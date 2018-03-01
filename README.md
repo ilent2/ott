@@ -1,8 +1,33 @@
-# ott
-Optical Tweezers Toolbox
+ott - Optical Tweezers Toolbox
+==============================
+
+[ TODO: Overview of the toolbox ]
+
+Installation
+------------
+
+[ TODO ]
+
+Getting started
+---------------
+
+[ TODO ]
+
+To-do list
+----------
+
+* Version 2 of the toolbox, an object orientated implementation with
+  a focus on simulating particles in optical traps rather than just
+  focussing on calculating optical forces/torques.  (in progress)
+  
+* Automatic choice of Nmax
+
+* Graphical user interface (in progress)
+
+* T-Matrix routines for arbitrary particles
 
 Licence
-=======
+-------
 
 The package and its components may be used free-of-charge for research,
 teaching, or personal use. If results obtained using the package are
@@ -23,13 +48,13 @@ or by directly citing the toolbox
 > "Optical tweezers toolbox", https://github.com/ilent2/ott
 
 Contact us
-==========
+----------
 
 The best person to contact for inquiries about the toolbox or lincensing
 is [Timo Nieminen](mailto:timo@physics.uq.edu.au)
 
 Further Reading
-===============
+---------------
 
 Papers describing the toolbox
 
