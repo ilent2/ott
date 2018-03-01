@@ -25,7 +25,8 @@ or by directly citing the toolbox
 Contact us
 ==========
 
-  [ TODO ]
+The best person to contact for inquiries about the toolbox or lincensing
+is [Timo Nieminen](mailto:timo@physics.uq.edu.au)
 
 Further References
 ==================
