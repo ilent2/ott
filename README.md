@@ -1,17 +1,58 @@
 ott - Optical Tweezers Toolbox
 ==============================
 
-[ TODO: Overview of the toolbox ]
+The optical tweezers toolbox can be used to calculate optical forces
+and torques of particles using the T-matrix formalism in a vector
+spherical wave basis.
+The toolbox includes codes for calculating T-matrices, beams described
+by vector spherical wave functions, functions for calculating forces
+and torques, and examples.
 
 Installation
 ------------
 
-[ TODO ]
+To use the toolbox, download or clone the GitHub repository.
+The toolbox consists of a directory, ott-toolbox, which contains
+a collection of functions for calculating T-matricies, beam coefficients,
+force and torques.
+To use the functions in your code, the easiest way is to add the
+ott-toolbox directory to your matlab path,
+
+```matlab
+addpath('<download-path>/ott/ott-toolbox');
+```
+
+if you regularly use the toolbox you might want to add the command to
+your [startup.m](https://au.mathworks.com/help/matlab/ref/startup.html?searchHighlight=startup.m) file.
+You might also want to add the examples to your path
+
+```matlab
+addpath('<download-path>/ott/examples');
+```
 
 Getting started
 ---------------
 
-[ TODO ]
+1. To get started using the toolbox you should first take a look at the
+users guide for version 1.2 and the optical tweezers computational
+toolbox paper (pre-print).  Both are available on our
+[website](https://people.smp.uq.edu.au/TimoNieminen/software.html).
+
+2. Copy the examples to your working directory, and play with
+    them. Start with example_gaussian.m.
+
+3. It's best to use length units of the wavelength in the trapping
+    medium, usually free-space wavelength/1.33.
+    
+4. The examples calculate the force and torque efficiencies. These are
+    the force and torque per photon, in photon units. To convert to
+    SI units:
+                force_SI = force_Q * n * P/c
+               torque_SI = torque_Q * P/w
+    where n is the refractive index of the surrounding medium,
+          P is the beam power in watts,
+          c is the speed of light in free space,
+          w is the angular optical frequency, in radians/s.
 
 To-do list
 ----------
