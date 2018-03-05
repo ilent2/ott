@@ -1,8 +1,8 @@
 function [ncube,mcube,cicube]=nm_cube(n,m,Nmax)
 % Calculates which n, m and ci to use for a cube
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0.1
+% Copyright 2006-2007 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

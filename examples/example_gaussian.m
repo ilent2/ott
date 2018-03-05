@@ -1,7 +1,7 @@
 % Example of calculation of force in a Gaussian beam trap
 %
-% Figure 1 in Nieminen et al., Optical tweezers computational toolbox,
-% to appear in Journal of Optics A (2007)
+% Figure 3 in Nieminen et al., Optical tweezers computational toolbox,
+% Journal of Optics A 9, S196-S203 (2007)
 %
 % How long should this take?
 % With the original settings, on a 3GHz PC, it took us about 1.5 hours
@@ -10,8 +10,8 @@
 % wavelengths, and only going out 2 wavelengths away from the focus cuts
 % the time to 1.5 seconds.
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0.1
+% Copyright 2006-2007 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
@@ -28,7 +28,8 @@ wavelength = 1;
 % else you can give it in any units you want. Only k times lengths matters
 k = 2*pi/wavelength;
 
-radius = 2.5;
+%radius = 2.5;
+radius = 1.0;
 Nmax = ka2nmax(k*radius);
 
 diam_microns = radius * 1.064 * 2 / n_medium
@@ -37,9 +38,14 @@ if Nmax < 12
     Nmax = 12;
 end
 
-% a Gaussian beam: w0 = 2/(k*tan(theta))
-w0 = 0.2671; % Convergence half-angle of 50 degrees
-% Or you can use lg_mode_w0 to find w0 from the angle
+% Specify the beam width. We can either start with the numerical
+% aperture (NA) or the beam convergence angle. Either way, we convert
+% to the equivalent paraxial beam waist, which is the w0 we put into the
+% paraxial beam to obtain the desired (non-paraxial) far field.
+% For a Gaussian beam: w0 = 2/(k*tan(theta))
+NA = 1.25;
+beam_angle = asin(NA/n_medium)*180/pi
+w0 = lg_mode_w0( [ 0 0 ], beam_angle );
              
 % Polarisation. [ 1 0 ] is plane-polarised along the x-axis, [ 0 1 ] is
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
@@ -54,8 +60,10 @@ beam_offset = [ 0 0 0];
 
 T = tmatrix_mie(Nmax,k,k*n_relative,radius);
 
-z = linspace(-8,8,80);
-r = linspace(-4,4,80);
+%z = linspace(-8,8,80);
+%r = linspace(-4,4,80);
+z = linspace(-5,5,80);
+r = linspace(-3,3,80);
 
 fz = zeros(size(z));
 fr = zeros(size(r));
@@ -96,7 +104,7 @@ zeq = interp1(fz((nequi-1):nequi),z((nequi-1):nequi),0)
 [Nparticle,dummy] = combined_index(max(size(T))/2);
 
 equiv_ka = nmax2ka(Nbeam);
-Nbeam = ka2nmax( equiv_ka + 2*pi*abs(z(nz)) );
+Nbeam = ka2nmax( equiv_ka + 2*pi*abs(zeq) );
 
 Nmax = max(Nparticle,Nbeam);
 total_orders = combined_index(Nmax,Nmax);

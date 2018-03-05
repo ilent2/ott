@@ -6,8 +6,8 @@ function z = find_axial_equilibrium(T,a,b,z)
 % z = find_axial_equilibrium(T,a,b,initial_guess);
 % where T = T-matrix, a,b = multipole expansion of beam.
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0.1
+% Copyright 2006-2007 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

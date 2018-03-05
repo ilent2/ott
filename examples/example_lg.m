@@ -1,7 +1,7 @@
 % Example of calculation of force in a Gaussian beam trap
 %
-% Figure 1 in Nieminen et al., Optical tweezers computational toolbox,
-% to appear in Journal of Optics A (2007)
+% Figure 2 in Nieminen et al., Optical tweezers computational toolbox,
+% Journal of Optics A 9, S196-S203 (2007)
 %
 % How long should this take?
 % With the original settings, on a 3GHz PC, it took us about 1.5 hours
@@ -10,8 +10,8 @@
 % wavelengths, and only going out 2 wavelengths away from the focus cuts
 % the time to 1.5 seconds.
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0.1
+% Copyright 2006-2007 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
@@ -37,8 +37,18 @@ if Nmax < 12
     Nmax = 12;
 end
 
-w0 = 0.5466; % Convergence half-angle of 50 degrees for LG03
-             % NA 1.4 objective has max half-angle of approx 70 degrees
+
+% Specify the beam width. We can either start with the numerical
+% aperture (NA) or the beam convergence angle. Either way, we convert
+% to the equivalent paraxial beam waist, which is the w0 we put into the
+% paraxial beam to obtain the desired (non-paraxial) far field.
+% For a Gaussian beam: w0 = 2/(k*tan(theta))
+% NA = 1.25;
+% beam_angle = asin(NA/n_medium)*180/pi
+%
+% Convergence half-angle of 50 degrees for LG03
+% NA 1.4 objective has max half-angle of approx 70 degrees
+w0 = lg_mode_w0( [ 0 3 ], 50 );
 
 % Polarisation. [ 1 0 ] is plane-polarised along the x-axis, [ 0 1 ] is
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
@@ -95,7 +105,7 @@ zeq = interp1(fz((nequi-1):nequi),z((nequi-1):nequi),0)
 [Nparticle,dummy] = combined_index(max(size(T))/2);
 
 equiv_ka = nmax2ka(Nbeam);
-Nbeam = ka2nmax( equiv_ka + 2*pi*abs(z(nz)) );
+Nbeam = ka2nmax( equiv_ka + 2*pi*abs(zeq) );
 
 Nmax = max(Nparticle,Nbeam);
 total_orders = combined_index(Nmax,Nmax);

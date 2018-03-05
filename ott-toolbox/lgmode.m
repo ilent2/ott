@@ -7,8 +7,8 @@ function LG = lgmode(p,l,r,phi)
 % r is in units of the beam width
 % r and phi can be matrices of equal size
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0.1
+% Copyright 2006-2007 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

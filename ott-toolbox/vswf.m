@@ -19,8 +19,8 @@ function [M,N,M2,N2,M3,N3] = vswf(n,m,kr,theta,phi,htype)
 %
 % "Out of range" n and m result in return of [0 0 0]
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0.1
+% Copyright 2006-2007 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

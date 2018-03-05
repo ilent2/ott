@@ -23,8 +23,8 @@ function [force,torque,spin] = forcetorque(n,m,a,b,p,q)
 % in either the incident-scattered or incoming-outgoing
 % formulations! Check that it matches the one you use!
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0.1
+% Copyright 2006-2007 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
@@ -36,10 +36,8 @@ incidentscattered = 1; % YES, I AM USING INCIDENT-SCATTERED FORMULATION
 % The force/torque calculations are easiest in the incoming-outgoing
 % formulation, so convert to it if necessary
 if incidentscattered
-    a = a/2;
-    b = b/2;
-    p = p + a;
-    q = q + b;
+    p = 2*p + a;
+    q = 2*q + b;
 end
 
 force = [ 0 0 0 ];

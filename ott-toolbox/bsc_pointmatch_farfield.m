@@ -12,8 +12,8 @@ function [nn,mm,a,b] = bsc_pointmatch_farfield( nmax, beam_type, parameters )
 % 1 Laguerre-Gauss beam
 %   parameters: [ p l w0 P xcomponent ycomponent truncation_angle xoffset yoffset zoffset ]
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0.1
+% Copyright 2006-2007 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
