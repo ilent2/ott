@@ -1,26 +1,16 @@
 function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=force_torque_farsund(n,m,a,b,p,q)
-% force_torque_farsund.m : Calculates the force and torque in a 3D orthogonal
-%                         space. If the beam shape coefficients are in the
-%                         original coordinates, this outputs the force,
-%                         torque and spin in 3D carteisan coordinates.
+% FORCE_TORQUE_FARSUND calculate force/torque/spin in a 3D orthogonal space
+% If the beam shape coefficients are in the original coordinates,
+% this outputs the force, torque and spin in 3D carteisan coordinates.
 %
-% USAGE:
+%   [fxyz,txyz,sxyz] = FORCE_TORQUE_FARSUND(...) calculates the force,
+%   torque and spin and stores them in [3, 1] column vectors.  Torque
+%   and spin can be omitted to only calculate the force or force and torque.
 %
-% [fx,fy,fz,tx,ty,tz,sx,sy,sz] = force_torque_farsund(n,m,a,b,p,q)
+%   [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCE_TORQUE_FARSUND(...) unpacks the
+%   force/torque/spin into separate output arguments.
 %
-% OR
-%
-% [fxyz,txyz,sxyz] = force_torque_farsund(n,m,a,b,p,q)
-%
-% OR
-%
-% [fxyz,txyz] = force_torque_farsund(n,m,a,b,p,q)
-%
-% OR
-%
-% [fxyz] = force_torque_farsund(n,m,a,b,p,q)
-%
-% where n,m are the degree and order of modes contained in the system. They
+% n,m are the degree and order of modes contained in the system. They
 % can be the truncated n and m's.
 %
 % a,b,p,q are the incident modes and scattered modes respectively. These
