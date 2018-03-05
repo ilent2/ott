@@ -16,8 +16,8 @@ function [r,theta,phi] = xyz2rtp(x,y,z)
 %
 % Angles are in radians
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.2
+% Copyright 2006-2012 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

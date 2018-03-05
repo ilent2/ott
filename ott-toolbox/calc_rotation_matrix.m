@@ -9,11 +9,15 @@ function R = calc_rotation_matrix(  angle_vector )
 %
 % NB: Since this  is an SI package, the angles are all in radians!
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.2
+% Copyright 2006-2012 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
+
+if length(angle_vector)==2
+    angle_vector=[0;angle_vector(:)];
+end
 
 R = [ (cos(angle_vector(2))*cos(angle_vector(3))) ...
       (sin(angle_vector(3))) ...

@@ -8,13 +8,10 @@ The toolbox includes codes for calculating T-matrices, beams described
 by vector spherical wave functions, functions for calculating forces
 and torques, and examples.
 
-This is our first public release of this code. It's behind
-schedule and more hurried than planned. Who knows what
-bugs lurk within? Let us know what you find.
-
-We're still sorting out incompatibilities between
-`example_landscape.m` and `example_cube.m` and recent changes. These
-will appear in an update as soon as possible.
+This release incorporates many of the previous bug fixes. However, as
+always this is a work in progress and may contain bugs from the new code.
+Bugs you discover may prevent the correct results from being obtained.
+Let us know what you find.
 
 Installation
 ------------

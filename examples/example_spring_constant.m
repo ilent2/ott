@@ -1,7 +1,7 @@
 % Example file for finding spring constants
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.2
+% Copyright 2006-2012 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
@@ -48,5 +48,5 @@ beam_offset = [ 0 0 0];
 
 T = tmatrix_mie(Nmax,k,k*n_relative,radius);
 
-k = spring_constant(T,a,b)
+[z,k] = axial_equilibrium(T,a,b)
 

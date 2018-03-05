@@ -1,5 +1,5 @@
 function [A,B,C] = translate_z(nmax,z)
-% translate_z.m - translation of VSWFs along z axis
+% translate_z.m - translation of VSWFs along z axis.
 %
 % Usage:
 % [A,B] = translate_z(nmax,z);
@@ -11,8 +11,15 @@ function [A,B,C] = translate_z(nmax,z)
 %
 % A and B are sparse matrices, since only m' = m VSWFs couple
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% If z is a vector/matrix only A's and B's will be outputted. A and B will 
+% be cells of matricies the length of the number of elements in z. To save
+% time only use unique values of z.
+%
+% Time *may* be saved by taking the conjugate transpose instead of
+% calculating translations in the positive or negative direction.
+%
+% This file is part of the package Optical tweezers toolbox 1.2
+% Copyright 2006-2012 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
@@ -26,6 +33,23 @@ function [A,B,C] = translate_z(nmax,z)
 % chapter 5 (pp. 81-96) % in F. Moreno and F. Gonzalez (eds), "Light
 % Scattering from Microstructures", Lecture Notes in Physics 534,
 % Springer-Verlag, Berlin, 2000
+
+if numel(z)>1
+    A=cell(numel(z),1);
+    B=A;
+    for ii=1:numel(z)
+        [A{ii},B{ii}]=translate_z(nmax,z(ii));
+    end
+    C=0;
+    return
+end
+
+if z==0
+    A=sparse(1:(nmax^2+nmax*2),1:(nmax^2+nmax*2),1);
+    B=0;
+    C=A;
+    return
+end
 
 N = 3*nmax+5;
 
@@ -118,7 +142,7 @@ A = C0 - 2*pi*z./(kkk+1) .* ...
     sqrt((kkk-mmm+1).*(kkk+mmm+1)./((2*kkk+1).*(2*kkk+3))) .* Cp - ...
     2*pi*z./kkk.*sqrt((kkk-mmm).*(kkk+mmm)./((2*kkk+1).*(2*kkk-1))).*Cm;
 
-B = i*2*pi*z*mmm./(kkk.*(kkk+1)) .* C0;
+B = 1i*2*pi*z*mmm./(kkk.*(kkk+1)) .* C0;
 
 % Videen uses a different normalisation, so adjust to our VSWFs
 A = A .* sqrt(kkk.*(kkk+1)) ./ sqrt(nnn.*(nnn+1));

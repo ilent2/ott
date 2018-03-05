@@ -12,8 +12,8 @@ function [nn,mm,a,b] = bsc_pointmatch_farfield( nmax, beam_type, parameters )
 % 1 Laguerre-Gauss beam
 %   parameters: [ p l w0 P xcomponent ycomponent truncation_angle xoffset yoffset zoffset ]
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.2
+% Copyright 2006-2012 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
@@ -62,6 +62,12 @@ if axisymmetry
     total_modes = 2 * nmax;
     nn = sort([ 1:nmax 1:nmax ]');
     mm = ((-1).^(1:(2*nmax)))' + azimuthal_mode;
+    
+    removeels=find(nn<abs(mm));
+    nn(removeels)=[];
+    mm(removeels)=[];
+    
+    total_modes=total_modes-length(removeels);
 end
 
 % Grid of points over sphere
@@ -73,6 +79,7 @@ if axisymmetry
     ntheta = 2*(nmax+1);
     nphi = 3;
 end
+
 [theta,phi] = angulargrid(ntheta,nphi);
 
 np = length(theta);
@@ -99,9 +106,10 @@ rw = k^2 * w0^2 * tan(theta).^2 / 2;
 %rw = rw .* abs(sin(phi)) + 1/9 * rw .* abs(cos(phi));
 %rw = 1/9 * rw .* abs(sin(phi)) + rw .* abs(cos(phi));
 
-%beam_envelope = rw.^(azimuthal_mode/2) .* L(p,rw).^azimuthal_mode .* ...
+%beam_envelope = rw.^(azimuthal_mode/2) .* L(p,l,rw) .* ...
 %       exp(-rw/2  + i*azimuthal_mode*phi);
-beam_envelope = rw.^abs(azimuthal_mode/2) .* exp(-rw/2 + i*azimuthal_mode*phi);
+L = laguerre(radial_mode,abs(azimuthal_mode),rw);
+beam_envelope = rw.^abs(azimuthal_mode/2) .* L .* exp(-rw/2 + i*azimuthal_mode*phi);
 %beam_envelope = exp(-rw/2);
 
 % Phase shift due to offset?

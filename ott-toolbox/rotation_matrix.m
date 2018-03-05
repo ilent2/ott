@@ -10,8 +10,8 @@ function R = rotation_matrix(rot_axis,rot_angle)
 % axis_angle is a vector giving the rotation axis, of magnitude equal to
 % the angle of rotation.
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.2
+% Copyright 2006-2012 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

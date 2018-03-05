@@ -1,11 +1,13 @@
-function [T,T2] = tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k_medium,k_particle,shape,parameters)
+function [T,T2] = tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k_medium,k_particle,sidelength)
 % tmatrix_pm_cube.m
 % T-matrix, calculated by point-matching method
 %
 % Usage:
-% T = tmatrix_pm(Nmax,k_medium,k_particle,shape,parameters);
+% T =
+% tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k_medium,k_particle,sidelength)
 % or
-% [T,T2] = tmatrix_pm(Nmax,k_medium,k_particle,shape,parameters);
+% [T,T2] =
+% tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k_medium,k_particle,sidelength)
 % where
 % n_medium and n_particle are the wavenumbers in the
 % surrounding medium and the scattering particle,
@@ -13,16 +15,17 @@ function [T,T2] = tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k_medium,k_part
 % (see shapesurface for more detail)
 % T2 is the T matrix giving the internal field
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.2
+% Copyright 2006-2012 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
 
 verbose = 0;
+shape=4;
 
 % Do we have a shape rotationally symmetric about the z-axis?
-[dummy1,dummy2,rotational_symmetry] = shapesurface([],[],shape,parameters);
+[dummy1,dummy2,rotational_symmetry] = shapesurface([],[],shape,sidelength);
 %rotational_symmetry = 0;
 
 % If it's just a sphere, let's just find the Mie solution, which is, after all,
@@ -46,7 +49,7 @@ nphi = 3*(Nmax_particle + 2)+1;
 % Testing randomly distributed points
 %xyz = randn(ceil(total_orders*50),3);
 %[r,theta,phi] = xyz2rtp(xyz);
-[r,normals] = shapesurface(theta,phi,shape,parameters);
+[r,normals] = shapesurface(theta,phi,shape,sidelength);
 npoints = length(theta);
 
 % 3 vector components at each point, c/d,p/q coefficient per order

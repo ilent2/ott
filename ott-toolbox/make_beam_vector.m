@@ -1,4 +1,4 @@
-function [newa,newb] = make_beam_vector(olda,oldb,n,m,Nmax)
+function [newa,newb,newn,newm] = make_beam_vector(olda,oldb,n,m,Nmax)
 % make_beam_vector.m
 %
 % Convert the n,m,a,b as output by the bsc_* functions to sparse vector
@@ -8,8 +8,12 @@ function [newa,newb] = make_beam_vector(olda,oldb,n,m,Nmax)
 % [a2,b2] = make_beam_vector(a1,b1,n,m);
 % [a2,b2] = make_beam_vector(a1,b1,n,m,Nmax);
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% Optional (will not calculate if n2, m2 not requested):
+% [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m);
+% [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m,Nmax);
+%
+% This file is part of the package Optical tweezers toolbox 1.2
+% Copyright 2006-2012 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
@@ -23,5 +27,12 @@ ci = combined_index(n,m);
 
 newa = sparse(ci,1,olda,total_orders,1);
 newb = sparse(ci,1,oldb,total_orders,1);
+
+if nargout>2
+    [newn,newm]=combined_index(1:Nmax^2+2*Nmax);
+    
+    newn=newn.';
+    newm=newm.';
+end
 
 return

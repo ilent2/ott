@@ -16,8 +16,8 @@ function [D,D2] = wigner_rotation_matrix( nmax, R )
 % Note change in notation - here, use x' = Rx (x is row vector),
 % a' = Da (a is column vector) etc.
 %
-% This file is part of the package Optical tweezers toolbox 1.0
-% Copyright 2006 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.2
+% Copyright 2006-2012 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
