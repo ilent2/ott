@@ -1,4 +1,4 @@
-function [hn] = sbesselh1(n,kr)
+function [hn,ierr] = sbesselh1(n,kr)
 % sbesselh1 - spherical hankel function hn(kr) of the first kind
 %
 % Usage:
@@ -10,10 +10,8 @@ function [hn] = sbesselh1(n,kr)
 %
 % PACKAGE INFO
 
-kr=kr(:);
-n=n(:);
-[hn] = besselh(n'+1/2,1,kr);
-kr=repmat(kr,[1 length(n)]);
+[hn,ierr] = besselh(n+1/2,1,kr);
 hn = sqrt(pi./(2*kr)) .* hn;
 
 return
+

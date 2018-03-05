@@ -1,4 +1,4 @@
-function [jn] = sbesselj(n,kr)
+function [jn,ierr] = sbesselj(n,kr)
 % sbesselj - spherical bessel function jn(kr)
 %
 % jn(kr) = sqrt(pi/2kr) Jn+0.5(kr)
@@ -9,17 +9,14 @@ function [jn] = sbesselj(n,kr)
 %
 % PACKAGE INFO
 
-kr=kr(:);
-n=n(:);
-[jn] = besselj(n'+1/2,kr);
-[n,kr]=meshgrid(n,kr);
-
 small_args = find( abs(kr) < 1e-15 );
 not_small_args = find( ~(abs(kr) < 1e-15) );
 
-if length(kr) == 1 & abs(kr) < 1e-15
+[jn,ierr] = besselj(n+1/2,kr);
+
+if length(kr) == 1 & kr < 1e-15
     jn = kr.^n ./ prod(1:2:(2*n+1));
-elseif length(kr) == 1 & ~(abs(kr) < 1e-15)
+elseif length(kr) == 1 & ~(kr < 1e-15)
     jn = sqrt(pi./(2*kr)) .* jn;
 elseif length(n) == 1
     jn(not_small_args) = ...
@@ -33,3 +30,4 @@ else % both n and kr are vectors
 end
 
 return
+
