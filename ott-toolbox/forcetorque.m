@@ -23,8 +23,8 @@ function [force,torque,spin] = forcetorque(n,m,a,b,p,q)
 % in either the incident-scattered or incoming-outgoing
 % formulations! Check that it matches the one you use!
 %
-% This file is part of the package Optical tweezers toolbox 1.0.1
-% Copyright 2006-2007 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0
+% Copyright 2006 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

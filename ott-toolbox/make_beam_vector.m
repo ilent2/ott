@@ -8,8 +8,8 @@ function [newa,newb] = make_beam_vector(olda,oldb,n,m,Nmax)
 % [a2,b2] = make_beam_vector(a1,b1,n,m);
 % [a2,b2] = make_beam_vector(a1,b1,n,m,Nmax);
 %
-% This file is part of the package Optical tweezers toolbox 1.0.1
-% Copyright 2006-2007 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0
+% Copyright 2006 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

@@ -13,8 +13,8 @@ function [out1,out2,out3,out4] = spring_constant(T,a,b,z)
 % If you the n,m,a,b output by bsc_*, try:
 % [a,b] = make_beam_vector(a0,b0,n,m);
 %
-% This file is part of the package Optical tweezers toolbox 1.0.1
-% Copyright 2006-2007 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0
+% Copyright 2006 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

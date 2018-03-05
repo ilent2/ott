@@ -10,8 +10,8 @@ function [Aperp,Apar] = perpcomponent( A, n )
 % The columns of A and n must be the vector components; a number
 % of rows can be used to process many vectors at once.
 %
-% This file is part of the package Optical tweezers toolbox 1.0.1
-% Copyright 2006-2007 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0
+% Copyright 2006 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html

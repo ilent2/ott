@@ -9,8 +9,8 @@ function B = change_nmax(A,Nmax)
 % A warning is issued if the matrix/vector is being truncated and possibly
 % significant values are being discarded.
 %
-% This file is part of the package Optical tweezers toolbox 1.0.1
-% Copyright 2006-2007 The University of Queensland.
+% This file is part of the package Optical tweezers toolbox 1.0
+% Copyright 2006 The University of Queensland.
 % See README.txt or README.m for license and details.
 %
 % http://www.physics.uq.edu.au/people/nieminen/software.html
