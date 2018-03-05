@@ -99,7 +99,7 @@ zeroindex=find(fz<0,1);
 if length(zeroindex)~=0
     %fit to third order polynomial the local points. (only works when dz
     %sufficiently small)
-    pz=polyfit(z(max([zeroindex-2,1]):min([zeroindex+2,length(z)])),fz(max([zeroindex-2,1]):min([zeroindex+2,length(z)])),2);
+    pz=polyfit(z(max([zeroindex-2,1]):min([zeroindex+2,length(z)])),fz(max([zeroindex-2,1]):min([zeroindex+2,length(z)])),3);
     root_z=roots(pz); %find roots of 3rd order poly.
     dpz=[3*pz(1),2*pz(2),1*pz(3)]; %derivative of 3rd order poly.
     

@@ -24,11 +24,7 @@ function [theta,phi] = angulargrid(ntheta,nphi,behaviour)
 % 0 -> 2: theta = reshape(theta,ntheta,nphi);
 %         phi = reshape(phi,ntheta,nphi);
 %
-% This file is part of the package Optical tweezers toolbox 1.3
-% Copyright 2006-2013 The University of Queensland.
-% See README.txt or README.m for license and details.
-%
-% http://www.physics.uq.edu.au/people/nieminen/software.html
+% PACKAGE_INFO
 
 switch nargin
 case 1

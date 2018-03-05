@@ -16,11 +16,7 @@ function [b,c] = vshtransform_rot4_mir_sym(f,n,m,nmax,theta,phi);
 % The theta and phi vectors really should be produced using
 % [theta,phi] = angulargrid(ntheta,nphi);
 %
-% This file is part of the package Optical tweezers toolbox 1.3
-% Copyright 2006-2013 The University of Queensland.
-% See README.txt or README.m for license and details.
-%
-% http://www.physics.uq.edu.au/people/nieminen/software.html
+% PACKAGE_INFO
 
 % The coefficients are found using the formula
 %

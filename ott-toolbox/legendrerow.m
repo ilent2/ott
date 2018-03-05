@@ -1,4 +1,4 @@
-function pnm=legendrecol(n,theta)
+function pnm=legendrerow(n,theta)
 % legendrerow.m : Gives the spherical coordinate recursion in m for a given
 %                 n, theta.
 %
