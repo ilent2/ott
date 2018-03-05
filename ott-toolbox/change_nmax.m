@@ -1,10 +1,15 @@
 function B = change_nmax(A,Nmax)
-% change_nmax.m
+% CHANGE_NMAX Resizes T-matrix or beam vector to a new Nmax
 %
-% Resizes a T-matrix or beam coefficients vector to a new Nmax
+% newT = CHANGE_NMAX(oldT,Nmax) creates a new T-matrix, if the new Nmax is
+% greater, the new T-matrix is sparse with zeros padding the original.
+% If Nmax is smaller, the new T-matrix is a truncated version of the
+% original matrix.
 %
-% Usage:
-% newT = change_nmax(oldT,Nmax);
+% newa = CHANGE_NMAX(olda,Nmax) creates a new beam vector with new Nmax.
+% The input must not be a combined beam vector, i.e. not [a;b], a and b
+% must be resized seperatly.  When the beam vector is expanded, the new
+% vector is stored as a sparse matrix.
 %
 % A warning is issued if the matrix/vector is being truncated and possibly
 % significant values are being discarded.
