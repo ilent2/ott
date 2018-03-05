@@ -20,7 +20,7 @@ function [rtp,n,ds]=axisym_boundarypoints(Nmax,rho,z);
 rho=rho(:);
 z=z(:);
 
-ntheta=(Nmax+2)*1024;
+ntheta=ceil((Nmax*(Nmax+2))^2/20+5);
 
 %add up line segments to get distance
 s=sqrt((rho(2:end)-rho(1:end-1)).^2+(z(2:end)-z(1:end-1)).^2);
@@ -64,7 +64,6 @@ for ii=2:length(rho);
     ncum=ncum+Nused;
     
 end
-
 %converts the cylindrical coordinates into spherical coordinates
 [n,rtp]=xyzv2rtpv(nxyz,[rhoout,zeros(size(rhoout)),zout]);
 
@@ -80,4 +79,5 @@ dst(end,3)=(z(end)-mean(zout(end-1:end)));
 
 %a general axisymmetric conic region has the following area (sans factor of 2*pi):
 ds=(rtp(:,1).*sqrt(sum(abs(dst).^2,2)).*sin(rtp(:,2))); 
+%ds=sqrt(sum(abs(dst).^2,2));
 

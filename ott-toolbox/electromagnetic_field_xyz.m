@@ -73,6 +73,12 @@ lengthcd=length(cd)/2;
 lengthpq=length(pq)/2;
 
 [rv,tv,pv]=xyz2rtp(xyz(:,1),xyz(:,2),xyz(:,3));
+
+[r_new,~,indR]=unique(rv);
+[theta_new,~,indTheta]=unique(tv);
+[phi_new,~,indPhi]=unique(pv);
+
+
 %ab length can be bigger than cd or pq as it is the beam we start with.
 
 %look for biggest and smallest elements in the matrix, kill elements
@@ -93,6 +99,8 @@ if lengthab==0
         end
     end
 else
+    a=ab(1:end/2);
+    b=ab(end/2+1:end);
     if lengthcd==0
         behaviour=1;
         if lengthpq==0
@@ -127,121 +135,205 @@ end
 switch behaviour
     case 0
         
-        for ii=1:length(un)
+        for nn = 1:max(un)
             
-            if length(m(n==un(ii)))>=1
-                indx=find(n==un(ii));
-                abv=ab([indx;indx+lengthab]);
+            vv=find(n==nn);
+            
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
+                [jn,djn]=sbesselj(nn,2*pi*r_new);
                 
-                [M3,N3]=vswf(un(ii),m(n==un(ii)),2*pi*rv,tv,pv,3);
+                [M,PHI]=meshgrid(m(vv),phi_new);
                 
-                for jj=1:length(abv)/2
-                    E1=E1+(abv(jj))*M3(:,[0:2]*length(indx)+jj)+(abv(length(abv)/2+jj)).*N3(:,[0:2]*length(indx)+jj);
-                    H1=H1+(abv(jj))*N3(:,[0:2]*length(indx)+jj)+(abv(length(abv)/2+jj)).*M3(:,[0:2]*length(indx)+jj);
+                expimphi=repmat(exp(1i*M.*PHI),[1,3]);
+                
+                Nn = 1/sqrt(nn*(nn+1));
+                
+                jnU=jn(indR);
+                djnU=djn(indR);
+                kr=2*pi*r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
+                    
+                    E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    if nargout>1
+                        H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                        H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                        H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    end
+                    
                 end
-                
             end
             
-            %             if verbose
-            %                 if ni==10
-            %                     disp(['Estimated time to completion: ' num2str(2*toc*length(calcvecels)/11) ' seconds!']);
-            %                 end
-            %             end
             
         end
+        
         
     case 1
         
-        for ii=1:length(un)
+        for nn = 1:max(un)
             
-            if length(m(n==un(ii)))>=1
-                indx=find(n==un(ii));
-                abv=ab([indx;indx+lengthab]);
-                pqv=pq([indx;indx+lengthab]);
+            vv=find(n==nn);
+            
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
+                [jn,djn]=sbesselj(nn,2*pi*r_new);
+                [hn,dhn]=sbesselh1(nn,2*pi*r_new);
                 
-                [M1,N1,~,~,M3,N3]=vswf(un(ii),m(n==un(ii)),2*pi*rv,tv,pv);
-                for jj=1:length(abv)/2
-                    E1=E1+full(abv(jj))*M3(:,[0:2]*length(indx)+jj)+full(abv(length(abv)/2+jj)).*N3(:,[0:2]*length(indx)+jj);
-                    H1=H1+full(abv(jj))*N3(:,[0:2]*length(indx)+jj)+full(abv(length(abv)/2+jj)).*M3(:,[0:2]*length(indx)+jj);
+                [M,PHI]=meshgrid(m(vv),phi_new);
+                
+                expimphi=repmat(exp(1i*M.*PHI),[1,3]);
+                
+                Nn = 1/sqrt(nn*(nn+1));
+                
+                jnU=jn(indR);
+                djnU=djn(indR);  
+                
+                hnU=hn(indR);
+                dhnU=dhn(indR);
+                
+                kr=2*pi*r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
-                    E2=E2+full(pqv(jj))*M1(:,[0:2]*length(indx)+jj)+full(pqv(length(abv)/2+jj)).*N1(:,[0:2]*length(indx)+jj);
-                    H2=H2+full(pqv(jj))*N1(:,[0:2]*length(indx)+jj)+full(pqv(length(abv)/2+jj)).*M1(:,[0:2]*length(indx)+jj);
+                    E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+
+                    E2(:,1)=E2(:,1)+Nn*b(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E2(:,2)=E2(:,2)+Nn*(a(index)*hnU.*Yphi(indTheta,ii)+b(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E2(:,3)=E2(:,3)+Nn*(-a(index)*hnU.*Ytheta(indTheta,ii)+b(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    if nargout>1
+                        H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                        H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                        H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                        
+                        H2(:,1)=H2(:,1)+Nn*a(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                        H2(:,2)=H2(:,2)+Nn*(b(index)*hnU.*Yphi(indTheta,ii)+a(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                        H2(:,3)=H2(:,3)+Nn*(-b(index)*hnU.*Ytheta(indTheta,ii)+a(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    end
                     
                 end
-                
             end
             
-            %             if verbose
-            %                 if ii==1
-            %                     disp(['Estimated time to completion: ' num2str(2*toc*length(calcvecels)/11) ' seconds!']);
-            %                 end
-            %             end
             
         end
-    case 2
         
-        for ii=1:length(un)
+    case 2
+         for nn = 1:max(un)
             
-            if length(m(n==un(ii)))>=1
-                indx=find(n==un(ii));
+            vv=find(n==nn);
+            
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
                 
-                abv=ab([indx;indx+lengthab]);
-                pqv=pq([indx;indx+lengthab]);
-                cdv=cd([indx;indx+lengthab]);
+                [jn,djn]=sbesselj(nn,2*pi*r_new);
+                [jnr,djnr]=sbesselj(nn,2*pi*relindex*r_new);
+                [hn,dhn]=sbesselh1(nn,2*pi*r_new);
                 
-                [M1,N1,~,~,M3,N3]=vswf(un(ii),m(n==un(ii)),2*pi*rv,tv,pv);
+                [M,PHI]=meshgrid(m(vv),phi_new);
                 
-                [M3a,N3a] = vswf(un(ii),m(n==un(ii)),2*pi*rv*(relindex),tv,pv,3);
+                expimphi=repmat(exp(1i*M.*PHI),[1,3]);
                 
-                for jj=1:length(abv)/2
-                    E1=E1+full(abv(jj))*M3(:,[0:2]*length(indx)+jj)+full(abv(length(abv)/2+jj)).*N3(:,[0:2]*length(indx)+jj);
-                    H1=H1+full(abv(jj))*N3(:,[0:2]*length(indx)+jj)+full(abv(length(abv)/2+jj)).*M3(:,[0:2]*length(indx)+jj);
+                Nn = 1/sqrt(nn*(nn+1));
+                
+                jnU=jn(indR);
+                djnU=djn(indR);
+                
+                jnrU=jnr(indR);
+                djnrU=djnr(indR);  
+                
+                hnU=hn(indR);
+                dhnU=dhn(indR);
+                
+                kr=2*pi*r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
-                    E2=E2+full(pqv(jj))*M1(:,[0:2]*length(indx)+jj)+full(pqv(length(abv)/2+jj)).*N1(:,[0:2]*length(indx)+jj);
-                    H2=H2+full(pqv(jj))*N1(:,[0:2]*length(indx)+jj)+full(pqv(length(abv)/2+jj)).*M1(:,[0:2]*length(indx)+jj);
+                    E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+
+                    E2(:,1)=E2(:,1)+Nn*b(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E2(:,2)=E2(:,2)+Nn*(a(index)*hnU.*Yphi(indTheta,ii)+b(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E2(:,3)=E2(:,3)+Nn*(-a(index)*hnU.*Ytheta(indTheta,ii)+b(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
                     
-                    E3=E3+full(cdv(jj))*M3a(:,[0:2]*length(indx)+jj)+full(cdv(length(abv)/2+jj)).*N3a(:,[0:2]*length(indx)+jj);
-                    H3=H3+full(cdv(jj))*N3a(:,[0:2]*length(indx)+jj)+full(cdv(length(abv)/2+jj)).*M3a(:,[0:2]*length(indx)+jj);
+                    E3(:,1)=E3(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E3(:,2)=E3(:,2)+Nn*(a(index)*jnrU.*Yphi(indTheta,ii)+b(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E3(:,3)=E3(:,3)+Nn*(-a(index)*jnrU.*Ytheta(indTheta,ii)+b(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    if nargout>1
+                        H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                        H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                        H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                        
+                        H2(:,1)=H2(:,1)+Nn*a(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                        H2(:,2)=H2(:,2)+Nn*(b(index)*hnU.*Yphi(indTheta,ii)+a(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                        H2(:,3)=H2(:,3)+Nn*(-b(index)*hnU.*Ytheta(indTheta,ii)+a(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                        
+                        H3(:,1)=H3(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                        H3(:,2)=H3(:,2)+Nn*(b(index)*jnrU.*Yphi(indTheta,ii)+a(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                        H3(:,3)=H3(:,3)+Nn*(-b(index)*jnrU.*Ytheta(indTheta,ii)+a(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+
+                    end
                     
                 end
-                
             end
             
-            %             if verbose
-            %                 if ni==10
-            %                     disp(['Estimated time to completion: ' num2str(2*toc*length(calcvecels)/11) ' seconds!']);
-            %                 end
-            %             end
             
-        end
+         end
+        
         
     case 4
         
-        for ii=1:length(un)
+         for nn = 1:max(un)
             
-            if length(m(n==un(ii)))>=1
-                indx=find(n==un(ii));
+            vv=find(n==nn);
+            
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
                 
-                pqv=pq([indx;indx+lengthpq]);
+                [hn,dhn]=sbesselh1(nn,2*pi*r_new);
                 
-                [M1,N1]=vswf(un(ii),m(n==un(ii)),2*pi*rv,tv,pv,1);
+                [M,PHI]=meshgrid(m(vv),phi_new);
                 
-                for jj=1:length(pqv)/2
-                    
-                    E2=E2+full(pqv(jj))*M1(:,[0:2]*length(indx)+jj)+full(pqv(length(pqv)/2+jj)).*N1(:,[0:2]*length(indx)+jj);
-                    H2=H2+full(pqv(jj))*N1(:,[0:2]*length(indx)+jj)+full(pqv(length(pqv)/2+jj)).*M1(:,[0:2]*length(indx)+jj);
+                expimphi=repmat(exp(1i*M.*PHI),[1,3]);
+                
+                Nn = 1/sqrt(nn*(nn+1));
+
+                
+                hnU=hn(indR);
+                dhnU=dhn(indR);
+                
+                kr=2*pi*r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
+
+                    E2(:,1)=E2(:,1)+Nn*b(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E2(:,2)=E2(:,2)+Nn*(a(index)*hnU.*Yphi(indTheta,ii)+b(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E2(:,3)=E2(:,3)+Nn*(-a(index)*hnU.*Ytheta(indTheta,ii)+b(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                                  
+                    if nargout>1                     
+                        H2(:,1)=H2(:,1)+Nn*a(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                        H2(:,2)=H2(:,2)+Nn*(b(index)*hnU.*Yphi(indTheta,ii)+a(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                        H2(:,3)=H2(:,3)+Nn*(-b(index)*hnU.*Ytheta(indTheta,ii)+a(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+
+                    end
                     
                 end
-                
             end
             
-            %             if verbose
-            %                 if ni==10
-            %                     disp(['Estimated time to completion: ' num2str(2*toc*length(calcvecels)/11) ' seconds!']);
-            %                 end
-            %             end
-            %
-        end
+            
+         end
+         
     case default
         disp('This behaviour is not implimented')
         return

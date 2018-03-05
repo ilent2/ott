@@ -1,20 +1,24 @@
-function Lpl = laguerre(p,l,x)
+function Lpl = laguerre(p,l,X)
 % laguerre.m - associated Laguerre function
 %
 % Usage:
-% L = laguerre(p,l,x)
+% L = laguerre(p,l,X)
 %
 % p and l must be integer scalars greater than zero
 %
-% Warning: this is a naive direct calculation, so might be slow or unstable
-% for large p and/or l.
-%
 % PACKAGE INFO
 
-Lpl = nchoosek(p+l,p) * ones(size(x)); 
+x=X(:);
 
-for m = 1:p
-    Lpl = Lpl + (-1)^m/factorial(m) * nchoosek(p+l,p-m) * x.^m;
+Lplt=zeros(numel(x),max([p+1,2]));
+
+Lplt(:,1)=1;
+Lplt(:,2)=-x+l+1;
+
+for ii=2:p
+    Lplt(:,ii+1)=1/ii*((2*ii+l-1-x).*Lplt(:,ii)-(ii+l-1).*Lplt(:,ii-1));
 end
+
+Lpl=reshape(Lplt(:,p+1),size(X));
 
 return

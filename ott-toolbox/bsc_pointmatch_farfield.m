@@ -100,7 +100,7 @@ rw = k^2 * w0^2 * tan(theta).^2 / 2;
 %beam_envelope = rw.^(azimuthal_mode/2) .* L(p,l,rw) .* ...
 %       exp(-rw/2  + i*azimuthal_mode*phi);
 L = laguerre(radial_mode,abs(azimuthal_mode),rw);
-beam_envelope = rw.^abs(azimuthal_mode/2) .* L .* exp(-rw/2 + i*azimuthal_mode*phi);
+beam_envelope = rw.^abs(azimuthal_mode/2) .* L .* exp(-rw/2 + 1i*azimuthal_mode*phi+1i*pi/2*(radial_mode*2+abs(azimuthal_mode)+1));
 %beam_envelope = exp(-rw/2);
 
 % Phase shift due to offset?
@@ -108,7 +108,7 @@ beam_envelope = rw.^abs(azimuthal_mode/2) .* L .* exp(-rw/2 + i*azimuthal_mode*p
 if ~isempty(offset)
     rhat = rtpv2xyzv( ones(size(theta)), zeros(size(theta)), zeros(size(theta)), ones(size(theta)), theta, phi );
     [offset,rhat] = matchsize(offset,rhat);
-    phase_shift = exp( -i * k * dot(offset,rhat,2) );
+    phase_shift = exp( -1i * k * dot(offset,rhat,2) );
     beam_envelope = beam_envelope .* phase_shift;
 end
 
@@ -132,8 +132,8 @@ for n = 1:length(nn)
 
    % Now find E as appropriate for each mode
    [B,C,P] = vsh(nn(n),mm(n),theta,phi);
-   coefficient_matrix(:,n) = [ C(:,2); C(:,3) ] * i^(nn(n)+1)/sqrt(nn(n)*(nn(n)+1));
-   coefficient_matrix(:,n+length(nn)) = [ B(:,2); B(:,3) ] * i^nn(n)/sqrt(nn(n)*(nn(n)+1));
+   coefficient_matrix(:,n) = [ C(:,2); C(:,3) ] * 1i^(nn(n)+1)/sqrt(nn(n)*(nn(n)+1));
+   coefficient_matrix(:,n+length(nn)) = [ B(:,2); B(:,3) ] * 1i^nn(n)/sqrt(nn(n)*(nn(n)+1));
 
 end
 

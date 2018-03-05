@@ -69,7 +69,7 @@ m2 = m2(:);
 
 % First, rotate x axis onto z axis
 
-R = calc_rotation_matrix([0 -pi/2 0]);
+R = calc_rotation_matrix([0 pi/2 0]);
 D = wigner_rotation_matrix(max(n),R);
 D = D(:,ci);
 
