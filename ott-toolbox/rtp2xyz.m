@@ -1,14 +1,11 @@
 function [x,y,z] = rtp2xyz(r,theta,phi)
 % RTP2XYZ coordinate transformation from spherical to cartesian
-% theta is the polar angle, measured from the +z axis,
-% and varies from 0 to pi
-% phi is the azimuthal angle, measured from the +x axis, increasing
-% towards the +y axis, varying from 0 to 2*pi
-%
-% [x,y,z] = RTP2XYZ(r,theta,phi) takes vectors or scalars for:
 %   r      radial distance [0, Inf)
 %   theta  polar angle, measured from +z axis [0, pi]
-%   phi    azimuthal angle, measured from +x axis [0, 2*pi)
+%   phi    azimuthal angle, measured from +x towards +y axes [0, 2*pi)
+%
+% [x,y,z] = RTP2XYZ(r,theta,phi) takes vectors or scalars, outputs
+% the spherical coordinates as vectors/scalars of the same size.
 %
 % [x,y,z] = RTP2XYZ(r) same as above but with the coordinate
 % packed into the vector/matrix r = [ r theta phi ].
