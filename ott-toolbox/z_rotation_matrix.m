@@ -18,6 +18,8 @@ function [Ryz]=z_rotation_matrix(theta,phi,tolerance)
 %
 % PACKAGE INFO
 
+warning('this function will move to ott.utils.z_rotation_matrix');
+
 ct=cos(theta);
 st=sin(theta);
 cp=cos(phi);
