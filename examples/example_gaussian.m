@@ -12,6 +12,9 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+import ott.*
+import ott.utils.*
+
 % Make warnings less obtrusive
 ott_warning('once');
 change_warnings('off');

@@ -12,14 +12,15 @@ Installation
 ------------
 
 To use the toolbox, download or clone the GitHub repository.
-The toolbox consists of a directory, ott-toolbox, which contains
-a collection of functions for calculating T-matricies, beam coefficients,
-force and torques.
+This version of the toolbox is released as a package, `+ott`, which
+contains a collection of functions for calculating T-matricies, beam
+coefficients, force and torques.
 To use the functions in your code, the easiest way is to add the
-ott-toolbox directory to your matlab path,
+directory containing the package to your path and importing the package,
 
 ```matlab
-addpath('<download-path>/ott/ott-toolbox');
+addpath('<download-path>/ott');
+import ott.*
 ```
 
 if you regularly use the toolbox you might want to add the command to
