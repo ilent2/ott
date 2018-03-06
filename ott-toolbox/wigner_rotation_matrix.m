@@ -18,6 +18,8 @@ function [D,D2] = wigner_rotation_matrix( nmax, R )
 %
 % PACKAGE INFO
 
+warning('this function will move to ott.utils.wigner_rotation_matrix');
+
 % Transform cartesian rotation matrix to spinor(?) rotation matrix
 %
 % Note that the order n = 1 scalar spherical harmonics are equal to
@@ -98,5 +100,3 @@ for n = 2:nmax
     DD = DDD;
     
 end
-
-return
