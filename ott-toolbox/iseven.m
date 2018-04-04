@@ -9,5 +9,5 @@ function x = iseven(input)
 
 warning('This function will be moved to ott.utils.iseven');
 
-x = mod(mod(input,2)+1,2);
+x = logical(mod(mod(input,2)+1,2));
 

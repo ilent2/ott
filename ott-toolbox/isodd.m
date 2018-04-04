@@ -9,4 +9,4 @@ function x = isodd(input)
 
 warning('this function will move to ott.utils.isodd');
 
-x = mod(input,2);
+x = logical(mod(input,2));
