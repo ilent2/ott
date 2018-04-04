@@ -1,39 +1,74 @@
 function [nn,mm,a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
-% Finds VSWF representation of plane wave
+% Finds VSWF representation of plane wave, output BSCs producing a plane
+% with amplitude determined by the field input. If a vector input then a
+% and b are matrices.
+%
+% Usage:
 % [n,m,a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
+% 
+% or
+%
+% [a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
 %
 % theta and phi (in radians) give the direction of propagation
 % of the plane wave. +z direction is theta = 0, phi = any value
 %
+% NOTE: lambda will be leaving this code in a future release.
+%
 % PACKAGE_INFO
 
-E = [ 0 Etheta Ephi ];
+theta=theta(:);
+phi=phi(:);
+Etheta=Etheta(:);
+Ephi=Ephi(:);
 
+if any(theta>pi)
+    warning('ott:bsc_plane:thetatoobig','Theta is larger than PI, treating all elements as angles in degrees.')
+    theta=theta/180*pi;
+end
+
+%calculate the mode indices we are going to find.
 [nn,mm]=combined_index([1:nmax*(nmax+2)].');
 
-a = zeros(size(nn));
-b = zeros(size(nn));
+a = zeros(length(nn),length(Etheta));
+b = zeros(length(nn),length(Etheta));
 
-ii=0;
 for n = 1:nmax
     
-    iter=2*n+1;
+    iter=[(n-1)*(n+1)+1:n*(n+2)];
+    leniter=2*n+1;
     
-    Nn = sqrt(1/(n*(n+1)));
+    %expand theta and phi components of field to match spherical harmonics
+    ET=repmat(Etheta,[1,leniter]);
+    EP=repmat(Ephi,[1,leniter]);
     
-    [B,C,P] = vsh(n,[-n:n],theta,phi);
+    %power normalisation.
+    Nn = 1/sqrt(n*(n+1));
     
-    Creorg=reshape(C,[iter,3]);
-    Breorg=reshape(B,[iter,3]);
-    
-    Et=repmat(E,[iter,1]);
-    
-    % dot product function takes complex conjugate of first term
-    a(ii+1:ii+iter) = 4*pi * 1i^n * Nn * dot(Creorg,Et,2);
-    b(ii+1:ii+iter) = 4*pi * 1i^(n-1) * Nn * dot(Breorg,Et,2);
-    
-    ii=ii+iter;
+    %Generate the farfield components of the VSWFs
+    [~,dtY,dpY] = spharm(n,[-n:n],theta,phi);
+        
+    %equivalent to dot((1i)^(n+1)*C,E);
+    a(iter,:) = 4*pi*Nn*(-1i)^(n+1)*(conj(dpY).*ET - conj(dtY).*EP).';
+    %equivalent to dot((1i)^(n)*B,E);
+    b(iter,:) = 4*pi*Nn*(-1i)^(n)  *(conj(dtY).*ET + conj(dpY).*EP).';
     
 end
 
+p=abs(a).^2+abs(b).^2;
+binaryvector=(p>1e-15*max(p));
+
+if nargout>2
+    nn=nn(any(binaryvector,2),:);
+    mm=mm(any(binaryvector,2),:);
+    a=a(any(binaryvector,2),:);
+    b=b(any(binaryvector,2),:);
+end
+
+if nargout==2
+    a(~binaryvector)=0;
+    b(~binaryvector)=0;
+    nn=sparse(a);
+    mm=sparse(b);
+end
 return
