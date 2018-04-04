@@ -89,8 +89,8 @@ c=modeweights(row,keepz);
 
 w0 = parameters(3);
 k = 2*pi * medium_refractive_index / beam_wavelength0;
-xcomponent = parameters(5)/norm(parameters(5:6),2);
-ycomponent = parameters(6)/norm(parameters(5:6),2);
+xcomponent = parameters(5);
+ycomponent = parameters(6);
 
 % Truncation angle
 if length(parameters) > 6
