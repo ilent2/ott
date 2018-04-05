@@ -37,7 +37,23 @@ classdef Bsc
   end
 
   methods (Static)
-    % TODO: make_beam_vector
+    function [a, b, n, m] = make_beam_vector(a, b, n, m, Nmax)
+      %MAKE_BEAM_VECTOR converts output of bsc_* functions to sparse vectors
+
+      if nargin < 5
+        Nmax = max(n);
+      end
+
+      total_orders = ott.utils.combined_index(Nmax, Nmax);
+      ci = ott.utils.combined_index(n, m);
+
+      a = sparse(ci, 1, a, total_orders, 1);
+      b = sparse(ci, 1, b, total_orders, 1);
+
+      [n, m] = ott.utils.combined_index(1:Nmax^2+2*Nmax);
+      n = n.';
+      m = m.';
+    end
   end
 
   methods (Access=protected)
