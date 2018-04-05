@@ -1,18 +1,25 @@
-function [nn,mm,a,b] = bsc_pointmatch_focalplane( nmax, beam_type, parameters )
+function [nn,mm,a,b] = bsc_pointmatch_focalplane( nmax, ~, parameters )
 % bsc_pointmatch_focalplane.m
 % Uses an overdetermined point-matching method to find
-% spherical harmonic expansion of a laser beam.
+% spherical harmonic expansion of a Gaussian laser beam.
+%
+% It is recommended that you use bsc_pointmatch_farfield instead as
+% this function provides a larger range of beam types.
 %
 % Usage:
 % [n,m,a,b] = bsc_pointmatch_focalplane( nmax, beam_type, parameters );
 %
-% Currently available types of beams:
-% 0 Gauss-Hermite beam
-%   parameters: [ n m w0 P xcomponent ycomponent ]
-% 1 Laguerre-Gauss beam
-%   parameters: [ p l w0 P xcomponent ycomponent ]
+% The beam_type argument is not currently used and there are no plans to
+% implement different beams using focal plane matching.
+%
+% parameters: [ ~ ~ w0 ~ xcomponent ycomponent ]
+%    w0    Beam waist
+%    xcomponent and ycomponent are the x and y polarisation components.
 %
 % PACKAGE INFO
+
+warning('ott:bsc_pointmatch_focalplane', ...
+    'This function is not recommended, use bsc_pointmatch_farfield instead');
 
 zero_rejection_level = 1e-8;
 
