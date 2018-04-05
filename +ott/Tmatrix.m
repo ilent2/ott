@@ -58,8 +58,16 @@ classdef Tmatrix < matlab.mixin.Copyable
  end
 
  methods (Access=protected)
-  function tmatrix = Tmatrix()
+  function tmatrix = Tmatrix(data)
     %TMATRIX construct a new T-matrix object
+    %
+    % TMATRIX() leaves the data uninitialised.
+    %
+    % TMATRIX(data) initializes the data with the matrix data.
+
+    if nargin == 1
+      tmatrix.data = data;
+    end
   end
  end
 
