@@ -13,8 +13,6 @@ function [jn,djn] = sbesselj(n,kr)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.*
-ott_warning('ott:sbesselj:move', ...
-    'This file will move to ott.utils.sbesselj');
 ott_warning('internal');
 
 kr=kr(:);

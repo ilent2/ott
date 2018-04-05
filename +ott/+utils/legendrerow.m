@@ -11,8 +11,6 @@ function pnm=legendrerow(n,theta)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott_warning('ott:legendrerow:move', ...
-    'This file will move to ott.utils.legendrerow');
 import ott.*
 
 if n==0;

@@ -15,9 +15,6 @@ function [hn,dhn] = sbesselh(n,htype,kr)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.*
-
-ott_warning('ott:sbesselh:move', ...
-    'This file will move to ott.utils.sbesselh');
 ott_warning('internal');
 
 kr=kr(:);

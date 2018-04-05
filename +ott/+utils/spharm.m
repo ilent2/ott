@@ -21,8 +21,6 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.*
-ott_warning('ott:spharm:move', ...
-    'This file will move to ott.utils.spharm');
 ott_warning('internal');
 
 if length(n)>1

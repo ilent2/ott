@@ -27,8 +27,6 @@ function [theta,phi] = angulargrid(ntheta,nphi,behaviour)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott_warning('ott:angulargrid:move', ...
-    'This file will move to ott.utils.angulargrid');
 import ott.*
 
 switch nargin

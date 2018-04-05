@@ -13,7 +13,7 @@ function HG=hgmode(m,n,x,y,z,theta);
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-w=ott.paraxial_beam_waist(m+n); %Beam waist in normalized units.
+w=ott.utils.paraxial_beam_waist(m+n); %Beam waist in normalized units.
 
 if nargin<6
     theta=atan(w.^2/pi)*180/pi;
@@ -40,5 +40,5 @@ y=y./w_z;
 
 HG = exp(1i*(n + m + 1)*psi)*(2/pi)^(1/2).*...
     (1./(2^(n+m)*factorial(n)*factorial(m)*w_z)).^(1/2).*...
-    ott.hermite(m, (sqrt(2)*x)).*ott.hermite(n, (sqrt(2)*y)).* ...
+    ott.utils.hermite(m, (sqrt(2)*x)).*ott.utils.hermite(n, (sqrt(2)*y)).* ...
     exp( - r.^2).*extFac./sqrt(w_z);

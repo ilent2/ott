@@ -18,8 +18,6 @@ function [B,C,P] = vsh(n,m,theta,phi)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.*
-ott_warning('ott:vsh:move', ...
-    'This file will move to ott.utils.vsh');
 ott_warning('internal');
 
 if length(n)>1

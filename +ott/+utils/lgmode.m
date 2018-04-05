@@ -13,7 +13,7 @@ function LG = lgmode(p,l,r,phi,z,theta)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-w=ott.paraxial_beam_waist(2*p+abs(l)); %Beam waist in normalized units.
+w=ott.utils.paraxial_beam_waist(2*p+abs(l)); %Beam waist in normalized units.
 
 if nargin<6
     theta=atan(w.^2/pi)*180/pi;
@@ -35,5 +35,5 @@ extFac=exp(1i*(l*phi-k*z-r.^2/2./R));
 r=r./w_z;
 
 LG = sqrt(2*factorial(p)/(pi*factorial(p+abs(l)))) * (sqrt(2)*r).^abs(l) ...
-    .* ott.laguerre(p,abs(l),2*r.^2) ...
+    .* ott.utils.laguerre(p,abs(l),2*r.^2) ...
     .* extFac .* exp(-r.^2) .* exp(1i * (2*p + abs(l) + 1) * psi )./w_z;

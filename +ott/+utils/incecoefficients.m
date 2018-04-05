@@ -17,8 +17,6 @@ function [A_n,B_n,eigA,eigB]=incecoefficients(p,xi);
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott_warning('ott:incecoefficients:move', ...
-    'This file will move to ott.utils.incecoefficients');
 import ott.*
 
 testcase=0;
