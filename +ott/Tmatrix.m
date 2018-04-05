@@ -17,6 +17,43 @@ classdef Tmatrix < matlab.mixin.Copyable
   data            % The matrix this class encapsulates
  end
 
+  methods (Static)
+    function k_medium = parser_k_medium(p)
+      %PARSER_K_MEDIUM helper to get k_medium from a parser object
+
+      if ~isempty(p.Results.k_medium)
+        k_medium = p.Results.k_medium;
+      elseif ~isempty(p.Results.wavelength_medium)
+        k_medium = 2.0*pi/p.Results.wavelength_medium;
+      elseif ~isempty(p.Results.index_medium)
+        if isempty(p.Results.wavelength0)
+          error('wavelength0 must be specified to use index_medium');
+        end
+        k_medium = p.Results.index_medium*2.0*pi/p.Results.wavelength0;
+      else
+        error('Unable to determine k_medium from inputs');
+      end
+    end
+
+    function k_particle = parser_k_particle(p)
+      %PARSER_K_PARTICLE helper to get k_particle from a parser object
+
+      if ~isempty(p.Results.k_particle)
+        k_particle = p.Results.k_particle;
+      elseif ~isempty(p.Results.wavelength_particle)
+        k_particle = 2.0*pi/p.Results.wavelength_particle;
+      elseif ~isempty(p.Results.index_particle)
+        if isempty(p.Results.wavelength0)
+          error('wavelength0 must be specified to use index_particle');
+        end
+        k_particle = p.Results.index_particle ...
+            * 2.0*pi/p.Results.wavelength0;
+      else
+        error('Unable to determine k_particle from inputs');
+      end
+    end
+  end
+
  methods (Abstract)
  end
 

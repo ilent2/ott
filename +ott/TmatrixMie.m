@@ -217,37 +217,10 @@ classdef TmatrixMie < ott.Tmatrix
       p.addParameter('internal', false);
       p.parse(varargin{:});
 
-      % Store inputs: radius
+      % Store inputs: radius, k_medium, k_particle
       tmatrix.radius = radius;
-
-      % Store inputs: k_medium
-      if ~isempty(p.Results.k_medium)
-        tmatrix.k_medium = p.Results.k_medium;
-      elseif ~isempty(p.Results.wavelength_medium)
-        tmatrix.k_medium = 2.0*pi/p.Results.wavelength_medium;
-      elseif ~isempty(p.Results.index_medium)
-        if isempty(p.Results.wavelength0)
-          error('wavelength0 must be specified to use index_medium');
-        end
-        tmatrix.k_medium = p.Results.index_medium*2.0*pi/p.Results.wavelength0;
-      else
-        error('Unable to determine k_medium from inputs');
-      end
-
-      % Store inputs: k_particle
-      if ~isempty(p.Results.k_particle)
-        tmatrix.k_particle = p.Results.k_particle;
-      elseif ~isempty(p.Results.wavelength_particle)
-        tmatrix.k_particle = 2.0*pi/p.Results.wavelength_particle;
-      elseif ~isempty(p.Results.index_particle)
-        if isempty(p.Results.wavelength0)
-          error('wavelength0 must be specified to use index_particle');
-        end
-        tmatrix.k_particle = p.Results.index_particle ...
-            * 2.0*pi/p.Results.wavelength0;
-      else
-        error('Unable to determine k_particle from inputs');
-      end
+      tmatrix.k_medium = tmatrix.parser_k_medium(p);
+      tmatrix.k_particle = tmatrix.parser_k_particle(p);
 
       % Check radius and k_particle are similar lengths
       if numel(tmatrix.radius) ~= numel(tmatrix.k_particle)
