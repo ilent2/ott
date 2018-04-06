@@ -158,7 +158,28 @@ classdef Bsc
       H = H * -1i;
     end
 
-    % TODO: emfieldXyz
+    function [E, H] = emFieldXyz(beam, kxyz)
+      %EMFIELDXYZ calculates the E and H field at specified locations
+
+      [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
+      nm = [ n.'; m.' ];
+
+      if strcmp(beam.type, 'incomming')
+        S = ott.electromagnetic_field_xyz(kxyz, nm, ibeam, [], []);
+        E = S.Eincident;
+        H = S.Hincident;
+      elseif strcmp(beam.type, 'outgoing')
+        S = ott.electromagnetic_field_xyz(kxyz, nm, [], obeam, []);
+        E = S.Escattered;
+        H = S.Hscattered;
+      elseif strcmp(beam.type, 'regular')
+        S = ott.electromagnetic_field_xyz(kxyz, nm, [], [], beam);
+        E = S.Einternal;
+        H = S.Hinternal;
+      else
+        error('Invalid beam type');
+      end
+    end
 
     function nmax = get.Nmax(beam)
       %get.Nmax calculates Nmax from the current size of the beam coefficients
