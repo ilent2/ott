@@ -99,7 +99,7 @@ ci=union(cia,cib);
 
 [n,m]=combined_index(ci);
 %%
-Es=electromagnetic_field_xyz(2*pi*[X(:),Y(:),Z(:)],[n;m],[a_full;b_full]);
+Es=electromagnetic_field_xyz(2*pi*[X(:),Y(:),Z(:)],[n;m],[a_full;b_full],[],[]);
 
 E2=sum(abs(Es.Eincident).^2,2);
 H2=sum(abs(Es.Hincident).^2,2);

@@ -29,6 +29,8 @@ function [nn,mm,a,b] = bsc_bessel_farfield( nmax, beam_type, parameters )
 %
 % PACKAGE INFO
 
+warning('ott:bsc_bessel_farfield:depreciated','This function will be replaced by bsc_bessel.m in ott1.4 which uses an analytical solution for bessel beams instead of pointmatching.')
+
 axisymmetry = 1;
 %axisymmetry = 0;
 
