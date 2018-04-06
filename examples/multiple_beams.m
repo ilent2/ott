@@ -16,11 +16,13 @@ n_relative = 1.2; %relative refractive index = 1.2
 r_particle = 1;   %particle radius is 1 wavelength in the medium
 beam_angle = 50;  %beam half angle of 50 degrees
 polarization = [1 i];  %circular polarization
+beam_offset = [0 0 0]; %sets the destination of the beam focus to O.
 
 Nmax = ka2nmax(2*pi*r_particle); %calculate limit of the expansion
 
 %calculate the beam shape coefficients
-[n, m, a0, b0] = bsc_pointmatch_farfield(Nmax, 1, [0 0 beam_angle 1 polarization 90 ]);
+[n, m, a0, b0] = bsc_pointmatch_farfield(Nmax, 1, ...
+    [0 0 beam_angle 1 polarization 90 ]);
 [a, b, n, m] = make_beam_vector(a0, b0, n, m); %pack beam vector to full size
 
 %calculate the power of the two beam system:
