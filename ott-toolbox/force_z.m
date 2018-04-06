@@ -21,6 +21,9 @@ function [force,torque] = force_z(n,m,a,b,p,q)
 %
 % PACKAGE INFO
 
+warning('ott:force_z:depreciated', ...
+    'This file will be removed in the next release');
+
 % Uncomment one of the following:
 incidentscattered = 1; % YES, I AM USING INCIDENT-SCATTERED FORMULATION
 % incidentscattered = 0; % NO, I AM NOT, I USE INCOMING-OUTGOING FORMULATION

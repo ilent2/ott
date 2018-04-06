@@ -22,6 +22,9 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=force_torque_farsund(n,m,a,b,p,q)
 %
 % PACKAGE INFO
 
+warning('ott:force_torque_farsund:depreciated', ...
+    'This file will replace forcetorque.m in the next release');
+
 nmax=max(n);
 
 b=1i*b;
