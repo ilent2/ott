@@ -25,19 +25,15 @@ polarisation = [1,1i];
 
 %% get mode weights
 %generate paraxial conversion matrix:
-[modeweights,lglookups,hglookups]=genLG2HG(order);
-
-%we don't have reverse lookup so we're going to find the appropriate row of
-%the transformation matrix using find.
-[m_,n_]=hglookup(order,hglookups);
+[modeweights,lg_modes,hg_modes]=paraxial_transformation_matrix(order,0,1,0);
 
 %row is the resulting mode
-[row,col]=find(m_==m,1);
+[row]=find(hg_modes(:,1)==m,1);
 
 %let's draw paraxial modes to check!
 % note if you do a profile in Z you will need to re-write the code from...
 %% here
-x=linspace(-3,3,128);
+x=linspace(-pi,pi,128)*45/convergence_angle;
 y=x;
 z=0;
 
@@ -50,20 +46,19 @@ PHI=atan2(Y,X);
 U=zeros(size(X));
 
 for ii=1:order+1
-    [p,l]=lglookup(order,lglookups(row,ii));
-    U=U+modeweights(row,ii)*lgmode(p,l,R,PHI);
+    U=U+modeweights(row,ii)*lgmode(lg_modes(ii,1),lg_modes(ii,2),R,PHI,0*R,convergence_angle);
 end
 
-UHG=hgmode(m,n,X,Y);
+UHG=hgmode(m,n,X,Y,0*X,convergence_angle);
 
 h=figure(1)
 set(h,'position',[80,80,750,750])
 subplot(2,2,1)
 imagesc(abs(U).^2);axis equal 
-title(['|HG_{' num2str(m_(row,1)) ',' num2str(n_(row,1)) '}|^2' ])
+title(['|HG_{' num2str(hg_modes(row,1)) ',' num2str(hg_modes(row,2)) '}|^2' ])
 subplot(2,2,2)
 imagesc(angle(U));caxis([-pi,pi]);axis equal 
-title(['arg(HG_{' num2str(m_(row,1)) ',' num2str(n_(row,1)) '})' ])
+title(['arg(HG_{' num2str(hg_modes(row,1)) ',' num2str(hg_modes(row,2)) '})' ])
 subplot(2,2,3)
 imagesc(abs(UHG).^2);axis equal 
 title(['|HG_{' num2str(m) ',' num2str(n) '}|^2' ])
@@ -76,18 +71,14 @@ title(['arg(HG_{' num2str(m) ',' num2str(n) '})' ])
 
 % we're going to use the "lean and mean" beam code:
 
-% as the bsc_lgmode_farfield will expand to nmax of 200 let's set a's and
-% b's to the full size.
+% for low convergence angles a large nmax is required.
+nmax=50;
+a_full=sparse(nmax*(nmax+2),1);
+b_full=sparse(nmax*(nmax+2),1);
 
-a_full=sparse(200*202,1);
-b_full=sparse(200*202,1);
-
-nmax=0;
 for ii=1:order+1
-    
-    [p,l]=lglookup(order,lglookups(row,ii));
 
-    [n,m,a,b]=bsc_lgmode_farfield(convergence_angle,[p,l],'fixed',polarisation);
+    [n,m,a,b]=bsc_pointmatch_farfield(nmax,1,[lg_modes(ii,:) lg_mode_w0(lg_modes(ii,:),convergence_angle) 1 polarisation 90 ],'sintheta');
 
     nmax=max(nmax,max(n));
 
@@ -107,11 +98,12 @@ cib=find(b_full);
 ci=union(cia,cib);
 
 [n,m]=combined_index(ci);
-
-Es=electromagnetic_field_xyz([X(:),Y(:),Z(:)],[n;m],[a_full;b_full]);
+%%
+Es=electromagnetic_field_xyz(2*pi*[X(:),Y(:),Z(:)],[n;m],[a_full;b_full]);
 
 E2=sum(abs(Es.Eincident).^2,2);
-I=reshape(E2,size(X));
+H2=sum(abs(Es.Hincident).^2,2);
+I=reshape(E2+H2,size(X));
 
 %the transversal phase is approimately the sum of the conjugate weights of
 %the jones vectors times the Ex and Ey.
@@ -121,7 +113,7 @@ argEtr=reshape(Etr,size(X));
 figure(2)
 subplot(1,2,1)
 imagesc(I);axis equal
-title(['|HG_{' num2str(m_(row,1)) ',' num2str(n_(row,1)) '}|^2' ])
+title(['|HG_{' num2str(hg_modes(row,1)) ',' num2str(hg_modes(row,2)) '}|^2' ])
 subplot(1,2,2)
 imagesc(argEtr);caxis([-pi,pi]);axis equal
-title(['arg(HG^{tr}_{' num2str(m_(row,1)) ',' num2str(n_(row,1)) '})' ])
+title(['arg(HG^{tr}_{' num2str(hg_modes(row,1)) ',' num2str(hg_modes(row,2)) '})' ])

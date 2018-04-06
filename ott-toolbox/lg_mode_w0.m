@@ -5,7 +5,7 @@ function w0 = lg_mode_w0( mode, angle )
 % w0 = lg_mode_w0( mode, angle );
 % where:
 % w0 is the waist parameter in units of wavelength
-% mode = [ p l ] [BUT CURRENTLY p MUST BE ZERO]
+% mode = [ p l ] 
 %  or
 % mode = l (and p = 0 is assumed)
 % angle = 1/e^2 angle in degrees
@@ -47,9 +47,9 @@ psi3 = [ -4.859972437674526e-006;
    9.47541396001228 ];
 
 if length(mode) > 1
-   l = abs(mode(2));
+   l = 2*mode(1)+abs(mode(2));
 else
-   l = mode;
+   l = abs(mode);
 end
 
 if l == 0

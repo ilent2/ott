@@ -25,6 +25,16 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=force_torque_farsund(n,m,a,b,p,q)
 warning('ott:force_torque_farsund:depreciated', ...
     'This file will replace forcetorque.m in the next release');
 
+fx=0;
+fy=0;
+fz=0;
+tx=0;
+ty=0;
+tz=0;
+sx=0;
+sy=0;
+sz=0;
+
 nmax=max(n);
 
 b=1i*b;
@@ -98,8 +108,8 @@ Bxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ... %sqrt(n.*)
     sqrt((n-m+1).*(n-m+2)) .* (pnp1mm1.*conj(p) + qnp1mm1.*conj(q) - anp1mm1.*conj(a) - bnp1mm1.*conj(b)) ); %this has the correct sign... farsund. modes match.
 
 fxy=sum(Axy+Bxy);
-fx=-real(fxy);
-fy=-imag(fxy);
+fx=real(fxy);
+fy=imag(fxy);
 
 if nargout > 1
     tz=sum(m.*(a.*conj(a)+b.*conj(b)-p.*conj(p)-q.*conj(q))); %this has the correct sign... farsund. modes match.
@@ -114,7 +124,7 @@ if nargout > 1
             .*real(anp1.*conj(b)-bnp1.*conj(a)-(pnp1).*conj(q) ...
             +(qnp1).*conj(p));
         
-        sz = -sum(Cz+Dz);
+        sz = sum(Cz+Dz);
         
         Cxy=1i./n./(n+1).*sqrt((n-m).*(n+m+1)).*(conj(pmp1).*p - conj(amp1).*a + conj(qmp1).*q - conj(bmp1).*b);
         Dxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ...
@@ -123,7 +133,7 @@ if nargout > 1
         
         sxy=sum(Cxy+Dxy);
         sy=real(sxy);
-        sx=-imag(sxy);
+        sx=imag(sxy);
     end
 end
 

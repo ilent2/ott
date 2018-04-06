@@ -40,9 +40,9 @@ wavelength = 1;
 k = 2*pi/wavelength;
 
 radius = 1; %this is now side length
-Nmax = ka2nmax(k*radius); %nmax for a centered cube with side length radius...
+Nmax = ka2nmax(k*radius*sqrt(3)/(2))+1; %nmax for a centered cube with side length radius...
 Nmax_medium=Nmax; %these are the same using this method.
-Nmax_particle=ka2nmax(k*radius*n_relative); %this is the internal refractive index in this system
+Nmax_particle=ka2nmax(k*radius*sqrt(3)*n_relative/(2)); %this is the internal refractive index in this system
 
 k_particle = 2*pi/wavelength*n_relative;
 
@@ -59,14 +59,14 @@ w0 = lg_mode_w0( [ 0 0 ], beam_angle );
 
 % Polarisation. [ 1 0 ] is plane-polarised along the x-axis, [ 0 1 ] is
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
-polarisation = [ i 1 ];
+polarisation = [ 1i 1 ];
 
 % Location of the focal point relative to the particle. These are the
 % [ x y z ] coordinates.
 beam_offset = [ 0 0 0];
 
 %Makes beam.
-[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 beam_offset ]);
+[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 ]);
 [a,b,n,m] = make_beam_vector(a0,b0,n,m);
 
 %Finds the root power (note this is different than dividing at the level of
@@ -79,8 +79,8 @@ b=b/pwr;
 
 %% Insert tmatrix here %%
 tic
-disp('Calculating T-matrix for cube...')
 if clearT | ~exist('T','var')
+    disp('Calculating T-matrix for cube...')
     T=tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k,k_particle,radius);
 end
 % T=tmatrix_mie(Nmax,k,k_particle,radius); %test dynamic simulation with sphere
@@ -110,17 +110,17 @@ translation_drag_tensor=eye(3)/200;
 rotation_drag_tensor=eye(3)/500; % we assume big rotations. This corresponds to low resistance.
 
 %calculate the x and y-axis rotations for force calculation.
-Rx = z_rotation_matrix(pi/2,0);
+Rx = rotation_matrix([0,1,0],pi/2);
 Dx = wigner_rotation_matrix(Nmax,Rx);
 
-Ry = z_rotation_matrix(pi/2,pi/2);
+Ry = rotation_matrix([-1,0,0],pi/2);
 Dy = wigner_rotation_matrix(Nmax,Ry);
 
 %save rotation matricies for drawing.
 Rtotal=zeros(numt*3,3);
 
 %set initial orientation.
-Rw=z_rotation_matrix(0*pi/4,0*pi/4);
+Rw=rotation_matrix([-sin(0*pi/4),cos(0*pi/4),0],0*pi/4);
 Rtotal([1:3],:)=Rw;
 
 %set temp force and torque storage
@@ -129,7 +129,7 @@ tt=ft;
 
 for ii=2:numt
     rtp=xyz2rtp(x(:,ii-1).').';           %change the coordinate of the old particle position from xyz to spherical polars.
-    R = z_rotation_matrix(rtp(2),rtp(3)); %calculates an appropriate axis rotation onto z'.
+    R = rotation_matrix([-sin(rtp(3)),cos(rtp(3)),0],rtp(2)); %calculates an appropriate axis rotation onto z'.
     D = wigner_rotation_matrix(Nmax,R);   %passive (coordinate) rotation pointing the new particle position along the z axis.
     D2 = wigner_rotation_matrix(Nmax,Rw); %passive rotation of the beam to the particle orientation coordinates.
     
@@ -167,7 +167,7 @@ for ii=2:numt
     %almost certainly a physically motivated choice for dt, but this method
     %seems to work well in a number of situations. Scaling factors can be
     %added if you care to, let us know what you find out!
-    dt=dtlim/(1+(sqrt(sum((-inv(rotation_drag_tensor)*tt).^2))));
+    dt=dtlim/(1+(sqrt(sum((inv(rotation_drag_tensor)*tt).^2))));
     
     %Calculate new x.
     x(:,ii)=x(:,ii-1)+inv(translation_drag_tensor)*ft*dt;
@@ -180,7 +180,7 @@ for ii=2:numt
     % %a2, b2, p, q.
     
     %New rotation matrix using the deviation.
-    Rw=rotation_matrix(-inv(rotation_drag_tensor)*tt*dt)*Rw; %This calculates the appropriate rotation using the euler-rodriguez formula.
+    Rw=rotation_matrix(inv(rotation_drag_tensor)*tt*dt)*Rw; %This calculates the appropriate rotation using the euler-rodriguez formula.
     Rtotal(3*(ii-1)+[1:3],:)=Rw;
     
     tvec(ii)=tvec(ii-1)+dt; %update time
@@ -234,7 +234,7 @@ for ii=1:numt
     zlabel('z');
     grid on 
     axis equal
-    axis([-1,1,-1,1,-1,1])
+    axis([-1,1,-1,1,-1,1]*radius)
     title('Particle trajectory and orientation with time.')
     view(3)
     movieframe(ii)=getframe(1);
@@ -268,12 +268,11 @@ end
 %% save movie %%
 if strcmp(lower(input('Save movie (y/n)? ','s')),'y')
     nm=input('File name (warning overwrites without asking): ','s');
-    upath=userpath;
-    movie2avi(movieframe,[upath(1:end-1),'\',nm,'.avi']);
-% else
-%     try; close 1;end;
-%     figure(1)
-%     movie(1,movieframe,1,30);
+    v = VideoWriter([pwd,'\',nm,'.avi']);
+    open(v)
+    writeVideo(v,movieframe);
+    close(v)
+    clear movieframe;
 end
 
 figure(3)

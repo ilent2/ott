@@ -60,7 +60,7 @@ switch beam_type
         [modeweights,initial_mode,final_mode]=paraxial_transformation_matrix(paraxial_order,0,1,0);
         [row]=find(final_mode(:,1)==m,1);
     case 1
-        paraxial_order=2*radial_mode+azimuthal_mode;
+        paraxial_order=2*radial_mode+abs(azimuthal_mode);
         modeweights=eye(paraxial_order+1);
         row=(azimuthal_mode+paraxial_order)/2+1;
         
@@ -139,7 +139,7 @@ if axisymmetry
     ntheta = 2*(nmax+1);
     nphi = 3;
     if beam_type~=1
-        nphi = paraxial_order+3;
+        nphi = paraxial_order+3-rem(paraxial_order,2);
     end
 end
 
