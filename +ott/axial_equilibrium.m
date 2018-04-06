@@ -11,6 +11,11 @@ function [z,kz] = axial_equilibrium(tmatrix,beam,z)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.*
+
+% This function is not directly concerned with force/torque calculation
+warning('ott:axialequilibrium:move', ...
+    'This function will move in a future release');
+
 ott_warning('internal');
 
 if nargin < 4

@@ -37,15 +37,25 @@ sx=0;
 sy=0;
 sz=0;
 
-nmax=max(n);
+% Ensure beams are the same size
+if ibeam.Nmax > sbeam.Nmax
+  sbeam.Nmax = ibeam.Nmax;
+elseif ibeam.Nmax < sbeam.Nmax
+  ibeam.Nmax = sbeam.Nmax;
+end
+
+% Ensure the beam is incomming-outgoing
+sbeam = sbeam.toOutgoing(ibeam);
+
+% Get the relevent beam coefficients
+[a, b] = ibeam.getCoefficients();
+[p, q] = sbeam.getCoefficients();
+[n, m] = ibeam.getModeIndices();
+
+nmax=ibeam.Nmax;
 
 b=1i*b;
 q=1i*q;
-
-if 1
-    p=a+2*p;
-    q=b+2*q;
-end
 
 addv=zeros(2*nmax+3,1);
 
