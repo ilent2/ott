@@ -26,6 +26,9 @@ classdef BscPmGauss < ott.BscPointmatch
     waist0             % Beam waist at focal plane
   end
 
+  % TODO: Generalize BscPointmatch for farfield and focal plane
+  % TODO: Incorperate bsc_pointmatch_focalplane option for gaussian beams.
+
   methods
     function beam = BscPmGauss(varargin)
       %BSCPMGAUSS construct a new IG, HG or LG gaussian beam.
