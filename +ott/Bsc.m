@@ -15,6 +15,7 @@ classdef Bsc
 %   get.Nmax        Get the current size of the beam shape coefficient vectors
 %   getCoefficients Get the beam coefficients [a, b]
 %   getModeIndices  Get the mode indices [n, m]
+%   power           Calculate the power of the beam
 %
 % Static methods:
 %   make_beam_vector    Convert output of bsc_* functions to beam coefficients
@@ -330,11 +331,15 @@ classdef Bsc
 
     function [n, m] = getModeIndices(beam)
       %GETMODEINDICES gets the mode indices
-      Nmax = beam.Nmax;
-      [n, m] = ott.utils.combined_index([1:combined_index(Nmax, Nmax)].');
+      [n, m] = ott.utils.combined_index([1:length(beam.a)].');
       if nargout == 1
         n = [n; m];
       end
+    end
+
+    function p = power(beam)
+      %POWER calculate the power of the beam
+      p = sqrt(sum(abs(a).^2 + abs(b).^2));
     end
   end
 end
