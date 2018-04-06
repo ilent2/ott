@@ -1,159 +1,106 @@
-% Example of calculation of force in a Gaussian beam trap
+% Example calculation of forces on a sphere in a optical beam
 %
-% Approximate of Figure 1 in Nieminen et al., Optical tweezers computational
-% toolbox, Journal of Optics A 9, S196-S203 (2007)
-%
-% How long should this take?
-% The problem scales with the square of particle size. Excluding that the
-% calculation goes out to main memory from cache should scale like the
-% square. For the example here it took ~20 seconds on a Core2 Duo 6600 with
-% 6GB of RAM.
+% This example includes a couple of example beams (Gaussian, LG and HG),
+% combining the separate example scripts found in ottv1.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-import ott.utils.*
+%% Describe the particle, beam and surrounding medium
 
 % Make warnings less obtrusive
 ott_warning('once');
 change_warnings('off');
 
-% Specify refractive indices
+% Refractive index of particle and medium
 n_medium = 1.33;
 n_particle = 1.59;
-n_relative = n_particle/n_medium;
 
-% If you want to give all measurements in wavelengths in the surrounding
-% medium, then:
-wavelength = 1;
-% wavelength = wavelength0 / n_medium;
-% else you can give it in any units you want. Only k times lengths matters
-k = 2*pi/wavelength;
+% Wavelength of light in vacuum [m]
+wavelength0 = 1064e-9;
 
-% radiuz=nmax2ka([1:20]);
-%
-% try; clear timetakes; end
-%
-% for ii=1:length(radiuz)
-%     tic
-%
-tic
-radius = 2.5;
-%radius = radiuz(ii);
-radius = 1;
-Nmax = ka2nmax(k*radius);
+% Calculate the wavelength in the medium
+wavelength_medium = wavelength0/n_medium;
 
-diam_microns = radius * 1.064 * 2 / n_medium;
-%
-%     if Nmax < 12
-%         Nmax = 12;
-%     end
+% Radius of particle
+radius = 1.0*wavelength_medium;
 
-% Specify the beam width. We can either start with the numerical
-% aperture (NA) or the beam convergence angle. Either way, we convert
-% to the equivalent paraxial beam waist, which is the w0 we put into the
-% paraxial beam to obtain the desired (non-paraxial) far field.
-% For a Gaussian beam: w0 = 2/(k*tan(theta))
+% Set the beam type (must be one of lg, gaussian or hg)
+% This is used bellow to select from the beam presets
+beam_type = 'gaussian';
+
+% Specify the numerical aparture of the beam/microscope
 NA = 1.02;
-beam_angle = asin(NA/n_medium)*180/pi;
 
-% Polarisation. [ 1 0 ] is plane-polarised along the x-axis, [ 0 1 ] is
-% y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
-polarisation = [ 1 i ];
+%% Setup the T-matrix for the particle
 
-[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 beam_angle 1 polarisation 90 ]);
-[a,b,n,m] = make_beam_vector(a0,b0,n,m);
+% Create a T-matrix for a sphere
+T = ott.Tmatrix.simple('sphere', radius, 'wavelength0', wavelength0, ...
+    'n_medium', n_medium, 'n_particle', n_relative);
 
-%% Insert tmatrix here %%
-T = tmatrix_mie(Nmax,k,k*n_relative,radius);
-%%
+%% Setup the T-matrix for the beam
 
-z = linspace(-8,8,80);
-r = linspace(-4,4,80);
+switch beam_type
+  case 'gaussian'
 
-fz = zeros(size(z));
-fr = zeros(size(r));
+    % Create a simple Gaussian beam with circular polarisation
+    beam = ott.BscPmGauss('NA', NA, 'polarisation', [ 1 1i ]);
 
-%root power for nomalization to a and b individually.
-pwr = sqrt(sum( abs(a).^2 + abs(b).^2 ));
+  case 'lg'
 
-%normalize total momentum of wave sum to 1. Not good for SI EM field.
-a=a/pwr;
-b=b/pwr;
+    % Create a LG03 beam with circular polarisation
+    %
+    % We could have specified the NA as before but this time we
+    % calculate the beam angle ourselves and specify that
+    beam_angle = asin(NA/n_medium);
+    beam = ott.BscPmGauss('lg', [ 0 3 ], ...
+        'polarisation', polarisation, 'angle', beam_angle);
+
+  case 'hg'
+
+    % Create a HG23 beam with circular polarisation
+    beam_angle = asin(NA/n_medium);
+    beam = ott.BscPmGauss('hg', [ 2 3 ], ...
+        'polarisation', polarisation, 'angle', w0);
+
+  otherwise
+    error('Unsupported beam type');
+end
+
+% Normalize the beam power
+beam = beam / beam.power();
+
+%% Generate force/position graphs
 
 %calculate the force along z
+z = linspace(-8,8,80);            % z is in units of the wavelength
+fz = zeros(3, length(z));
 for nz = 1:length(z)
-    
-    [A,B] = translate_z(Nmax,z(nz));
-    a2 = ( A*a + B*b );
-    b2 = ( A*b + B*a );
-    
-    pq = T * [ a2; b2 ];
-    p = pq(1:length(pq)/2);
-    q = pq(length(pq)/2+1:end);
-    
-    [~,~,fz(nz),~,~,~] = forcetorque(n,m,a2,b2,p,q);
-    
+  tbeam = beam.translateZ(z(nz));
+  sbeam = T * tbeam;
+  fz(:, nz) = ott.forcetorque(tbeam, sbeam);
 end
 
-zeroindex=find(fz<0,1);
-
-if length(zeroindex)~=0
-    %fit to third order polynomial the local points. (only works when dz
-    %sufficiently small)
-    pz=polyfit(z(max([zeroindex-2,1]):min([zeroindex+2,length(z)])),fz(max([zeroindex-2,1]):min([zeroindex+2,length(z)])),3);
-    root_z=roots(pz); %find roots of 3rd order poly.
-    dpz=[3*pz(1),2*pz(2),1*pz(3)]; %derivative of 3rd order poly.
-    
-    real_z=root_z(imag(root_z)==0); % finds real roots only.
-    
-    rootsofsign=polyval(dpz,real_z); %roots that are stable
-    zeq=real_z(rootsofsign<0); %there is at most 1 stable root. critical roots give error.
-    try
-        zeq=zeq(abs(zeq-z(zeroindex))==min(abs(zeq-z(zeroindex))));
-    end
-else
-    zeq=[];
+% Find the equilibrium along the z axis
+zeq = ott.find_equilibrium(z, fz(3, :));
+if isempty(zeq)
+  warning('No axial equilibrium in range!')
+  zeq=0;
 end
+zeq = zeq(1);
 
-if length(zeq)==0
-    warning('No axial equilibrium in range!')
-    zeq=0;
-end
-
-% equilibrium probably only correct to 1 part in 1000.
-%now work out spherical coordinates along that axis:
-[rt,theta,phi]=xyz2rtp(r,0,zeq);
-
-%calculate the x-axis coefficients for force calculation.
-Rx = rotation_matrix([-sin(0),cos(0),0],pi/2);
-Dx = wigner_rotation_matrix(Nmax,Rx);
-
+% Calculate force along x-axis (with z = zeq, if found)
+r = linspace(-4,4,80);          % x is in units of the wavelength
+fr = zeros(3, length(r));
 for nr = 1:length(r)
-    
-    R = rotation_matrix([-sin(phi(nr)),cos(phi(nr)),0],theta(nr)); %calculates an appropriate axis rotation off z.
-    D = wigner_rotation_matrix(Nmax,R);
-    
-    [A,B] = translate_z(Nmax,rt(nr));
-    a2 = D'*(  A * D*a +  B * D*b ); % Wigner matricies here are hermitian. Therefore in MATLAB the D' operator is the inverse of D.
-    b2 = D'*(  A * D*b +  B * D*a ); % In MATLAB operations on vectors are done first, therefore less calculation is done on the matricies.
-    
-    pq = T * [ a2; b2 ];
-    p = pq(1:length(pq)/2);
-    q = pq(length(pq)/2+1:end);
-    
-    [~,~,fr(nr),~,~,~] = forcetorque(n,m,Dx*a2,Dx*b2,Dx*p,Dx*q); %Dx makes the z-force calculation the x-force calculation.
-    
+  tbeam = beam.translateXyz([r(nr), 0.0, zeq]);
+  sbeam = T * tbeam;
+  fr(:, nr) = ott.forcetorque(tbeam, sbeam);
 end
-%     timetakes(ii)=toc;
-% end
-%
-% plot(log([4:length(timetakes)])/log(10),log(timetakes(4:end)-timetakes(3:end-1))/log(10))
-% plot([1:length(timetakes)-1],timetakes(2:end)-timetakes(1:end-1))
 
-toc
-figure; plot(z,fz);
+% Generate the plots
+
+figure(1); plot(z,fz(3, :));
 xlabel('{\it z} (x\lambda)');
 ylabel('{\it Q_z}');
 aa = axis;
@@ -162,7 +109,7 @@ line(aa(1:2),[ 0 0 ],'linestyle',':');
 line([0 0],aa(3:4),'linestyle',':');
 hold off;
 
-figure; plot(r,fr);
+figure(2); plot(r,fr(1, :));
 xlabel('{\it r} (x\lambda)');
 ylabel('{\it Q_r}');
 aa = axis;

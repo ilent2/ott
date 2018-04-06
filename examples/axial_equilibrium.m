@@ -1,10 +1,9 @@
-% Example file for finding spring constants
+% ott.axial_equilibrium can be used to calculate the trapping position
+% and spring constant along the z axis.  If the beam is rotated, the
+% method can also be used for other axies too.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
-
-import ott.*
-import ott.utils.*
 
 % Make warnings less obtrusive
 ott_warning('once');
@@ -13,38 +12,36 @@ change_warnings('off');
 % Specify refractive indices
 n_medium = 1.34;
 n_particle = 1.59;
-n_relative = n_particle/n_medium;
 
-% If you want to give all measurements in wavelengths in the surrounding
-% medium, then:
-wavelength = 1;
-% wavelength = wavelength0 / n_medium;
-% else you can give it in any units you want. Only k times lengths matters
-k = 2*pi/wavelength;
+% Specify the wavelength in freespace [m]
+wavelength = 1064.0e-9;
 
-radius = 1.5;
-Nmax = ka2nmax(k*radius);
+% Specify the particle radius (sphere)
+radius = 1.0*wavelength/n_medium;
 
-if Nmax < 12
-    Nmax = 12;
-end
+%% Calculate the beam
 
-% a Gaussian beam: w0 = 2/(k*tan(theta))
-beam_angle = 50; % Convergence half-angle of 50 degrees
+beam = ott.BscPmGauss('angle_deg', 50, ...
+    'polarisation', [ 1 0 ], 'power', 1.0);
 
-% Polarisation. [ 1 0 ] is plane-polarised along the x-axis, [ 0 1 ] is
-% y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
-polarisation = [ 1 0 ];
+%% Calculate the particle T-matrix
 
-[a,b] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 beam_angle 1 polarisation 90 ]);
+T = ott.Tmatrix.simple('sphere', radius, ...
+    'n_medium', n_medium, ...
+    'n_particle', n_particle, ...
+    'wavelength0', wavelength);
 
-% If you're going to do a range of particles, then the T-matrix has to
-% calculated inside the loop.
+%% Find the equilibrium and trap stiffness in the x and x directions
 
-% To search for a refractive index, I recommend a bisection search. For an
-% example of bisection search, see find_axial_equilibrium.m
+% Find the equilibrium in the z-direction
+[z,kz] = ott.axial_equilibrium(T, beam)
 
-T = tmatrix_mie(Nmax,k,k*n_relative,radius);
+% Translate the beam to the z-axis equilibrium
+beam = beam.translateZ(z);
 
-[z,k] = axial_equilibrium(T,a,b)
+% Rotate the beam about the y axis (so the beam is aligned with the x axis)
+beam = beam.rotateY(pi/2.0);
+
+% Calculate the equilibrium in the x-direction
+[x,kx] = ott.axial_equilibrium(T, beam);
 

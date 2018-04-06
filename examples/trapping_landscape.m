@@ -45,7 +45,6 @@ system_parameters=[1.3 1.33 1.07e-6 [1 i] 90 0];
 structurelandscape=landscape(index_range,size_range_rad,system_parameters);
 toc
 
-
 %plot the minimum force. This is essentially the figure which appears in
 %the article as figure 3.
 tempmin=structurelandscape.minforce;
@@ -140,7 +139,6 @@ lambda=system_parameters(3);
 relsize_range=size_range_rad/lambda;
 k=2*pi*medium_index; %normalized units
 nTrans=100;
-theta=asin(system_parameters(1)/system_parameters(2));
 
 nParticles=length(relsize_range);
 nIndexes=length(relindex_range);
@@ -151,6 +149,11 @@ maxforcez=z_equilibrium;
 minforcez=z_equilibrium;
 fz=zeros([1,nTrans]);
 
+%% Setup beam
+
+beam = ott.BscPmGauss('NA', NA, 'polarisation', system_parameters(4:5), ...
+    'truncation_angle_deg', system_parameters(6), 'power', 1.0);
+
 %%%
 
 for particle=1:nParticles
@@ -159,77 +162,39 @@ for particle=1:nParticles
         disp(['Particle: ' num2str(particle) '/' num2str(nParticles) ', radius=' num2str(relsize_range(particle))]);
     end
     %prepare Nmax and beam vector.
-    position=linspace(-(medium_index/NA)^2*(1+relsize_range(particle)*3/4),(medium_index/NA)^2*(1+relsize_range(particle)*3/4),nTrans);
+    position=linspace(-(medium_index/NA)^2*(1+relsize_range(particle)*3/4),...
+        (medium_index/NA)^2*(1+relsize_range(particle)*3/4),nTrans);
     if relsize_range(particle) > 0.5
-        position=linspace(-(medium_index/NA)^2*(0.5+relsize_range(particle)*max(relindex_range)),(medium_index/NA)^2*(0.5+relsize_range(particle)*max(relindex_range)),nTrans);
+        position=linspace(-(medium_index/NA)^2*...
+            (0.5+relsize_range(particle)*max(relindex_range)),...
+            (medium_index/NA)^2*(0.5+relsize_range(particle)...
+            *max(relindex_range)),nTrans);
     end
     %We calculate particle size, then refractive index. Therefore we can
     %calculate all needed translations now.
 
-    Nmax=ka2nmax(max([2*k*.3,k/medium_index*relsize_range(particle)*max(relindex_range)]));
-    if Nmax<13
-        Nmax=13;
-    end
-    
-    total_orders=Nmax*(Nmax+2);
-    
-    %make beam and normalize power for force
-    [n0,m0,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 theta*180/pi 1 system_parameters(4:5) system_parameters(6) 0 0 0 ]);
-    [a,b,n,m] = make_beam_vector(a0,b0,n0,m0,Nmax); %unpacked a,b,n,m;
-    
-    pwr=sqrt(sum(abs(a0).^2+abs(b0).^2));
-    
-    a=a/pwr;
-    b=b/pwr;
-
-    %make cells of A B aT bT. Increases efficiency for particles of the
-    %same refractive index. It is this way because repeated calculation is
-    %slow.
-    aT=cell(length(position),1);
-    bT=aT;
+    % Precompute the beams
+    beams(1:length(position)) = beam;
     for trans=1:length(position)
-        %prevents error in translate_z
-        if position(trans)~=0
-            [A,B]=translate_z(Nmax,position(trans));
-            aT{trans}=A*a+B*b;
-            bT{trans}=A*b+B*a;
-        else
-            A=1;
-            B=0;
-            aT{trans}=a;
-            bT{trans}=b;
-        end
+      beams(trans) = beams(trans).translateZ(position(trans));
     end
-    
-    %rotation to x-axis
-    Rx = rotation_matrix([-sin(0),cos(0),0],pi/2);
-    Dx = wigner_rotation_matrix(Nmax,Rx);
-    
-    %Translation along x-axis. To work out central difference...
-    [Au,Bu]=translate_z(Nmax,1e-8);
-    [Ad,Bd]=translate_z(Nmax,-1e-8);
+
+    % Precompute rotation to x-axis
+    [~, D] = beam.rotateY(pi/2);
     
     for index=1:nIndexes
         if verbose
         disp(['Index: ' num2str(index) '/' num2str(nIndexes) ', rRI=' num2str(relindex_range(index))]);
         end
 
-        T = tmatrix_mie(Nmax,k,k*relindex_range(index),relsize_range(particle));
-        
-        %looking at axial force so solve the 1D problem:
-        for trans=1:nTrans
-            
-            aTa=aT{trans};
-            bTa=bT{trans};
-            %work out scattered light
-            pq = (T) * [ aTa;  bTa];
-            p = pq(1:total_orders);
-            q = pq((total_orders+1):end);
+        T = ott.Tmatrix.simple('sphere', relsize_range(particle), ...
+            'k_medium', k, 'k_particle', k*relindex_range(index));
 
-            [~,~,fz(trans),~,~,~] = forcetorque(n,m,aTa,bTa,p,q);
-            
+        % Calculate axial force
+        for trans=1:nTrans
+          fz3 = ott.forcetorque(beams(trans), T*beams(trans));
+          fz(trans) = fz3(3);
         end
-%       figure(4);plot(position,fz);hold on;
 
         [maxforcez(index,particle),mai]=max(fz);
         [minforcez(index,particle),mii]=min(fz);
@@ -277,6 +242,7 @@ for particle=1:nParticles
 %                         pause(1)
 
                         %calc transverse
+<<<<<<< HEAD
                         [A,B]=translate_z(Nmax,z_equilibrium(index,particle));
                         
                         a1=(A*a+B*b);
@@ -300,6 +266,24 @@ for particle=1:nParticles
                         
                         [~,~,fx0,~,~,~,~,~,~]= forcetorque(n,m,aTx,bTx,p,q);
                         
+=======
+                        tbeam = beam.translateZ(z_equilibrium(index,particle));
+                        tbeam = Dx * tbeam;
+
+                        % TODO: The old version put the translateZ part
+                        % matrix calcultion outside this loop
+
+                        % Translate along the x direction and calc x force
+                        xbeam = tbeam.translateZ(1e-8);
+                        f_ = ott.forcetorque(xbeam, T*xbeam);
+                        fx1 = f_(3);
+
+                        % Translate along the x direction and calc x force
+                        xbeam = tbeam.translateZ(-1e-8);
+                        f_ = ott.forcetorque(xbeam, T*xbeam);
+                        fx0 = f_(3);
+
+>>>>>>> Started work on the 1.4.0 examples
                         x_stiffness(index,particle)=(fx1-fx0)/2e-8;
                     else
                         z_equilibrium(index,particle)=NaN; %also pretty good.
@@ -325,4 +309,5 @@ structureOutput.zstiffness=z_stiffness;
 structureOutput.xstiffness=x_stiffness;
 structureOutput.position=position; %grabs last position, I only want this for rayleigh stuff.
 structureOutput.fz=fz; %grabs last position, I only want this for rayleigh stuff.
+
 end
