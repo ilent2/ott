@@ -73,7 +73,7 @@ m2 = m2(:);
 
 % First, rotate x axis onto z axis
 
-R = calc_rotation_matrix([0 pi/2 0]);
+R = calc_rotation_matrix([0 -pi/2 0]);
 D = wigner_rotation_matrix(max(n),R);
 D = D(:,ci);
 
@@ -88,7 +88,7 @@ spin(1) = spinz(n2,m2,a2,b2) - spinz(n2,m2,p2,q2);
 
 % Finally, rotate (original) y axis onto z axis
 
-R = calc_rotation_matrix([pi/2 0 0]);
+R = calc_rotation_matrix([-pi/2 0 0]);
 D = wigner_rotation_matrix(max(n),R);
 D = D(:,ci);
 

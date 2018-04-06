@@ -38,12 +38,12 @@ warning('this function will move to ott.utils.wigner_rotation_matrix');
 %          0         0         1;
 %         -1/sqrt(2) i/sqrt(2) 0 ];
 
-C = [  -1/sqrt(2) 0 1/sqrt(2);
-      -1i/sqrt(2) 0 -1i/sqrt(2);
+C = [  1/sqrt(2) 0 -1/sqrt(2);
+      1i/sqrt(2) 0 1i/sqrt(2);
        0         1  0 ];
-invC = [ -1/sqrt(2) 1i/sqrt(2) 0;
+invC = [ 1/sqrt(2) -1i/sqrt(2) 0;
          0         0         1;
-         1/sqrt(2) 1i/sqrt(2) 0 ];
+         -1/sqrt(2) -1i/sqrt(2) 0 ];
 
 % Since x' = x R, s' -> x' C = s invC R C -> s' = s (invC R C)
 
