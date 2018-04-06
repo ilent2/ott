@@ -13,6 +13,8 @@ classdef Bsc
 %   emfieldXyz      Calculate fields at specified locations
 %   set.Nmax        Resize the beam shape coefficient vectors
 %   get.Nmax        Get the current size of the beam shape coefficient vectors
+%   getCoefficients Get the beam coefficients [a, b]
+%   getModeIndices  Get the mode indices [n, m]
 %
 % Static methods:
 %   make_beam_vector    Convert output of bsc_* functions to beam coefficients
@@ -293,6 +295,46 @@ classdef Bsc
     function [beam, D] = rotateXyz(beam, anglex, angley, anglez)
       %ROTATEX rotates the beam about the x, y then z axes
       [beam, D] = beam.rotate(rotz(anglez)*roty(angley)*rotx(anglex));
+    end
+
+    function beam = toOutgoing(beam, ibeam)
+      %TOOUTGOING calculate the outgoing beam
+      if strcmp(beam.type, 'outgoing')
+        beam = beam;
+      elseif strcmp(beam.type, 'regular')
+        beam = 2*beam + ibeam;
+      else
+        error('Unable to convert incomming beam to outgoing beam');
+      end
+    end
+
+    function beam = toRegular(beam, ibeam)
+      %TOREGULAR calculate regular beam
+      if strcmp(beam.type, 'outgoing')
+        beam = 0.5*(beam - ibeam);
+      elseif strcmp(beam.type, 'regular')
+        beam = beam;
+      else
+        error('Unable to convert incomming beam to outgoing beam');
+      end
+    end
+
+    function [a, b] = getCoefficients(beam, ci)
+      %GETCOEFFICIENTS gets the beam coefficients
+      a = beam.a(ci);
+      b = beam.b(ci);
+      if nargout == 1
+        a = [a; b];
+      end
+    end
+
+    function [n, m] = getModeIndices(beam)
+      %GETMODEINDICES gets the mode indices
+      Nmax = beam.Nmax;
+      [n, m] = ott.utils.combined_index([1:combined_index(Nmax, Nmax)].');
+      if nargout == 1
+        n = [n; m];
+      end
     end
   end
 end
