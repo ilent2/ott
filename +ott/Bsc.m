@@ -224,7 +224,6 @@ classdef Bsc
       % Add a warning when the beam is translated outside nmax2ka(Nmax) 
       % The first time may be OK, the second time does not have enough
       % information.
-      % TODO: Planewave beams are not valid the first time either
       if dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
         warning('ott:Bsc:translateZ:outside_nmax', ...
             'Repeated translation of beam outside Nmax region');
