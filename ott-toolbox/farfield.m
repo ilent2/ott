@@ -66,6 +66,6 @@ E=[zeros(size(Etheta)),Etheta,Ephi];
 H=[zeros(size(Htheta)),Htheta,Hphi];
 
 % SI-ify units of H
-%H = H * -1i;
+H = H * -1i;
 
 return

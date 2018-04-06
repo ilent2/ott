@@ -534,9 +534,9 @@ if verbose
     toc
 end
 
-% H1=-1i*H1; %LOOK HERE TO FIX STUFF
-% H2=-1i*H2; %LOOK HERE TO FIX STUFF
-% H3=-1i*H3; %LOOK HERE TO FIX STUFF
+ H1=-1i*H1; %LOOK HERE TO FIX STUFF
+ H2=-1i*H2; %LOOK HERE TO FIX STUFF
+ H3=-1i*H3; %LOOK HERE TO FIX STUFF
 
 
 %res flipped because it's a meshgrid
