@@ -44,6 +44,7 @@ classdef BscPmGauss < ott.BscPointmatch
       % TODO: Documentation
 
       beam = beam@ott.BscPointmatch(varargin{:});
+      beam.type = 'incomming';
 
       % Parse inputs
       p = inputParser;
