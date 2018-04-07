@@ -38,7 +38,8 @@ function [structureoutput]=electromagnetic_field_xyz(kxyz,nm,ab,pq,cd,varargin)
 % of E are continuous at the boundary. Conversely, only the kr component of
 % D is continuous at the boundary.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 verbose=0;
 

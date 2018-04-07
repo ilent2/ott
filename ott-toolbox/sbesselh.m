@@ -14,7 +14,8 @@ function [hn,dhn] = sbesselh(n,htype,kr)
 %
 % See besselj and bessely for more details
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 kr=kr(:);
 n=n(:);

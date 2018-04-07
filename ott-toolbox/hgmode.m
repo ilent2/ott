@@ -4,7 +4,8 @@ function HG=hgmode(m,n,x,y,z,theta);
 % Usage:
 % A = hgmode(m,n,x,y);
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 if nargin<6
     theta=atan(1/pi)*180/pi;

@@ -12,7 +12,8 @@ function w0 = lg_mode_w0( mode, angle )
 % 
 % Accuracy not guaranteed for very large l (ie > 200)
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Precalculated results for small l
 psi1 = [ 2.25262074788770;

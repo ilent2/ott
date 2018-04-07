@@ -20,7 +20,8 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 %
 % "Out of range" n and m result in return of Y = 0
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 if length(n)>1
     error('n must be a scalar at present')

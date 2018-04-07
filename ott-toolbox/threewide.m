@@ -6,7 +6,8 @@ function wide_vector = threewide( a )
 % You might find this useful for multiplying a vector of scalars
 % with a column vector of 3-vectors.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 warning('this function will move to ott.utils.threewide');
 

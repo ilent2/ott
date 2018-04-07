@@ -19,7 +19,8 @@ function [t,t2,a,b] = tmatrix_mie_layered(nmax,k_medium,k_particle,radius)
 % "Improved recursive algorithm for light scattering by a multilayered
 % sphere", Wen Yang, Applied Optics 42(9), 2003
 %
-% PACKAGE_INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 n_layer=[k_particle,k_medium]/2/pi; %medium is on the outside...
 radius=radius; %radius for the medium layer is the "same" as final layer.

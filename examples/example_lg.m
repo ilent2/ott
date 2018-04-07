@@ -16,7 +16,8 @@
 % large and if that is the case, a different method to map the paraxial
 % scalar field to the wavefunctions should be used.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Specify refractive indices
 n_medium = 1.33;

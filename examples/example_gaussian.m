@@ -9,7 +9,8 @@
 % square. For the example here it took ~20 seconds on a Core2 Duo 6600 with
 % 6GB of RAM.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Specify refractive indices
 n_medium = 1.33;

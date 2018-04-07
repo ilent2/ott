@@ -11,7 +11,8 @@
 % Note: This is not fully annotated. example_gaussian.m may be a better
 % place to start for those unfamiliar with the toolbox.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Specify refractive indices
 n_medium = 1.34;

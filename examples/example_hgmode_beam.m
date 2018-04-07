@@ -10,7 +10,8 @@
 % the beams have the same rayleigh range so the same w0 must be used for
 % all modes.
 % 
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 %% set up
 %first off. which mode do we want?

@@ -9,7 +9,8 @@ function pnm=legendrerow(n,theta)
 % *may* provide a benefit in Octave. Inspiration from [Holmes and Featherstone, 2002]
 % and [Jekeli et al., 2007].
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 if n==0;
     pnm=1/sqrt(2*pi)/sqrt(2);

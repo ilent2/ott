@@ -9,7 +9,8 @@
 % with 6GB RAM. The low resolution version takes about ~1030 seconds on the
 % same machine.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Low res version.
 size_range_rad=linspace(1e-2,3.25,100)*1e-6/2; %radius in SI

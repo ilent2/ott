@@ -7,7 +7,8 @@ function [z,kz] = axial_equilibrium(T,a,b,z)
 % [z,kz] = axial_equilibrium(T,a,b,initial_guess);
 % where T = T-matrix, a,b = multipole expansion of beam.
 %
-% PACKAGE_INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 if nargin < 4
     z = 0;

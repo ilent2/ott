@@ -14,7 +14,8 @@ function B = change_nmax(A,Nmax)
 % A warning is issued if the matrix/vector is being truncated and possibly
 % significant values are being discarded.
 %
-% PACKAGE_INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 
 warning_error_level = 1e-6;

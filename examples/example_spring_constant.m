@@ -1,6 +1,7 @@
 % Example file for finding spring constants
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Specify refractive indices
 n_medium = 1.34;

@@ -20,7 +20,8 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=force_torque_farsund(n,m,a,b,p,q)
 % Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
 % E_{inc}=sum_{nm}(aM+bN);
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 warning('ott:force_torque_farsund:depreciated', ...
     'This file will replace forcetorque.m in the next release');

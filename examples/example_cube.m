@@ -21,7 +21,8 @@
 % you do this that you could send the code to the authors so that it may be
 % implemented. Thank you!
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 %Tries to clear T matrix if 1. It is good to make 0 if you want repeated
 %calculations of the same particle.

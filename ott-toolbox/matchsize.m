@@ -9,7 +9,8 @@ function [A,B,C] = matchsize(A,B,C)
 %
 % Either 2 or 3 input vectors/scalars are allowed.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 An = size(A);
 Bn = size(B);
