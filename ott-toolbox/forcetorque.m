@@ -1,167 +1,145 @@
-function [force,torque,spin] = forcetorque(n,m,a,b,p,q)
-% FORCETORQUE finds optical force and torque
+function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(n,m,a,b,p,q)
+% FORCETORQUE calculate force/torque/spin in a 3D orthogonal space
+% If the beam shape coefficients are in the original coordinates,
+% this outputs the force, torque and spin in 3D carteisan coordinates.
 %
-% [force,torque,spin] = FORCETORQUE(n,m,a,b,p,q) and
-% [force,torque,spin] = FORCETORQUE(n,m,ab,pq) calculate force, torque
-% and spin between incident ab beam and scattered pq beam.
-% Beams can be specified as separate column vectors or combined vectors
-% ab = [a;b], pq = [p;q], where a,b,p,q are the beam coefficients.
+%   [fxyz,txyz,sxyz] = FORCETORQUE(...) calculates the force,
+%   torque and spin and stores them in [3, 1] column vectors.  Torque
+%   and spin can be omitted to only calculate the force or force and torque.
 %
-% What units are you using for a,b,p,q?
-% If you have simple units like (using incoming/outgoing):
-%     power = sum( abs(a).^2 ... )
-% then divide by c to get newtons, divide by omega to get N.m
-% If you have
-%    sum( abs(a).^2 + abs(b).^2 ) = 1
-% then the force and torque are in units of the momentum per photon
-% and hbar per photon.
+%   [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCETORQUE(...) unpacks the
+%   force/torque/spin into separate output arguments.
 %
-% WARNING: This code will be set up to expect a,b,p,q
-% in either the incident-scattered or incoming-outgoing
-% formulations! Check that it matches the one you use!
+% n,m are the degree and order of modes contained in the system. They
+% can be the truncated n and m's.
+%
+% a,b,p,q are the incident modes and scattered modes respectively. These
+% must be full or sparse of the appropriate size!!!!!
+%
+% This uses mathematical result of Farsund et al., 1996, in the form of
+% Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
+% E_{inc}=sum_{nm}(aM+bN);
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott_warning('ott:forcetorque:depreciated', ...
-    ['forcetorque.m will be replaced with ' ...
-    'force_torque_farsund.m in ott1.4.']);
-
 ott_warning('internal');
 
-% Uncomment one of the following:
-incidentscattered = 1; % YES, I AM USING INCIDENT-SCATTERED FORMULATION
-% incidentscattered = 0; % NO, I AM NOT, I USE INCOMING-OUTGOING FORMULATION
+fx=0;
+fy=0;
+fz=0;
+tx=0;
+ty=0;
+tz=0;
+sx=0;
+sy=0;
+sz=0;
 
-if nargin==4
-    if length(a)==length(b)
-        labpq=length(a)/2;
-        p=b(1:labpq);
-        q=b(labpq+1:end);
-        b=a(labpq+1:end);
-        a=a(1:labpq);
-    else
-        error('[a;b] must be the same size as [p;q]!')
+nmax=max(n);
+
+b=1i*b;
+q=1i*q;
+
+if 1
+    p=a+2*p;
+    q=b+2*q;
+end
+
+addv=zeros(2*nmax+3,1);
+
+at=[a;addv];
+bt=[b;addv];
+pt=[p;addv];
+qt=[q;addv];
+
+ci=combined_index(n,m);
+
+%these preserve order and number of entries!
+np1=2*n+2;
+cinp1=ci+np1;
+cinp1mp1=ci+np1+1;
+cinp1mm1=ci+np1-1;
+cimp1=ci+1;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%this is for m+1... if m+1>n then we'll ignore!
+kimp=(m>n-1);
+
+anp1=at(cinp1);
+bnp1=bt(cinp1);
+pnp1=pt(cinp1);
+qnp1=qt(cinp1);
+
+anp1mp1=at(cinp1mp1);
+bnp1mp1=bt(cinp1mp1);
+pnp1mp1=pt(cinp1mp1);
+qnp1mp1=qt(cinp1mp1);
+
+anp1mm1=at(cinp1mm1);
+bnp1mm1=bt(cinp1mm1);
+pnp1mm1=pt(cinp1mm1);
+qnp1mm1=qt(cinp1mm1);
+
+amp1=at(cimp1);
+bmp1=bt(cimp1);
+pmp1=pt(cimp1);
+qmp1=qt(cimp1);
+
+amp1(kimp)=0;
+bmp1(kimp)=0;
+pmp1(kimp)=0;
+qmp1(kimp)=0;
+
+a=a(ci);
+b=b(ci);
+p=p(ci);
+q=q(ci);
+
+Az=m./n./(n+1).*imag(-(a).*conj(b)+conj(q).*(p)); %this has the correct sign... farsund. modes match.
+Bz=1./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ... %.*n
+    .*imag(anp1.*conj(a)+bnp1.*conj(b)-(pnp1).*conj(p) ...
+    -(qnp1).*conj(q)); %this has the correct sign... farsund. modes match.
+
+fz=2*sum(Az+Bz);
+
+Axy=1i./n./(n+1).*sqrt((n-m).*(n+m+1)).*(conj(pmp1).*q - conj(amp1).*b - conj(qmp1).*p + conj(bmp1).*a); %this has the correct sign... farsund. modes match.
+Bxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ... %sqrt(n.*)
+    ( sqrt((n+m+1).*(n+m+2)) .* ( p.*conj(pnp1mp1) + q.* conj(qnp1mp1) -a.*conj(anp1mp1) -b.*conj(bnp1mp1)) + ... %this has the correct sign... farsund. modes match.
+    sqrt((n-m+1).*(n-m+2)) .* (pnp1mm1.*conj(p) + qnp1mm1.*conj(q) - anp1mm1.*conj(a) - bnp1mm1.*conj(b)) ); %this has the correct sign... farsund. modes match.
+
+fxy=sum(Axy+Bxy);
+fx=real(fxy);
+fy=imag(fxy);
+
+if nargout > 1
+    tz=sum(m.*(a.*conj(a)+b.*conj(b)-p.*conj(p)-q.*conj(q))); %this has the correct sign... farsund. modes match.
+    
+    txy=sum(sqrt((n-m).*(n+m+1)).*(a.*conj(amp1)+b.*conj(bmp1)-p.*conj(pmp1)-q.*conj(qmp1))); %this has the correct sign... farsund. modes match.
+    tx=real(txy);
+    ty=imag(txy);
+    
+    if nargout > 2
+        Cz=m./n./(n+1).*(-(a).*conj(a)+conj(q).*(q)-(b).*conj(b)+conj(p).*(p));
+        Dz=-2./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ...
+            .*real(anp1.*conj(b)-bnp1.*conj(a)-(pnp1).*conj(q) ...
+            +(qnp1).*conj(p));
+        
+        sz = sum(Cz+Dz);
+        
+        Cxy=1i./n./(n+1).*sqrt((n-m).*(n+m+1)).*(conj(pmp1).*p - conj(amp1).*a + conj(qmp1).*q - conj(bmp1).*b);
+        Dxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ...
+            ( (sqrt((n+m+1).*(n+m+2)) .* ( p.*conj(qnp1mp1) - q.* conj(pnp1mp1) -a.*conj(bnp1mp1) +b.*conj(anp1mp1))) + ...
+            (sqrt((n-m+1).*(n-m+2)) .* (pnp1mm1.*conj(q) - qnp1mm1.*conj(p) - anp1mm1.*conj(b) + bnp1mm1.*conj(a))) );
+        
+        sxy=sum(Cxy+Dxy);
+        sy=real(sxy);
+        sx=imag(sxy);
     end
 end
 
-% The force/torque calculations are easiest in the incoming-outgoing
-% formulation, so convert to it if necessary
-if incidentscattered
-    p = 2*p + a;
-    q = 2*q + b;
+if nargout <= 3
+    fx=[fx;fy;fz];
+    fy=[tx;ty;tz];
+    fz=[sx;sy;sz];
 end
-
-force = [ 0 0 0 ];
-torque = [ 0 0 0 ];
-spin = [ 0 0 0 ];
-
-% z-component is easiest
-force(3) = forcez(n,m,a,b) - forcez(n,m,p,q);
-torque(3) = sum( m.*( abs(a).^2 + abs(b).^2 - abs(p).^2 - abs(q).^2 ) );
-spin(3) = spinz(n,m,a,b) - spinz(n,m,p,q);
-
-% Now find x,y components by rotating by 90 degrees and re-using the
-% z-component formulae
-
-ci = combined_index(n,m);
-[n2,m2] = combined_index(1:combined_index(max(n),max(n)));
-n2 = n2(:);
-m2 = m2(:);
-
-% First, rotate x axis onto z axis
-
-R = calc_rotation_matrix([0 -pi/2 0]);
-D = wigner_rotation_matrix(max(n),R);
-D = D(:,ci);
-
-a2 = D*a;
-b2 = D*b;
-p2 = D*p;
-q2 = D*q;
-
-force(1) = forcez(n2,m2,a2,b2) - forcez(n2,m2,p2,q2);
-torque(1) = sum( m2.*( abs(a2).^2 + abs(b2).^2 - abs(p2).^2 - abs(q2).^2 ) );
-spin(1) = spinz(n2,m2,a2,b2) - spinz(n2,m2,p2,q2);
-
-% Finally, rotate (original) y axis onto z axis
-
-R = calc_rotation_matrix([-pi/2 0 0]);
-D = wigner_rotation_matrix(max(n),R);
-D = D(:,ci);
-
-a2 = D*a;
-b2 = D*b;
-p2 = D*p;
-q2 = D*q;
-
-force(2) = forcez(n2,m2,a2,b2) - forcez(n2,m2,p2,q2);
-torque(2) = sum( m2.*( abs(a2).^2 + abs(b2).^2 - abs(p2).^2 - abs(q2).^2 ) );
-spin(2) = spinz(n2,m2,a2,b2) - spinz(n2,m2,p2,q2);
-
-ott_warning('external');
-
-return
-
-
-% Find z-component of force
-% Magic formula from Crichton
-function fz = forcez(n,m,a,b)
-
-ci = combined_index(n,m);
-
-aa = zeros(max(ci),1);
-bb = zeros(max(ci),1);
-aap = zeros(max(ci),1);
-bbp = zeros(max(ci),1);
-
-[nn,mm] = combined_index((1:max(ci))');
-
-aa(ci) = a;
-bb(ci) = 1i*b;
-
-n1 = find( n>1 & n>abs(m));
-
-ci1 = combined_index(n(n1)-1,m(n1));
-
-aap(ci1) = a(n1);
-bbp(ci1) = 1i*b(n1);
-
-fz = 2 * mm ./ nn ./ (nn+1) .* imag( conj(aa) .* bb ) ...
-    - 2 ./ (nn+1) .* sqrt( nn .* (nn+2) .*  (nn-mm+1) .* (nn+mm+1) ./ (2*nn+1) ./ (2*nn+3) ) ...
-    .* imag( aa.*conj(aap) + bb.*conj(bbp) );
-
-fz = sum(fz);
-
-return
-
-% Also magic formula for z-component of spin
-function sz = spinz(n,m,a,b)
-
-ci = combined_index(n,m);
-
-aa = zeros(max(ci),1);
-bb = zeros(max(ci),1);
-aap = zeros(max(ci),1);
-bbp = zeros(max(ci),1);
-
-[nn,mm] = combined_index((1:max(ci))');
-
-aa(ci) = a;
-bb(ci) = 1i*b;
-
-n1 = find( n>1 & n>abs(m));
-
-ci1 = combined_index(n(n1)-1,m(n1));
-
-aap(ci1) = a(n1);
-bbp(ci1) = 1i*b(n1);
-
-sz = mm ./ nn ./ (nn+1) .* ( abs(aa).^2 + abs(bb).^2 ) ...
-    - 2 ./ (nn+1) .* sqrt( nn .* (nn+2) .*  (nn-mm+1) .* (nn+mm+1) ./ (2*nn+1) ./ (2*nn+3) ) ...
-    .* real( aa.*conj(bbp) - bb.*conj(aap) );
-
-sz = sum(sz);
-
-return
 
