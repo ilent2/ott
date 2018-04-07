@@ -1,6 +1,13 @@
 Change history
 ==============
 
+Version 1.4
+-----------
+
+* Removed bloat from the toolbox, some functions are now gone
+* Removed the depreciation/change warnings added in 1.3.1
+* Replaced bsc_bessel_farfield.m with bsc_bessel.m
+
 Version 1.3.1
 -------------
 
