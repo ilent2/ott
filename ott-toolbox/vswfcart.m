@@ -25,7 +25,6 @@ function [M,N,M2,N2,M3,N3] = vswfsph2cart(n,m,kr,theta,phi,htype)
 
 ott_warning('internal');
 
-
 if nargin < 6
    htype = 0;
 end
