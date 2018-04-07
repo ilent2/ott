@@ -17,6 +17,9 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Add the toolbox to the path (assuming we are in ott/examples)
+addpath('../');
+
 import ott.*
 import ott.utils.*
 

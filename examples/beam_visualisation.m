@@ -9,6 +9,9 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Add the toolbox to the path (assuming we are in ott/examples)
+addpath('../');
+
 %% Setup the beam
 
 % Select a beam type to visualise (gaussian, lg, hg, ig, addition, scattered)

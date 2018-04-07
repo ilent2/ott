@@ -6,6 +6,9 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Add the toolbox to the path (assuming we are in ott/examples)
+addpath('../');
+
 %% Describe the particle, beam and surrounding medium
 
 % Make warnings less obtrusive
@@ -36,7 +39,7 @@ NA = 1.02;
 
 % Create a T-matrix for a sphere
 T = ott.Tmatrix.simple('sphere', radius, 'wavelength0', wavelength0, ...
-    'n_medium', n_medium, 'n_particle', n_relative);
+    'n_medium', n_medium, 'n_particle', n_particle);
 
 %% Setup the T-matrix for the beam
 
