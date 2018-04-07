@@ -61,10 +61,6 @@ w0 = lg_mode_w0( [ 0 0 ], beam_angle );
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
 polarisation = [ 1i 1 ];
 
-% Location of the focal point relative to the particle. These are the
-% [ x y z ] coordinates.
-beam_offset = [ 0 0 0];
-
 %Makes beam.
 [n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 ]);
 [a,b,n,m] = make_beam_vector(a0,b0,n,m);
