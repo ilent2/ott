@@ -29,11 +29,7 @@ w0 = 0.2671; % Convergence half-angle of 50 degrees
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
 polarisation = [ 1 0 ];
 
-% Location of the focal point relative to the particle. These are the
-% [ x y z ] coordinates.
-beam_offset = [ 0 0 0];
-
-[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 beam_offset ]);
+[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 ]);
 [a,b] = make_beam_vector(a0,b0,n,m);
 
 % If you're going to do a range of particles, then the T-matrix has to
