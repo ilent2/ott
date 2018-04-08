@@ -27,7 +27,10 @@ function [nn,mm,a,b] = bsc_bessel_farfield( nmax, beam_type, parameters )
 %
 % l is the angular momentum mode.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
+warning('ott:bsc_bessel_farfield:depreciated','This function will be replaced by bsc_bessel.m in ott1.4 which uses an analytical solution for bessel beams instead of pointmatching.')
 
 warning('ott:bsc_bessel_farfield:depreciated','This function will be replaced by bsc_bessel.m in ott1.4 which uses an analytical solution for bessel beams instead of pointmatching.')
 

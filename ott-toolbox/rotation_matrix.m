@@ -10,7 +10,8 @@ function R = rotation_matrix(rot_axis,rot_angle)
 % axis_angle is a vector giving the rotation axis, of magnitude equal to
 % the angle of rotation.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 if nargin < 2
 	rot_angle= norm(rot_axis);

@@ -10,7 +10,8 @@ function [Aperp,Apar] = perpcomponent( A, n )
 % The columns of A and n must be the vector components; a number
 % of rows can be used to process many vectors at once.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Make n a unit vector
 nmag = dot(n,n,2);

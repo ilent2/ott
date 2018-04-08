@@ -8,7 +8,8 @@ function [E,H] = farfield(n,m,a,b,p,q,theta,phi)
 % each row of E is the field (in spherical coordinates) in the
 % (theta,phi) direction (assuming a distance scaling factor of kr)
 %
-% PACKAGE_INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 [theta,phi] = matchsize(theta,phi);
 

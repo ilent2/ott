@@ -16,7 +16,8 @@ function A = lgmodes(r,phi,E,maxp,maxl)
 % WARNING: INCOMPLETE!
 % r,phi,E MUST BE COLUMN VECTORS OF EQUAL LENGTH
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Is E a vector or a matrix?
 % For now, assume that r,phi,E are column vectors

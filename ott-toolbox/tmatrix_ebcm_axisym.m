@@ -7,7 +7,8 @@ function T = tmatrix_ebcm_axisym(Nmax,k_medium,k_particle,rho,z);
 % rho is the cylindrical r coodinate of a corner or feature.
 % z is the cylindrical z coordinate of a corner or feature.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 verbose=0;
 % %%%% TEST VALUES

@@ -12,7 +12,8 @@ function [newa,newb,newn,newm] = make_beam_vector(olda,oldb,n,m,Nmax)
 % [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m);
 % [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m,Nmax);
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 if nargin < 5
     Nmax = max(n);

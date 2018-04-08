@@ -6,7 +6,8 @@ function Lpl = laguerre(p,l,X)
 %
 % p and l must be integer scalars greater than zero
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 x=X(:);
 

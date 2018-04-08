@@ -21,7 +21,8 @@ function [r,n,rotsym,xyz_vec] = shapesurface(theta,phi,shape,parameters)
 % shape = 3: cone-tipped cylinder, parameters = [ r h d ], d = cone height
 % shape = 4: cube, parameters = [d], d = width of cube
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % For a surface defined by
 % r = r(theta,phi)

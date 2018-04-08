@@ -25,7 +25,8 @@ function [force,torque,spin] = forcetorque(n,m,a,b,p,q)
 % in either the incident-scattered or incoming-outgoing
 % formulations! Check that it matches the one you use!
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 warning('ott:forcetorque:depreciated', ...
     ['This file will be replaced with ' ...

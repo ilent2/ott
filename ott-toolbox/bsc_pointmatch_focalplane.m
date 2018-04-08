@@ -16,7 +16,8 @@ function [nn,mm,a,b] = bsc_pointmatch_focalplane( nmax, ~, parameters )
 %    w0    Beam waist
 %    xcomponent and ycomponent are the x and y polarisation components.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 warning('ott:bsc_pointmatch_focalplane', ...
     'This function is not recommended, use bsc_pointmatch_farfield instead');

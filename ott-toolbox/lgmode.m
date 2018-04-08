@@ -9,7 +9,8 @@ function LG = lgmode(p,l,r,phi,z,theta)
 %
 % theta is the convergence angle
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 if nargin<6
     theta=atan(1/pi)*180/pi;

@@ -7,7 +7,8 @@ function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
 % or
 % [vec_cart,pos_cart] = rtpv2xyzv(vec,pos)
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 if nargin < 6
    r = thetav(:,1);

@@ -21,7 +21,8 @@
 % you do this that you could send the code to the authors so that it may be
 % implemented. Thank you!
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 %Tries to clear T matrix if 1. It is good to make 0 if you want repeated
 %calculations of the same particle.
@@ -60,10 +61,6 @@ w0 = lg_mode_w0( [ 0 0 ], beam_angle );
 % Polarisation. [ 1 0 ] is plane-polarised along the x-axis, [ 0 1 ] is
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
 polarisation = [ 1i 1 ];
-
-% Location of the focal point relative to the particle. These are the
-% [ x y z ] coordinates.
-beam_offset = [ 0 0 0];
 
 %Makes beam.
 [n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 ]);

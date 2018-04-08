@@ -15,7 +15,8 @@ function [nn,mm,a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
 %
 % NOTE: lambda will be leaving this code in a future release.
 %
-% PACKAGE_INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 theta=theta(:);
 phi=phi(:);

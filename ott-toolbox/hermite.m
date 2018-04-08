@@ -6,7 +6,8 @@ function [output]=hermite(n,X);
 %
 % n must be integer scalars greater than zero
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 x=X(:);
 

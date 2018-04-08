@@ -6,7 +6,8 @@ function [rtp,n,ds]=axisym_boundarypoints(Nmax,rho,z);
 % Usage:
 % [rhoout,zout]=axisym_boundarypoints(rho,z,n);
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % %%%%test values
 % ntheta=500;

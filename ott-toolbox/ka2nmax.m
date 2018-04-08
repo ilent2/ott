@@ -4,7 +4,8 @@ function Nmax = ka2nmax(ka)
 %
 % Returns Nmax = ka + 3 (ka)^(1/3)
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 Nmax = ka + 3 * ka.^(1/3);
 Nmax = ceil(Nmax);

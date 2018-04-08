@@ -9,7 +9,8 @@
 % square. For the example here it took ~20 seconds on a Core2 Duo 6600 with
 % 6GB of RAM.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Specify refractive indices
 n_medium = 1.33;
@@ -55,11 +56,7 @@ w0 = lg_mode_w0( [ 0 0 ], beam_angle );
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
 polarisation = [ 1 i ];
 
-% Location of the focal point relative to the particle. These are the
-% [ x y z ] coordinates.
-beam_offset = [ 0 0 0];
-
-[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 beam_offset ]);
+[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 ]);
 [a,b,n,m] = make_beam_vector(a0,b0,n,m);
 
 %% Insert tmatrix here %%

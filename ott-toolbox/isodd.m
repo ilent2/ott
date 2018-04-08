@@ -5,7 +5,8 @@ function x = isodd(input)
 %
 % Warning: Plays up if the the integer is of the order 10^16
 %
-% PACKAGE_INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 warning('this function will move to ott.utils.isodd');
 

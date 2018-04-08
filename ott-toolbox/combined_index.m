@@ -6,7 +6,8 @@ function [out1,out2] = combined_index(in1,in2)
 % [n,m] = combined_index(ci);
 % ci = combined_index(n,m);
 %
-% PACKAGE_INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Sanity check
 if nargin == 1

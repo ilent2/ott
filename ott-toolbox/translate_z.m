@@ -18,7 +18,8 @@ function [A,B,C] = translate_z(nmax,z)
 % Time *may* be saved by taking the conjugate transpose instead of
 % calculating translations in the positive or negative direction.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Refs:
 % N. A. Gumerov and R. Duraiswami, "Recursions for the computation of

@@ -25,7 +25,8 @@ function [nn,mm,a,b] = bsc_pointmatch_farfield( nmax, beam_type, parameters, var
 %   approximation" which is valid for thin lenses ONLY. Does not preserve
 %   high order mode shape at large angles.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 axisymmetry = 1;
 %axisymmetry = 0;

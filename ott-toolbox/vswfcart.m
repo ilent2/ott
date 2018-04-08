@@ -21,7 +21,8 @@ function [M,N,M2,N2,M3,N3] = vswfsph2cart(n,m,kr,theta,phi,htype)
 %
 % "Out of range" n and m result in return of [0 0 0]
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 
 if nargin < 6
