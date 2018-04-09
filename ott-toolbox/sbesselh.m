@@ -1,4 +1,4 @@
-function [hn,dhn] = sbesselh1(n,kr)
+function [hn,dhn] = sbesselh(n,htype,kr)
 % sbesselh1 - spherical hankel function hn(kr) of the first kind
 %
 % hn(kr) = sqrt(pi/2kr) Hn+0.5(kr)
