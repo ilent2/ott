@@ -1,8 +1,9 @@
-classdef Tmatrix < matlab.mixin.Copyable
+classdef Tmatrix
 %Tmatrix abstract class representing T-matrix of a scattering particle
 %
 % Tmatrix properties:
 %   data          The T-matrix this class encapculates
+%   type          Type of T-matrix (total or scattered)
 %
 % Tmatrix methods:
 %
@@ -16,6 +17,7 @@ classdef Tmatrix < matlab.mixin.Copyable
 
  properties (SetAccess=protected)
   data            % The matrix this class encapsulates
+  type            % Type of T-matrix (total or scattered)
  end
 
   properties (Dependent)
@@ -276,6 +278,8 @@ classdef Tmatrix < matlab.mixin.Copyable
     function k_medium = parser_k_medium(p)
       %PARSER_K_MEDIUM helper to get k_medium from a parser object
 
+      % TODO: n_relative support
+
       if ~isempty(p.Results.k_medium)
         k_medium = p.Results.k_medium;
       elseif ~isempty(p.Results.wavelength_medium)
@@ -292,6 +296,8 @@ classdef Tmatrix < matlab.mixin.Copyable
 
     function k_particle = parser_k_particle(p)
       %PARSER_K_PARTICLE helper to get k_particle from a parser object
+
+      % TODO: n_relative support
 
       if ~isempty(p.Results.k_particle)
         k_particle = p.Results.k_particle;
@@ -313,15 +319,16 @@ classdef Tmatrix < matlab.mixin.Copyable
  end
 
  methods (Access=protected)
-  function tmatrix = Tmatrix(data)
+  function tmatrix = Tmatrix(data, type)
     %TMATRIX construct a new T-matrix object
     %
     % TMATRIX() leaves the data uninitialised.
     %
     % TMATRIX(data) initializes the data with the matrix data.
 
-    if nargin == 1
+    if nargin >= 1
       tmatrix.data = data;
+      tmatrix.type = type;
     end
   end
  end
@@ -329,8 +336,8 @@ classdef Tmatrix < matlab.mixin.Copyable
   methods
     function nmax = get.Nmax(tmatrix)
       %get.Nmax calculate Nmax from the current T-matrix data
-      nmax1 = ott.utils.combined_index(size(tmatrix.data, 1));
-      nmax2 = ott.utils.combined_index(size(tmatrix.data, 2));
+      nmax1 = ott.utils.combined_index(size(tmatrix.data, 1)/2);
+      nmax2 = ott.utils.combined_index(size(tmatrix.data, 2)/2);
 
       % Support non-square T-matrices
       if nmax1 == nmax2
@@ -423,6 +430,45 @@ classdef Tmatrix < matlab.mixin.Copyable
       if apparent_error > warning_error_level
           warning('ott:Tmatrix:set.Nmax:truncation', ...
               ['Apparent error of ' num2str(apparent_error)]);
+      end
+    end
+
+    function tmatrix = set.type(tmatrix, type)
+      % Set the T-matrix type, checking that it is valid
+      if strcmp(type, 'total') || strcmp(type, 'internal') ...
+          || strcmp(type, 'scattered')
+        tmatrix.type = type;
+      else
+        error('Invalid type');
+      end
+    end
+      
+    function sbeam = mtimes(tmatrix,ibeam)
+      %MTIMES provide T-matrix multiplication overload
+      sbeam = ibeam.scatter(tmatrix);
+    end
+    
+    function tmatrix = toTotal(tmatrix)
+      %TOTOTAL get a total field T-matrix
+
+      if strcmp(tmatrix.type, 'total')
+        % Nothing to do
+      elseif strcmp(tmatrix.type, 'scattered')
+        tmatrix.data = 2.0*tmatrix.data + eye(size(tmatrix.data));
+      else
+        error('Unrecognized T-matrix type');
+      end
+    end
+
+    function tmatrix=toScattered(tmatrix)
+      %TOSCATTERED get a scattered field T-matrix
+
+      if strcmp(tmatrix.type, 'total')
+        tmatrix.data = 0.5*(tmatrix.data - eye(size(tmatrix.data)));
+      elseif strcmp(tmatrix.type, 'scattered')
+        % Nothing to do
+      else
+        error('Unrecognized T-matrix type');
       end
     end
   end

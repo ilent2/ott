@@ -1,4 +1,4 @@
-function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(n,m,a,b,p,q)
+function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam)
 % FORCETORQUE calculate force/torque/spin in a 3D orthogonal space
 % If the beam shape coefficients are in the original coordinates,
 % this outputs the force, torque and spin in 3D carteisan coordinates.

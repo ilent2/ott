@@ -53,7 +53,7 @@ D = invC * R * C;
 D1 = D.';
 DD = D1;
 
-maxci = ott.combined_index(nmax,nmax);
+maxci = ott.utils.combined_index(nmax,nmax);
 D = sparse(maxci,maxci);
 
 D(1:3,1:3) = D1;
@@ -92,8 +92,8 @@ for n = 2:nmax
 
     % Dump into final matrix
     
-    minci = ott.combined_index(n,-n);
-    maxci = ott.combined_index(n,n);
+    minci = ott.utils.combined_index(n,-n);
+    maxci = ott.utils.combined_index(n,n);
     
     D(minci:maxci,minci:maxci) = DDD;
     DD = DDD;

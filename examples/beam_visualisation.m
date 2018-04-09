@@ -74,7 +74,7 @@ switch beam_type
 
     % Create a spherical particle to scatter the beam
     tmatrix = ott.Tmatrix.simple('sphere', 1.0, 'wavelength0', 1.0, ...
-        'n_medium', 1.0, 'n_particle', 1.2);
+        'index_medium', 1.0, 'index_particle', 1.2);
 
     % Scatter the beam to create the final beam
     beam = tmatrix * ibeam;

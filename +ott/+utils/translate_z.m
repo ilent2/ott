@@ -21,6 +21,7 @@ function [A,B,C] = translate_z(nmax,z)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.*
+import ott.utils.*
 
 % Refs:
 % N. A. Gumerov and R. Duraiswami, "Recursions for the computation of

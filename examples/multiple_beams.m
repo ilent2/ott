@@ -32,8 +32,8 @@ change_warnings('off');
 % Wavelength in medium/vacuum [m]
 wavelength = 1064.0e-9;
 
-T = ott.Tmatrix.simple('sphere', 1.0, 'n_medium', 1.0, ...
-    'n_particle', 1.2, 'wavelength0', wavelength);
+T = ott.Tmatrix.simple('sphere', 1.0, 'index_medium', 1.0, ...
+    'index_particle', 1.2, 'wavelength0', wavelength);
 
 %% Create a simple gaussian beam
 % We will create displaced copies of this beam

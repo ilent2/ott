@@ -29,6 +29,8 @@ classdef Bsc
     a           % Beam shape coefficients a vector
     b           % Beam shape coefficients b vector
     type        % Coefficient type (incomming, outgoing or regular)
+    
+    k_medium    % Wavenumber in medium
 
     dz          % Distance the beam has been translated
   end
@@ -58,16 +60,37 @@ classdef Bsc
       n = n.';
       m = m.';
     end
-  end
 
-  methods (Access=protected)
-    function beam = Bsc()
-      %BSC construct a new beam object
-      beam.dz = 0.0;
+    function k_medium = parser_k_medium(p)
+      %PARSER_K_MEDIUM helper to get k_medium from a parser object
+
+      if ~isempty(p.Results.k_medium)
+        k_medium = p.Results.k_medium;
+      elseif ~isempty(p.Results.wavelength_medium)
+        k_medium = 2.0*pi/p.Results.wavelength_medium;
+      elseif ~isempty(p.Results.index_medium)
+        if isempty(p.Results.wavelength0)
+          error('wavelength0 must be specified to use index_medium');
+        end
+        k_medium = p.Results.index_medium*2.0*pi/p.Results.wavelength0;
+      else
+        error('Unable to determine k_medium from inputs');
+      end
     end
   end
 
   methods
+    function beam = Bsc(a, b, type, varargin)
+      %BSC construct a new beam object
+
+      if nargin ~= 0
+        beam.a = a;
+        beam.b = b;
+        beam.type = type;
+      end
+
+      beam.dz = 0.0;
+    end
 
     function [E, H] = farfield(beam, theta, phi)
       %FARFIELD finds far field at locations thieta, phi.
@@ -209,7 +232,7 @@ classdef Bsc
         warning_error_level = 1e-6;
         if aapparent_error > warning_error_level || ...
             bapparent_error > warning_error_level
-          warning('ott:Bsc:set.Nmax:truncation', ...
+          warning('ott:Bsc:setNmax:truncation', ...
               ['Apparent errors of ' num2str(aapparent_error) ...
                   ', ' num2str(bapparent_error) ]);
         end
@@ -227,22 +250,22 @@ classdef Bsc
       % Add a warning when the beam is translated outside nmax2ka(Nmax) 
       % The first time may be OK, the second time does not have enough
       % information.
-      if dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
+      if beam.dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
         warning('ott:Bsc:translateZ:outside_nmax', ...
             'Repeated translation of beam outside Nmax region');
       end
-      dz = dz + abs(z);
+      beam.dz = beam.dz + abs(z);
 
       [A, B] = ott.utils.translate_z(beam.Nmax, z);
-      beam = blkdiag(A, B) * beam;
+      beam = [ A B ; B A ] * beam;
     end
 
     function beam = translateXyz(beam, x, y, z)
       %TRANSLATEXYZ translate the beam given Cartesian coordinates
       if nargin == 2
-        rtp = xyz2rtp(x);
+        rtp = ott.utils.xyz2rtp(x(:).');
       else
-        rtp = xyz2rtp(x, y, z);
+        rtp = ott.utils.xyz2rtp(x, y, z);
       end
       beam = beam.translateRtp(rtp);
     end
@@ -250,11 +273,12 @@ classdef Bsc
     function beam = translateRtp(beam, r, theta, phi)
       %TRANSLATERTP translate the beam given spherical coordinates
       if nargin == 2
-        [r, theta, phi] = r(1:3);
+        theta = r(2);
+        phi = r(3);
+        r = r(1);
       end
-      [~, D] = beam.rotateYz(theta, phi);
-      beam = D * beam;
-      beam.translateZ(r);
+      [beam, D] = beam.rotateYz(theta, phi);
+      beam = beam.translateZ(r);
       beam = D' * beam;
     end
 
@@ -266,42 +290,44 @@ classdef Bsc
 
     function [beam, D] = rotateX(beam, angle)
       %ROTATEX rotates the beam about the x-axis an angle in radians
-      [beam, D] = beam.rotate(rotx(angle));
+      [beam, D] = beam.rotate(rotx(angle*180/pi));
     end
 
     function [beam, D] = rotateY(beam, angle)
       %ROTATEX rotates the beam about the y-axis an angle in radians
-      [beam, D] = beam.rotate(roty(angle));
+      [beam, D] = beam.rotate(roty(angle*180/pi));
     end
 
     function [beam, D] = rotateZ(beam, angle)
       %ROTATEX rotates the beam about the z-axis an angle in radians
-      [beam, D] = beam.rotate(rotz(angle));
+      [beam, D] = beam.rotate(rotz(angle*180/pi));
     end
 
     function [beam, D] = rotateXy(beam, anglex, angley)
       %ROTATEX rotates the beam about the x then y axes
-      [beam, D] = beam.rotate(roty(angley)*rotx(anglex));
+      [beam, D] = beam.rotate(roty(angley*180/pi)*rotx(anglex*180/pi));
     end
 
     function [beam, D] = rotateXz(beam, anglex, anglez)
       %ROTATEX rotates the beam about the x then z axes
-      [beam, D] = beam.rotate(rotz(anglez)*rotx(anglex));
+      [beam, D] = beam.rotate(rotz(anglez*180/pi)*rotx(anglex*180/pi));
     end
 
     function [beam, D] = rotateYz(beam, angley, anglez)
       %ROTATEX rotates the beam about the y then z axes
-      [beam, D] = beam.rotate(rotz(anglez)*roty(angley));
+      [beam, D] = beam.rotate(rotz(anglez*180/pi)*roty(angley*180/pi));
+    end
 
     function [beam, D] = rotateXyz(beam, anglex, angley, anglez)
       %ROTATEX rotates the beam about the x, y then z axes
-      [beam, D] = beam.rotate(rotz(anglez)*roty(angley)*rotx(anglex));
+      [beam, D] = beam.rotate(rotz(anglez*180/pi)* ...
+          roty(angley*180/pi)*rotx(anglex*180/pi));
     end
 
     function beam = toOutgoing(beam, ibeam)
       %TOOUTGOING calculate the outgoing beam
       if strcmp(beam.type, 'outgoing')
-        beam = beam;
+        % Nothing to do
       elseif strcmp(beam.type, 'regular')
         beam = 2*beam + ibeam;
       else
@@ -314,7 +340,7 @@ classdef Bsc
       if strcmp(beam.type, 'outgoing')
         beam = 0.5*(beam - ibeam);
       elseif strcmp(beam.type, 'regular')
-        beam = beam;
+        % Nothing to do
       else
         error('Unable to convert incomming beam to outgoing beam');
       end
@@ -322,8 +348,24 @@ classdef Bsc
 
     function [a, b] = getCoefficients(beam, ci)
       %GETCOEFFICIENTS gets the beam coefficients
-      a = beam.a(ci);
-      b = beam.b(ci);
+      %
+      % ab = beam.getCoefficients() gets the beam coefficients packed
+      % into a single vector, suitable for multiplying by a T-matrix.
+      %
+      % [a, b] = beam.getCoefficients() get the coefficients in two
+      % beam vectors.
+      %
+      % beam.getCoefficients(ci) behaves as above but only returns
+      % the requested beam cofficients a(ci) and b(ci).
+
+      % If ci omitted, return all a and b
+      if nargin == 1
+        ci = 1:size(beam.a, 1);
+      end
+
+      a = beam.a(ci, :);
+      b = beam.b(ci, :);
+
       if nargout == 1
         a = [a; b];
       end
@@ -339,7 +381,77 @@ classdef Bsc
 
     function p = power(beam)
       %POWER calculate the power of the beam
-      p = sqrt(sum(abs(a).^2 + abs(b).^2));
+      p = sqrt(sum(abs(beam.a).^2 + abs(beam.b).^2));
+    end
+
+    function beam = mrdivide(beam,o)
+      %MRDIVIDE (op) divide the beam coefficients by a scalar
+      beam.a = beam.a / o;
+      beam.b = beam.b / o;
+    end
+
+    function beam = scatter(beam, tmatrix)
+      %SCATTER scatter a beam using a T-matrix
+
+      % Ensure the Nmax for the inner dimension matches
+      tmatrix.Nmax = [tmatrix.Nmax, beam.Nmax];
+
+      % Calculate the resulting beam
+      beam = tmatrix.data * beam;
+
+      % Assign a type to the resulting beam
+      if strcmp(tmatrix.type, 'total')
+        beam.type = 'regular';
+      elseif strcmp(tmatrix.type, 'scattered')
+        beam.type = 'outgoing';
+      elseif strcmp(tmatrix.type, 'internal')
+        beam.type = 'regular';
+      else
+        error('Unrecognized T-matrix type');
+      end
+    end
+
+    function beam = mtimes(a,b)
+      %MTIMES (op) divide the beam coefficients by a scalar
+      %
+      % Supports:
+      %    - Scalar multiplication
+      %    - Matrix multiplication of a and b vectors: A*a, a*A
+      %    - Matrix multiplication of [a;b] vector: T*[a;b]
+      
+      if isa(a, 'ott.Bsc')
+        beam = a;
+        beam.a = beam.a * b;
+        beam.b = beam.b * b;
+      else
+        beam = b;
+        if size(a, 2) == 2*size(beam.a, 1)
+          ab = a * [beam.a; beam.b];
+          beam.a = ab(1:size(ab, 1)/2, :);
+          beam.b = ab(1+size(ab, 1)/2:end, :);
+        else
+          beam.a = a * beam.a;
+          beam.b = a * beam.b;
+        end
+      end
+    end
+
+    function beam = plus(beam1, beam2)
+      %PLUS add two beams together
+
+      % TODO: Support for beams with different Nmax
+      beam = beam1;
+      beam.a = beam.a + beam2.a;
+      beam.b = beam.b + beam2.b;
+    end
+
+    function beam = minus(beam1, beam2)
+      %MINUS subtract two beams
+
+      % TODO: Support for beams with different Nmax
+      beam = beam1;
+      beam.a = beam.a - beam2.a;
+      beam.b = beam.b - beam2.b;
     end
   end
 end

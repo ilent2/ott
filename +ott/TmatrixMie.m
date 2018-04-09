@@ -243,8 +243,6 @@ classdef TmatrixMie < ott.Tmatrix
         Nmax = p.Results.Nmax;
       end
 
-      % TODO: We should store if it is internal or external
-      % TODO: Is this a total or scattered T-matrix?  Store this too.
       % TODO: For layered spheres, can we resize Nmax after calculation?
 
       % Calculate the T-matrix and store it
@@ -252,6 +250,13 @@ classdef TmatrixMie < ott.Tmatrix
         tmatrix.data = tmatrix.tmatrix_mie(Nmax, p.Results.internal);
       else
         tmatrix.data = tmatrix.tmatrix_mie_layered(Nmax, p.Results.internal);
+      end
+
+      % Store the T-matrix type
+      if p.Results.internal == false
+        tmatrix.type = 'total';
+      else
+        tmatrix.type = 'internal';
       end
     end
   end

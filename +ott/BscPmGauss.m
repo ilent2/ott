@@ -2,12 +2,12 @@ classdef BscPmGauss < ott.BscPointmatch
 %BscPmGauss provides HG, LG and IG beams using point matching method
 %
 % BscPmGauss properties:
-%   type                Type of beam ('gaussian', 'lg', 'hg', or 'ig')
+%   gtype               Type of beam ('gaussian', 'lg', 'hg', or 'ig')
 %   mode                Beam modes (2 or 4 element vector)
 %   polarisation        Beam polarisation
 %   truncation_angle    Truncation angle for beam
-%   beam_offset         Offset for original beam calculation
-%   waist0              Beam waist at focal plane
+%   offset              Offset for original beam calculation
+%   angle               Angle of incomming beam waist
 %
 % BscPmGauss methods:
 %
@@ -18,16 +18,22 @@ classdef BscPmGauss < ott.BscPointmatch
 % See LICENSE.md for information about using/distributing this file.
 
   properties (SetAccess=protected)
-    type               % Type of beam ('gaussian', 'lg', 'hg', or 'ig')
+    gtype              % Type of beam ('gaussian', 'lg', 'hg', or 'ig')
     mode               % Beam modes (2 or 4 element vector)
     polarisation       % Beam polarisation
     truncation_angle   % Truncation angle for beam
-    beam_offset        % Offset for original beam calculation
-    waist0             % Beam waist at focal plane
+    offset             % Offset for original beam calculation
+    angle              % Angle of incomming beam waist
   end
 
   % TODO: Generalize BscPointmatch for farfield and focal plane
   % TODO: Incorperate bsc_pointmatch_focalplane option for gaussian beams.
+
+  methods (Static)
+    function l = supported_beam_type(s)
+      l = strcmp(s, 'lg') || strcmp(s, 'hg') || strcmp(s, 'ig');
+    end
+  end
 
   methods
     function beam = BscPmGauss(varargin)
@@ -51,12 +57,17 @@ classdef BscPmGauss < ott.BscPointmatch
 
       % Parse inputs
       p = inputParser;
-      p.addOptional('type', 'lg');
+      p.addOptional('type', 'lg', @ott.BscPmGauss.supported_beam_type);
       p.addOptional('mode', [ 0 0 ]);
 
       p.addParameter('Nmax', []);
       p.addParameter('offset', []);
       p.addParameter('polarisation', [ 1 1i ]);
+      p.addParameter('wavelength0', 1);
+
+      p.addParameter('k_medium', []);
+      p.addParameter('index_medium', []);
+      p.addParameter('wavelength_medium', []);
 
       p.addParameter('NA', []);
       p.addParameter('angle_deg', []);
@@ -66,6 +77,26 @@ classdef BscPmGauss < ott.BscPointmatch
       p.addParameter('truncation_angle', []);
 
       p.parse(varargin{:});
+
+      % Store parameters
+      beam.gtype = p.Results.type;
+      beam.mode = p.Results.mode;
+      beam.polarisation = p.Results.polarisation;
+      beam.offset = p.Results.offset;
+      beam.k_medium = ott.Bsc.parser_k_medium(p);
+
+      % Store truncation angle
+      if isempty(p.Results.truncation_angle_deg) &&  ...
+          isempty(p.Results.truncation_angle)
+        beam.truncation_angle = pi/2;
+      elseif ~isempty(p.Results.truncation_angle)
+        beam.truncation_angle = p.Results.truncation_angle;
+      elseif ~isempty(p.Results.truncation_angle_deg)
+        beam.truncation_angle = p.Results.truncation_angle_deg * pi/180;
+      else
+        ott.warning('external');
+        error('Truncation angle given in degrees and radians');
+      end
 
       % TODO: bsc_pointmatch_farfield.m had other arguments
       % optional parameters:
@@ -79,8 +110,7 @@ classdef BscPmGauss < ott.BscPointmatch
       %   approximation" which is valid for thin lenses ONLY. Does not preserve
       %   high order mode shape at large angles.
 
-      import ott.*
-      import utils.*
+      import ott.utils.*
 
       axisymmetry = 1;
 
@@ -156,11 +186,12 @@ classdef BscPmGauss < ott.BscPointmatch
       elseif ~isempty(p.Results.angle)
         beam_angle_deg = p.Results.angle*180/pi;
       end
+      beam.angle = beam_angle_deg * pi/180;
 
-      k = 2*pi * medium_refractive_index / beam_wavelength0;
+      k = 2*pi; % * beam.k_medium;
 
-      [xcomponent, ycomponent] = p.Results.polarisation;
-      truncation_angle = p.Results.truncation_angle_deg;
+      xcomponent = p.Results.polarisation(1);
+      ycomponent = p.Results.polarisation(2);
       offset = p.Results.offset;
 
       if numel(offset) == 3 && any(abs(offset(1:2))>0)
@@ -177,18 +208,28 @@ classdef BscPmGauss < ott.BscPointmatch
 
       aperture_function=0;
 
+      w0 = paraxial_beam_waist(paraxial_order);
+      wscaling=1/tan(abs(beam_angle_deg/180*pi));
+
+      % Store or calculate Nmax
+      if isempty(p.Results.Nmax)
+        nmax = ott.utils.ka2nmax(w0*wscaling*k);
+      else
+        nmax = p.Results.Nmax;
+      end
+
       % Grid of points over sphere
       ntheta = (nmax + 1);
       nphi = 2*(nmax + 1);
       if axisymmetry
           ntheta = 2*(nmax+1);
           nphi = 3;
-          if ~strcmp(beam_type, 'lg')
+          if ~strcmp(beam.gtype, 'lg')
               nphi = paraxial_order+3-rem(paraxial_order,2);
           end
       end
 
-      [theta,phi] = angulargrid(ntheta,nphi);
+      [theta,phi] = ott.utils.angulargrid(ntheta,nphi);
 
       np = length(theta);
 
@@ -204,8 +245,6 @@ classdef BscPmGauss < ott.BscPointmatch
       %   (speed_in_medium*kappa));
 
       central_amplitude = 1;
-      w0 = paraxial_beam_waist(paraxial_order);
-      wscaling=1/tan(abs(beam_angle_deg/180*pi));
       rw = 2*(wscaling * w0)^2 * tan(theta).^2 ;
       dr = (wscaling * w0) * (sec(theta)).^2 ;
 
@@ -219,7 +258,7 @@ classdef BscPmGauss < ott.BscPointmatch
 
       % degree and order of all modes
       total_modes = nmax^2 + 2*nmax;
-      [nn,mm] = combined_index((1:total_modes)');
+      [nn,mm] = ott.utils.combined_index((1:total_modes)');
 
       mode_index_vector=[];
       beam_envelope = zeros(np,length(c));
@@ -241,7 +280,7 @@ classdef BscPmGauss < ott.BscPointmatch
       mode_index_vector=unique(mode_index_vector);
 
       beam_envelope=sum(beam_envelope,2);
-      outbeam = find(theta<pi*(180-truncation_angle)/180);
+      outbeam = find(theta < pi-beam.truncation_angle);
       beam_envelope(outbeam) = 0;
 
       if ~isempty(offset)

@@ -39,7 +39,7 @@ NA = 1.02;
 
 % Create a T-matrix for a sphere
 T = ott.Tmatrix.simple('sphere', radius, 'wavelength0', wavelength0, ...
-    'n_medium', n_medium, 'n_particle', n_particle);
+    'index_medium', n_medium, 'index_particle', n_particle);
 
 %% Setup the T-matrix for the beam
 
@@ -47,7 +47,8 @@ switch beam_type
   case 'gaussian'
 
     % Create a simple Gaussian beam with circular polarisation
-    beam = ott.BscPmGauss('NA', NA, 'polarisation', [ 1 1i ]);
+    beam = ott.BscPmGauss('NA', NA, 'polarisation', [ 1 1i ], ...
+        'index_medium', n_medium, 'wavelength0', wavelength0);
 
   case 'lg'
 
@@ -57,14 +58,16 @@ switch beam_type
     % calculate the beam angle ourselves and specify that
     beam_angle = asin(NA/n_medium);
     beam = ott.BscPmGauss('lg', [ 0 3 ], ...
-        'polarisation', polarisation, 'angle', beam_angle);
+        'polarisation', polarisation, 'angle', beam_angle, ...
+        'index_medium', n_medium, 'wavelength0', wavelength0);
 
   case 'hg'
 
     % Create a HG23 beam with circular polarisation
     beam_angle = asin(NA/n_medium);
     beam = ott.BscPmGauss('hg', [ 2 3 ], ...
-        'polarisation', polarisation, 'angle', w0);
+        'polarisation', polarisation, 'angle', beam_angle, ...
+        'index_medium', n_medium, 'wavelength0', wavelength0);
 
   otherwise
     error('Unsupported beam type');
@@ -74,6 +77,9 @@ end
 beam = beam / beam.power();
 
 %% Generate force/position graphs
+
+% Time the calculation
+tic
 
 %calculate the force along z
 z = linspace(-8,8,80);            % z is in units of the wavelength
@@ -100,6 +106,9 @@ for nr = 1:length(r)
   sbeam = T * tbeam;
   fr(:, nr) = ott.forcetorque(tbeam, sbeam);
 end
+
+% Finish timing the calculation
+toc
 
 % Generate the plots
 

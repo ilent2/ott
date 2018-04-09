@@ -10,5 +10,8 @@ classdef BscPointmatch < ott.Bsc
 % See LICENSE.md for information about using/distributing this file.
 
   methods
+    function beam = BscPointmatch(varargin)
+      beam = beam@ott.Bsc(varargin{:});
+    end
   end
 end
