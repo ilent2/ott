@@ -62,7 +62,7 @@ if numel(varargin)>0
                             dfield=1;
                         end
                     otherwise
-                        warning('not a known parameter!')
+                        warning('ott:electromagnetic_field_xyz:badargs','not a known parameter!')
                 end
             otherwise
         end
@@ -568,7 +568,7 @@ if behaviour==7||behaviour==4||behaviour==5||behaviour==6
     structureoutput.Einternal=[squeeze(Ex3),squeeze(Ey3),squeeze(Ez3)];
     structureoutput.Hinternal=[squeeze(Hx3),squeeze(Hy3),squeeze(Hz3)];
     
-    warning('Must scale grid for internal fields by relative refractive index.')
+    warning('ott:electromagnetic_field_xyz:internalfield','Must scale grid for internal fields by relative refractive index.')
     
 end
 

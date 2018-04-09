@@ -19,7 +19,7 @@ function [Ryz]=z_rotation_matrix(theta,phi,tolerance)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('this function will move to ott.utils.z_rotation_matrix');
+%warning('ott:z_rotation_matrix:move','this function will move to ott.utils.z_rotation_matrix');
 
 ct=cos(theta);
 st=sin(theta);

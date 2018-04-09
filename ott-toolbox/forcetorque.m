@@ -29,8 +29,8 @@ function [force,torque,spin] = forcetorque(n,m,a,b,p,q)
 % See LICENSE.md for information about using/distributing this file.
 
 warning('ott:forcetorque:depreciated', ...
-    ['This file will be replaced with ' ...
-    'force_torque_farsund.m in the next release']);
+    ['forcetorque.m will be replaced with ' ...
+    'force_torque_farsund.m in ott1.4.']);
 
 % Uncomment one of the following:
 incidentscattered = 1; % YES, I AM USING INCIDENT-SCATTERED FORMULATION

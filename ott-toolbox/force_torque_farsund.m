@@ -24,7 +24,7 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=force_torque_farsund(n,m,a,b,p,q)
 % See LICENSE.md for information about using/distributing this file.
 
 warning('ott:force_torque_farsund:depreciated', ...
-    'This file will replace forcetorque.m in the next release');
+    'force_torque_farsund.m file will replace forcetorque.m in ott1.4.');
 
 fx=0;
 fy=0;
