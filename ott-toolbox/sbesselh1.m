@@ -26,10 +26,9 @@ end
 
 [n,kr]=meshgrid(n,kr);
 
-[jn] = besselj(n+1/2,kr);
-[yn] = bessely(n+1/2,kr);
+[hn] = besselh(n+1/2,1,kr);
 
-hn = sqrt(pi./(2*kr)) .* (jn+1i*yn);
+hn = sqrt(pi./(2*kr)) .* (hn);
 
 if nargout==2
     dhn=hn(1:end,end/2+1:end)-n(1:end,1:end/2)./kr(1:end,1:end/2) .* hn(1:end,1:end/2);
