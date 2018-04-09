@@ -12,18 +12,30 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+if exist ("OCTAVE_VERSION", "builtin")
+    warning('ott:example_landscape:function','This code must be modified to run in octave, take the function defined at the bottom of this script and move it to above where it is first called.')
+end
+
 % Low res version.
-size_range_rad=linspace(1e-2,3.25,100)*1e-6/2; %radius in SI
-index_range=linspace(1.34,2.66,50);            %absolute refractive index
+size_range_rad=linspace(1e-2,3.25,10)*1e-6/2; %radius in SI
+index_range=linspace(1.34,2.66,5);            %absolute refractive index
 
 % % High res version.
 % size_range_rad=linspace(1e-2,3.25,300)*1e-6/2; %radius in SI
 % index_range=linspace(1.34,2.66,100);           %absolute refractive index
 
+% if octave plane landscape function immediately below: %
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 tic
 %to see the proceedure for calculating a range of particle sizes and
 %refractive indexes open landscape()
-structurelandscape=landscape(index_range,size_range_rad);
+system_parameters=[1.3 1.33 1.07e-6 [1 i] 90 0];
+structurelandscape=landscape(index_range,size_range_rad,system_parameters);
 toc
 
 
@@ -80,7 +92,7 @@ grid on
 cax=colorbar;
 ylabel(cax,'k_r [k^{-1}\lambda^{-1}]');
 
-function [structureOutput]=landscape(index_range,size_range_rad,system_parameters)
+function structureOutput=landscape(index_range,size_range_rad,system_parameters)
 % landscape.m: Generates a trapping landscape along the beam
 %                        propagaing axis.
 %
@@ -305,3 +317,4 @@ structureOutput.zstiffness=z_stiffness;
 structureOutput.xstiffness=x_stiffness;
 structureOutput.position=position; %grabs last position, I only want this for rayleigh stuff.
 structureOutput.fz=fz; %grabs last position, I only want this for rayleigh stuff.
+end
