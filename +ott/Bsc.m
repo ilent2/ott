@@ -100,22 +100,20 @@ classdef Bsc
       [theta_new,~,indY]=unique(theta);
       [phi_new,~,indP]=unique(phi);
 
-      E = zeros(length(theta),3);
       Etheta=zeros(length(theta),1);
       Ephi=zeros(length(theta),1);
 
-      H = zeros(length(theta),3);
       Htheta=zeros(length(theta),1);
       Hphi=zeros(length(theta),1);
 
-      if beam.type == 'incomming'
+      if strcmp(beam.type, 'incomming')
 
         a = beam.a;
         b = beam.b;
         p = zeros(size(beam.a));
         q = zeros(size(beam.b));
 
-      elseif beam.type == 'outgoing'
+      elseif strcmp(beam.type, 'outgoing')
 
         a = zeros(size(beam.a));
         b = zeros(size(beam.a));
@@ -177,8 +175,8 @@ classdef Bsc
         end
       end
 
-      E=[zeros(size(Etheta)),Etheta,Ephi];
-      H=[zeros(size(Htheta)),Htheta,Hphi];
+      E=[zeros(size(Etheta)),Etheta,Ephi].';
+      H=[zeros(size(Htheta)),Htheta,Hphi].';
 
       % SI-ify units of H
       H = H * -1i;
@@ -191,17 +189,17 @@ classdef Bsc
       nm = [ n.'; m.' ];
 
       if strcmp(beam.type, 'incomming')
-        S = ott.electromagnetic_field_xyz(kxyz, nm, ibeam, [], []);
-        E = S.Eincident;
-        H = S.Hincident;
+        S = ott.electromagnetic_field_xyz(kxyz.', nm, beam, [], []);
+        E = S.Eincident.';
+        H = S.Hincident.';
       elseif strcmp(beam.type, 'outgoing')
-        S = ott.electromagnetic_field_xyz(kxyz, nm, [], obeam, []);
-        E = S.Escattered;
-        H = S.Hscattered;
+        S = ott.electromagnetic_field_xyz(kxyz.', nm, [], beam, []);
+        E = S.Escattered.';
+        H = S.Hscattered.';
       elseif strcmp(beam.type, 'regular')
-        S = ott.electromagnetic_field_xyz(kxyz, nm, [], [], beam);
-        E = S.Einternal;
-        H = S.Hinternal;
+        S = ott.electromagnetic_field_xyz(kxyz.', nm, [], [], beam);
+        E = S.Einternal.';
+        H = S.Hinternal.';
       else
         error('Invalid beam type');
       end
@@ -256,6 +254,9 @@ classdef Bsc
       end
       beam.dz = beam.dz + abs(z);
 
+      % Convert to beam units
+      z = z * beam.k_medium / 2 / pi;
+      
       [A, B] = ott.utils.translate_z(beam.Nmax, z);
       beam = [ A B ; B A ] * beam;
     end
@@ -330,6 +331,7 @@ classdef Bsc
         % Nothing to do
       elseif strcmp(beam.type, 'regular')
         beam = 2*beam + ibeam;
+        beam.type = 'outgoing';
       else
         error('Unable to convert incomming beam to outgoing beam');
       end
@@ -339,6 +341,7 @@ classdef Bsc
       %TOREGULAR calculate regular beam
       if strcmp(beam.type, 'outgoing')
         beam = 0.5*(beam - ibeam);
+        beam.type = 'regular';
       elseif strcmp(beam.type, 'regular')
         % Nothing to do
       else
@@ -439,7 +442,12 @@ classdef Bsc
     function beam = plus(beam1, beam2)
       %PLUS add two beams together
 
-      % TODO: Support for beams with different Nmax
+      if beam1.Nmax > beam2.Nmax
+        beam2.Nmax = beam1.Nmax;
+      elseif beam2.Nmax > beam1.Nmax
+        beam1.Nmax = beam2.Nmax;
+      end
+
       beam = beam1;
       beam.a = beam.a + beam2.a;
       beam.b = beam.b + beam2.b;
@@ -448,7 +456,12 @@ classdef Bsc
     function beam = minus(beam1, beam2)
       %MINUS subtract two beams
 
-      % TODO: Support for beams with different Nmax
+      if beam1.Nmax > beam2.Nmax
+        beam2.Nmax = beam1.Nmax;
+      elseif beam2.Nmax > beam1.Nmax
+        beam1.Nmax = beam2.Nmax;
+      end
+
       beam = beam1;
       beam.a = beam.a - beam2.a;
       beam.b = beam.b - beam2.b;

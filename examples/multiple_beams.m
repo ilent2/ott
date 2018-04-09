@@ -32,20 +32,24 @@ change_warnings('off');
 % Wavelength in medium/vacuum [m]
 wavelength = 1064.0e-9;
 
-T = ott.Tmatrix.simple('sphere', 1.0, 'index_medium', 1.0, ...
+T = ott.Tmatrix.simple('sphere', wavelength, 'index_medium', 1.0, ...
     'index_particle', 1.2, 'wavelength0', wavelength);
 
 %% Create a simple gaussian beam
 % We will create displaced copies of this beam
 
-beam = ott.BscPmGauss('polarisation', [1 i], 'angle_deg', 50);
+beam = ott.BscPmGauss('polarisation', [1 1i], 'angle_deg', 50, ...
+    'index_medium', 1.0, 'wavelength0', wavelength);
 beam = beam / beam.power();
 
-% Displacement of beams
-displacement = wavelength;
+% Displacement of beams [wavelength_medium]
+displacement = 1.2*wavelength;
+
+% Phase shift for 2nd beam
+phase = exp(2*pi*1i/0.1);
 
 % Range for force/displacement graph
-x = linspace(-8, 8, 80);
+x = linspace(-8, 8, 80)*wavelength;
 
 %% Coherent beams with expanded Nmax
 
@@ -60,7 +64,7 @@ beam2 = beam1.translateXyz(displacement, 0, 0);
 beam1 = beam1.translateXyz(-displacement, 0, 0);
 
 % Add the beams
-nbeam = beam1 + beam2;
+nbeam = beam1 + beam2 * phase;
 
 % Calculate the force along the x-axis
 fx1 = zeros(3, length(x));
@@ -68,7 +72,6 @@ for ii = 1:length(x)
   tbeam = nbeam.translateXyz(x(ii), 0, 0);
   sbeam = T * tbeam;
   fx1(:, ii) = ott.forcetorque(tbeam, sbeam);
->>>>>>> Started work on the 1.4.0 examples
 end
 
 %% Coherent beams with same Nmax
@@ -80,7 +83,7 @@ for ii = 1:length(x)
   % Translate and add the beams
   beam1 = beam.translateXyz(x(ii)+displacement, 0, 0);
   beam2 = beam.translateXyz(x(ii)-displacement, 0, 0);
-  tbeam = beam1 + beam2;
+  tbeam = beam1 + beam2 * phase;
 
   % Scatter the beam and calculate the force
   sbeam = T * tbeam;
@@ -95,14 +98,14 @@ for ii = 1:length(x)
 
   % Translate beams
   beam1 = beam.translateXyz(x(ii)+displacement, 0, 0);
-  beam2 = beam.translateXyz(x(ii)-displacement, 0, 0);
+  beam2 = beam.translateXyz(x(ii)-displacement, 0, 0) * phase;
 
   % Scatter the beams
   sbeam1 = T * beam1;
   sbeam2 = T * beam2;
 
   % Calculate the force
-  fx3(:, ii) = ott.forcetorque(beam1, sbeam2) ...
+  fx3(:, ii) = ott.forcetorque(beam1, sbeam1) ...
       + ott.forcetorque(beam2, sbeam2);
 
 >>>>>>> Started work on the 1.4.0 examples
@@ -110,8 +113,10 @@ end
 
 %% Generate a figure showing the force displacement graphs
 
+x = x/wavelength;
+
 figure(1);
-plot(x, fx1(1, :), x, fx2(1, :), x, fx3(1, :));
+plot(x, fx1(1, :), 'b', x, fx2(1, :), 'r*', x, fx3(1, :));
 legend('Coherent (large Nmax)', 'Coherent (small Nmax)', 'Incoherent');
 xlabel('x [\lambda]')
 ylabel('Q_x')

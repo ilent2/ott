@@ -78,13 +78,14 @@ classdef TmatrixPm < ott.Tmatrix
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)
         k_medium = ott.Tmatrix.parser_k_medium(p);
-        Nmax = ka2nmax(r_max * k_medium);
+        Nmax = ott.utils.ka2nmax(r_max * k_medium);
       else
         Nmax = p.Results.Nmax;
       end
 
       % Determine if we have rotational symetry
-      [~,~,rotational_symmetry] = shapesurface([],[],shape_idx,parameters);
+      [~,~,rotational_symmetry] = ott.utils.shapesurface(...
+          [],[],shape_idx,parameters);
 
       if rotational_symmetry
         ntheta = 4*(Nmax + 2);
@@ -94,11 +95,11 @@ classdef TmatrixPm < ott.Tmatrix
         nphi = 3*(Nmax + 2)+1;
       end
 
-      [theta,phi] = angulargrid(ntheta,nphi);
+      [theta,phi] = ott.utils.angulargrid(ntheta,nphi);
 
       % TODO: Different ways to distribute points (random points)
 
-      [r,normals] = shapesurface(theta,phi,shape_idx,parameters);
+      [r,normals] = ott.utils.shapesurface(theta,phi,shape_idx,parameters);
 
       % TODO: What does inputParser do with duplicate parameters?
       ott.TmatrixPm(r, theta, phi, normals, varargin{:}, 'Nmax', Nmax, ...
@@ -191,7 +192,7 @@ classdef TmatrixPm < ott.Tmatrix
 
       import ott.utils.*
 
-      k_relative = k_particle/k_medium;
+      k_relative = tmatrix.k_particle/tmatrix.k_medium;
 
       for n = 1:Nmax
         for m = -n:n

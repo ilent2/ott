@@ -158,7 +158,6 @@ classdef TmatrixMie < ott.Tmatrix
             ['The internal coefficients are for the outermost layer only...' ...
              ' the real ones are only defined for each layer.']);
         T=sparse([1:2*(Nmax^2+2*Nmax)],[1:2*(Nmax^2+2*Nmax)],[c(indexing);d(indexing)]);
-
       end
     end
   end

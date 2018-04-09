@@ -27,8 +27,6 @@ Nmax = max(tmatrix.Nmax, beam.Nmax);
 tmatrix.Nmax = Nmax;
 beam.Nmax = Nmax;
 
-equiv_ka = nmax2ka(Nmax);
-
 % Normalise the beam power
 power=beam.power();
 beam = beam / power;
@@ -43,9 +41,6 @@ fz=zeros(size(zs));
 
 chkflg=false;
 jj=0;
-
-p=zeros(length(a),1);
-q=p;
 
 while ~chkflg
     jj=jj+1;
@@ -114,5 +109,3 @@ else
 end
 
 ott_warning('external');
-
-return

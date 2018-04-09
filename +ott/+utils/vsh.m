@@ -17,7 +17,7 @@ function [B,C,P] = vsh(n,m,theta,phi)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
+import ott.utils.*
 ott_warning('internal');
 
 if length(n)>1

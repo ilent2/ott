@@ -64,6 +64,7 @@ classdef BscPmGauss < ott.BscPointmatch
       p.addParameter('offset', []);
       p.addParameter('polarisation', [ 1 1i ]);
       p.addParameter('wavelength0', 1);
+      p.addParameter('power', []);
 
       p.addParameter('k_medium', []);
       p.addParameter('index_medium', []);
@@ -332,8 +333,8 @@ classdef BscPmGauss < ott.BscPointmatch
       a = expansion_coefficients(1:end/2,:);
       b = expansion_coefficients(1+end/2:end,:);
 
-      p=abs(a).^2+abs(b).^2;
-      binaryvector=(p>zero_rejection_level*max(p));
+      pwr=abs(a).^2+abs(b).^2;
+      binaryvector=(pwr>zero_rejection_level*max(pwr));
 
       nn=nn(binaryvector);
       mm=mm(binaryvector);
@@ -342,6 +343,11 @@ classdef BscPmGauss < ott.BscPointmatch
 
       % Make the beam vector and store the coefficients
       [beam.a, beam.b] = beam.make_beam_vector(a, b, nn, mm);
+      
+      % Normalize the beam power
+      if ~isempty(p.Results.power)
+        beam = p.Results.power * beam / beam.power();
+      end
 
       ott.warning('external');
     end
