@@ -7,6 +7,7 @@ function R = calc_rotation_matrix(  angle_vector )
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+warning('ott:calc_rotation_matrix:depreciated','calc_rotation_matrix.m will be depreciated in ott1.4. rotation_matrix.m can be used instead.')
 
 ott_warning('ott:calc_rotation_matrix:depreciated', ...
     ['calc_rotation_matrix.m will be depreciated in ott1.4. ' ...
