@@ -15,7 +15,7 @@ if nargin < 2
     	rot_axis = rot_axis / norm(rot_axis);
 end
 
-if rot_angle==0|norm(rot_axis)==0
+if rot_angle==0 || norm(rot_axis)==0
 	R=eye(3);
 	return
 end
@@ -29,5 +29,3 @@ ux = [ 0 -rot_axis(3) rot_axis(2);
     -rot_axis(2) rot_axis(1) 0 ];
 
 R = eye(3) + sin(rot_angle) * ux + ( 1 - cos(rot_angle) ) * ux * ux;
-
-return

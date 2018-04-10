@@ -55,8 +55,7 @@ end
 force = forcez(n,m,a,b) - forcez(n,m,p,q);
 torque = sum( m.*( abs(a).^2 + abs(b).^2 - abs(p).^2 - abs(q).^2 ) );
 
-return
-
+ott_warning('external');
 
 % Find z-component of force
 % Magic formula from Crichton
@@ -86,8 +85,3 @@ fz = 2 * mm ./ nn ./ (nn+1) .* imag( conj(aa) .* bb ) ...
     .* imag( aa.*conj(aap) + bb.*conj(bbp) );
 
 fz = sum(fz);
-
-ott_warning('external');
-
-return
-

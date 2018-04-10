@@ -71,9 +71,9 @@ case 2
    c = parameters(3);
    ew = parameters(4);
    ns = parameters(5);
-   if a == b & ew == 1
+   if a == b && ew == 1
       rotsym = 1;
-      if a == c & ns == 1
+      if a == c && ns == 1
          rotsym = 2;
       end
    else
@@ -144,7 +144,8 @@ case 1
 
     r = zeros(size(theta));
     n = [r r r];
-    sides = find( ( theta >= pi/2 - edge_angle ) & ( theta <= pi/2 + edge_angle ) );
+    sides = find( ( theta >= pi/2 - edge_angle ) ...
+        && ( theta <= pi/2 + edge_angle ) );
     top = find( theta < pi/2 - edge_angle );
     bottom = find( theta > pi/2 + edge_angle );
     ends = [ top; bottom ];
@@ -204,7 +205,8 @@ case 3
     
     r = zeros(size(theta));
     n = [r r r];
-    sides = find( ( theta >= pi/2 - edge_angle ) & ( theta <= pi/2 + edge_angle ) );
+    sides = find( ( theta >= pi/2 - edge_angle ) ...
+        && ( theta <= pi/2 + edge_angle ) );
     top = find( theta < pi/2 - edge_angle );
     bottom = find( theta > pi/2 + edge_angle );
     ends = [ top; bottom ];
@@ -250,13 +252,13 @@ for j = 1:length(theta_vec)
 
 % Now to collapse the sphere down to a cube
 
-if abs(x) == d/2 & abs(y) == d/2 & abs(z) == d/2
+if abs(x) == d/2 && abs(y) == d/2 && abs(z) == d/2
 a=1;
 x2 = a*x;
 y2 = a*y;
 z2 = a*z;
 n = [1 0 0];
-elseif abs(x) > d/2 & abs(x) > abs(y) & abs(x) > abs(z)
+elseif abs(x) > d/2 && abs(x) > abs(y) && abs(x) > abs(z)
 a = (d/2)/abs(x);
 x2 = a*x;
 y2 = a*y;
@@ -270,7 +272,7 @@ elseif x < -d/2
     norm = sqrt(n(1)^2 + n(2)^2 + n(3)^2);
     n = n./norm;
 end
-elseif abs(y) > d/2 & abs(y) > abs(x) & abs(y) > abs(z)
+elseif abs(y) > d/2 && abs(y) > abs(x) && abs(y) > abs(z)
 a = (d/2)/abs(y);
 x2 = a*x;
 y2 = a*y;
@@ -284,7 +286,7 @@ elseif y < -d/2
     norm = sqrt(n(1)^2 + n(2)^2 + n(3)^2);
     n = n./norm;
 end
-elseif abs(z) > d/2 & abs(z) > abs(x) & abs(z) > abs(y)
+elseif abs(z) > d/2 && abs(z) > abs(x) && abs(z) > abs(y)
 a = (d/2)/abs(z);
 x2 = a*x;
 y2 = a*y;

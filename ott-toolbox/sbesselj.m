@@ -27,9 +27,9 @@ end
 small_args = find( abs(kr) < 1e-15 );
 not_small_args = find( ~(abs(kr) < 1e-15) );
 
-if length(kr) == 1 & abs(kr) < 1e-15
+if length(kr) == 1 && abs(kr) < 1e-15
     jn = kr.^n ./ repmat(prod(1:2:(2*n+1)),[kr,1]);
-elseif length(kr) == 1 & ~(abs(kr) < 1e-15)
+elseif length(kr) == 1 && ~(abs(kr) < 1e-15)
     jn = sqrt(pi./(2*kr)) .* jn;
 elseif length(n) == 1
     jn(not_small_args) = ...

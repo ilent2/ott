@@ -196,17 +196,17 @@ clear nm
 l=1;
 for k = 1:length(m0)
     
-    if isodd(n) & iseven(m0(k))
+    if isodd(n) && iseven(m0(k))
         n0 = abs(m0(k))+1:2:Nmax;
-    elseif isodd(n) & isodd(m0(k))
+    elseif isodd(n) && isodd(m0(k))
         n0 = abs(m0(k)):2:Nmax;
-    elseif iseven(n) & iseven(m0(k))
+    elseif iseven(n) && iseven(m0(k))
         if m0(k) == 0;
             n0 = abs(m0(k))+2:2:Nmax;
         else
         n0 = abs(m0(k)):2:Nmax;
     end
-    elseif iseven(n) & isodd(m0(k))
+    elseif iseven(n) && isodd(m0(k))
         n0 = abs(m0(k))+1:2:Nmax;
     end
     nm(1,l:l+length(n0)-1) = n0;

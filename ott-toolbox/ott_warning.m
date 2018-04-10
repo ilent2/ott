@@ -19,7 +19,7 @@ function varargout = ott_warning(varargin)
 persistent once internal;
 if isempty(once)
   once = false;
-  internal = false;
+  internal = 0;
 end
 
 % Look for ott key words
@@ -30,22 +30,27 @@ if length(varargin) == 1
     ott_warning_flag = true;
   elseif strcmpi(varargin{1}, 'off')
     once = false;
-    internal = false;
+    internal = 0;
   elseif strcmpi(varargin{1}, 'internal')
-    internal = true;
+    internal = internal + 1;
     ott_warning_flag = true;
   elseif strcmpi(varargin{1}, 'external')
-    internal = false;
+    internal = max(internal - 1, 0);
     ott_warning_flag = true;
   end
 end
 
-if internal
+if internal ~= 0
   % Display no warnings
 elseif ~ott_warning_flag
 
   % Call matlab warning function
-  varargout{:} = warning(varargin{:});
+  if nargout ~= 0
+    varargout{:} = warning(varargin{:});
+  else
+    % This case is for octave
+    warning(varargin{:});
+  end
 
   % Turn off ott warning if once mode
   if length(varargin) >= 1

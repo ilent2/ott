@@ -155,14 +155,16 @@ figure; plot(z,fz);
 xlabel('{\it z} (x\lambda)');
 ylabel('{\it Q_z}');
 aa = axis;
-hold on
+hold on;
 line(aa(1:2),[ 0 0 ],'linestyle',':');
 line([0 0],aa(3:4),'linestyle',':');
+hold off;
 
 figure; plot(r,fr);
 xlabel('{\it r} (x\lambda)');
 ylabel('{\it Q_r}');
 aa = axis;
-hold on
+hold on;
 line(aa(1:2),[ 0 0 ],'linestyle',':');
 line([0 0],aa(3:4),'linestyle',':');
+hold off;
