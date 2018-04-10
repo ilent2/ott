@@ -6,7 +6,7 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 % [Y,Ytheta,Yphi] = SPHARM(n,m,theta,phi) additionally, calculates
 % the angular partial derivatives dY/dtheta and 1/sin(theta)*dY/dphi.
 %
-% SPHARM(n,theta,phi) ... TODO: Documentation
+% SPHARM(n,theta,phi) as above but for all m.
 %
 % Scalar n for the moment.
 % 
