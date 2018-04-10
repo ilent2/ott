@@ -20,7 +20,8 @@ function [nn,mm,a,b] = bsc_pointmatch_focalplane( nmax, ~, parameters )
 % See LICENSE.md for information about using/distributing this file.
 
 warning('ott:bsc_pointmatch_focalplane:tightfocus', ...
-    'This function is not recommended for accurate modelling of tightly focused beams, use bsc_pointmatch_farfield instead');
+    ['This function is not recommended for accurate modelling ' ...
+    'of tightly focused beams, use bsc_pointmatch_farfield instead']);
 
 zero_rejection_level = 1e-8;
 

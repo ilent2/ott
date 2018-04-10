@@ -24,7 +24,9 @@ Etheta=Etheta(:);
 Ephi=Ephi(:);
 
 if any(theta>pi)
-    warning('ott:bsc_plane:thetatoobig','Theta is larger than PI, treating all elements as angles in degrees.')
+    warning('ott:bsc_plane:thetatoobig', ...
+        ['Theta is larger than PI, treating all elements as ' ...
+         'angles in degrees.'])
     theta=theta/180*pi;
 end
 

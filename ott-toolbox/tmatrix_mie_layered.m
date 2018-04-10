@@ -111,7 +111,9 @@ if nargout>1
     d = r_0.*(d3_1 - d1_1 )  ./ (ha_0-m*d3_1);
     c = r_0.*(d3_1 - d1_1 )  ./ (m*hb_0 - d3_1);
     
-    warning('ott:tmatrix_mie_layered:internalcoefficientwarning','The internal coefficients are for the outermost layer only... the real ones are only defined for each layer.')
+    warning('ott:tmatrix_mie_layered:internalcoefficientwarning', ...
+        ['The internal coefficients are for the outermost layer only...' ...
+         ' the real ones are only defined for each layer.']);
     t2=sparse([1:2*(nmax^2+2*nmax)],[1:2*(nmax^2+2*nmax)],[c(indexing);d(indexing)]);
     
 end

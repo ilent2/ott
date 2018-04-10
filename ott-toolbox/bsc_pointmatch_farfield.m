@@ -104,7 +104,12 @@ end
 if length(parameters) > 9
     offset = parameters(8:10);
     if any(abs(parameters(8:9))>0)
-        warning('ott:bsc_pointmatch_farfield:offsets','Beam offsets with x and y components cannot be axi-symmetric, beam symmetry is now off, and the calculation will be much slower. It is highly recommended that a combination of rotations and translations are used on BSCs instead.')
+        warning('ott:bsc_pointmatch_farfield:offsets', ...
+            ['Beam offsets with x and y components cannot be ' ...
+             'axi-symmetric, beam symmetry is now off, and the ' ...
+             'calculation will be much slower. It is highly recommended ' ...
+             'that a combination of rotations and translations are ' ...
+             'used on BSCs instead.']);
         axisymmetry=0;
     end
 else
@@ -128,7 +133,8 @@ if numel(varargin)>0
                         azimuthal=1;
                 end
             otherwise
-                warning('ott:bsc_pointmatch_farfield:input',['Unrecognised input: ' varargin{ii} '.'])
+                warning('ott:bsc_pointmatch_farfield:input', ...
+                    ['Unrecognised input: ' varargin{ii} '.'])
         end
     end
 end

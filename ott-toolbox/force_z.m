@@ -23,7 +23,8 @@ function [force,torque] = force_z(n,m,a,b,p,q)
 % See LICENSE.md for information about using/distributing this file.
 
 warning('ott:force_z:depreciated', ...
-    'force_z.m will be removed in ott1.4. forcetorque.m will have an efficient implementation of force calculation.');
+    ['force_z.m will be removed in ott1.4. forcetorque.m will '
+    'have an efficient implementation of force calculation.']);
 
 % Uncomment one of the following:
 incidentscattered = 1; % YES, I AM USING INCIDENT-SCATTERED FORMULATION

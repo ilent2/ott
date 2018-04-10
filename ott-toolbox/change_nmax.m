@@ -81,7 +81,8 @@ magB = full(sum(sum(abs(B).^2)));
 apparent_error = abs( magA - magB )/magA;
 
 if apparent_error > warning_error_level
-    warning(['ott:change_nmax:tol', 'Apparent error of ' num2str(apparent_error) ]);
+    warning('ott:change_nmax:tol', ...
+        ['Apparent error of ' num2str(apparent_error)]);
 end
 
 return
