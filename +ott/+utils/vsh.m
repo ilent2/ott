@@ -18,7 +18,7 @@ function [B,C,P] = vsh(n,m,theta,phi)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.utils.*
-ott_warning('internal');
+ott.warning('internal');
 
 if length(n)>1
     ott_warning('external');
@@ -48,8 +48,4 @@ C = [Z,Yphi,-Ytheta];
 
 P = [Y,Z,Z];
 
-ott_warning('external');
-
-return
-
-
+ott.warning('external');

@@ -30,7 +30,7 @@ function [ modeweights col_modes row_modes ] = paraxial_transformation_matrix( p
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott_warning('internal');
+ott.warning('internal');
 
 if nargin==3
     normal_mode=0;
@@ -123,7 +123,7 @@ switch basis_in(1)
 end
 col_modes=[i1_in,i2_in,i3_in];
 
-ott_warning('external');
+ott.warning('external');
 
 end
 

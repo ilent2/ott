@@ -29,7 +29,7 @@ import ott.utils.*
 % and for good measure, we expand any scalar ones
 % to match the others in length
 
-ott_warning('internal');
+ott.warning('internal');
 
 if length(n)>1
     ott_warning('external');
@@ -155,7 +155,4 @@ switch(htype)
         end
 end
 
-ott_warning('external');
-
-return
-
+ott.warning('external');

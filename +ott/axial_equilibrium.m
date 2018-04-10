@@ -13,10 +13,10 @@ function [z,kz] = axial_equilibrium(tmatrix,beam,z)
 import ott.*
 
 % This function is not directly concerned with force/torque calculation
-warning('ott:axialequilibrium:move', ...
+ott.warning('ott:axialequilibrium:move', ...
     'This function will move in a future release');
 
-ott_warning('internal');
+ott.warning('internal');
 
 if nargin < 4
     z = 0;
@@ -108,4 +108,4 @@ else
     error('No stable equilibrium near z!')
 end
 
-ott_warning('external');
+ott.warning('external');

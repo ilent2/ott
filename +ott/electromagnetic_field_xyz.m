@@ -38,8 +38,7 @@ function [structureoutput]=electromagnetic_field_xyz(kxyz,nm, ...
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-import utils.*
+import ott.utils.*
 
 p = inputParser;
 p.addParameter('relativerefractiveindex', 1);
@@ -53,7 +52,7 @@ tol = p.Results.tolerance;
 dfield = p.Results.displacementfield;
 verbose = p.Results.verbose;
 
-ott_warning('internal');
+ott.warning('internal');
 
 lengthnm=size(nm,1)/2;
 
@@ -528,7 +527,7 @@ if behaviour==7||behaviour==4||behaviour==5||behaviour==6
     structureoutput.Einternal=[squeeze(Ex3),squeeze(Ey3),squeeze(Ez3)];
     structureoutput.Hinternal=[squeeze(Hx3),squeeze(Hy3),squeeze(Hz3)];
     
-    ott_warning('ott:electromagnetic_field_xyz:internalfield', ...
+    ott.warning('ott:electromagnetic_field_xyz:internalfield', ...
         'Must scale grid for internal fields by relative refractive index.')
 end
 
@@ -589,6 +588,4 @@ if behaviour==1||behaviour==3||behaviour==5||behaviour==7
     
 end
 
-ott_warning('external');
-
-return
+ott.warning('external');

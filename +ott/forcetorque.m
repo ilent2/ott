@@ -25,7 +25,7 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam)
 
 import ott.*
 import ott.utils.*
-ott_warning('internal');
+ott.warning('internal');
 
 fx=0;
 fy=0;
@@ -155,3 +155,4 @@ if nargout <= 3
     fz=[sx;sy;sz];
 end
 
+ott.warning('external');

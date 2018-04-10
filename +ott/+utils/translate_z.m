@@ -32,7 +32,7 @@ import ott.utils.*
 % Scattering from Microstructures", Lecture Notes in Physics 534,
 % Springer-Verlag, Berlin, 2000
 
-ott_warning('internal');
+ott.warning('internal');
 
 if numel(z)>1
     A=cell(numel(z),1);
@@ -177,6 +177,4 @@ if nargout>2
     C=C(1:nmax+1,1:nmax+1,1:nmax+1);
 end
 
-ott_warning('external');
-
-return
+ott.warning('external');

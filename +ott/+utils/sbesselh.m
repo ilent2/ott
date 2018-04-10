@@ -15,7 +15,7 @@ function [hn,dhn] = sbesselh(n,htype,kr)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.*
-ott_warning('internal');
+ott.warning('internal');
 
 kr=kr(:);
 n=n(:);
@@ -35,4 +35,4 @@ if nargout==2
     hn=hn(1:end,1:end/2);
 end
 
-ott_warning('external');
+ott.warning('external');

@@ -1,13 +1,13 @@
-function varargout = ott_warning(varargin)
-%OTT_WARNING overload of MATLAB warning function for OTT
+function varargout = warning(varargin)
+%WARNING overload of MATLAB warning function for OTT
 %
 % Adds additional options for warnings such as displaying warnings
 % once per session and suppressing internal warnings.
 %
-% OTT_WARNING('internal') and OTT_WARNING('external') are for use by
+% WARNING('internal') and WARNING('external') are for use by
 % ott functions that call other function which likely raise warnings.
 %
-% OTT_WARNING('once') makes warnings only display once before the warning
+% WARNING('once') makes warnings only display once before the warning
 % is turned off.  Turning off all warnings resets the once flag.
 %
 % All other commands are passed onto the builtin warning function.

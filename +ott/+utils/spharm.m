@@ -22,7 +22,7 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 
 import ott.utils.*
 
-ott_warning('internal');
+ott.warning('internal');
 
 if length(n)>1
     ott_warning('external');
@@ -124,6 +124,4 @@ Y=Y(n+mi+1,:).';
 Yphi=Yphi(n+mi+1,:).';
 Ytheta=Ytheta(n+mi+1,:).';
 
-ott_warning('external');
-
-return
+ott.warning('external');

@@ -30,7 +30,7 @@ function [r,n,rotsym,xyz_vec] = shapesurface(theta,phi,shape,parameters)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.utils.*
-ott_warning('internal');
+ott.warning('internal');
 
 % For a surface defined by
 % r = r(theta,phi)
@@ -322,6 +322,4 @@ otherwise
    error('Unknown shape');
 end
 
-ott_warning('external');
-
-return
+ott.warning('external');

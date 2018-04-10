@@ -11,7 +11,7 @@ function [rtp,n,ds]=axisym_boundarypoints(Nmax,rho,z);
 
 import ott.utils.*
 
-ott_warning('internal');
+ott.warning('internal');
 
 % %%%%test values
 % ntheta=500;
@@ -86,4 +86,4 @@ dst(end,3)=(z(end)-mean(zout(end-1:end)));
 ds=(rtp(:,1).*sqrt(sum(abs(dst).^2,2)).*sin(rtp(:,2))); 
 %ds=sqrt(sum(abs(dst).^2,2));
 
-ott_warning('external');
+ott.warning('external');

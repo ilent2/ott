@@ -17,7 +17,7 @@ function [D,D2] = wigner_rotation_matrix( nmax, R )
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott_warning('internal');
+ott.warning('internal');
 
 % Transform cartesian rotation matrix to spinor(?) rotation matrix
 %
@@ -100,4 +100,4 @@ for n = 2:nmax
     
 end
 
-ott_warning('external');
+ott.warning('external');

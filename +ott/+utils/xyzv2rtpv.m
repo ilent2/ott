@@ -10,7 +10,7 @@ function [rv,thetav,phiv,r,theta,phi] = xyzv2rtpv(xv,yv,zv,x,y,z)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott_warning('internal');
+ott.warning('internal');
 
 if nargin < 6
    x = yv(:,1);
@@ -41,11 +41,5 @@ if nargout < 3
    rv = [ rv thetav phiv ];
    thetav = [ r theta phi ];
 end
-<<<<<<< HEAD:ott-toolbox/xyzv2rtpv.m
 
-ott_warning('external');
-
-return
-
-=======
->>>>>>> Moved functions to +ott and +ott/+utils packages:+ott/+utils/xyzv2rtpv.m
+ott.warning('external');
