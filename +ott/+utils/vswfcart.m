@@ -23,11 +23,8 @@ function [M,N,M2,N2,M3,N3] = vswfsph2cart(n,m,kr,theta,phi,htype)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-import utils.*
-ott_warning('ott:vswfcart:move', ...
-    'This file will move to ott.utils.vswfcart');
-ott_warning('internal');
+import ott.utils.*
+ott.warning('internal');
 
 if nargin < 6
    htype = 0;
@@ -107,6 +104,4 @@ Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
 N3 = [ Mx My Mz ];
 end
 
-ott_warning('external');
-
-return
+ott.warning('external');

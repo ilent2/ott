@@ -49,5 +49,3 @@ if nargout==2
 end
 
 ott_warning('external');
-
-return

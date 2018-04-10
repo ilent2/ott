@@ -7,8 +7,6 @@ function Lpl = laguerre(p,l,X)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-
 x=X(:);
 
 Lplt=zeros(numel(x),max([p+1,2]));
@@ -21,5 +19,3 @@ for ii=2:p
 end
 
 Lpl=reshape(Lplt(:,p+1),size(X));
-
-return

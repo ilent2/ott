@@ -20,7 +20,6 @@ function [A,B,C] = translate_z(nmax,z)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
 import ott.utils.*
 
 % Refs:

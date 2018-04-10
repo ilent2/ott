@@ -7,8 +7,6 @@ function [output]=hermite(n,X);
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-
 x=X(:);
 
 h=zeros(numel(x),max([n+1,2]));

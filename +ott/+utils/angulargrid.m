@@ -27,8 +27,6 @@ function [theta,phi] = angulargrid(ntheta,nphi,behaviour)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-
 switch nargin
 case 1
    nphi = ntheta;
@@ -59,6 +57,3 @@ end
 
 theta = theta(:);
 phi = phi(:);
-
-return
-

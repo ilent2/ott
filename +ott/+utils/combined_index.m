@@ -13,8 +13,6 @@ function [out1,out2] = combined_index(in1,in2)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-
 % Sanity check
 if nargin == 1
    out1 = floor(sqrt(in1));
@@ -24,5 +22,3 @@ elseif nargin == 2
 else
    error('Bad number of input/output arguments');
 end
-
-return

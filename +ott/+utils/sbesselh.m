@@ -26,7 +26,7 @@ end
 
 [n,kr]=meshgrid(n,kr);
 
-[hn] = besselh(n+1/2,htype,kr);
+[hn] = ott.utils.besselh(n+1/2,htype,kr);
 
 hn = sqrt(pi./(2*kr)) .* (hn);
 
@@ -36,5 +36,3 @@ if nargout==2
 end
 
 ott_warning('external');
-
-return

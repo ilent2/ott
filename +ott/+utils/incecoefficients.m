@@ -17,8 +17,6 @@ function [A_n,B_n,eigA,eigB]=incecoefficients(p,xi);
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-
 testcase=0;
 if testcase
     %test in Bandres 2004, josaa-21-5-873.
