@@ -1,32 +1,40 @@
-function [fx,fy,fz,tx,ty,tz]=force_torque_farsund(n,m,a,b,p,q)
-% force_torque_farsun.m : Calculates the force and torque in a 3D orthogonal
-%                         space. If the beam shape coefficients are in the
-%                         original coordinates, this outputs the force and
-%                         torque in 3D carteisan coordinates.
+function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=force_torque_farsund(n,m,a,b,p,q)
+% FORCE_TORQUE_FARSUND calculate force/torque/spin in a 3D orthogonal space
+% If the beam shape coefficients are in the original coordinates,
+% this outputs the force, torque and spin in 3D carteisan coordinates.
 %
-% USAGE:
+%   [fxyz,txyz,sxyz] = FORCE_TORQUE_FARSUND(...) calculates the force,
+%   torque and spin and stores them in [3, 1] column vectors.  Torque
+%   and spin can be omitted to only calculate the force or force and torque.
 %
-% [fx,fy,fz,tx,ty,tz] = force_torque_farsund(n,m,a,b,p,q)
+%   [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCE_TORQUE_FARSUND(...) unpacks the
+%   force/torque/spin into separate output arguments.
 %
-% OR
-% 
-% [fxyz,txyz] = force_torque_farsund(n,m,a,b,p,q)
-%
-% OR
-%
-% [fxyz] = force_torque_farsund(n,m,a,b,p,q)
-%
-% where n,m are the degree and order of modes contained in the system. They
+% n,m are the degree and order of modes contained in the system. They
 % can be the truncated n and m's.
 %
-% a,b,p,q are the incident modes and scattered modes respectively. These 
+% a,b,p,q are the incident modes and scattered modes respectively. These
 % must be full or sparse of the appropriate size!!!!!
 %
 % This uses mathematical result of Farsund et al., 1996, in the form of
-% Chricton and Marsden, 2000, and our standard T-matrix notation S.T. 
+% Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
 % E_{inc}=sum_{nm}(aM+bN);
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
+warning('ott:force_torque_farsund:depreciated', ...
+    'force_torque_farsund.m file will replace forcetorque.m in ott1.4.');
+
+fx=0;
+fy=0;
+fz=0;
+tx=0;
+ty=0;
+tz=0;
+sx=0;
+sy=0;
+sz=0;
 
 nmax=max(n);
 
@@ -90,7 +98,7 @@ q=q(ci);
 
 Az=m./n./(n+1).*imag(-(a).*conj(b)+conj(q).*(p)); %this has the correct sign... farsund. modes match.
 Bz=1./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ... %.*n
-    .*imag(anp1.*conj(a)+bnp1.*conj(b)-(pnp1).*conj(p) ... 
+    .*imag(anp1.*conj(a)+bnp1.*conj(b)-(pnp1).*conj(p) ...
     -(qnp1).*conj(q)); %this has the correct sign... farsund. modes match.
 
 fz=2*sum(Az+Bz);
@@ -102,15 +110,37 @@ Bxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ... %sqrt(n.*)
 
 fxy=sum(Axy+Bxy);
 fx=real(fxy);
-fy=-imag(fxy);
+fy=imag(fxy);
 
-tz=sum(m.*(a.*conj(a)+b.*conj(b)-p.*conj(p)-q.*conj(q))); %this has the correct sign... farsund. modes match.
+if nargout > 1
+    tz=sum(m.*(a.*conj(a)+b.*conj(b)-p.*conj(p)-q.*conj(q))); %this has the correct sign... farsund. modes match.
+    
+    txy=sum(sqrt((n-m).*(n+m+1)).*(a.*conj(amp1)+b.*conj(bmp1)-p.*conj(pmp1)-q.*conj(qmp1))); %this has the correct sign... farsund. modes match.
+    tx=real(txy);
+    ty=imag(txy);
+    
+    if nargout > 2
+        Cz=m./n./(n+1).*(-(a).*conj(a)+conj(q).*(q)-(b).*conj(b)+conj(p).*(p));
+        Dz=-2./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ...
+            .*real(anp1.*conj(b)-bnp1.*conj(a)-(pnp1).*conj(q) ...
+            +(qnp1).*conj(p));
+        
+        sz = sum(Cz+Dz);
+        
+        Cxy=1i./n./(n+1).*sqrt((n-m).*(n+m+1)).*(conj(pmp1).*p - conj(amp1).*a + conj(qmp1).*q - conj(bmp1).*b);
+        Dxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ...
+            ( (sqrt((n+m+1).*(n+m+2)) .* ( p.*conj(qnp1mp1) - q.* conj(pnp1mp1) -a.*conj(bnp1mp1) +b.*conj(anp1mp1))) + ...
+            (sqrt((n-m+1).*(n-m+2)) .* (pnp1mm1.*conj(q) - qnp1mm1.*conj(p) - anp1mm1.*conj(b) + bnp1mm1.*conj(a))) );
+        
+        sxy=sum(Cxy+Dxy);
+        sy=real(sxy);
+        sx=imag(sxy);
+    end
+end
 
-txy=sum(sqrt((n-m).*(n+m+1)).*(a.*conj(amp1)+b.*conj(bmp1)-p.*conj(pmp1)-q.*conj(qmp1))); %this has the correct sign... farsund. modes match.
-tx=real(txy);
-ty=-imag(txy);
-
-if nargout <= 2
+if nargout <= 3
     fx=[fx;fy;fz];
     fy=[tx;ty;tz];
+    fz=[sx;sy;sz];
 end
+

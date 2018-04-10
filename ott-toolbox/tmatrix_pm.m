@@ -13,7 +13,8 @@ function [T,T2] = tmatrix_pm(Nmax,k_medium,k_particle,shape,parameters)
 % (see shapesurface for more detail)
 % T2 is the T matrix giving the internal field
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 verbose = 0;
 

@@ -1,22 +1,22 @@
 function [x,y,z] = rtp2xyz(r,theta,phi)
-% rtp2xyz.m
-% Coordinate transformation from spherical to cartesian
-% theta is the polar angle, measured from the +z axis,
-% and varies from 0 to pi
-% phi is the azimuthal angle, measured from the +x axis, increasing
-% towards the +y axis, varying from 0 to 2*pi
+% RTP2XYZ coordinate transformation from spherical to cartesian
+%   r      radial distance [0, Inf)
+%   theta  polar angle, measured from +z axis [0, pi]
+%   phi    azimuthal angle, measured from +x towards +y axes [0, 2*pi)
 %
-% Usage:
-% [x,y,z] = rtp2xyz(r,theta,phi);
-% where x, y, z, r, theta, phi are all scalars or
-% equal-length vectors
-% or
-% x = rtp2xyz(r);
-% where x = [ x y z ] and r = [ r theta phi ]
+% [x,y,z] = RTP2XYZ(r,theta,phi) takes vectors or scalars, outputs
+% the spherical coordinates as vectors/scalars of the same size.
 %
-% Angles are in radians
+% [x,y,z] = RTP2XYZ(r) same as above but with the coordinate
+% packed into the vector/matrix r = [ r theta phi ].
 %
-% PACKAGE INFO
+% x = RTP2XYZ(...) same as above with the result packed into
+% the vector/matrix x = [ x y z ].
+%
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
+%warning('ott:rtp2xyz:move','this function will move to ott.utils.rtp2xyz');
 
 if nargin == 1
    theta = r(:,2);

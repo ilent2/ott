@@ -16,7 +16,11 @@ function [D,D2] = wigner_rotation_matrix( nmax, R )
 % Note change in notation - here, use x' = Rx (x is row vector),
 % a' = Da (a is column vector) etc.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
+%warning('ott:wigner_rotation_matrix:move', ...
+    'this function will move to ott.utils.wigner_rotation_matrix');
 
 % Transform cartesian rotation matrix to spinor(?) rotation matrix
 %
@@ -29,12 +33,19 @@ function [D,D2] = wigner_rotation_matrix( nmax, R )
 % So, to transform cartesian coords to spinor coords,
 % s = x C / r
 
+% C = [  1/sqrt(2) 0 -1/sqrt(2);
+%       -i/sqrt(2) 0 -i/sqrt(2);
+%        0         1  0 ];
+% invC = [ 1/sqrt(2) i/sqrt(2) 0;
+%          0         0         1;
+%         -1/sqrt(2) i/sqrt(2) 0 ];
+
 C = [  1/sqrt(2) 0 -1/sqrt(2);
-      -i/sqrt(2) 0 -i/sqrt(2);
+      1i/sqrt(2) 0 1i/sqrt(2);
        0         1  0 ];
-invC = [ 1/sqrt(2) i/sqrt(2) 0;
+invC = [ 1/sqrt(2) -1i/sqrt(2) 0;
          0         0         1;
-        -1/sqrt(2) i/sqrt(2) 0 ];
+         -1/sqrt(2) -1i/sqrt(2) 0 ];
 
 % Since x' = x R, s' -> x' C = s invC R C -> s' = s (invC R C)
 
@@ -91,5 +102,3 @@ for n = 2:nmax
     DD = DDD;
     
 end
-
-return

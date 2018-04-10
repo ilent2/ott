@@ -1,47 +1,77 @@
 function [nn,mm,a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
-% Finds VSWF representation of plane wave
+% Finds VSWF representation of plane wave, output BSCs producing a plane
+% with amplitude determined by the field input. If a vector input then a
+% and b are matrices.
+%
+% Usage:
 % [n,m,a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
+% 
+% or
+%
+% [a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
 %
 % theta and phi (in radians) give the direction of propagation
 % of the plane wave. +z direction is theta = 0, phi = any value
 %
-% This file is part of the package Optical tweezers toolbox 1.3
-% Copyright 2006-2013 The University of Queensland.
-% See README.txt or README.m for license and details.
+% NOTE: lambda will be leaving this code in a future release.
 %
-% http://www.physics.uq.edu.au/people/nieminen/software.html
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
-E = [ 0 Etheta Ephi ];
+theta=theta(:);
+phi=phi(:);
+Etheta=Etheta(:);
+Ephi=Ephi(:);
 
-mm = [];
-nn = [];
-a = [];
-b = [];
-
-for n = 1:nmax
-  
-   Nn = sqrt(1/(n*(n+1)));
-  
-   for m = -n:n
-      
-      [B,C,P] = vsh(n,m,theta,phi);
-      
-      % dot product function takes complex conjugate of first term
-      newa = 4*pi * i^n * Nn * dot(C,E);
-      newb = 4*pi * i^(n-1) * Nn * dot(B,E);
-      
-      % Get rid of any values too close to zero
-      if abs(newa) + abs(newb) > 1e-14
-         nn = [ nn n ];
-         mm = [ mm m ];
-         a = [ a newa ];
-         b = [ b newb ];
-      end
-      %fprintf(1,'Done n = %d, m = %d, a = %g+%gi, b = %g+%gi.\n',...
-      %   n,m,real(newa),imag(newa),real(newb),imag(newb));
-      
-   end
-   
+if any(theta>pi)
+    warning('ott:bsc_plane:thetatoobig', ...
+        ['Theta is larger than PI, treating all elements as ' ...
+         'angles in degrees.'])
+    theta=theta/180*pi;
 end
 
+%calculate the mode indices we are going to find.
+[nn,mm]=combined_index([1:nmax*(nmax+2)].');
+
+a = zeros(length(nn),length(Etheta));
+b = zeros(length(nn),length(Etheta));
+
+for n = 1:nmax
+    
+    iter=[(n-1)*(n+1)+1:n*(n+2)];
+    leniter=2*n+1;
+    
+    %expand theta and phi components of field to match spherical harmonics
+    ET=repmat(Etheta,[1,leniter]);
+    EP=repmat(Ephi,[1,leniter]);
+    
+    %power normalisation.
+    Nn = 1/sqrt(n*(n+1));
+    
+    %Generate the farfield components of the VSWFs
+    [~,dtY,dpY] = spharm(n,[-n:n],theta,phi);
+        
+    %equivalent to dot((1i)^(n+1)*C,E);
+    a(iter,:) = 4*pi*Nn*(-1i)^(n+1)*(conj(dpY).*ET - conj(dtY).*EP).';
+    %equivalent to dot((1i)^(n)*B,E);
+    b(iter,:) = 4*pi*Nn*(-1i)^(n)  *(conj(dtY).*ET + conj(dpY).*EP).';
+    
+end
+
+p=abs(a).^2+abs(b).^2;
+binaryvector=(p>1e-15*max(p));
+
+if nargout>2
+    nn=nn(any(binaryvector,2),:);
+    mm=mm(any(binaryvector,2),:);
+    a=a(any(binaryvector,2),:);
+    b=b(any(binaryvector,2),:);
+end
+
+if nargout==2
+    a(~binaryvector)=0;
+    b(~binaryvector)=0;
+    nn=sparse(a);
+    mm=sparse(b);
+end
 return

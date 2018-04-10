@@ -1,17 +1,26 @@
-function [structureoutput]=electromagnetic_field_xyz(xyz,nm,ab,pq,cd,relindex,tol)
+function [structureoutput]=electromagnetic_field_xyz(kxyz,nm,ab,pq,cd,varargin)
 % electromagnetic_field_xyz.m : Calculates the fields of any of the
 %                                incident, scattered or internal
 %                                beam shape coefficients.
 %
 % Usage:
 %
-% [structureoutput]=electromagnetic_field_xyz(xyz,[n;m],[a;b],[p;q],[c;d],relindex)
+% [structureoutput]=electromagnetic_field_xyz(kr,[n;m],[a;b],[p;q],[c;d],relindex)
 % or
-% [structureoutput]=electromagnetic_field_xyz(xyz,[n;m],[a;b],[],[])
+% [structureoutput]=electromagnetic_field_xyz(kr,[n;m],[a;b])
 % or
-% [structureoutput]=electromagnetic_field_xyz(xyz,[n;m],[a;b],[p;q])
+% [structureoutput]=electromagnetic_field_xyz(kr,[n;m],[a;b],[p;q])
 % or
-% [structureoutput]=electromagnetic_field_xyz(xyz,[n;m],[],[p;q])
+% [structureoutput]=electromagnetic_field_xyz(kr,[n;m],[],[p;q])
+% etc...
+%
+% where:
+% kr    - is the coordinates of the wavefunction (wavelength dependent hence kr)
+% [n;m] - is a column vector of mode indices
+% [a;b] - is a column vector of full incident beam shape coefficients
+% [p;q] - is a column vector of full scattered beam shape coefficients
+% [c;d] - is a column vector of full internal beam shape coefficients
+% relk  - is the relative k for the internal refractive index
 %
 % the output structure contains three set of vectors of the following:
 % Eincident, Hincident.
@@ -26,91 +35,115 @@ function [structureoutput]=electromagnetic_field_xyz(xyz,nm,ab,pq,cd,relindex,to
 % will be quicker if a truncated n and m can be used.
 %
 % NOTE: If internal fields are calculated only the theta and phi components
-% of E are continuous at the boundary. Conversely, only the r component of
+% of E are continuous at the boundary. Conversely, only the kr component of
 % D is continuous at the boundary.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 verbose=0;
-if ~exist('relindex','var')
-    relindex=1;
+
+relindx=1;
+tol=1e-8;
+dfield=0;
+if numel(varargin)>0
+    for ii=1:length(varargin)
+        switch class(varargin{ii})
+            case 'cell'
+                switch lower(varargin{ii}{1})
+                    case 'relativerefractiveindex'
+                        relindx=varargin{ii}{2};
+                    case 'tolerance'
+                        tol=varargin{ii}{2};
+                    case 'displacementfield'
+                        try
+                            dfield=varargin{ii}{2};
+                        catch
+                            dfield=1;
+                        end
+                    otherwise
+                      warning('ott:electromagnetic_field_xyz:input', ...
+                          ['Unrecognised input: ' varargin{ii} '.'])
+                end
+            otherwise
+        end
+    end
 end
 
-lengthnm=length(nm)/2;
+lengthnm=size(nm,1)/2;
 
-n=nm(1:length(nm)/2);
-m=nm(length(nm)/2+1:end);
+n=nm(1:size(nm,1)/2,1);
+m=nm(size(nm,1)/2+1:size(nm,1),1);
 
 ci=combined_index(n,m);
 
 try
-    lengthab=length(ab)/2;
+    lengthab=size(ab,1)/2;
     ab=full(ab([ci;ci+lengthab]));
 catch
     ab=[];
 end
 
 try
-    lengthpq=length(pq)/2;
+    lengthpq=size(pq,1)/2;
     pq=full(pq([ci;ci+lengthpq]));
 catch
     pq=[];
 end
 
 try
-    lengthcd=length(cd)/2;
+    lengthcd=size(cd,1)/2;
     cd=full(cd([ci;ci+lengthcd]));
 catch
     cd=[];
 end
 
-if ~exist('tol','var')
-    tol=1e-15;
-end
 %calculate the space
-lengthab=length(ab)/2;
-lengthcd=length(cd)/2;
-lengthpq=length(pq)/2;
+lengthab=size(ab,1)/2;
+lengthcd=size(cd,1)/2;
+lengthpq=size(pq,1)/2;
 
-[rv,tv,pv]=xyz2rtp(xyz(:,1),xyz(:,2),xyz(:,3));
+[rv,tv,pv]=xyz2rtp(kxyz(:,1),kxyz(:,2),kxyz(:,3));
+
+[r_new,~,indR]=unique(rv);
+[theta_new,~,indTheta]=unique(tv);
+[phi_new,~,indPhi]=unique(pv);
+
+% r_new=r_new;
+r_new(r_new==0)=1e-15;
 %ab length can be bigger than cd or pq as it is the beam we start with.
 
 %look for biggest and smallest elements in the matrix, kill elements
 %less than tol of the max.
 
-if lengthab==0
-    if lengthcd==0
-        behaviour=4;
-        if lengthpq==0
-            error('No entries detected!')
-            return
-        end
-        
-    else
-        behaviour=5;
-        if lengthpq==0
-            behaviour=6;
-        end
-    end
-else
-    if lengthcd==0
-        behaviour=1;
-        if lengthpq==0
-            behaviour=0;
-        end
-    else
-        behaviour=2;
-        if lengthpq==0
-            behaviour=3;
-        end
-    end
+behaviour=0;
+if lengthab~=0
+    behaviour=behaviour+1;
+    a=ab(1:lengthab,:);
+    b=ab(lengthab+1:end,:);
+end
+
+if lengthpq~=0
+    behaviour=behaviour+2;
+    p=pq(1:lengthpq,:);
+    q=pq(lengthpq+1:end,:);
+end
+
+if lengthcd~=0
+    behaviour=behaviour+4;
+    c=cd(1:lengthcd,:);
+    d=cd(lengthcd+1:end,:);
 end
 
 if verbose
     behaviour
 end
 
-E1 = zeros(size(xyz));
+if behaviour==0
+    error('no non-zero elements!')
+end
+
+E1 = zeros(size(kxyz));
 E2 = E1;
 E3 = E1;
 H1 = E1;
@@ -125,126 +158,374 @@ if verbose
 end
 
 switch behaviour
-    case 0
-        
-        for ii=1:length(un)
-            
-            if length(m(n==un(ii)))>=1
-                indx=find(n==un(ii));
-                abv=ab([indx;indx+lengthab]);
-                
-                [M3,N3]=vswf(un(ii),m(n==un(ii)),2*pi*rv,tv,pv,3);
-                
-                for jj=1:length(abv)/2
-                    E1=E1+(abv(jj))*M3(:,[0:2]*length(indx)+jj)+(abv(length(abv)/2+jj)).*N3(:,[0:2]*length(indx)+jj);
-                    H1=H1+(abv(jj))*N3(:,[0:2]*length(indx)+jj)+(abv(length(abv)/2+jj)).*M3(:,[0:2]*length(indx)+jj);
-                end
-                
-            end
-            
-            %             if verbose
-            %                 if ni==10
-            %                     disp(['Estimated time to completion: ' num2str(2*toc*length(calcvecels)/11) ' seconds!']);
-            %                 end
-            %             end
-            
-        end
-        
     case 1
         
-        for ii=1:length(un)
-            
-            if length(m(n==un(ii)))>=1
-                indx=find(n==un(ii));
-                abv=ab([indx;indx+lengthab]);
-                pqv=pq([indx;indx+lengthab]);
-                
-                [M1,N1,~,~,M3,N3]=vswf(un(ii),m(n==un(ii)),2*pi*rv,tv,pv);
-                for jj=1:length(abv)/2
-                    E1=E1+full(abv(jj))*M3(:,[0:2]*length(indx)+jj)+full(abv(length(abv)/2+jj)).*N3(:,[0:2]*length(indx)+jj);
-                    H1=H1+full(abv(jj))*N3(:,[0:2]*length(indx)+jj)+full(abv(length(abv)/2+jj)).*M3(:,[0:2]*length(indx)+jj);
-                    
-                    E2=E2+full(pqv(jj))*M1(:,[0:2]*length(indx)+jj)+full(pqv(length(abv)/2+jj)).*N1(:,[0:2]*length(indx)+jj);
-                    H2=H2+full(pqv(jj))*N1(:,[0:2]*length(indx)+jj)+full(pqv(length(abv)/2+jj)).*M1(:,[0:2]*length(indx)+jj);
-                    
-                end
-                
+        for nn = 1:max(un)
+            if verbose
+                nn
             end
             
-            %             if verbose
-            %                 if ii==1
-            %                     disp(['Estimated time to completion: ' num2str(2*toc*length(calcvecels)/11) ' seconds!']);
-            %                 end
-            %             end
+            Nn = 1/sqrt(nn*(nn+1));
+            vv=find(n==nn);
+            
+            if ~isempty(vv)
+                
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
+                [jn,djn]=sbesselj(nn,r_new);
+                
+                [M,PHI]=meshgrid(m(vv),phi_new);
+                
+                expimphi=exp(1i*M.*PHI);%repmat(,[1,3]);
+                
+                jnU=jn(indR);
+                djnU=djn(indR);
+                kr=r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
+                    
+                    E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %if nargout>1
+                    H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    %end
+                    
+                end
+            end
+            
             
         end
+        
     case 2
         
-        for ii=1:length(un)
+        for nn = 1:max(un)
+            if verbose
+                nn
+            end
+  
+           Nn = 1/sqrt(nn*(nn+1));
+           vv=find(n==nn);
             
-            if length(m(n==un(ii)))>=1
-                indx=find(n==un(ii));
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
                 
-                abv=ab([indx;indx+lengthab]);
-                pqv=pq([indx;indx+lengthab]);
-                cdv=cd([indx;indx+lengthab]);
+                [hn,dhn]=sbesselh1(nn,r_new);
                 
-                [M1,N1,~,~,M3,N3]=vswf(un(ii),m(n==un(ii)),2*pi*rv,tv,pv);
+                [M,PHI]=meshgrid(1i*m(vv),phi_new);
                 
-                [M3a,N3a] = vswf(un(ii),m(n==un(ii)),2*pi*rv*(relindex),tv,pv,3);
+                expimphi=repmat(exp(M.*PHI),[1,3]);
                 
-                for jj=1:length(abv)/2
-                    E1=E1+full(abv(jj))*M3(:,[0:2]*length(indx)+jj)+full(abv(length(abv)/2+jj)).*N3(:,[0:2]*length(indx)+jj);
-                    H1=H1+full(abv(jj))*N3(:,[0:2]*length(indx)+jj)+full(abv(length(abv)/2+jj)).*M3(:,[0:2]*length(indx)+jj);
+                Nn = 1/sqrt(nn*(nn+1));
+                
+                
+                hnU=hn(indR);
+                dhnU=dhn(indR);
+                
+                kr=r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
-                    E2=E2+full(pqv(jj))*M1(:,[0:2]*length(indx)+jj)+full(pqv(length(abv)/2+jj)).*N1(:,[0:2]*length(indx)+jj);
-                    H2=H2+full(pqv(jj))*N1(:,[0:2]*length(indx)+jj)+full(pqv(length(abv)/2+jj)).*M1(:,[0:2]*length(indx)+jj);
+                    E2(:,1)=E2(:,1)+Nn*q(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E2(:,2)=E2(:,2)+Nn*(p(index)*hnU.*Yphi(indTheta,ii)+q(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E2(:,3)=E2(:,3)+Nn*(-p(index)*hnU.*Ytheta(indTheta,ii)+q(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
                     
-                    E3=E3+full(cdv(jj))*M3a(:,[0:2]*length(indx)+jj)+full(cdv(length(abv)/2+jj)).*N3a(:,[0:2]*length(indx)+jj);
-                    H3=H3+full(cdv(jj))*N3a(:,[0:2]*length(indx)+jj)+full(cdv(length(abv)/2+jj)).*M3a(:,[0:2]*length(indx)+jj);
+                    %                     if nargout>1
+                    H2(:,1)=H2(:,1)+Nn*p(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H2(:,2)=H2(:,2)+Nn*(q(index)*hnU.*Yphi(indTheta,ii)+p(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H2(:,3)=H2(:,3)+Nn*(-q(index)*hnU.*Ytheta(indTheta,ii)+p(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %                     end
                     
                 end
-                
             end
             
-            %             if verbose
-            %                 if ni==10
-            %                     disp(['Estimated time to completion: ' num2str(2*toc*length(calcvecels)/11) ' seconds!']);
-            %                 end
-            %             end
             
         end
         
+    case 3
+        
+        for nn = 1:max(un)
+            if verbose
+                nn
+            end
+            Nn = 1/sqrt(nn*(nn+1));
+            vv=find(n==nn);
+            
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
+                [jn,djn]=sbesselj(nn,r_new);
+                [hn,dhn]=sbesselh1(nn,r_new);
+                
+                [M,PHI]=meshgrid(1i*m(vv),phi_new);
+                
+                expimphi=repmat(exp(M.*PHI),[1,3]);
+                                
+                jnU=jn(indR);
+                djnU=djn(indR);
+                
+                hnU=hn(indR);
+                dhnU=dhn(indR);
+                
+                kr=r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
+                    
+                    E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    E2(:,1)=E2(:,1)+Nn*q(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E2(:,2)=E2(:,2)+Nn*(p(index)*hnU.*Yphi(indTheta,ii)+q(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E2(:,3)=E2(:,3)+Nn*(-p(index)*hnU.*Ytheta(indTheta,ii)+q(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %                     if nargout>1
+                    H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    H2(:,1)=H2(:,1)+Nn*p(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H2(:,2)=H2(:,2)+Nn*(q(index)*hnU.*Yphi(indTheta,ii)+p(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H2(:,3)=H2(:,3)+Nn*(-q(index)*hnU.*Ytheta(indTheta,ii)+p(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    %                     end
+                    
+                end
+            end
+            
+            
+        end
     case 4
-        
-        for ii=1:length(un)
+        for nn = 1:max(un)
+            if verbose
+                nn
+            end
+            Nn = 1/sqrt(nn*(nn+1));
+            vv=find(n==nn);
             
-            if length(m(n==un(ii)))>=1
-                indx=find(n==un(ii));
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
                 
-                pqv=pq([indx;indx+lengthpq]);
+                [jn,djn]=sbesselj(nn,r_new);
+                [jnr,djnr]=sbesselj(nn,relindx*r_new); %relindx*
+                [hn,dhn]=sbesselh1(nn,r_new);
                 
-                [M1,N1]=vswf(un(ii),m(n==un(ii)),2*pi*rv,tv,pv,1);
+                [M,PHI]=meshgrid(1i*m(vv),phi_new);
                 
-                for jj=1:length(pqv)/2
+                expimphi=repmat(exp(M.*PHI),[1,3]);
+                
+                jnU=jn(indR);
+                djnU=djn(indR);
+                
+                jnrU=jnr(indR);
+                djnrU=djnr(indR);
+                
+                hnU=hn(indR);
+                dhnU=dhn(indR);
+                
+                kr=r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
-                    E2=E2+full(pqv(jj))*M1(:,[0:2]*length(indx)+jj)+full(pqv(length(pqv)/2+jj)).*N1(:,[0:2]*length(indx)+jj);
-                    H2=H2+full(pqv(jj))*N1(:,[0:2]*length(indx)+jj)+full(pqv(length(pqv)/2+jj)).*M1(:,[0:2]*length(indx)+jj);
+                    E3(:,1)=E3(:,1)+Nn*d(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E3(:,2)=E3(:,2)+Nn*(c(index)*jnrU.*Yphi(indTheta,ii)+d(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E3(:,3)=E3(:,3)+Nn*(-c(index)*jnrU.*Ytheta(indTheta,ii)+d(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    H3(:,1)=H3(:,1)+Nn*c(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H3(:,2)=H3(:,2)+Nn*(d(index)*jnrU.*Yphi(indTheta,ii)+c(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H3(:,3)=H3(:,3)+Nn*(-d(index)*jnrU.*Ytheta(indTheta,ii)+c(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %                     end
                     
                 end
-                
             end
             
-            %             if verbose
-            %                 if ni==10
-            %                     disp(['Estimated time to completion: ' num2str(2*toc*length(calcvecels)/11) ' seconds!']);
-            %                 end
-            %             end
-            %
+            
         end
-    case default
-        disp('This behaviour is not implimented')
-        return
+    case 5
+        for nn = 1:max(un)
+            if verbose
+                nn
+            end
+            Nn = 1/sqrt(nn*(nn+1));
+            vv=find(n==nn);
+            
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
+                
+                [jn,djn]=sbesselj(nn,r_new);
+                [jnr,djnr]=sbesselj(nn,relindx*r_new); %relindx*
+                
+                [M,PHI]=meshgrid(1i*m(vv),phi_new);
+                
+                expimphi=repmat(exp(M.*PHI),[1,3]);
+                
+                jnU=jn(indR);
+                djnU=djn(indR);
+                
+                jnrU=jnr(indR);
+                djnrU=djnr(indR);
+                
+                kr=r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
+                    
+                    E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    E3(:,1)=E3(:,1)+Nn*d(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E3(:,2)=E3(:,2)+Nn*(c(index)*jnrU.*Yphi(indTheta,ii)+d(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E3(:,3)=E3(:,3)+Nn*(-c(index)*jnrU.*Ytheta(indTheta,ii)+d(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %                     if nargout>1
+                    H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    H3(:,1)=H3(:,1)+Nn*c(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H3(:,2)=H3(:,2)+Nn*(d(index)*jnrU.*Yphi(indTheta,ii)+c(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H3(:,3)=H3(:,3)+Nn*(-d(index)*jnrU.*Ytheta(indTheta,ii)+c(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %                     end
+                    
+                end
+            end
+            
+            
+        end
+    case 6
+        for nn = 1:max(un)
+            if verbose
+                nn
+            end
+            Nn = 1/sqrt(nn*(nn+1));
+            vv=find(n==nn);
+            
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
+                
+                [jnr,djnr]=sbesselj(nn,relindx*r_new); %relindx*
+                [hn,dhn]=sbesselh1(nn,r_new);
+                
+                [M,PHI]=meshgrid(1i*m(vv),phi_new);
+                
+                expimphi=repmat(exp(M.*PHI),[1,3]);
+                
+                jnrU=jnr(indR);
+                djnrU=djnr(indR);
+                
+                hnU=hn(indR);
+                dhnU=dhn(indR);
+                
+                kr=r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
+                    
+
+                    E2(:,1)=E2(:,1)+Nn*q(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E2(:,2)=E2(:,2)+Nn*(p(index)*hnU.*Yphi(indTheta,ii)+q(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E2(:,3)=E2(:,3)+Nn*(-p(index)*hnU.*Ytheta(indTheta,ii)+q(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    E3(:,1)=E3(:,1)+Nn*d(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E3(:,2)=E3(:,2)+Nn*(c(index)*jnrU.*Yphi(indTheta,ii)+d(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E3(:,3)=E3(:,3)+Nn*(-c(index)*jnrU.*Ytheta(indTheta,ii)+d(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %                     if nargout>1
+            
+                    H2(:,1)=H2(:,1)+Nn*p(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H2(:,2)=H2(:,2)+Nn*(q(index)*hnU.*Yphi(indTheta,ii)+p(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H2(:,3)=H2(:,3)+Nn*(-q(index)*hnU.*Ytheta(indTheta,ii)+p(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    H3(:,1)=H3(:,1)+Nn*c(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H3(:,2)=H3(:,2)+Nn*(d(index)*jnrU.*Yphi(indTheta,ii)+c(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H3(:,3)=H3(:,3)+Nn*(-d(index)*jnrU.*Ytheta(indTheta,ii)+c(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %                     end
+                    
+                end
+            end
+            
+            
+        end
+    case 7
+        for nn = 1:max(un)
+            if verbose
+                nn
+            end
+            Nn = 1/sqrt(nn*(nn+1));
+            vv=find(n==nn);
+            
+            if ~isempty(vv)
+                [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
+                
+                [jn,djn]=sbesselj(nn,r_new);
+                [jnr,djnr]=sbesselj(nn,relindx*r_new); %relindx*
+                [hn,dhn]=sbesselh1(nn,r_new);
+                
+                [M,PHI]=meshgrid(1i*m(vv),phi_new);
+                
+                expimphi=repmat(exp(M.*PHI),[1,3]);
+                
+                jnU=jn(indR);
+                djnU=djn(indR);
+                
+                jnrU=jnr(indR);
+                djnrU=djnr(indR);
+                
+                hnU=hn(indR);
+                dhnU=dhn(indR);
+                
+                kr=r_new(indR);
+                
+                for ii=1:length(vv)
+                    index=vv(ii);%nn*(nn+1)+m(vv(ii))
+                    
+                    E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    E2(:,1)=E2(:,1)+Nn*q(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E2(:,2)=E2(:,2)+Nn*(p(index)*hnU.*Yphi(indTheta,ii)+q(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E2(:,3)=E2(:,3)+Nn*(-p(index)*hnU.*Ytheta(indTheta,ii)+q(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    E3(:,1)=E3(:,1)+Nn*d(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E3(:,2)=E3(:,2)+Nn*(c(index)*jnrU.*Yphi(indTheta,ii)+d(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E3(:,3)=E3(:,3)+Nn*(-c(index)*jnrU.*Ytheta(indTheta,ii)+d(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %                     if nargout>1
+                    H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    H2(:,1)=H2(:,1)+Nn*p(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H2(:,2)=H2(:,2)+Nn*(q(index)*hnU.*Yphi(indTheta,ii)+p(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H2(:,3)=H2(:,3)+Nn*(-q(index)*hnU.*Ytheta(indTheta,ii)+p(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    H3(:,1)=H3(:,1)+Nn*c(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    H3(:,2)=H3(:,2)+Nn*(d(index)*jnrU.*Yphi(indTheta,ii)+c(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    H3(:,3)=H3(:,3)+Nn*(-d(index)*jnrU.*Ytheta(indTheta,ii)+c(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    
+                    %                     end
+                    
+                end
+            end
+            
+            
+        end
+        
+        
+        
+    otherwise
+        error('ott:electromagnetic_field_xyz:notyetimplemented','This behaviour is not implemented.')
+        
         
         
 end
@@ -252,12 +533,14 @@ if verbose
     toc
 end
 
-H1=-1i*H1; %LOOK HERE TO FIX STUFF
-H2=-1i*H2; %LOOK HERE TO FIX STUFF
-H3=-1i*H3; %LOOK HERE TO FIX STUFF
+ H1=-1i*H1; %LOOK HERE TO FIX STUFF
+ H2=-1i*H2; %LOOK HERE TO FIX STUFF
+ H3=-1i*H3; %LOOK HERE TO FIX STUFF
+
 
 %res flipped because it's a meshgrid
-if behaviour==2||behaviour==3||behaviour==5||behaviour==6
+if behaviour==7||behaviour==4||behaviour==5||behaviour==6
+    
     [Exv3,Eyv3,Ezv3] = rtpv2xyzv(E3(:,1),E3(:,2),E3(:,3),rv,tv,pv);
     Ex3=Exv3;
     index= isnan(Ex3);
@@ -283,10 +566,12 @@ if behaviour==2||behaviour==3||behaviour==5||behaviour==6
     structureoutput.Einternal=[squeeze(Ex3),squeeze(Ey3),squeeze(Ez3)];
     structureoutput.Hinternal=[squeeze(Hx3),squeeze(Hy3),squeeze(Hz3)];
     
-    warning('Must scale grid for internal fields by relative refractive index.')
+    warning('ott:electromagnetic_field_xyz:internalfield', ...
+        'Must scale grid for internal fields by relative refractive index.')
+    
 end
 
-if behaviour==1|behaviour==2|behaviour==4|behaviour==5
+if behaviour==2|behaviour==3|behaviour==6|behaviour==7
     
     [Exv2,Eyv2,Ezv2] = rtpv2xyzv(E2(:,1),E2(:,2),E2(:,3),rv,tv,pv);
     Ex2=Exv2;
@@ -314,7 +599,7 @@ if behaviour==1|behaviour==2|behaviour==4|behaviour==5
     structureoutput.Hscattered=[squeeze(Hx2),squeeze(Hy2),squeeze(Hz2)];
     
 end
-if behaviour<4
+if behaviour==1|behaviour==3|behaviour==5|behaviour==7
     
     [Exv1,Eyv1,Ezv1] = rtpv2xyzv(E1(:,1),E1(:,2),E1(:,3),rv,tv,pv);
     Ex1=Exv1;
@@ -327,7 +612,7 @@ if behaviour<4
     index= isnan(Ez1);
     Ez1(index)=0;
     
-    [Hxv1,Hyv1,Hzv1] = rtpv2xyzv(H1(:,1),H1(:,2),H1(:,3),rv,tv,pv);
+    [Hxv1,Hyv1,Hzv1] = rtpv2xyzv(H1(:,1)*1,1*H1(:,2),1*H1(:,3),rv,tv,pv);
     Hx1=Hxv1;
     index= isnan(Hx1);
     Hx1(index)=0;
@@ -340,6 +625,7 @@ if behaviour<4
     
     structureoutput.Eincident=[squeeze(Ex1),squeeze(Ey1),squeeze(Ez1)];
     structureoutput.Hincident=[squeeze(Hx1),squeeze(Hy1),squeeze(Hz1)];
+    
 end
 
 return

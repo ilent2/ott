@@ -1,19 +1,21 @@
 function B = change_nmax(A,Nmax)
-% change_nmax.m
+% CHANGE_NMAX Resizes T-matrix or beam vector to a new Nmax
 %
-% Resizes a T-matrix or beam coefficients vector to a new Nmax
+% newT = CHANGE_NMAX(oldT,Nmax) creates a new T-matrix, if the new Nmax is
+% greater, the new T-matrix is sparse with zeros padding the original.
+% If Nmax is smaller, the new T-matrix is a truncated version of the
+% original matrix.
 %
-% Usage:
-% newT = change_nmax(oldT,Nmax);
+% newa = CHANGE_NMAX(olda,Nmax) creates a new beam vector with new Nmax.
+% The input must not be a combined beam vector, i.e. not [a;b], a and b
+% must be resized seperatly.  When the beam vector is expanded, the new
+% vector is stored as a sparse matrix.
 %
 % A warning is issued if the matrix/vector is being truncated and possibly
 % significant values are being discarded.
 %
-% This file is part of the package Optical tweezers toolbox 1.3
-% Copyright 2006-2013 The University of Queensland.
-% See README.txt or README.m for license and details.
-%
-% http://www.physics.uq.edu.au/people/nieminen/software.html
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 
 warning_error_level = 1e-6;
@@ -79,7 +81,8 @@ magB = full(sum(sum(abs(B).^2)));
 apparent_error = abs( magA - magB )/magA;
 
 if apparent_error > warning_error_level
-    warning([ 'Apparent error of ' num2str(apparent_error) ]);
+    warning('ott:change_nmax:tol', ...
+        ['Apparent error of ' num2str(apparent_error)]);
 end
 
 return

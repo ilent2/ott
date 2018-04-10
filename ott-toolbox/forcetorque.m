@@ -25,7 +25,12 @@ function [force,torque,spin] = forcetorque(n,m,a,b,p,q)
 % in either the incident-scattered or incoming-outgoing
 % formulations! Check that it matches the one you use!
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
+warning('ott:forcetorque:depreciated', ...
+    ['forcetorque.m will be replaced with ' ...
+    'force_torque_farsund.m in ott1.4.']);
 
 % Uncomment one of the following:
 incidentscattered = 1; % YES, I AM USING INCIDENT-SCATTERED FORMULATION
@@ -84,7 +89,7 @@ spin(1) = spinz(n2,m2,a2,b2) - spinz(n2,m2,p2,q2);
 
 % Finally, rotate (original) y axis onto z axis
 
-R = calc_rotation_matrix([pi/2 0 0]);
+R = calc_rotation_matrix([-pi/2 0 0]);
 D = wigner_rotation_matrix(max(n),R);
 D = D(:,ci);
 

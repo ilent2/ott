@@ -9,7 +9,12 @@ function R = calc_rotation_matrix(  angle_vector )
 %
 % NB: Since this  is an SI package, the angles are all in radians!
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
+warning('ott:calc_rotation_matrix:depreciated', ...
+    ['calc_rotation_matrix.m will be depreciated in ott1.4. ' ...
+     'rotation_matrix.m can be used instead.']);
 
 if length(angle_vector)==2
     angle_vector=[0;angle_vector(:)];

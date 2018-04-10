@@ -19,41 +19,81 @@ function [t,t2,a,b] = tmatrix_mie_layered(nmax,k_medium,k_particle,radius)
 % "Improved recursive algorithm for light scattering by a multilayered
 % sphere", Wen Yang, Applied Optics 42(9), 2003
 %
-% This file is part of the package Optical tweezers toolbox 1.3
-% Copyright 2006-2013 The University of Queensland.
-% See README.txt or README.m for license and details.
-%
-% http://www.physics.uq.edu.au/people/nieminen/software.html
+% PACKAGE_INFO
 
-n_layer=[k_particle,k_medium]/2/pi; %medium is on the outside...
-radius=radius; %radius for the medium layer is the "same" as final layer.
+k_layer=[k_particle,k_medium]; %medium is on the outside...
+n_layer=k_layer/2/pi;
+radius=[radius,radius(end)]; %radius for the medium layer is the "same" as final layer.
 
 n=[1:nmax]; %n for nmax
 
-[ha_0,hb_0]=layerrecursion(n,n_layer,radius,1,1/n_layer(1),1);
+lastElement=length(k_layer);
 
-m_0 = n_layer(end-1);
-m_1 = n_layer(end);
+%generate all special functions first:
+if length(k_particle)>1
+    [jN,jNd] = sbesselj(n,[k_layer.*radius,k_layer(2:end).*radius(1:end-1)]);
+    [hN,hNd] = sbesselh1(n,[k_layer.*radius,k_layer(2:end).*radius(1:end-1)]);
+else
+    [jN,jNd] = sbesselj(n,k_layer(:).*radius(:));
+    [hN,hNd] = sbesselh1(n,k_layer(:).*radius(:)); 
+end
+jN=jN.';
+hN=hN.';
+jNd=jNd.';
+hNd=hNd.';
 
-r1 = 2*pi*m_1 * radius(end);
+d1_N=jNd./jN;
+d3_N=hNd./hN;
+r_N=jN./hN;
 
-j1 = (sbesselj(n,r1)).';
+ha_0=1/n_layer(1);
+hb_0=1;
 
-h1 = (sbesselh1(n,r1)).';
+for ii=1:length(k_particle)
+    ha_n=ha_0;
+    hb_n=hb_0;
+    
+    m_0 = n_layer(ii);
+    
+    d1_0=d1_N(:,ii);
+    d3_0=d3_N(:,ii);
+    r_0=r_N(:,ii);
+    
+    if ii>1
+        m_n = n_layer(ii-1);
+        
+        d1_n=d1_N(:,lastElement+ii-1);
+        d3_n=d3_N(:,lastElement+ii-1);
+        r_n=r_N(:,lastElement+ii-1);
+    else
+        m_n=1;
+        
+        d1_n=0;
+        d3_n=0;
+        r_n=0;
+    end
+    
+    g0=m_0*ha_n-m_n*d1_n;
+    g1=m_0*ha_n-m_n*d3_n;
+    g0b=m_n*hb_n-m_0*d1_n;
+    g1b=m_n*hb_n-m_0*d3_n;
+    q_0=r_n./r_0;
+    ha_0=(g1.*d1_0-q_0.*g0.*d3_0)./(g1-q_0.*g0);
+    hb_0=(g1b.*d1_0-q_0.*g0b.*d3_0)./(g1b-q_0.*g0b);
 
-j1d = (sbesselj(n-1,r1) - n.*sbesselj(n,r1)/r1).';
+end
+m_0 = n_layer(lastElement-1);
+m_1 = n_layer(lastElement);
 
-h1d = (sbesselh1(n-1,r1) - n.*sbesselh1(n,r1)/r1).';
+m=m_0/m_1;
 
-d1_1=j1d./j1;
-d3_1=h1d./h1;
-r_1=j1./h1;
+d1_1=d1_N(:,lastElement);
+d3_1=d3_N(:,lastElement);
+r_1=r_N(:,lastElement);
 
 % %TM/TE coeffs...
-al_1=r_1.*(m_1*ha_0-m_0*d1_1)./(m_1*ha_0-m_0*d3_1);
-bl_1=r_1.*(m_0*hb_0-m_1*d1_1)./(m_0*hb_0-m_1*d3_1);
-% aL_1=((ha_0/m_0+n.'/r1).*j1-sbesselj(n-1,r1).')./((ha_0/m_0+n.'/r1).*h1-sbesselh1(n-1,r1).');
-% bL_1=((m_0*hb_0+n.'/r1).*j1-sbesselj(n-1,r1).')./((m_0*hb_0+n.'/r1).*h1-sbesselh1(n-1,r1).');
+al_1=r_1.*(ha_0-m*d1_1)./(ha_0-m*d3_1);
+bl_1=r_1.*(m*hb_0-d1_1)./(m*hb_0-d3_1);
 
 %swap the modes to TE/TM... and negatize.
 b = -al_1;
@@ -66,65 +106,16 @@ t=sparse([1:2*(nmax^2+2*nmax)],[1:2*(nmax^2+2*nmax)],[a(indexing);b(indexing)]);
 
 if nargout>1
     
-    warning('This release does not calculate internal coefficients.') %because I have to use different ratio functions to find c/d
-    t2=sparse([1:2*(nmax^2+2*nmax)],[1:2*(nmax^2+2*nmax)],[a(indexing);b(indexing)]);
+    r_0=(jN(:,lastElement)./jN(:,lastElement-1));
     
-end
-
-end
-
-function [ha_0,hb_0]=layerrecursion(n,n_layer,radius,recursionnumber,ha_n,hb_n)
-%Internal function which should never be bare. This function has a lot of
-%overhead but takes very little time to complete so I'm happy with it as
-%is. I made the recursion start from 1 because it should...
-
-m_0 = n_layer(recursionnumber);
-r0 = 2*pi*m_0 * radius(recursionnumber);
-j0 = (sbesselj(n,r0)).';
-h0 = (sbesselh1(n,r0)).';
-j0d = (sbesselj(n-1,r0) - n.*sbesselj(n,r0)/r0).';
-h0d = (sbesselh1(n-1,r0) - n.*sbesselh1(n,r0)/r0).';
-
-d1_0=j0d./j0;
-d3_0=h0d./h0;
-r_0=j0./h0;
-
-if recursionnumber>1
-    m_n = n_layer(recursionnumber-1);
-    rn = 2*pi*m_0 * radius(recursionnumber-1);
-    jn = (sbesselj(n,rn)).';
-    hn = (sbesselh1(n,rn)).';
-    jnd = (sbesselj(n-1,rn) - n.*sbesselj(n,rn)/rn).';
-    hnd = (sbesselh1(n-1,rn) - n.*sbesselh1(n,rn)/rn).';
+    d = r_0.*(d3_1 - d1_1 )  ./ (ha_0-m*d3_1);
+    c = r_0.*(d3_1 - d1_1 )  ./ (m*hb_0 - d3_1);
     
-    d1_n=jnd./jn;
-    d3_n=hnd./hn;
-    r_n=jn./hn;
-else
-    m_n=1;
-    rn=0;
-    jn=0;
-    hn=0;
-    jnd=0;
-    hnd=0;
+    warning('ott:tmatrix_mie_layered:internalcoefficientwarning', ...
+        ['The internal coefficients are for the outermost layer only...' ...
+         ' the real ones are only defined for each layer.']);
+    t2=sparse([1:2*(nmax^2+2*nmax)],[1:2*(nmax^2+2*nmax)],[c(indexing);d(indexing)]);
     
-    d1_n=0;
-    d3_n=0;
-    r_n=0;
-end
-
-g0=m_0*ha_n-m_n*d1_n;
-g1=m_0*ha_n-m_n*d3_n;
-g0b=m_n*hb_n-m_0*d1_n;
-g1b=m_n*hb_n-m_0*d3_n;
-q_0=r_n./r_0;
-
-ha_0=(g1.*d1_0-q_0.*g0.*d3_0)./(g1-q_0.*g0);
-hb_0=(g1b.*d1_0-q_0.*g0b.*d3_0)./(g1b-q_0.*g0b);
-
-if recursionnumber<length(radius) %doesn't calculate last layer with this recursion...
-    recursionnumber=recursionnumber+1;
-    [ha_0,hb_0]=layerrecursion(n,n_layer,radius,recursionnumber,ha_0,hb_0);
 end
 
 end

@@ -1,7 +1,15 @@
 Change history
 ==============
 
-Version 1.3:
+Version 1.3.1
+-------------
+
+* Added function name change warnings and depreciation warnings.
+
+* Added functions from latest in-house development version of the toolbox.
+
+Version 1.3
+-----------
 
 Bugs: Fixed various bugs related to the beam code and vswf. These bugs were minor and 
 would only have effects on a small range of calculations.
@@ -12,8 +20,8 @@ calculates the EBCM T-matrix for that particular perimeter. axisym_boundarypoint
 tmatrix_ebcm_axisym.m. By default tmatrix_ebcm_axisym.m calls axisym_boundarypoints.m 
 for the desired boundary.
 
-
-Version 1.2:
+Version 1.2
+-----------
 
 Added: multilayered sphere code tmatrix_mie_layered.m. Definitely works for two layers.
 Change: added vector m functionality in spharm.m, vsh.m and vswf.m. These are still 
@@ -38,7 +46,8 @@ Change: changed the readme.txt and readme.m to reflect the changes made to the t
 and the addition of a user guide.
 
 
-Version 1.1:
+Version 1.1
+-----------
 
 Bug: different power normalisations used in force_z.m,
 forcetorque.m, and elesewhere. force_z.m and forcetorque.m
@@ -57,4 +66,7 @@ determine w0.
 Change: example_lg.m now uses beam convergence angle and beam
 mode to determine w0.
 
-Version 1.0: initial release
+Version 1.0
+-----------
+Initial release.
+

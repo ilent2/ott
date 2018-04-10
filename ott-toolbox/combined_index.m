@@ -6,11 +6,8 @@ function [out1,out2] = combined_index(in1,in2)
 % [n,m] = combined_index(ci);
 % ci = combined_index(n,m);
 %
-% This file is part of the package Optical tweezers toolbox 1.3
-% Copyright 2006-2013 The University of Queensland.
-% See README.txt or README.m for license and details.
-%
-% http://www.physics.uq.edu.au/people/nieminen/software.html
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % Sanity check
 if nargin == 1

@@ -1,18 +1,32 @@
-function [nn,mm,a,b] = bsc_pointmatch_farfield( nmax, beam_type, parameters )
+function [nn,mm,a,b] = bsc_pointmatch_farfield( nmax, beam_type, parameters, varargin )
 % bsc_pointmatch_farfield.m
 % Uses an overdetermined point-matching method to find
 % spherical harmonic expansion of a laser beam.
 %
 % Usage:
-% [n,m,a,b] = bsc_pointmatch_farfield( nmax, beam_type, parameters );
+% [n,m,a,b] = bsc_pointmatch_farfield( nmax, beam_type, parameters, (optional) );
 %
 % Currently available types of beams:
 % 0 Gauss-Hermite beam
-%   parameters: [ n m w0 P xcomponent ycomponent ]
+%   parameters: [ m n w0 P xcomponent ycomponent truncation_angle beam_offset ]
 % 1 Laguerre-Gauss beam
-%   parameters: [ p l w0 P xcomponent ycomponent truncation_angle xoffset yoffset zoffset ]
+%   parameters: [ p l w0 P xcomponent ycomponent truncation_angle beam_offset ]
+% 2 Ince-Gauss beam
+%   parameters: [ o m p xi w0 P xcomponent ycomponent truncation_angle beam_offset ]
 %
-% PACKAGE INFO
+% optional parameters:
+%
+% 'radial' - makes radial component with weighting xcomponent.
+% 'azimuthal' - makes azimuthal component with weighting ycomponent. (note:
+%   azimuthal and radial components are not mutually exclusive.)
+% 'sintheta' - angular scaling function is the same as the one present in
+%   standard microscope objectives. Preserves high order mode shape!
+% 'tantheta' - default angular scaling function, "small angle
+%   approximation" which is valid for thin lenses ONLY. Does not preserve
+%   high order mode shape at large angles.
+%
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 axisymmetry = 1;
 %axisymmetry = 0;
@@ -24,44 +38,105 @@ speed_of_light = 3.00e8;
 medium_refractive_index = 1;
 %beam_wavelength0 = 1064e-9;
 beam_wavelength0 = 1;
+
+%radial and azimuthal polarisation.
+radial=0;
+azimuthal=0;
+
+%% these parameters aren't used
 beam_power = 1e-3;
 speed_in_medium = speed_of_light/medium_refractive_index;
 epsilon0 = 8.854187817e-12;
 kappa = medium_refractive_index^2;
+%%
+radial_mode = parameters(1);
+azimuthal_mode = parameters(2);
+
+%% mode selection
+switch beam_type
+    case 0
+        m=radial_mode;
+        n=azimuthal_mode;
+        paraxial_order=n+m;
+        [modeweights,initial_mode,final_mode]=paraxial_transformation_matrix(paraxial_order,0,1,0);
+        [row]=find(final_mode(:,1)==m,1);
+    case 1
+        paraxial_order=2*radial_mode+abs(azimuthal_mode);
+        modeweights=eye(paraxial_order+1);
+        row=(azimuthal_mode+paraxial_order)/2+1;
+        
+        i2_out=[-paraxial_order:2:paraxial_order].';
+        i1_out=floor((paraxial_order-abs(i2_out))/2);
+        
+        initial_mode=[i1_out,i2_out];
+    case 2
+        paraxial_order = radial_mode;
+        parity = parameters(3);
+        elipticity = parameters(4);
+        parameters=parameters(3:end); %pop off the extra parameters.
+        
+        [modeweights,initial_mode,final_mode]=paraxial_transformation_matrix(paraxial_order,0,[2,elipticity],0);
+        
+        [row]=find(and(final_mode(:,2)==azimuthal_mode,final_mode(:,3)==parity),1);
+        
+        if and(paraxial_order>1,isempty(row))
+            error('Observe parity convensions!')
+        end
+end
+% find the mode columns:
+keepz=(abs(modeweights(row,:))>0);
+initial_mode=initial_mode(keepz,:);
+c=modeweights(row,keepz);
 
 w0 = parameters(3);
 k = 2*pi * medium_refractive_index / beam_wavelength0;
 xcomponent = parameters(5);
 ycomponent = parameters(6);
-radial_mode = parameters(1);
-azimuthal_mode = parameters(2);
 
 % Truncation angle
 if length(parameters) > 6
-   truncation_angle = parameters(7);
+    truncation_angle = parameters(7);
 else
-   truncation_angle = 90;
+    truncation_angle = 90;
 end
 
 % Offset of focal point from coordinate origin
 if length(parameters) > 9
-   offset = parameters(8:10);
+    offset = parameters(8:10);
+    if any(abs(parameters(8:9))>0)
+        warning('ott:bsc_pointmatch_farfield:offsets', ...
+            ['Beam offsets with x and y components cannot be ' ...
+             'axi-symmetric, beam symmetry is now off, and the ' ...
+             'calculation will be much slower. It is highly recommended ' ...
+             'that a combination of rotations and translations are ' ...
+             'used on BSCs instead.']);
+        axisymmetry=0;
+    end
 else
-   offset = [];
+    offset = [];
 end
 
-% degree and order of all modes
-total_modes = nmax^2 + 2*nmax;
-[nn,mm] = combined_index((1:total_modes)');
-
-if axisymmetry
-    nn = sort([ 1:nmax 1:nmax ]');
-    mm = ((-1).^(1:(2*nmax)))' + azimuthal_mode;
-    
-    removeels=find(nn<abs(mm));
-    nn(removeels)=[];
-    mm(removeels)=[];
-    
+aperture_function=0;
+if numel(varargin)>0
+    for ii=1:length(varargin)
+        
+        switch class(varargin{ii})
+            case 'char'
+                switch lower(varargin{ii})
+                    case {'sin','sintheta'}
+                        aperture_function=2;
+                    case {'tan','tantheta'}
+                        aperture_function=0;
+                    case {'radial'}
+                        radial=1;
+                    case {'azimuthal'}
+                        azimuthal=1;
+                end
+            otherwise
+                warning('ott:bsc_pointmatch_farfield:input', ...
+                    ['Unrecognised input: ' varargin{ii} '.'])
+        end
+    end
 end
 
 % Grid of points over sphere
@@ -70,13 +145,14 @@ nphi = 2*(nmax + 1);
 if axisymmetry
     ntheta = 2*(nmax+1);
     nphi = 3;
+    if beam_type~=1
+        nphi = paraxial_order+3-rem(paraxial_order,2);
+    end
 end
 
 [theta,phi] = angulargrid(ntheta,nphi);
 
 np = length(theta);
-
-e_field = zeros(2*np,1);
 
 % Find electric field at all points
 % In the far-field, we have:
@@ -90,67 +166,132 @@ e_field = zeros(2*np,1);
 %   (speed_in_medium*kappa));
 
 central_amplitude = 1;
+rw = (k * w0)^2 * tan(theta).^2 / 2;
+dr = (k * w0) * (sec(theta)).^2 / 2;
 
-rw = k^2 * w0^2 * tan(theta).^2 / 2;
-
-% Bi-Gaussian beam
-%rw = rw .* abs(sin(phi)) + 1/9 * rw .* abs(cos(phi));
-%rw = 1/9 * rw .* abs(sin(phi)) + rw .* abs(cos(phi));
-
-%beam_envelope = rw.^(azimuthal_mode/2) .* L(p,l,rw) .* ...
-%       exp(-rw/2  + i*azimuthal_mode*phi);
-L = laguerre(radial_mode,abs(azimuthal_mode),rw);
-beam_envelope = rw.^abs(azimuthal_mode/2) .* L .* exp(-rw/2 + i*azimuthal_mode*phi);
-%beam_envelope = exp(-rw/2);
-
-% Phase shift due to offset?
-% Phase shift is exp(-i*k * offset.rhat)
-if ~isempty(offset)
-    rhat = rtpv2xyzv( ones(size(theta)), zeros(size(theta)), zeros(size(theta)), ones(size(theta)), theta, phi );
-    [offset,rhat] = matchsize(offset,rhat);
-    phase_shift = exp( -i * k * dot(offset,rhat,2) );
-    beam_envelope = beam_envelope .* phase_shift;
+if aperture_function==2
+    
+    % This is a solution to a problem created by lg_mode_w0... we need to
+    % normalise to the "mode size".
+    
+    w = 1.; %Beam waist in normalized units.
+    
+    if  paraxial_order ~= 0
+        invL=1./abs(paraxial_order );
+        z = exp(-(abs(paraxial_order )+2.)*invL);
+        w=-(1.+2*sqrt(invL)+invL); %This is a really good starting guess. It converges within 3 iterations for l=1:10000+
+        
+        wt=-w;
+        
+        while (abs(w-wt)>0.00001)
+            wt=w;
+            expw = exp(w);
+            
+            w=wt-(wt*expw+z)/(expw+wt*expw); %Newton's rule... Usually this kind of method would find the real root i.e. W_0(z)... This finds W_{-1}(z) local to the beam waist of an LG beam.
+            
+        end
+        
+        w = sqrt(-abs(paraxial_order )/2.*w); %Beam waist in normalized units
+        
+    end
+    
+    kw0=sqrt(1+((k * w0)/w./2).^2);
+    rw = 2*(w*kw0)^2 * sin(theta).^2 ;
+    dr = (w*kw0) * abs(cos(theta)) ;
 end
 
+% degree and order of all modes
+total_modes = nmax^2 + 2*nmax;
+[nn,mm] = combined_index((1:total_modes)');
 
+mode_index_vector=[];
+beam_envelope = zeros(np,length(c));
+for ii=1:length(c)
+    radial_mode=initial_mode(ii,1);
+    azimuthal_mode=initial_mode(ii,2);
+    
+    norm_paraxial=sqrt(2*factorial(radial_mode)/(pi*factorial(radial_mode+abs(azimuthal_mode))));
+    L = laguerre(radial_mode,abs(azimuthal_mode),rw);
+    beam_envelope(:,ii) = norm_paraxial.*rw.^abs(azimuthal_mode/2) .* L .* exp(-rw/2 + 1i*azimuthal_mode*phi+1i*pi/2*(radial_mode*2+abs(azimuthal_mode)+1));
+    mode_input_power=sqrt(sum(2*pi*abs(beam_envelope(:,ii)).^2.*sqrt(rw/2).*abs(dr)));
+    aperture_power_normalization=sqrt(sum(2*pi*abs(beam_envelope(:,ii)).^2.*sin(theta)));
+    
+    beam_envelope(:,ii)=c(ii)*beam_envelope(:,ii)/aperture_power_normalization*mode_input_power;
+    
+    mode_index_vector=[mode_index_vector;find(mm==azimuthal_mode+1-max([azimuthal,radial])|mm==azimuthal_mode-1+max([azimuthal,radial]))];
+
+end
+mode_index_vector=unique(mode_index_vector);
+
+beam_envelope=sum(beam_envelope,2);
 outbeam = find(theta<pi*(180-truncation_angle)/180);
 beam_envelope(outbeam) = 0;
 
-% FOR TESTING
-% figure;polar(theta,beam_envelope)
-
+if ~isempty(offset)
+    rhat = rtpv2xyzv( ones(size(theta)), zeros(size(theta)), zeros(size(theta)), ones(size(theta)), theta, phi );
+    [offset,rhat] = matchsize(offset,rhat);
+    phase_shift = exp( -1i * k * dot(offset,rhat,2) );
+    beam_envelope = beam_envelope .* phase_shift;
+end
 Ex = xcomponent * beam_envelope * central_amplitude;
 Ey = ycomponent * beam_envelope * central_amplitude;
 
-Etheta = - Ex .* cos(phi) - Ey .* sin(phi);
-Ephi = - Ex .* sin(phi) + Ey .* cos(phi);
-
-e_field = [ Etheta(:); Ephi(:) ];
-coefficient_matrix = zeros(2*np,2*length(nn));
-
-for n = 1:length(nn)
-
-   % Now find E as appropriate for each mode
-   [B,C,P] = vsh(nn(n),mm(n),theta,phi);
-   coefficient_matrix(:,n) = [ C(:,2); C(:,3) ] * i^(nn(n)+1)/sqrt(nn(n)*(nn(n)+1));
-   coefficient_matrix(:,n+length(nn)) = [ B(:,2); B(:,3) ] * i^nn(n)/sqrt(nn(n)*(nn(n)+1));
-
+if any(azimuthal|radial)
+    Etheta=-radial*xcomponent*beam_envelope * central_amplitude;
+    Ephi=azimuthal*ycomponent*beam_envelope * central_amplitude;
+else
+    Etheta = - Ex .* cos(phi) - Ey .* sin(phi);
+    Ephi = - Ex .* sin(phi) + Ey .* cos(phi);
 end
 
-%tic
-%fprintf(1,'Beginning solution of linear system ... ');
+e_field = [[ Etheta(:); Ephi(:) ]];
+
+if axisymmetry
+    nn=nn(mode_index_vector);
+    mm=mm(mode_index_vector);
+    
+    removeels=find(abs(mm)>paraxial_order+1);
+    nn(removeels)=[];
+    mm(removeels)=[];
+end
+
+coefficient_matrix = zeros(2*np,2*length(nn));
+
+for n = 1:max(nn)
+    ci=find(nn==n);
+    
+    [~,dtY,dpY]= spharm(n,mm(ci),theta,phi);
+    
+    coefficient_matrix(:,ci) = [dpY;-dtY] * 1i^(n+1)/sqrt(n*(n+1));
+    coefficient_matrix(:,ci+length(nn)) = [dtY;dpY] * 1i^(n)/sqrt(n*(n+1));
+    
+end
+
+a=zeros(size(nn));
+b=zeros(size(nn));
+
 expansion_coefficients = coefficient_matrix \ e_field;
 %fprintf(1,'done!\n');
 %toc
+a = expansion_coefficients(1:end/2,:);
+b = expansion_coefficients(1+end/2:end,:);
 
-a = expansion_coefficients(1:end/2);
-b = expansion_coefficients(1+end/2:end);
+p=abs(a).^2+abs(b).^2;
+binaryvector=(p>zero_rejection_level*max(p));
 
-non_zero_elements = find( abs(a) + abs(b) > max(abs(a)+abs(b)) * zero_rejection_level );
-a = a(non_zero_elements);
-b = b(non_zero_elements);
-nn = nn(non_zero_elements);
-mm = mm(non_zero_elements);
+if nargout>2
+    nn=nn(binaryvector);
+    mm=mm(binaryvector);
+    a=a(binaryvector);
+    b=b(binaryvector);
+end
+
+if nargout==2
+    ci=combined_index(nn,mm);
+    
+    mm=sparse(ci,1,b,nmax*(nmax+2),1);
+    nn=sparse(ci,1,a,nmax*(nmax+2),1);
+end
 
 return
 
