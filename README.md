@@ -85,7 +85,8 @@ The package can be refereced by citing the paper describing version
 
 or by directly citing the toolbox
 
-> T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe, Y. Hu, G. Knoener, A. M. Branczyk,
+> T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe, I. C. D. Lenton,
+> Y. Hu, G. Knoener, A. M. Branczyk,
 > "Optical tweezers toolbox", https://github.com/ilent2/ott
 
 Contact us
