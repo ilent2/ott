@@ -12,7 +12,7 @@ function [jn,djn] = sbesselj(n,kr)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:sbesselj:move', ...
+ott_warning('ott:sbesselj:move', ...
     'This file will move to ott.utils.sbesselj');
 ott_warning('internal');
 

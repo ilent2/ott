@@ -10,7 +10,7 @@ function R = rotation_matrix(rot_axis,rot_angle)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:rotation_matrix:move', ...
+ott_warning('ott:rotation_matrix:move', ...
     'This file will move to ott.utils.rotation_matrix');
 
 if nargin < 2

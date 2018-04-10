@@ -11,7 +11,7 @@ function LG = lgmode(p,l,r,phi,z,theta)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:lgmode:move', ...
+ott_warning('ott:lgmode:move', ...
     'This file will move to ott.utils.lgmode');
 
 if nargin<6

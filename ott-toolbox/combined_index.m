@@ -13,7 +13,7 @@ function [out1,out2] = combined_index(in1,in2)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:combined_index:move', ...
+ott_warning('ott:combined_index:move', ...
     'This file will move to ott.utils.combined_index');
 
 % Sanity check
