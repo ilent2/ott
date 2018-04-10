@@ -80,7 +80,7 @@ b=b/pwr;
 
 %% Insert tmatrix here %%
 tic
-if clearT | ~exist('T','var')
+if clearT || ~exist('T','var')
     disp('Calculating T-matrix for cube...')
     T=tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k,k_particle,radius);
 end

@@ -201,6 +201,6 @@ set(gca,'fontsize',16)
 xlabel('x [\lambda]','fontsize',16)
 ylabel('Q_x','fontsize',16)
 M={'large N_{max} coherent (phase shift)','small N_{max} coherent (no shift)','incoherent (no shift)','incoherent (phase shift)'};
-lh=legend(h,M)
+lh=legend(h,M);
 axis tight
 set(lh,'fontsize',16)
