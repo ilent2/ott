@@ -7,6 +7,9 @@ function varargout = matchsize(varargin)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:matchsize:move', ...
+    'This file will move to ott.utils.matchsize');
+
 % Loop over inputs to determine maximum size
 nmax = 0;
 for ii = 1:length(varargin)
