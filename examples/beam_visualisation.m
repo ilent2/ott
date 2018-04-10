@@ -21,13 +21,15 @@ switch beam_type
   case 'gaussian'
 
     % Create a simple Gaussian beam with circular polarisation
-    beam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ]);
+    beam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ], ...
+        'index_medium', 1, 'wavelength0', 1);
 
   case 'lg'
 
     % Create a simple LG03 beam with circular polarisation
-    beam = ott.BscPmGauss('lg', [ 0 3 ], ...
-        'NA', 1.02, 'polarisation', [ 1 1i ]);
+    beam = ott.BscPmGauss('lg', [ 0 5 ], ...
+        'index_medium', 1, 'wavelength0', 1, ...
+        'NA', 1.02, 'polarisation', [ 1 0 ]);
 
   case 'hg'
 
@@ -36,8 +38,9 @@ switch beam_type
     % The beam waist calculation doesn't yet handle HG beams so
     % we estimate the beam waist using a magic formula
     beam_angle = asin(NA/n_medium);
-    w0=1.0/pi/tan(abs(theta/180*pi));
+    w0=1.0/pi/tan(abs(beam_angle/180*pi));
     beam = ott.BscPmGauss('hg', [ 2 3 ], ...
+        'index_medium', 1, 'wavelength0', 1, ...
         'polarisation', polarisation, 'w0', w0);
 
   case 'ig'
@@ -47,17 +50,19 @@ switch beam_type
     % The beam waist calculation doesn't yet handle IG beams so
     % we estimate the beam waist using a magic formula
     beam_angle = asin(NA/n_medium);
-    w0=1.0/pi/tan(abs(theta/180*pi));
+    w0=1.0/pi/tan(abs(beam_angle/180*pi));
     beam = ott.BscPmGauss('ig', [ 2 3 1 2 ], ...
+        'index_medium', 1, 'wavelength0', 1, ...
         'polarisation', polarisation, 'w0', w0);
 
   case 'addition'
 
     % Separation between beams
-    dx = 1.0;
+    dx = 2*pi;
 
     % Create a simple Gaussian beam with circular polarisation
-    beam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ]);
+    beam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ], ...
+        'index_medium', 1, 'wavelength0', 1);
     beam.Nmax = beam.Nmax + ott.utils.ka2nmax(dx);
 
     % Displace the beams by +/- dx/2
@@ -70,7 +75,8 @@ switch beam_type
   case 'scattered'
 
     % Create a simple Gaussian beam with circular polarisation
-    ibeam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ]);
+    ibeam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ], ...
+        'index_medium', 1, 'wavelength0', 1);
 
     % Create a spherical particle to scatter the beam
     tmatrix = ott.Tmatrix.simple('sphere', 1.0, 'wavelength0', 1.0, ...
@@ -78,6 +84,9 @@ switch beam_type
 
     % Scatter the beam to create the final beam
     beam = tmatrix * ibeam;
+
+    % Farfield visualisation requires incomming or outgoing
+    beam = beam.toOutgoing(ibeam);
 
   otherwise
     error('Unsupported beam type specified');
@@ -144,7 +153,7 @@ nt=80;
 [x,y,z]=sphere(nt);
 
 %generate angular points for farfield:
-[~,theta,phi]=xyz2rtp(x,y,z);
+[~,theta,phi]=ott.utils.xyz2rtp(x,y,z);
 
 %find far-field in theta, phi:
 [E,H]=beam.farfield(theta(:),phi(:));
@@ -154,19 +163,19 @@ Ei=reshape(sqrt(sum(real(E).^2,1)),[nt+1,nt+1]);
 
 % Calculate the average phase of the E field
 % This should be similar to the pattern we put on a SLM
-Ep=reshape(sum(arg(E),1)/2.0),[nt+1,nt+1]);
+Ep=reshape(sum(angle(E),1)/2.0,[nt+1,nt+1]);
 
 % Calculate the radiance
 I=reshape(sum(abs(E).^2,1),[nt+1,nt+1]);
 
 figure(3);
-subplot(1, 2, 1);
+subplot(1, 3, 1);
 surf(x,y,z,Ei,'facecolor','interp','edgecolor','none')
 title('E field intensity (farfield)');
-subplot(1, 2, 2);
+subplot(1, 3, 2);
 surf(x,y,z,Ep,'facecolor','interp','edgecolor','none')
 title('E field phase (farfield)');
-subplot(1, 2, 3);
+subplot(1, 3, 3);
 surf(x,y,z,I,'facecolor','interp','edgecolor','none')
 title('radiance (farfield)');
 

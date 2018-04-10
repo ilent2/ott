@@ -33,8 +33,8 @@ k = 2*pi/wavelength;
 radius = linspace(.25,2.5,50)/n_medium;
 
 % Gaussian beam with circular polarisation
-beam = ott.BscPmGauss('NA', 1.02, 'polarisation' [ 1 i ]);
-beam = beam / beam.power();
+beam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ], ...
+    'power', 1.0, 'index_medium', n_medium, 'wavelength0', wavelength);
 
 % Allocate spcae for the arrays
 z = zeros(1, 45);

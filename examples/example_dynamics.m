@@ -42,7 +42,8 @@ particle_type = 'cube';
 
 %% Generate beam
 
-beam = ott.BscPmGauss('NA', 1.25, 'polarisation', [ i 1 ], 'power', 1.0);
+beam = ott.BscPmGauss('NA', 1.25, 'polarisation', [ 1i 1 ], ...
+    'power', 1.0, 'index_medium', n_medium, 'wavelength0', wavelength0);
 
 %% Calculate T-matrix
 
@@ -55,7 +56,7 @@ switch particle_type
         'wavelength0', wavelength0);
 
   case 'cylinder'
-    T = ott.Tmatrix.simple('cylinder', [ 0.5*width, width ] ...
+    T = ott.Tmatrix.simple('cylinder', [ 0.5*width, width ], ...
         'index_medium', n_medium, ...
         'index_particle', n_particle, ...
         'wavelength0', wavelength0);
@@ -97,6 +98,11 @@ Rtotal=zeros(numt*3,3);
 Rw = rotz(0)*roty(0);
 Rtotal([1:3],:) = Rw;
 
+% Ensure Nmax of beam and particle are the same (optimisation)
+Nmax = max(beam.Nmax, T.Nmax);
+T.Nmax = Nmax;
+beam.Nmax = Nmax;
+
 for ii=2:numt
 
     % Translate the beam to the particle
@@ -137,9 +143,11 @@ title('Particle trajectory in principal axes.')
 
 %% Plotting code of rotating and translating sphere
 
+% TODO: Draw cylinder or sphere instead for other particles
+
 % patch of cube
 verticies=[-1,-1,-1;1,-1,-1;1,1,-1;-1,1,-1; ...
-    -1,-1,1;1,-1,1;1,1,1;-1,1,1]*radius/2;
+    -1,-1,1;1,-1,1;1,1,1;-1,1,1]*width/2;
 faces=[1 2 6 5;2 3 7 6;3 4 8 7;4 1 5 8;1 2 3 4;5 6 7 8];
 cdata=zeros(size(verticies));
 
@@ -186,7 +194,7 @@ for ii=1:numt
   zlabel('z');
   grid on 
   axis equal
-  axis([-1,1,-1,1,-1,1]*radius)
+  axis([-1,1,-1,1,-1,1]*width)
   title('Particle trajectory and orientation with time.')
   view(3)
   movieframe(ii)=getframe(1);
