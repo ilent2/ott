@@ -1,11 +1,13 @@
 function [hn,dhn] = sbesselh(n,htype,kr)
-% SBESSELH spherical hankel function hn(kr) of the first kind
-% hn(kr) = sqrt(pi/2kr) Hn+0.5(kr)
+% SBESSELH spherical hankel function hn(kr) of the first or 
+% second kind hn(kr) = sqrt(pi/2kr) Hn+0.5(kr)
 %
-% hn = SBESSELH(n,z) calculates something... TODO: FIXME
+% hn = SBESSELH(n,htype,z) computes the spherical hankel function
+% of degree, n, of kind, htype, and argument, z. 
 %
-% [hn,dzhn] = SBESSELH(n,z) additionally, calculates the derivative
-% of the appropriate Ricatti-Bessel function divided by z.
+% [hn,dzhn] = SBESSELH(n,htype,z) additionally, calculates the 
+% derivative of the appropriate Ricatti-Bessel function divided 
+% by z.
 %
 % See also besselj and bessely.
 %
