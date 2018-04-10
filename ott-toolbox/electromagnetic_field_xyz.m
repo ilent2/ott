@@ -184,9 +184,9 @@ switch behaviour
                 for ii=1:length(vv)
                     index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
-                    E1(:,1)=E1(:,1)+b(index)*sqrt(nn*(nn+1))./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
-                    E1(:,2)=E1(:,2)+(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii)/sqrt(nn*(nn+1));
-                    E1(:,3)=E1(:,3)+(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii)/sqrt(nn*(nn+1));
+                    E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
+                    E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
+                    E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
                     
                     %if nargout>1
                     H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
@@ -206,7 +206,9 @@ switch behaviour
             if verbose
                 nn
             end
-            vv=find(n==nn);
+  
+           Nn = 1/sqrt(nn*(nn+1));
+           vv=find(n==nn);
             
             if ~isempty(vv)
                 [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
@@ -251,6 +253,7 @@ switch behaviour
             if verbose
                 nn
             end
+            Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
             
             if ~isempty(vv)
@@ -261,9 +264,7 @@ switch behaviour
                 [M,PHI]=meshgrid(1i*m(vv),phi_new);
                 
                 expimphi=repmat(exp(M.*PHI),[1,3]);
-                
-                Nn = 1/sqrt(nn*(nn+1));
-                
+                                
                 jnU=jn(indR);
                 djnU=djn(indR);
                 
@@ -303,6 +304,7 @@ switch behaviour
             if verbose
                 nn
             end
+            Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
             
             if ~isempty(vv)
@@ -315,8 +317,6 @@ switch behaviour
                 [M,PHI]=meshgrid(1i*m(vv),phi_new);
                 
                 expimphi=repmat(exp(M.*PHI),[1,3]);
-                
-                Nn = 1/sqrt(nn*(nn+1));
                 
                 jnU=jn(indR);
                 djnU=djn(indR);
@@ -352,6 +352,7 @@ switch behaviour
             if verbose
                 nn
             end
+            Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
             
             if ~isempty(vv)
@@ -363,8 +364,6 @@ switch behaviour
                 [M,PHI]=meshgrid(1i*m(vv),phi_new);
                 
                 expimphi=repmat(exp(M.*PHI),[1,3]);
-                
-                Nn = 1/sqrt(nn*(nn+1));
                 
                 jnU=jn(indR);
                 djnU=djn(indR);
@@ -406,6 +405,7 @@ switch behaviour
             if verbose
                 nn
             end
+            Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
             
             if ~isempty(vv)
@@ -417,8 +417,6 @@ switch behaviour
                 [M,PHI]=meshgrid(1i*m(vv),phi_new);
                 
                 expimphi=repmat(exp(M.*PHI),[1,3]);
-                
-                Nn = 1/sqrt(nn*(nn+1));
                 
                 jnrU=jnr(indR);
                 djnrU=djnr(indR);
@@ -462,6 +460,7 @@ switch behaviour
             if verbose
                 nn
             end
+            Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
             
             if ~isempty(vv)
@@ -474,8 +473,6 @@ switch behaviour
                 [M,PHI]=meshgrid(1i*m(vv),phi_new);
                 
                 expimphi=repmat(exp(M.*PHI),[1,3]);
-                
-                Nn = 1/sqrt(nn*(nn+1));
                 
                 jnU=jn(indR);
                 djnU=djn(indR);
