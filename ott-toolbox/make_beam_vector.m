@@ -1,16 +1,12 @@
 function [newa,newb,newn,newm] = make_beam_vector(olda,oldb,n,m,Nmax)
-% make_beam_vector.m
+% MAKE_BEAM_VECTOR convert output of bsc_* functions to sparse vectors.
 %
-% Convert the n,m,a,b as output by the bsc_* functions to sparse vector
-% a and b with standard packing
+% [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m,Nmax) generates sparse
+% beam vectors a2, b2 using standard packing.  The length of the beam
+% vectors is set by Nmax.
 %
-% Usage:
-% [a2,b2] = make_beam_vector(a1,b1,n,m);
-% [a2,b2] = make_beam_vector(a1,b1,n,m,Nmax);
-%
-% Optional (will not calculate if n2, m2 not requested):
-% [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m);
-% [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m,Nmax);
+% [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m) calculates Nmax from
+% max(n).
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

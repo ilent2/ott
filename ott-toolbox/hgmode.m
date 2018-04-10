@@ -1,8 +1,11 @@
 function HG=hgmode(m,n,x,y,z,theta);
-% hgmode -- HG mode
+%HGMODE calcualtes HG mode
 %
-% Usage:
-% A = hgmode(m,n,x,y);
+% A = HGMODE(m,n,x,y) calcualtes HG mode amplitude for mode [m,n] at
+% location [x,y].
+%
+% A = HGMODE(m,n,x,y,theta) scales the beam waist according to the
+% beam convergence angle theta (in degrees): w0=1/tan(theta).
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

@@ -24,6 +24,10 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Make warnings less obtrusive
+ott_warning('once');
+change_warnings('off');
+
 %Tries to clear T matrix if 1. It is good to make 0 if you want repeated
 %calculations of the same particle.
 clearT=1;
@@ -76,7 +80,7 @@ b=b/pwr;
 
 %% Insert tmatrix here %%
 tic
-if clearT | ~exist('T','var')
+if clearT || ~exist('T','var')
     disp('Calculating T-matrix for cube...')
     T=tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k,k_particle,radius);
 end

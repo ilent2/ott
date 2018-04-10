@@ -1,20 +1,17 @@
 function [T,T2] = tmatrix_pm(Nmax,k_medium,k_particle,shape,parameters)
-% tmatrix_pm.m
-% T-matrix, calculated by point-matching method
+% TMATRIX_PM T-matrix, calculated by point-matching method
 %
-% Usage:
-% T = tmatrix_pm(Nmax,k_medium,k_particle,shape,parameters);
-% or
-% [T,T2] = tmatrix_pm(Nmax,k_medium,k_particle,shape,parameters);
-% where
+% [T,T2] = TMATRIX_PM(Nmax,k_medium,k_particle,shape,parameters);
 % n_medium and n_particle are the wavenumbers in the
 % surrounding medium and the scattering particle,
 % shape and parameters describe the particle geometry
 % (see shapesurface for more detail)
-% T2 is the T matrix giving the internal field
+% T2 is the T matrix giving the internal field.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+ott_warning('internal');
 
 verbose = 0;
 
@@ -156,6 +153,8 @@ end
 if verbose
    fprintf(1,'done!\n');
 end
+
+ott_warning('external');
 
 return
 

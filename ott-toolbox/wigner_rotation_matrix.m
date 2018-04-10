@@ -1,14 +1,12 @@
 function [D,D2] = wigner_rotation_matrix( nmax, R )
-% wigner_rotation_matrix.m
-% Rotation matrix for rotation of spherical harmonics or T-matrices
+% WIGNER_ROTATION_MATRIX rotation matrix for rotation of spherical
+% harmonics or T-matrices.
 %
-% Usage:
-% D = wigner_rotation_matrix(nmax,R)
-% [D,D2] = wigner_rotation_matrix(nmax,R)
-% where
-% R = cartesian coordinate rotation matrix
-% D = wigner D matrix, a' = D a
-% D2 = double matrix, D2 = [ D 0; 0 D], so [a';b'] = D [a;b]
+% D = WIGNER_ROTATION_MATRIX(nmax,R) calculates the rotation matrix
+% for the VSH given a coordinate rotation matrix R.  Usage: a' = D a.
+%
+% [D,D2] = wigner_rotation_matrix(nmax,R) additionally, calculates
+% the double matrix D2 = [ D 0; 0 D], so [a';b'] = D [a;b].
 %
 % D (and D2) are sparse
 %
@@ -20,7 +18,9 @@ function [D,D2] = wigner_rotation_matrix( nmax, R )
 % See LICENSE.md for information about using/distributing this file.
 
 %warning('ott:wigner_rotation_matrix:move', ...
-    'this function will move to ott.utils.wigner_rotation_matrix');
+%    'this function will move to ott.utils.wigner_rotation_matrix');
+
+ott_warning('internal');
 
 % Transform cartesian rotation matrix to spinor(?) rotation matrix
 %
@@ -102,3 +102,5 @@ for n = 2:nmax
     DD = DDD;
     
 end
+
+ott_warning('external');

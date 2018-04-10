@@ -1,14 +1,16 @@
 function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
-% rtpv2xyzv.m : convert a vector field of vector values at
-%               points from spherical to cartesian
+% RTPV2XYZV spherical to cartiesn vector field conversion
 %
-% Usage:
-% [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
-% or
+% [xv,yv,zv,x,y,z] = RTPV2XYZV(rv,thetav,phiv,r,theta,phi)
+%
 % [vec_cart,pos_cart] = rtpv2xyzv(vec,pos)
+%
+% See also rtp2xyz and xyzv2rtpv.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+ott_warning('internal');
 
 if nargin < 6
    r = thetav(:,1);
@@ -40,6 +42,8 @@ if nargout < 3
    xv = [ xv yv zv ];
    yv = [ x y z ];
 end
+
+ott_warning('external');
 
 return
 

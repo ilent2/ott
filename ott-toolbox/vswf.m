@@ -1,21 +1,17 @@
 function [M,N,M2,N2,M3,N3] = vswf(n,m,kr,theta,phi,htype)
-% vswf.m : Vector spherical wavefunctions: M_k, N_k.
+% VSWF vector spherical wavefunctions: M_k, N_k.
 %
-% Usage:
-% [M,N] = vswf(n,m,kr,theta,phi,type)
-% or
-% [M1,N1,M2,N2,M3,N3] = vswf(n,m,kr,theta,phi)
-% or
-% [M1,N1,M2,N2,M3,N3] = vswf(n,kr,theta,phi)
-%
-% where
+% [M1,N1,M2,N2,M3,N3] = VSWF(n,m,kr,theta,phi) calculates the
+% outgoing M1,N1, incomming M2,N2 and regular M3,N3 VSWF.
 % kr, theta, phi are vectors of equal length, or scalar.
-% type = 1 -> outgoing solution - h(1)
-% type = 2 -> incoming solution - h(2)
-% type = 3 -> regular solution - j (ie RgM, RgN)
 %
-% Scalar n for the moment. If no type or m specified will calculate for all
-% types and m.
+% [M,N] = VSWF(n,m,kr,theta,phi,type) calculates only the
+% requested VSWF, where type is
+%     1 -> outgoing solution - h(1)
+%     2 -> incoming solution - h(2)
+%     3 -> regular solution - j (ie RgM, RgN)
+%
+% VSWF(n, kr, theta, phi) if m is omitted, will calculate for all m.
 %
 % M,N are arrays of size length(vector_input,m) x 3
 %
@@ -30,6 +26,8 @@ function [M,N,M2,N2,M3,N3] = vswf(n,m,kr,theta,phi,htype)
 % These must all be of equal length if non-scalar
 % and for good measure, we expand any scalar ones
 % to match the others in length
+
+ott_warning('internal');
 
 if length(n)>1
     error('n must be scalar in this version')
@@ -154,6 +152,7 @@ switch(htype)
         end
 end
 
+ott_warning('external');
 
 return
 

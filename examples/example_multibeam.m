@@ -1,7 +1,13 @@
-%code to calculate multiple (identical) beams
+% Calculates the force from multiple (identical) beams positioned at
+% different locations.  Genrates a figure which compares forces calculated
+% using incoherent beams and two methods of adding coherent beams.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+% Make warnings less obtrusive
+ott_warning('once');
+change_warnings('off');
 
 n_relative = 1.2; %relative refractive index = 1.2
 r_particle = 1;   %particle radius is 1 wavelength in the medium
@@ -197,6 +203,6 @@ set(gca,'fontsize',16)
 xlabel('x [\lambda]','fontsize',16)
 ylabel('Q_x','fontsize',16)
 M={'large N_{max} coherent (phase shift)','small N_{max} coherent (no shift)','incoherent (no shift)','incoherent (phase shift)'};
-lh=legend(h,M)
+lh=legend(h,M);
 axis tight
 set(lh,'fontsize',16)

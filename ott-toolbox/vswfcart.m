@@ -1,17 +1,16 @@
 function [M,N,M2,N2,M3,N3] = vswfsph2cart(n,m,kr,theta,phi,htype)
-% vswfsph2cart.m : vector spherical harmonics
-%                  spherical coordinate input, cartesian output
+% VSWFSPH2CART vector spherical harmonics spherical coordinate input,
+% cartesian output.
 %
-% Usage:
-% [M,N] = vswfsph2cart(n,m,kr,theta,phi,type)
-% or
-% [M1,N1,M2,N2,M3,N3] = vswfsph2cart(n,m,kr,theta,phi)
-%
-% where
+% [M1,N1,M2,N2,M3,N3] = vswfsph2cart(n,m,kr,theta,phi) calculates the
+% outgoing M1,N1, incomming M2,N2 and regular M3,N3 VSWF.
 % kr, theta, phi are vectors of equal length, or scalar.
-% type = 1 -> outgoing solution - h(1)
-% type = 2 -> incoming solution - h(2)
-% type = 3 -> regular solution - j (ie RgM, RgN)
+%
+% [M,N] = VSWFSPH2CART(n,m,kr,theta,phi,type) calculates only the
+% requested VSWF, where type is
+%     1 -> outgoing solution - h(1)
+%     2 -> incoming solution - h(2)
+%     3 -> regular solution - j (ie RgM, RgN)
 %
 % Scalar n,m for the moment.
 % M,N are arrays of size length(vector_input) x 3
@@ -23,6 +22,8 @@ function [M,N,M2,N2,M3,N3] = vswfsph2cart(n,m,kr,theta,phi,htype)
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+ott_warning('internal');
 
 
 if nargin < 6
@@ -102,5 +103,7 @@ My = Mr .* r_hat_y + Mtheta .* theta_hat_y + Mphi .* phi_hat_y;
 Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
 N3 = [ Mx My Mz ];
 end
+
+ott_warning('external');
 
 return

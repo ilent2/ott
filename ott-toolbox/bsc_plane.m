@@ -1,19 +1,13 @@
-function [nn,mm,a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
-% Finds VSWF representation of plane wave, output BSCs producing a plane
-% with amplitude determined by the field input. If a vector input then a
-% and b are matrices.
+function [nn,mm,a,b] = bsc_plane(nmax,~,theta,phi,Etheta,Ephi)
+%BSC_PLANE finds beam coefficients for plane wave
 %
-% Usage:
-% [n,m,a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
-% 
-% or
-%
-% [a,b] = bsc_plane(nmax,lambda,theta,phi,Etheta,Ephi)
+% [nn,mm,a,b] = BSC_PLANE(Nmax, ~, theta, phi, Etheta, Ephi)
+% output BSCs producing a plane with amplitude determined by [Etheta,Ephi].
+% If theta, phi, Etheta, Ephi are vector inputs then a and b are
+% matricies, each colum corresponding to a different input.
 %
 % theta and phi (in radians) give the direction of propagation
 % of the plane wave. +z direction is theta = 0, phi = any value
-%
-% NOTE: lambda will be leaving this code in a future release.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -24,11 +18,13 @@ Etheta=Etheta(:);
 Ephi=Ephi(:);
 
 if any(theta>pi)
-    warning('ott:bsc_plane:thetatoobig', ...
+    ott_warning('ott:bsc_plane:thetatoobig', ...
         ['Theta is larger than PI, treating all elements as ' ...
          'angles in degrees.'])
     theta=theta/180*pi;
 end
+
+ott_warning('internal');
 
 %calculate the mode indices we are going to find.
 [nn,mm]=combined_index([1:nmax*(nmax+2)].');
@@ -74,4 +70,7 @@ if nargout==2
     nn=sparse(a);
     mm=sparse(b);
 end
+
+ott_warning('external');
+
 return

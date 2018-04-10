@@ -1,14 +1,15 @@
 function [T,T2,a,b] = tmatrix_mie(Nmax,k_medium,k_particle,radius)
-% tmatrix_mie.m : Mie scattering and internal coefficients for uniform
-%                 sphere, arranged as a sparse T-matrix.
+% TMATRIX_MIE Mie scattering and internal coefficients for uniform
+% sphere, arranged as a sparse T-matrix.
 %
-% Usage:
-% [T,T2] = tmatrix_mie(Nmax,k_medium,k_particle,radius)
+% [T,T2] = TMATRIX_MIE(Nmax,k_medium,k_particle,radius)
 % T is the T-matrix of scattered modes. T2 is the T-matrix of internal
-% modes
+% modes.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+ott_warning('internal');
 
 n=[1:Nmax];
 
@@ -38,3 +39,5 @@ if nargout>1
     T2=sparse([1:2*(Nmax^2+2*Nmax)],[1:2*(Nmax^2+2*Nmax)],[c(indexing);d(indexing)]);
     
 end
+
+ott_warning('external');

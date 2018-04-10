@@ -17,6 +17,7 @@ function B = change_nmax(A,Nmax)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('internal');
 
 warning_error_level = 1e-6;
 
@@ -80,8 +81,10 @@ magB = full(sum(sum(abs(B).^2)));
 
 apparent_error = abs( magA - magB )/magA;
 
+ott_warning('external');
+
 if apparent_error > warning_error_level
-    warning('ott:change_nmax:tol', ...
+    ott_warning('ott:change_nmax:tol', ...
         ['Apparent error of ' num2str(apparent_error)]);
 end
 

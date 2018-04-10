@@ -1,13 +1,10 @@
 function [B,C,P] = vsh(n,m,theta,phi)
-% vsh.m : Vector spherical harmonics. If m not specified will output for
-%           all m. Vector m input allowed.
+% VSH calculate vector spherical harmonics
 %
-% Usage:
-% [B,C,P] = vsh(n,m,theta,phi)
-% or
-% [B,C,P] = vsh(n,theta,phi)
+% [B,C,P] = VSH(n,m,theta,phi) calculates vector spherical harmonics
+% for the locations theta, phi.  Vector m allowed.  Scalar n for the moment.
 %
-% Scalar n for the moment.
+% [B,C,P] = VSH(n,theta,phi) outputs for all possible m.
 %
 % If scalar m: B,C,P are arrays of size length(theta,phi) x 3
 % If vector m: B,C,P are arrays of size length((theta,phi),m) x 3
@@ -19,6 +16,8 @@ function [B,C,P] = vsh(n,m,theta,phi)
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+ott_warning('internal');
 
 if length(n)>1
     error('n must be a scalar in this version')
@@ -46,6 +45,8 @@ B = [Z,Ytheta,Yphi];
 C = [Z,Yphi,-Ytheta];
 
 P = [Y,Z,Z];
+
+ott_warning('external');
 
 return
 

@@ -1,16 +1,11 @@
 function [force,torque,spin] = forcetorque(n,m,a,b,p,q)
-% forcetorque.m
+% FORCETORQUE finds optical force and torque
 %
-% Finds optical force and torque
-%
-% Usage:
-% force = forcetorque(n,m,a,b,p,q)
-% or
-% [force,torque] = forcetorque(n,m,a,b,p,q)
-% or
-% [force,torque,spin] = forcetorque(n,m,a,b,p,q)
-% or
-% [force,torque,spin] = forcetorque(n,m,ab,pq)
+% [force,torque,spin] = FORCETORQUE(n,m,a,b,p,q) and
+% [force,torque,spin] = FORCETORQUE(n,m,ab,pq) calculate force, torque
+% and spin between incident ab beam and scattered pq beam.
+% Beams can be specified as separate column vectors or combined vectors
+% ab = [a;b], pq = [p;q], where a,b,p,q are the beam coefficients.
 %
 % What units are you using for a,b,p,q?
 % If you have simple units like (using incoming/outgoing):
@@ -28,9 +23,11 @@ function [force,torque,spin] = forcetorque(n,m,a,b,p,q)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:forcetorque:depreciated', ...
+ott_warning('ott:forcetorque:depreciated', ...
     ['forcetorque.m will be replaced with ' ...
     'force_torque_farsund.m in ott1.4.']);
+
+ott_warning('internal');
 
 % Uncomment one of the following:
 incidentscattered = 1; % YES, I AM USING INCIDENT-SCATTERED FORMULATION
@@ -102,6 +99,7 @@ force(2) = forcez(n2,m2,a2,b2) - forcez(n2,m2,p2,q2);
 torque(2) = sum( m2.*( abs(a2).^2 + abs(b2).^2 - abs(p2).^2 - abs(q2).^2 ) );
 spin(2) = spinz(n2,m2,a2,b2) - spinz(n2,m2,p2,q2);
 
+ott_warning('external');
 
 return
 

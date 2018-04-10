@@ -1,14 +1,14 @@
 function T = tmatrix_ebcm_axisym(Nmax,k_medium,k_particle,rho,z);
-% tmatrix_ebcm_axisym.m : extendended boundary condition method for
-%                         axisymmetric particles.
+% TMATRIX_EBCM_AXISYM calculate T-matrix using EBCM for axissymetric particles.
 %
-% Usage:
-% T = tmatrix_ebcm_axisym(Nmax,k_medium,k_particle,rho,z)
+% T = TMATRIX_EBCM_AXISYM(Nmax,k_medium,k_particle,rho,z)
 % rho is the cylindrical r coodinate of a corner or feature.
 % z is the cylindrical z coordinate of a corner or feature.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+ott_warning('internal');
 
 verbose=0;
 % %%%% TEST VALUES
@@ -229,3 +229,5 @@ if verbose
     figure
     plot(sum(abs(S).^2));ylim([.95,1.05])
 end
+
+ott_warning('external');

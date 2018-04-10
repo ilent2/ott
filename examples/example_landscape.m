@@ -12,6 +12,10 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Make warnings less obtrusive
+ott_warning('once');
+change_warnings('off');
+
 if exist ("OCTAVE_VERSION", "builtin")
     warning('ott:example_landscape:function','This code must be modified to run in octave, take the function defined at the bottom of this script and move it to above where it is first called.')
 end

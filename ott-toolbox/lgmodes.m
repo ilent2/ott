@@ -1,8 +1,7 @@
 function A = lgmodes(r,phi,E,maxp,maxl)
-% lgmodes -- Decomposition of paraxial beam into LG modes
+% LGMODES decomposition of paraxial beam into LG modes
 %
-% Usage:
-% A = lgmodes(r,phi,E,maxp,maxl);
+% A = LGMODES(r,phi,E,maxp,maxl);
 % where
 % r is in units of the beam width,
 % E is in arbitrary units,
@@ -21,11 +20,13 @@ function A = lgmodes(r,phi,E,maxp,maxl)
 
 % Is E a vector or a matrix?
 % For now, assume that r,phi,E are column vectors
-warning('ott:lgmodes:depreciated', ...
+ott_warning('ott:lgmodes:depreciated', ...
     ['This function was originally meant to find the superposition of ' ...
     'modes for BSC codes, this is no longer necessary as ' ...
     'bsc_pointmatch_farfield.m uses an efficient implementation of ' ...
     'HG and IG modes. This file will be removed from ott1.4.'])
+
+ott_warning('internal');
 
 number_of_modes = ( maxp + 1 ) * ( 2*maxl + 1 );
 number_of_points = length(r);
@@ -50,5 +51,7 @@ A = coefficient_matrix\E;
 %[p,l,A]
 
 A = reshape(A,maxp+1,2*maxl+1);
+
+ott_warning('external');
 
 return

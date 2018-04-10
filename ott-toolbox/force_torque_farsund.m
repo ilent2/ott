@@ -23,8 +23,10 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=force_torque_farsund(n,m,a,b,p,q)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:force_torque_farsund:depreciated', ...
+ott_warning('ott:force_torque_farsund:depreciated', ...
     'force_torque_farsund.m file will replace forcetorque.m in ott1.4.');
+
+ott_warning('internal');
 
 fx=0;
 fy=0;
@@ -144,3 +146,4 @@ if nargout <= 3
     fz=[sx;sy;sz];
 end
 
+ott_warning('external');

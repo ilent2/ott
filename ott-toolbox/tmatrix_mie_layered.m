@@ -1,9 +1,8 @@
 function [t,t2,a,b] = tmatrix_mie_layered(nmax,k_medium,k_particle,radius)
-% tmatrix_mie.m : mie scattering and internal coefficients for a uniform or
-%                 layered sphere arranged as a sparse t-matrix.
+% TMATRIX_MIE_LAYERED mie scattering and internal coefficients for a
+% uniform or layered sphere arranged as a sparse t-matrix.
 %
-% usage:
-% [t,t2] = tmatrix_mie(nmax,k_medium,k_particle,radius)
+% [t,t2] = TMATRIX_MIE(nmax,k_medium,k_particle,radius)
 % k_medium is the wavenumber in the surrounding medium.
 % k_particle is the wavenumber in the layers starting at the core going to
 %   the outermost layer.
@@ -19,7 +18,10 @@ function [t,t2,a,b] = tmatrix_mie_layered(nmax,k_medium,k_particle,radius)
 % "Improved recursive algorithm for light scattering by a multilayered
 % sphere", Wen Yang, Applied Optics 42(9), 2003
 %
-% PACKAGE_INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
+ott_warning('internal');
 
 k_layer=[k_particle,k_medium]; %medium is on the outside...
 n_layer=k_layer/2/pi;
@@ -104,6 +106,8 @@ indexing=combined_index(1:nmax^2+2*nmax)';
 
 t=sparse([1:2*(nmax^2+2*nmax)],[1:2*(nmax^2+2*nmax)],[a(indexing);b(indexing)]);
 
+ott_warning('external');
+
 if nargout>1
     
     r_0=(jN(:,lastElement)./jN(:,lastElement-1));
@@ -111,7 +115,7 @@ if nargout>1
     d = r_0.*(d3_1 - d1_1 )  ./ (ha_0-m*d3_1);
     c = r_0.*(d3_1 - d1_1 )  ./ (m*hb_0 - d3_1);
     
-    warning('ott:tmatrix_mie_layered:internalcoefficientwarning', ...
+    ott_warning('ott:tmatrix_mie_layered:internalcoefficientwarning', ...
         ['The internal coefficients are for the outermost layer only...' ...
          ' the real ones are only defined for each layer.']);
     t2=sparse([1:2*(nmax^2+2*nmax)],[1:2*(nmax^2+2*nmax)],[c(indexing);d(indexing)]);

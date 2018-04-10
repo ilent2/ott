@@ -1,13 +1,15 @@
 function [rtp,n,ds]=axisym_boundarypoints(Nmax,rho,z);
-% axisym_boundarypoints.m : Calculates boundary points for surface integral
-%                           given a perimeter in r, theta_sp and the
-%                           normals n. Is in spherical coordinates.
+%AXISYM_BOUNDARYPOINTS calculates boundary points for surface integral
 %
-% Usage:
-% [rhoout,zout]=axisym_boundarypoints(rho,z,n);
+% [rtp,n,ds] = AXISYM_BOUNDARYPOINTS(Nmax, rho, z) calculates boundary
+% points using the perimiter described by radial points rho and axial
+% points z.  rtp are the spherical coordines, n are the normals, and
+% ds are the areas of the axisymetric conic regions.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+ott_warning('internal');
 
 % %%%%test values
 % ntheta=500;
@@ -82,3 +84,4 @@ dst(end,3)=(z(end)-mean(zout(end-1:end)));
 ds=(rtp(:,1).*sqrt(sum(abs(dst).^2,2)).*sin(rtp(:,2))); 
 %ds=sqrt(sum(abs(dst).^2,2));
 
+ott_warning('external');

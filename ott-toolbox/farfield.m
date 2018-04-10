@@ -1,15 +1,14 @@
 function [E,H] = farfield(n,m,a,b,p,q,theta,phi)
-% farfield.m
-% Finds far field given VSWF expansion coefficients
+%FARFIELD finds far field given VSWF expansion coefficients
 %
-% usage
-% E = farfield(n,m,a,b,p,q,theta,phi)
-%
-% each row of E is the field (in spherical coordinates) in the
+% [E,H] = FARFIELD(n,m,a,b,p,q,theta,phi) calculates far fields.
+% Each row of E,H is the field (in spherical coordinates) in the
 % (theta,phi) direction (assuming a distance scaling factor of kr)
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+ott_warning('internal');
 
 [theta,phi] = matchsize(theta,phi);
 
@@ -68,5 +67,7 @@ H=[zeros(size(Htheta)),Htheta,Hphi];
 
 % SI-ify units of H
 H = H * -1i;
+
+ott_warning('external');
 
 return

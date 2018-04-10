@@ -1,13 +1,12 @@
 function [A,B,C] = translate_z(nmax,z)
-% translate_z.m - translation of VSWFs along z axis.
+% TRANSLATE_Z calculates translation matricies for translation of
+% VSWFs along z axis.
 %
-% Usage:
-% [A,B] = translate_z(nmax,z);
-% [A,B,C] = translate_z(nmax,z);
-% where
-% M' = A M + B N; N' = B M + A N
+% [A,B] = translate_z(nmax,z) calculates translation matricies.
+% The matricies are use as: M' = A M + B N; N' = B M + A N.
 %
-% C are the scalar SWF translation coefficients in 3d packed form.
+% [A,B,C] = translate_z(nmax,z) additionally, calculates C,
+% the scalar SWF translation coefficients in 3d packed form.
 %
 % A and B are sparse matrices, since only m' = m VSWFs couple
 %
@@ -30,6 +29,8 @@ function [A,B,C] = translate_z(nmax,z)
 % chapter 5 (pp. 81-96) % in F. Moreno and F. Gonzalez (eds), "Light
 % Scattering from Microstructures", Lecture Notes in Physics 534,
 % Springer-Verlag, Berlin, 2000
+
+ott_warning('internal');
 
 if numel(z)>1
     A=cell(numel(z),1);
@@ -171,5 +172,7 @@ A=sparse(toIndexy,toIndexx,A,nmax*(nmax+2),nmax*(nmax+2));
 if nargout>2
     C=C(1:nmax+1,1:nmax+1,1:nmax+1);
 end
+
+ott_warning('external');
 
 return
