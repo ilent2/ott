@@ -16,6 +16,8 @@ function [T,T2] = tmatrix_pm(Nmax,k_medium,k_particle,shape,parameters)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('internal');
+
 verbose = 0;
 
 % Do we have a shape rotationally symmetric about the z-axis?
@@ -156,6 +158,8 @@ end
 if verbose
    fprintf(1,'done!\n');
 end
+
+ott_warning('external');
 
 return
 

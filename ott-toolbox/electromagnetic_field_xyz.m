@@ -62,13 +62,15 @@ if numel(varargin)>0
                             dfield=1;
                         end
                     otherwise
-                      warning('ott:electromagnetic_field_xyz:input', ...
+                      ott_warning('ott:electromagnetic_field_xyz:input', ...
                           ['Unrecognised input: ' varargin{ii} '.'])
                 end
             otherwise
         end
     end
 end
+
+ott_warning('internal');
 
 lengthnm=size(nm,1)/2;
 
@@ -566,7 +568,7 @@ if behaviour==7||behaviour==4||behaviour==5||behaviour==6
     structureoutput.Einternal=[squeeze(Ex3),squeeze(Ey3),squeeze(Ez3)];
     structureoutput.Hinternal=[squeeze(Hx3),squeeze(Hy3),squeeze(Hz3)];
     
-    warning('ott:electromagnetic_field_xyz:internalfield', ...
+    ott_warning('ott:electromagnetic_field_xyz:internalfield', ...
         'Must scale grid for internal fields by relative refractive index.')
     
 end
@@ -627,5 +629,7 @@ if behaviour==1|behaviour==3|behaviour==5|behaviour==7
     structureoutput.Hincident=[squeeze(Hx1),squeeze(Hy1),squeeze(Hz1)];
     
 end
+
+ott_warning('external');
 
 return

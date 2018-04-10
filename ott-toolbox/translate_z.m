@@ -31,6 +31,8 @@ function [A,B,C] = translate_z(nmax,z)
 % Scattering from Microstructures", Lecture Notes in Physics 534,
 % Springer-Verlag, Berlin, 2000
 
+ott_warning('internal');
+
 if numel(z)>1
     A=cell(numel(z),1);
     B=A;
@@ -171,5 +173,7 @@ A=sparse(toIndexy,toIndexx,A,nmax*(nmax+2),nmax*(nmax+2));
 if nargout>2
     C=C(1:nmax+1,1:nmax+1,1:nmax+1);
 end
+
+ott_warning('external');
 
 return

@@ -52,6 +52,8 @@ kappa = medium_refractive_index^2;
 radial_mode = parameters(1);
 azimuthal_mode = parameters(2);
 
+ott_warning('internal');
+
 %% mode selection
 switch beam_type
     case 0
@@ -100,11 +102,13 @@ else
     truncation_angle = 90;
 end
 
+ott_warning('external');
+
 % Offset of focal point from coordinate origin
 if length(parameters) > 9
     offset = parameters(8:10);
     if any(abs(parameters(8:9))>0)
-        warning('ott:bsc_pointmatch_farfield:offsets', ...
+        ott_warning('ott:bsc_pointmatch_farfield:offsets', ...
             ['Beam offsets with x and y components cannot be ' ...
              'axi-symmetric, beam symmetry is now off, and the ' ...
              'calculation will be much slower. It is highly recommended ' ...
@@ -133,11 +137,13 @@ if numel(varargin)>0
                         azimuthal=1;
                 end
             otherwise
-                warning('ott:bsc_pointmatch_farfield:input', ...
+                ott_warning('ott:bsc_pointmatch_farfield:input', ...
                     ['Unrecognised input: ' varargin{ii} '.'])
         end
     end
 end
+
+ott_warning('internal');
 
 % Grid of points over sphere
 ntheta = (nmax + 1);
@@ -292,6 +298,8 @@ if nargout==2
     mm=sparse(ci,1,b,nmax*(nmax+2),1);
     nn=sparse(ci,1,a,nmax*(nmax+2),1);
 end
+
+ott_warning('external');
 
 return
 

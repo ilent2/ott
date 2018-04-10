@@ -13,6 +13,10 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Make warnings less obtrusive
+ott_warning('once');
+change_warnings('off');
+
 %% set up
 %first off. which mode do we want?
 % we want hg_(3,2). what's the order?

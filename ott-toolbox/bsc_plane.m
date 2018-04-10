@@ -24,11 +24,13 @@ Etheta=Etheta(:);
 Ephi=Ephi(:);
 
 if any(theta>pi)
-    warning('ott:bsc_plane:thetatoobig', ...
+    ott_warning('ott:bsc_plane:thetatoobig', ...
         ['Theta is larger than PI, treating all elements as ' ...
          'angles in degrees.'])
     theta=theta/180*pi;
 end
+
+ott_warning('internal');
 
 %calculate the mode indices we are going to find.
 [nn,mm]=combined_index([1:nmax*(nmax+2)].');
@@ -74,4 +76,7 @@ if nargout==2
     nn=sparse(a);
     mm=sparse(b);
 end
+
+ott_warning('external');
+
 return

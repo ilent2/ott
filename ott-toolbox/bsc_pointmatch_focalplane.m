@@ -19,9 +19,11 @@ function [nn,mm,a,b] = bsc_pointmatch_focalplane( nmax, ~, parameters )
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:bsc_pointmatch_focalplane:tightfocus', ...
+ott_warning('ott:bsc_pointmatch_focalplane:tightfocus', ...
     ['This function is not recommended for accurate modelling ' ...
     'of tightly focused beams, use bsc_pointmatch_farfield instead']);
+
+ott_warning('internal');
 
 zero_rejection_level = 1e-8;
 
@@ -157,6 +159,8 @@ for n = 1:length(nn)
    end
    
 end
+
+ott_warning('external');
 
 return
 

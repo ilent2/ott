@@ -21,6 +21,8 @@ function [t,t2,a,b] = tmatrix_mie_layered(nmax,k_medium,k_particle,radius)
 %
 % PACKAGE_INFO
 
+ott_warning('internal');
+
 k_layer=[k_particle,k_medium]; %medium is on the outside...
 n_layer=k_layer/2/pi;
 radius=[radius,radius(end)]; %radius for the medium layer is the "same" as final layer.
@@ -104,6 +106,8 @@ indexing=combined_index(1:nmax^2+2*nmax)';
 
 t=sparse([1:2*(nmax^2+2*nmax)],[1:2*(nmax^2+2*nmax)],[a(indexing);b(indexing)]);
 
+ott_warning('external');
+
 if nargout>1
     
     r_0=(jN(:,lastElement)./jN(:,lastElement-1));
@@ -111,7 +115,7 @@ if nargout>1
     d = r_0.*(d3_1 - d1_1 )  ./ (ha_0-m*d3_1);
     c = r_0.*(d3_1 - d1_1 )  ./ (m*hb_0 - d3_1);
     
-    warning('ott:tmatrix_mie_layered:internalcoefficientwarning', ...
+    ott_warning('ott:tmatrix_mie_layered:internalcoefficientwarning', ...
         ['The internal coefficients are for the outermost layer only...' ...
          ' the real ones are only defined for each layer.']);
     t2=sparse([1:2*(nmax^2+2*nmax)],[1:2*(nmax^2+2*nmax)],[c(indexing);d(indexing)]);

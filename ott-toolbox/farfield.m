@@ -11,6 +11,8 @@ function [E,H] = farfield(n,m,a,b,p,q,theta,phi)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('internal');
+
 [theta,phi] = matchsize(theta,phi);
 
 [theta_new,~,indY]=unique(theta);
@@ -68,5 +70,7 @@ H=[zeros(size(Htheta)),Htheta,Hphi];
 
 % SI-ify units of H
 H = H * -1i;
+
+ott_warning('external');
 
 return

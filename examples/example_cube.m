@@ -24,6 +24,10 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Make warnings less obtrusive
+ott_warning('once');
+change_warnings('off');
+
 %Tries to clear T matrix if 1. It is good to make 0 if you want repeated
 %calculations of the same particle.
 clearT=1;

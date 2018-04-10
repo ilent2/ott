@@ -10,6 +10,8 @@ function [z,kz] = axial_equilibrium(T,a,b,z)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('internal');
+
 if nargin < 4
     z = 0;
 end
@@ -129,5 +131,7 @@ if length(rtsi)
 else
     error('No stable equilibrium near z!')
 end
+
+ott_warning('external');
 
 return

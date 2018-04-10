@@ -18,6 +18,8 @@ function [T,T2] = tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k_medium,k_part
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('internal');
+
 verbose = 0;
 shape=4;
 
@@ -176,6 +178,8 @@ end
 if verbose
    fprintf(1,'done!\n');
 end
+
+ott_warning('external');
 
 end
 

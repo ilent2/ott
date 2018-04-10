@@ -30,10 +30,12 @@ function [nn,mm,a,b] = bsc_bessel_farfield( nmax, beam_type, parameters )
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:bsc_bessel_farfield:depreciated', ...
+ott_warning('ott:bsc_bessel_farfield:depreciated', ...
     ['This function will be replaced by bsc_bessel.m in ott1.4 which ' ...
      'uses an analytical solution for bessel beams instead of ' ...
      'pointmatching.']);
+
+ott_warning('internal');
 
 axisymmetry = 1;
 %axisymmetry = 0;
@@ -226,6 +228,8 @@ a = a(non_zero_elements);
 b = b(non_zero_elements);
 nn = nn(non_zero_elements);
 mm = mm(non_zero_elements);
+
+ott_warning('external');
 
 return
 

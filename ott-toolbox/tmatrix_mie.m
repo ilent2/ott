@@ -10,6 +10,8 @@ function [T,T2,a,b] = tmatrix_mie(Nmax,k_medium,k_particle,radius)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('internal');
+
 n=[1:Nmax];
 
 m = k_particle/k_medium;
@@ -38,3 +40,5 @@ if nargout>1
     T2=sparse([1:2*(Nmax^2+2*Nmax)],[1:2*(Nmax^2+2*Nmax)],[c(indexing);d(indexing)]);
     
 end
+
+ott_warning('external');

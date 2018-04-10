@@ -3,6 +3,10 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Make warnings less obtrusive
+ott_warning('once');
+change_warnings('off');
+
 % Specify refractive indices
 n_medium = 1.34;
 n_particle = 1.59;

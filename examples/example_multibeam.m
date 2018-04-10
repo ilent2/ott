@@ -3,6 +3,10 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Make warnings less obtrusive
+ott_warning('once');
+change_warnings('off');
+
 n_relative = 1.2; %relative refractive index = 1.2
 r_particle = 1;   %particle radius is 1 wavelength in the medium
 beam_angle = 50;  %beam half angle of 50 degrees

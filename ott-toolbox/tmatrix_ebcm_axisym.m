@@ -10,6 +10,8 @@ function T = tmatrix_ebcm_axisym(Nmax,k_medium,k_particle,rho,z);
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('internal');
+
 verbose=0;
 % %%%% TEST VALUES
 % verbose=1;
@@ -229,3 +231,5 @@ if verbose
     figure
     plot(sum(abs(S).^2));ylim([.95,1.05])
 end
+
+ott_warning('external');

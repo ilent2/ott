@@ -31,6 +31,8 @@ function [M,N,M2,N2,M3,N3] = vswf(n,m,kr,theta,phi,htype)
 % and for good measure, we expand any scalar ones
 % to match the others in length
 
+ott_warning('internal');
+
 if length(n)>1
     error('n must be scalar in this version')
 end
@@ -154,6 +156,7 @@ switch(htype)
         end
 end
 
+ott_warning('external');
 
 return
 

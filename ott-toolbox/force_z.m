@@ -22,9 +22,11 @@ function [force,torque] = force_z(n,m,a,b,p,q)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:force_z:depreciated', ...
+ott_warning('ott:force_z:depreciated', ...
     ['force_z.m will be removed in ott1.4. forcetorque.m will ' ...
     'have an efficient implementation of force calculation.']);
+
+ott_warning('internal');
 
 % Uncomment one of the following:
 incidentscattered = 1; % YES, I AM USING INCIDENT-SCATTERED FORMULATION
@@ -83,6 +85,8 @@ fz = 2 * mm ./ nn ./ (nn+1) .* imag( conj(aa) .* bb ) ...
     .* imag( aa.*conj(aap) + bb.*conj(bbp) );
 
 fz = sum(fz);
+
+ott_warning('external');
 
 return
 

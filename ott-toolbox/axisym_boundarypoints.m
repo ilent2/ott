@@ -9,6 +9,8 @@ function [rtp,n,ds]=axisym_boundarypoints(Nmax,rho,z);
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('internal');
+
 % %%%%test values
 % ntheta=500;
 % rho=[0,1,1,0];
@@ -82,3 +84,4 @@ dst(end,3)=(z(end)-mean(zout(end-1:end)));
 ds=(rtp(:,1).*sqrt(sum(abs(dst).^2,2)).*sin(rtp(:,2))); 
 %ds=sqrt(sum(abs(dst).^2,2));
 
+ott_warning('external');

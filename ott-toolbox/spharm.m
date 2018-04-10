@@ -23,6 +23,8 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('internal');
+
 if length(n)>1
     error('n must be a scalar at present')
 end
@@ -120,5 +122,7 @@ Yphi = 1i/2 * sqrt((2*n+1)/(2*n+3)) * ...
 Y=Y(n+mi+1,:).';
 Yphi=Yphi(n+mi+1,:).';
 Ytheta=Ytheta(n+mi+1,:).';
+
+ott_warning('external');
 
 return
