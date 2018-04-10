@@ -17,7 +17,7 @@ function [B,C,P] = vsh(n,m,theta,phi)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:vsh:move', ...
+ott_warning('ott:vsh:move', ...
     'This file will move to ott.utils.vsh');
 ott_warning('internal');
 

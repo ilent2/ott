@@ -11,7 +11,7 @@ function [Aperp,Apar] = perpcomponent( A, n )
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:perpcomponent:move', ...
+ott_warning('ott:perpcomponent:move', ...
     'This file will move to ott.utils.perpcomponent');
 
 % Make n a unit vector

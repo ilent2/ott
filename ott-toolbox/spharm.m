@@ -20,7 +20,7 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:spharm:move', ...
+ott_warning('ott:spharm:move', ...
     'This file will move to ott.utils.spharm');
 ott_warning('internal');
 

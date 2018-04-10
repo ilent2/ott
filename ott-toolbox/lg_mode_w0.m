@@ -10,7 +10,7 @@ function w0 = lg_mode_w0( mode, angle )
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:lg_mode_w0:move', ...
+ott_warning('ott:lg_mode_w0:move', ...
     'This file will move to ott.utils.lg_mode_w0');
 
 % Precalculated results for small l

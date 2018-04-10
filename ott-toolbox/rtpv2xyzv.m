@@ -10,7 +10,7 @@ function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-warning('ott:rtpv2xyzv:move', ...
+ott_warning('ott:rtpv2xyzv:move', ...
     'This file will move to ott.utils.rtpv2xyzv');
 ott_warning('internal');
 

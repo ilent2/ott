@@ -10,6 +10,9 @@ function HG=hgmode(m,n,x,y,z,theta);
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:hgmode:move', ...
+    'This file will move to ott.utils.hgmode');
+
 if nargin<6
     theta=atan(1/pi)*180/pi;
 end
