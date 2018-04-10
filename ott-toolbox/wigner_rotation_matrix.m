@@ -20,7 +20,7 @@ function [D,D2] = wigner_rotation_matrix( nmax, R )
 % See LICENSE.md for information about using/distributing this file.
 
 %warning('ott:wigner_rotation_matrix:move', ...
-    'this function will move to ott.utils.wigner_rotation_matrix');
+%    'this function will move to ott.utils.wigner_rotation_matrix');
 
 % Transform cartesian rotation matrix to spinor(?) rotation matrix
 %
