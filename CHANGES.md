@@ -5,8 +5,11 @@ Version 1.3.1
 -------------
 
 * Added function name change warnings and depreciation warnings.
-
 * Added functions from latest in-house development version of the toolbox.
+* Various improvements and bug fixes
+* Added `ott_warning` and `change_warnings` functions to make warnings
+    less obtrusive.  Internal calls to toolbox functions now suppress
+    many warning messages.
 
 Version 1.3
 -----------
