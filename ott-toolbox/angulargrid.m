@@ -1,20 +1,20 @@
 function [theta,phi] = angulargrid(ntheta,nphi,behaviour)
-% angulargrid.m - makes a grid of point in theta and phi
+%ANGULARGRID makes a angular grid of points over a sphere
 %
-% Usage:
-% [theta,phi] = angulargrid(n); [n = ntheta = nphi]
-% [theta,phi] = angulargrid(ntheta,nphi);
-% [theta,phi] = angulargrid(ntheta,nphi,behaviour);
+% [theta,phi] = ANGULARGRID(N) generates two column N^2-by-1 matrices
+% with theta (polar) and phi (azimuthal) angle pairs for N discrete
+% evenly spaced polar and azimuthal angles.
 %
-% The default behaviour is that theta and phi are returned as
-% column vectors of the points.
+% [theta,phi] = ANGULARGRID(ntheta, nphi) specifies the number of
+% evenly spaced points to use in the theta and phi direction.
 %
-% Use behaviour to control the output type:
+% [theta,phi] = ANGULARGRID(..., behaviour) uses behaviour to control
+% the output type:
 %
 % behaviour | output
 % -----------------------------------------------
 %     0     | column vectors of all points
-%     1     | vectors of all theta and phi values
+%     1     | vectors of all theta and phi values 
 %     2     | ntheta x nphi matrix of all points
 %
 % Note that the output data values are the same for

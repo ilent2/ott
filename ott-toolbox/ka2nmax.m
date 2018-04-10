@@ -1,6 +1,8 @@
 function Nmax = ka2nmax(ka)
-% ka2nmax.m - Finds a reasonable maximum order to truncate at given
-%             a size parameter ka
+% KA2NMAX finds a reasonable Nmax to truncate at for given size parameter
+%
+% Nmax = KA2NMAX(ka) calculates reasonable maximum order, Nmax, to
+% truncate beam beam coefficients/T-matrix at for a given size parameter.
 %
 % Returns Nmax = ka + 3 (ka)^(1/3)
 %
@@ -9,5 +11,3 @@ function Nmax = ka2nmax(ka)
 
 Nmax = ka + 3 * ka.^(1/3);
 Nmax = ceil(Nmax);
-
-return

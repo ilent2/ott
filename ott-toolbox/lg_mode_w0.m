@@ -1,14 +1,9 @@
 function w0 = lg_mode_w0( mode, angle )
-% lg_mode_w0.m - gives paraxial waist parameter w0 to match a given 1/e^2 angle
+% LG_MODE_W0 gives paraxial waist parameter w0 to match a given 1/e^2 angle
 %
-% Usage:
-% w0 = lg_mode_w0( mode, angle );
-% where:
-% w0 is the waist parameter in units of wavelength
-% mode = [ p l ] 
-%  or
-% mode = l (and p = 0 is assumed)
-% angle = 1/e^2 angle in degrees
+% w0 = LG_MODE_W0( mode, angle ) calculates the paraxial beam waist
+% for LG mode [ p, l ] with 1/e^2 angle (in degrees).
+% If mode is a single integer, p = 0 is assumed and l = mode.
 % 
 % Accuracy not guaranteed for very large l (ie > 200)
 %

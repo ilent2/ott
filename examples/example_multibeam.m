@@ -1,4 +1,6 @@
-%code to calculate multiple (identical) beams
+% Calculates the force from multiple (identical) beams positioned at
+% different locations.  Genrates a figure which compares forces calculated
+% using incoherent beams and two methods of adding coherent beams.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

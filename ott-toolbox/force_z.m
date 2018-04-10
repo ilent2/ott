@@ -1,10 +1,11 @@
 function [force,torque] = force_z(n,m,a,b,p,q)
-% force_z.m: Finds z component of optical force and torque
+%FORCE_Z finds z component of optical force and torque
 %
-% Usage:
-% [Fz,Tz] = force_z(n,m,a,b,p,q)
-% OR
-% [Fz,Tz] = force_z(n,m,ab,pq)
+% [Fz,Tz] = force_z(n,m,a,b,p,q) and
+% [Fz,Tz] = force_z(n,m,ab,pq) calculate force and torque
+% between incident ab beam and scattered pq beam.
+% Beams can be specified as separate column vectors or combined vectors
+% ab = [a;b], pq = [p;q], where a,b,p,q are the beam coefficients.
 %
 % What units are you using for a,b,p,q?
 % If you have simple units like (using incoming/outgoing):

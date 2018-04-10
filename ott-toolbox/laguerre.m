@@ -1,9 +1,7 @@
 function Lpl = laguerre(p,l,X)
-% laguerre.m - associated Laguerre function
+% LAGUERRE associated Laguerre function
 %
-% Usage:
-% L = laguerre(p,l,X)
-%
+% L = LAGUERRE(p,l,X) evaluate associated Laguerre function.
 % p and l must be integer scalars greater than zero
 %
 % This file is part of the optical tweezers toolbox.

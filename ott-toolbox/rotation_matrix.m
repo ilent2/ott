@@ -1,14 +1,11 @@
 function R = rotation_matrix(rot_axis,rot_angle)
-% rotation_matrix.m
+% ROTATION_MATRIX calculates rotation matrix using Euler-Rodrigues formula.
 %
-% Usage:
-% R = rotation_matrix( axis, angle );
-% R = rotation_matrix( axis_angle );
-% where
-% axis is a vector giving the direction of the rotation axis, any length,
-% angle is the angle of rotation, in radians,
-% axis_angle is a vector giving the rotation axis, of magnitude equal to
-% the angle of rotation.
+% R = rotation_matrix( axis, angle ) calculates the rotation about
+% axis by angle (in radians).
+%
+% R = rotation_matrix( axis_angle ) calculates the rotation about vector
+% axis_angle, the angle is specified as the length of the vector (in radians).
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

@@ -1,8 +1,7 @@
 function A = lgmodes(r,phi,E,maxp,maxl)
-% lgmodes -- Decomposition of paraxial beam into LG modes
+% LGMODES decomposition of paraxial beam into LG modes
 %
-% Usage:
-% A = lgmodes(r,phi,E,maxp,maxl);
+% A = LGMODES(r,phi,E,maxp,maxl);
 % where
 % r is in units of the beam width,
 % E is in arbitrary units,

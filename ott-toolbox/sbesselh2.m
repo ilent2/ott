@@ -1,18 +1,13 @@
 function [hn,dhn] = sbesselh2(n,kr)
-% sbesselh1 - spherical hankel function hn(kr) of the first kind
-%
+% SBESSELH2 spherical hankel function hn(kr) of the second kind
 % hn(kr) = sqrt(pi/2kr) Hn+0.5(kr)
 %
-% Usage:
+% hn = SBESSELH2(n,z) calculates the hankel function of the second kind.
 %
-% hn = sbesselh1(n,z);
-% OR
-% [hn,dzhn] = sbesselh1(n,z);
+% [hn,dzhn] = SBESSELH2(n,z) additionally, calculates the derivative
+% of the appropriate Ricatti-Bessel function divided by z.
 %
-% where dzhn is the derivative of the appropriate Ricatti-Bessel function
-% divided by z.
-%
-% See besselj and bessely for more details
+% See also besselj and bessely.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

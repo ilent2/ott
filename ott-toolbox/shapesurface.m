@@ -1,25 +1,30 @@
 function [r,n,rotsym,xyz_vec] = shapesurface(theta,phi,shape,parameters)
-% shapesurface.m
+% SHAPESURFACE calclates radii and normals for use with tmatrix_pm.
 % Generates radii and normals to the surface for a range of
 % shapes for which the surface is a function of angle (theta,phi).
 %
-% Usage:
-% [r,n,rotsym] = shapesurface(theta,phi,shape,parameters);
+% [r,n,rotsym] = SHAPESURFACE(theta,phi,shape,parameters) calculates
+% radii, r, Nx3 unit-length normals, n, and a parameter describing if the
+% shape is rotationally symetric, rotsym.
+% theta, phi specify the points to calculate the radii and normals for.
+% shape and parameters (see bellow) describe the shape to use.
 %
-% where 
-% n is the unit-length normal, stored as
-%   a points-by-3 matrix with columns [ nr ntheta nphi ]
-% rotsym = 3 -> the shape is a cube
-% rotsym = 2 -> the shape is a sphere
-% rotsym = 1 -> the shape is rotationally symmetric about the z-axis
-% rotsym = 0 -> no axisymmetry
-% and
-% shape = 0: ellipsoid, parameters = [ a b c ]
-% shape = 1: cylinder, z-axis, parameters = [ r h ]
-% shape = -1: cylinder, x-axis, parameters = [ r h ]
-% shape = 2: superellipsoid, paramteres = [ a b c e n ]
-% shape = 3: cone-tipped cylinder, parameters = [ r h d ], d = cone height
-% shape = 4: cube, parameters = [d], d = width of cube
+% [~,~,rotsym] = SHAPESURFACE([], [], shape, parameters) calculates the
+% rotational symetric of the shape.
+%
+% rotsym will be one of:
+%     3 -> the shape is a cube
+%     2 -> the shape is a sphere
+%     1 -> the shape is rotationally symmetric about the z-axis
+%     0 -> no axisymmetry
+%
+% Supported shapes [parameters]:
+%     0   ellipsoid [ a b c ]
+%     1   cylinder, z-axis [ radius height ]
+%    -1   cylinder, x-axis [ radius height ]
+%     2   superellipsoid [ a b c e n ]
+%     3   cone-tipped cylinder [ radius height cone_height ]
+%     4   cube [ width ]
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

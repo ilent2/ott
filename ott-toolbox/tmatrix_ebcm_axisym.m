@@ -1,9 +1,7 @@
 function T = tmatrix_ebcm_axisym(Nmax,k_medium,k_particle,rho,z);
-% tmatrix_ebcm_axisym.m : extendended boundary condition method for
-%                         axisymmetric particles.
+% TMATRIX_EBCM_AXISYM calculate T-matrix using EBCM for axissymetric particles.
 %
-% Usage:
-% T = tmatrix_ebcm_axisym(Nmax,k_medium,k_particle,rho,z)
+% T = TMATRIX_EBCM_AXISYM(Nmax,k_medium,k_particle,rho,z)
 % rho is the cylindrical r coodinate of a corner or feature.
 % z is the cylindrical z coordinate of a corner or feature.
 %

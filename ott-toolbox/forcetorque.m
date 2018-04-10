@@ -1,16 +1,11 @@
 function [force,torque,spin] = forcetorque(n,m,a,b,p,q)
-% forcetorque.m
+% FORCETORQUE finds optical force and torque
 %
-% Finds optical force and torque
-%
-% Usage:
-% force = forcetorque(n,m,a,b,p,q)
-% or
-% [force,torque] = forcetorque(n,m,a,b,p,q)
-% or
-% [force,torque,spin] = forcetorque(n,m,a,b,p,q)
-% or
-% [force,torque,spin] = forcetorque(n,m,ab,pq)
+% [force,torque,spin] = FORCETORQUE(n,m,a,b,p,q) and
+% [force,torque,spin] = FORCETORQUE(n,m,ab,pq) calculate force, torque
+% and spin between incident ab beam and scattered pq beam.
+% Beams can be specified as separate column vectors or combined vectors
+% ab = [a;b], pq = [p;q], where a,b,p,q are the beam coefficients.
 %
 % What units are you using for a,b,p,q?
 % If you have simple units like (using incoming/outgoing):

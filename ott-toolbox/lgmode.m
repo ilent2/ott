@@ -1,13 +1,12 @@
 function LG = lgmode(p,l,r,phi,z,theta)
-% lgmode -- LG mode at z = 0
+% LGMODE calculates LG mode amplitude at z = 0
 %
-% Usage:
-% A = lgmode(p,l,r,phi);
-% where
-% r is in units of the beam width
-% r and phi can be matrices of equal size
+% A = LGMODE(p,l,r,phi) calculates the LG mode amplitude for mode [p,l]
+% at locations given in polar coordinates [r, phi].
+% r is in units of the beam width; r and phi can be matrices of equal size.
 %
-% theta is the convergence angle
+% A = LGMODE(p,l,r,phi,theta) scales the beam waist according to the
+% beam convergence angle theta (in degrees): w0=1/tan(theta).
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

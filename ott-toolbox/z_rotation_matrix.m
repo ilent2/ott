@@ -1,11 +1,8 @@
 function [Ryz]=z_rotation_matrix(theta,phi,tolerance)
-% z_rotation_matrix.m: Generates the rotation matrix for use in the wigner
-%                       rotation function using the product of Ry, Rz.
+% Z_ROTATION_MATRIX generates the rotation matrix for use in the wigner
+% rotation function using the product of Ry, Rz.
 % 
-% USAGE:
-%
-% [Ryz]=z_rotation_matrix(theta,phi,tolerance)
-% 
+% [Ryz]=Z_ROTATION_MATRIX(theta,phi,tolerance)
 % phi is the azimuthal angle from the +x.
 % theta is the elevation angle from +z.
 % 

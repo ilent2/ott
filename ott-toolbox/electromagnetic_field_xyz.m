@@ -1,38 +1,39 @@
 function [structureoutput]=electromagnetic_field_xyz(kxyz,nm,ab,pq,cd,varargin)
-% electromagnetic_field_xyz.m : Calculates the fields of any of the
-%                                incident, scattered or internal
-%                                beam shape coefficients.
+%ELECTROMAGNETIC_FIELD_XYZ calculates the fields from beam vectors.
 %
-% Usage:
+% S = ELECTROMAGNETIC_FIELD_XYZ(kr, nm, ab, pq, cd)
+% calculates the field at points kr for beams ab, pq and cd with mode
+% incides nm.
 %
-% [structureoutput]=electromagnetic_field_xyz(kr,[n;m],[a;b],[p;q],[c;d],relindex)
-% or
-% [structureoutput]=electromagnetic_field_xyz(kr,[n;m],[a;b])
-% or
-% [structureoutput]=electromagnetic_field_xyz(kr,[n;m],[a;b],[p;q])
-% or
-% [structureoutput]=electromagnetic_field_xyz(kr,[n;m],[],[p;q])
-% etc...
+% kr is a vector of cartesian coordinates (times wavenumber).
+% nm = [n;m] is a column vector of mode indices.
+% ab = [a;b] is a column vector of full incident beam shape coefficients.
+% pq = [p;q] is a column vector of full scattered beam shape coefficients.
+% cd = [c;d] is a column vector of full internal beam shape coefficients.
 %
-% where:
-% kr    - is the coordinates of the wavefunction (wavelength dependent hence kr)
-% [n;m] - is a column vector of mode indices
-% [a;b] - is a column vector of full incident beam shape coefficients
-% [p;q] - is a column vector of full scattered beam shape coefficients
-% [c;d] - is a column vector of full internal beam shape coefficients
-% relk  - is the relative k for the internal refractive index
-%
-% the output structure contains three set of vectors of the following:
-% Eincident, Hincident.
-% Escattered, Hscattered.
-% Einternal, Hinternal.
-% depending on the context of the input. e.g. if only ab has non-zero length
-% then only the Eincident, Hincident fields will appear in the output.
-%
-% ab, pq, cd are the full or sparse column vectors of the te/tm modes.
+% The beam vectors can be full or sparse column vectors.
 %
 % n,m are the mode indices, these can be in truncated form. The calculation
 % will be quicker if a truncated n and m can be used.
+%
+% Any combination of beams can be calculated, beams can be omitted
+% by replacing the corresponding beam with an empty array.
+%
+% The output is a structure which contains fields for each of the
+% requested beams:
+%     ab -> S.Eincident and S.Hincident
+%     pq -> S.Escattered and S.Hscattered
+%     cd -> S.Einternal and S.Hinternal
+%
+% S = ELECTROMAGNETIC_FIELD_XYZ(..., 'relativerefractiveindex', relidx)
+% specifies the relative refractive index for internal field calculations.
+%
+% S = ELECTROMAGNETIC_FIELD_XYZ(..., 'tolerance', tol)
+% may be used in future.
+%
+% S = ELECTROMAGNETIC_FIELD_XYZ(..., 'displacementfield') and
+% S = ELECTROMAGNETIC_FIELD_XYZ(..., 'displacementfield', dis)
+% may be used in future.
 %
 % NOTE: If internal fields are calculated only the theta and phi components
 % of E are continuous at the boundary. Conversely, only the kr component of

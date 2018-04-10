@@ -1,14 +1,11 @@
 function [ modeweights col_modes row_modes ] = paraxial_transformation_matrix( paraxial_order, basis_in, basis_out, normal_mode )
-% paraxial_transformation_matrix.m : Produces paraxial beam mode conversion
-%                                    in a particular order.
+% PARAXIAL_TRANSFORMATION_MATRIX produces paraxial beam mode conversion
+% in a particular order.
 %
-% USAGE:
-%
-% modeweights = paraxial_transformation_matrix( degree, basis_in, basis_out);
-%
-% or
-%
-% modeweights = paraxial_transformation_matrix( degree, basis_in, basis_out, normal_mode);
+% [modeweights, col_modes, row_modes] = ...
+%   PARAXIAL_TRANSFORMATION_MATRIX(degree, basis_in, basis_out) or
+% [modeweights, col_modes, row_modes] = ...
+%   PARAXIAL_TRANSFORMATION_MATRIX( degree, basis_in, basis_out, normal_mode)
 %
 % inputs:
 %

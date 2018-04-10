@@ -1,13 +1,9 @@
 function [A_n,B_n,eigA,eigB]=incecoefficients(p,xi);
-% incecoefficients.m --- Calculate the two sets of fourier coefficients of
-% Ince polynomials for a given order, p, and ellipticity, xi, in eigen-
-% matrix form.
+%INCECOEFFICIENTS calculates fourier coefficients for Ince polynomials
 %
-% Usage:
-%
-% [A_n,B_n]=incecoefficients(p,xi);
-%
-% [A_n,B_n,eigA,eigB]=incecoefficients(p,xi);
+% [A,B,eigA,eigB] = INCECOEFFICIENTS(p,xi) calculate the two sets of
+% fourier coefficients of Ince polynomials for a given order, p,
+% and ellipticity, xi, in eigen-matrix form.
 %
 % Notes:
 % A_n is the eigen-matrix corresponding to the form:

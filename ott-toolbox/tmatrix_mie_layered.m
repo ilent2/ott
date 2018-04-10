@@ -1,9 +1,8 @@
 function [t,t2,a,b] = tmatrix_mie_layered(nmax,k_medium,k_particle,radius)
-% tmatrix_mie.m : mie scattering and internal coefficients for a uniform or
-%                 layered sphere arranged as a sparse t-matrix.
+% TMATRIX_MIE_LAYERED mie scattering and internal coefficients for a
+% uniform or layered sphere arranged as a sparse t-matrix.
 %
-% usage:
-% [t,t2] = tmatrix_mie(nmax,k_medium,k_particle,radius)
+% [t,t2] = TMATRIX_MIE(nmax,k_medium,k_particle,radius)
 % k_medium is the wavenumber in the surrounding medium.
 % k_particle is the wavenumber in the layers starting at the core going to
 %   the outermost layer.
@@ -19,7 +18,8 @@ function [t,t2,a,b] = tmatrix_mie_layered(nmax,k_medium,k_particle,radius)
 % "Improved recursive algorithm for light scattering by a multilayered
 % sphere", Wen Yang, Applied Optics 42(9), 2003
 %
-% PACKAGE_INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 ott_warning('internal');
 

@@ -1,14 +1,12 @@
 function [Aperp,Apar] = perpcomponent( A, n )
-% perpcomponent.m - finds perpendicular (and optionally) parallel
-%       components of a vector relative to a reference vector.
+% PERPCOMPONENT finds perpendicular (and optionally) parallel
+% components of a vector relative to a reference vector.
 %
-% Usage:
-% perp_component = perpcomponent(A,n)
-% [perp_component,parallel_component] = perpcomponent(A,n)
+% perp_component = PERPCOMPONENT(A,n) calculates perpendicular component
+% of row vector A or Nx3 matrix A of vectors.  n is the reference vector.
 %
-% where n is the reference vector.
-% The columns of A and n must be the vector components; a number
-% of rows can be used to process many vectors at once.
+% [perp_component,parallel_component] = PERPCOMPONENT(A,n) calculates
+% perpendicular and parallel components.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

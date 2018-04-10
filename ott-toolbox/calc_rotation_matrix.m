@@ -1,13 +1,9 @@
 function R = calc_rotation_matrix(  angle_vector )
-% calc_rotation_matrix : finds coordinate transformation matrix
-% for pure rotation.
+%CALC_ROTATION_MATRIX finds rotation matrix
 %
+% R = CALC_ROTATION_MATRIX(angle_vector) calculates rotation matrix.
 % The rotation is specified by the angle vector, given by
 % angle_vector = integral(0,t) angular_velocity_vector(t) dt
-%
-% x' = x * R; for row vector (or matrix of row vectors)
-%
-% NB: Since this  is an SI package, the angles are all in radians!
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

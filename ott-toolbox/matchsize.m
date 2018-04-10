@@ -1,13 +1,10 @@
 function [A,B,C] = matchsize(A,B,C)
-% matchsize.m - checks that all vector inputs have the same
-%     number of rows, and expands single-row inputs by repetition
-%     to match the input row number.
+% MATCHSIZE checks that all vector inputs have the same number of rows
 %
-% Usage:
-% [A,B] = matchsize(A,B)
-% [A,B,C] = matchsize(A,B,C)
+% [A,B] = MATCHSIZE(A,B) checks inputs have same number of rows,
+% and expands single-row inputs by repetition to match the input row number.
 %
-% Either 2 or 3 input vectors/scalars are allowed.
+% [A,B,C] = matchsize(A,B,C) as above but for 3 inputs/outputs.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

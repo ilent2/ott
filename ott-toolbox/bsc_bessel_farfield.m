@@ -1,5 +1,7 @@
 function [nn,mm,a,b] = bsc_bessel_farfield( nmax, beam_type, parameters )
-% bsc_bessel_farfield.m
+%BSC_BESSEL_FARFIELD uses point matching to find bessel beam coefficients
+%
+% [nn,mm,a,b] = BSC_BESSEL_FARFIELD(Nmax, beam_type, parameters)
 % Uses an overdetermined point-matching method to find
 % spherical harmonic expansion of a laser beam. It uses a half sine like
 % function to simulate a beam with annular k. This can lead to a bessel
@@ -10,9 +12,6 @@ function [nn,mm,a,b] = bsc_bessel_farfield( nmax, beam_type, parameters )
 %
 % At present, there is no systematic way to decide what the beam shape is.
 % However, this being said the beam has the correct Poynting vector field.
-%
-% Usage:
-% [n,m,a,b] = bsc_bessel_farfield( nmax, beam_type, parameters );
 %
 % Currently available types of beams:
 % 0 Bessel 0
@@ -26,6 +25,9 @@ function [nn,mm,a,b] = bsc_bessel_farfield( nmax, beam_type, parameters )
 % you want.
 %
 % l is the angular momentum mode.
+%
+% Depreciated: This function will be replaced in the next version of
+% the toolbox.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

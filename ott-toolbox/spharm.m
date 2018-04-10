@@ -1,15 +1,12 @@
 function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
-% spharm.m : scalar spherical harmonics and
-%            angular partial derivatives for given n,m (can take vector m).
+% SPHARM scalar spherical harmonics and angular partial derivatives.
 %
-% Usage:
-% Y = spharm(n,m,theta,phi)
-% or
-% [Y,dY/dtheta,1/sin(theta)*dY/dphi] = spharm(n,m,theta,phi)
-% or
-% Y = spharm(n,theta,phi)
-% or
-% [Y,dtY,dpY] = spharm(n,theta,phi)
+% Y = SPHARM(n,m,theta,phi) calculates scalar spherical harmonics.
+%
+% [Y,Ytheta,Yphi] = SPHARM(n,m,theta,phi) additionally, calculates
+% the angular partial derivatives dY/dtheta and 1/sin(theta)*dY/dphi.
+%
+% SPHARM(n,theta,phi) ... TODO: Documentation
 %
 % Scalar n for the moment.
 % 

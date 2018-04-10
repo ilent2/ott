@@ -1,20 +1,20 @@
-function [nn,mm,a,b] = bsc_pointmatch_farfield( nmax, beam_type, parameters, varargin )
-% bsc_pointmatch_farfield.m
+function [nn,mm,a,b] = bsc_pointmatch_farfield( nmax, beam_type, ...
+    parameters, varargin )
+%BSC_POINTMATCH_FARFIELD calculate beam coefficients for Gaussian beams
+%
+% [nn,mm,a,b] = BSC_POINTMATCH_FARFIELD(Nmax, type, parameters[, optional])
 % Uses an overdetermined point-matching method to find
 % spherical harmonic expansion of a laser beam.
 %
-% Usage:
-% [n,m,a,b] = bsc_pointmatch_farfield( nmax, beam_type, parameters, (optional) );
-%
-% Currently available types of beams:
+% Currently available types of beams [parameters]:
 % 0 Gauss-Hermite beam
-%   parameters: [ m n w0 P xcomponent ycomponent truncation_angle beam_offset ]
+%   [ m n w0 P xcomponent ycomponent truncation_angle beam_offset ]
 % 1 Laguerre-Gauss beam
-%   parameters: [ p l w0 P xcomponent ycomponent truncation_angle beam_offset ]
+%   [ p l w0 P xcomponent ycomponent truncation_angle beam_offset ]
 % 2 Ince-Gauss beam
-%   parameters: [ o m p xi w0 P xcomponent ycomponent truncation_angle beam_offset ]
+%   [ o m p xi w0 P xcomponent ycomponent truncation_angle beam_offset ]
 %
-% optional parameters:
+% Optional parameters:
 %
 % 'radial' - makes radial component with weighting xcomponent.
 % 'azimuthal' - makes azimuthal component with weighting ycomponent. (note:

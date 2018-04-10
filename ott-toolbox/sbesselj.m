@@ -1,18 +1,13 @@
 function [jn,djn] = sbesselj(n,kr)
-% sbesselj - spherical bessel function jn(kr)
-%
+% SBESSELJ spherical bessel function jn(kr)
 % jn(kr) = sqrt(pi/2kr) Jn+0.5(kr)
 %
-% Usage:
+% jn = SBESSEL(n,z) calculates the spherical bessel function.
 %
-% jn = sbessel(n,z);
-% OR
-% [jn,dzjn] = sbessel(n,z);
+% [jn,dzjn] = sbessel(n,z) additionally, calculates the derivative
+% of the appropriate Ricatti-Bessel function divided by z.
 %
-% where dzjn is the derivative of the appropriate Ricatti-Bessel function
-% divided by z.
-%
-% See besselj for more details
+% See also besselj.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

@@ -1,19 +1,15 @@
-function [T,T2] = tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k_medium,k_particle,sidelength)
-% tmatrix_pm_cube.m
-% T-matrix, calculated by point-matching method
+function [T,T2] = tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,...
+    k_medium,k_particle,sidelength)
+% TMATRIX_PM_CUBE calculate T-matrix for a cube using point matching
+% with 4-th order symetry optimisations.
 %
-% Usage:
-% T =
-% tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k_medium,k_particle,sidelength)
-% or
-% [T,T2] =
-% tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k_medium,k_particle,sidelength)
-% where
+% [T,T2] = TMATRIX_PM_CUBE(Nmax,Nmax_medium,Nmax_particle, ...
+%    k_medium,k_particle,sidelength)
 % n_medium and n_particle are the wavenumbers in the
 % surrounding medium and the scattering particle,
 % shape and parameters describe the particle geometry
-% (see shapesurface for more detail)
-% T2 is the T matrix giving the internal field
+% (see shapesurface for more detail).
+% T2 is the T matrix giving the internal field.
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
