@@ -54,8 +54,6 @@ verbose = p.Results.verbose;
 
 ott.warning('internal');
 
-lengthnm=size(nm,1)/2;
-
 n=nm(1:size(nm,1)/2,1);
 m=nm(size(nm,1)/2+1:size(nm,1),1);
 
@@ -64,19 +62,19 @@ ci=combined_index(n,m);
 behaviour=0;
 
 if ~isempty(ibeam)
-  ibeam.Nmax = max(n);
+  ibeam.Nmax = max(n, ibeam.Nmax);
   [a,b] = ibeam.getCoefficients(ci);
   behaviour=behaviour+1;
 end
 
 if ~isempty(obeam)
-  obeam.Nmax = max(n);
+  obeam.Nmax = max(n, obeam.Nmax);
   [p,q] = obeam.getCoefficients(ci);
   behaviour=behaviour+2;
 end
 
 if ~isempty(rbeam)
-  rbeam.Nmax = max(n);
+  rbeam.Nmax = max(n, rbeam.Nmax);
   [c,d] = rbeam.getCoefficients(ci);
   behaviour=behaviour+4;
 end

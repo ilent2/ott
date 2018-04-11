@@ -15,21 +15,26 @@ addpath('../');
 %% Setup the beam
 
 % Select a beam type to visualise (gaussian, lg, hg, ig, addition, scattered)
-beam_type = 'gaussian';
+beam_type = 'lg';
+
+% Specify Nmax explicity for our near-field visualisation
+Nmax = ott.utils.ka2nmax(10*2*pi);
+
+sca = 1.0;
 
 switch beam_type
   case 'gaussian'
 
     % Create a simple Gaussian beam with circular polarisation
-    beam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ], ...
-        'index_medium', 1, 'wavelength0', 1);
+    beam = ott.BscPmGauss('NA', 0.9, 'polarisation', [ 1 0 ], ...
+        'index_medium', 1, 'wavelength0', 1, 'Nmax', Nmax);
 
   case 'lg'
 
     % Create a simple LG03 beam with circular polarisation
-    beam = ott.BscPmGauss('lg', [ 0 5 ], ...
+    beam = ott.BscPmGauss('lg', [ 0 3 ], ...
         'index_medium', 1, 'wavelength0', 1, ...
-        'NA', 1.02, 'polarisation', [ 1 0 ]);
+        'NA', 0.8, 'polarisation', [ 1 1i ], 'Nmax', Nmax);
 
   case 'hg'
 
@@ -37,32 +42,24 @@ switch beam_type
     %
     % The beam waist calculation doesn't yet handle HG beams so
     % we estimate the beam waist using a magic formula
-    beam_angle = asin(NA/n_medium);
+    beam_angle = 10;
     w0=1.0/pi/tan(abs(beam_angle/180*pi));
     beam = ott.BscPmGauss('hg', [ 2 3 ], ...
         'index_medium', 1, 'wavelength0', 1, ...
-        'polarisation', polarisation, 'w0', w0);
+        'polarisation', [ 0 1 ], 'w0', w0, 'Nmax', Nmax);
 
-  case 'ig'
+    sca = 2.0;
 
-    % Create a IG beam, not sure what would look good yet
-    %
-    % The beam waist calculation doesn't yet handle IG beams so
-    % we estimate the beam waist using a magic formula
-    beam_angle = asin(NA/n_medium);
-    w0=1.0/pi/tan(abs(beam_angle/180*pi));
-    beam = ott.BscPmGauss('ig', [ 2 3 1 2 ], ...
-        'index_medium', 1, 'wavelength0', 1, ...
-        'polarisation', polarisation, 'w0', w0);
+    % TODO: IG example
 
   case 'addition'
 
     % Separation between beams
-    dx = 2*pi;
+    dx = 1.4;
 
     % Create a simple Gaussian beam with circular polarisation
-    beam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ], ...
-        'index_medium', 1, 'wavelength0', 1);
+    beam = ott.BscPmGauss('NA', 0.8, 'polarisation', [ 1 1i ], ...
+        'index_medium', 1, 'wavelength0', 1, 'Nmax', Nmax);
     beam.Nmax = beam.Nmax + ott.utils.ka2nmax(dx);
 
     % Displace the beams by +/- dx/2
@@ -75,18 +72,16 @@ switch beam_type
   case 'scattered'
 
     % Create a simple Gaussian beam with circular polarisation
-    ibeam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ], ...
-        'index_medium', 1, 'wavelength0', 1);
+    ibeam = ott.BscPmGauss('NA', 0.8, 'polarisation', [ 1 1i ], ...
+        'index_medium', 1, 'wavelength0', 1, 'Nmax', Nmax);
+    ibeam = ibeam.translateXyz(1, 0, 0);
 
     % Create a spherical particle to scatter the beam
-    tmatrix = ott.Tmatrix.simple('sphere', 1.0, 'wavelength0', 1.0, ...
-        'index_medium', 1.0, 'index_particle', 1.2);
+    tmatrix = ott.Tmatrix.simple('sphere', 0.5, 'wavelength0', 1.0, ...
+        'index_medium', 1.0, 'index_particle', 1.5);
 
     % Scatter the beam to create the final beam
     beam = tmatrix * ibeam;
-
-    % Farfield visualisation requires incomming or outgoing
-    beam = beam.toOutgoing(ibeam);
 
   otherwise
     error('Unsupported beam type specified');
@@ -95,10 +90,10 @@ end
 %% Generate plot of the intensity at the focal plane
 
 % Create the grid of points we want to view
-nx = 40;
-ny = 40;
-xrange = linspace(-8, 8, nx);
-yrange = linspace(-8, 8, ny);
+nx = 80;
+ny = 80;
+xrange = linspace(-2, 2, nx)*sca;
+yrange = linspace(-2, 2, ny)*sca;
 [xx, yy] = meshgrid(xrange, yrange);
 xyz = [xx(:) yy(:) zeros(size(xx(:)))].';
 
@@ -108,24 +103,37 @@ xyz = [xx(:) yy(:) zeros(size(xx(:)))].';
 % Calculate the intensity of the E field
 Ei=reshape(sqrt(sum(real(E).^2,1)),[nx,ny]);
 
+% Calculate the phase at the focal plane
+Ep = reshape(angle(E(3, :)),[nx,ny]);
+
 % Calculate the radiance
 I=reshape(sum(abs(E).^2,1),[nx,ny]);
 
+if strcmp(beam_type, 'scattered')
+  idx = ((xx - 1).^2 + yy.^2) <  0.5.^2;
+  I(idx) = NaN;
+  Ei(idx) = NaN;
+  Ep(idx) = NaN;
+end
+
 figure(1);
-subplot(1, 2, 1);
+subplot(1, 3, 1);
 imagesc(xrange, yrange, Ei);
 title('E field intensity (focal plane)');
-subplot(1, 2, 2);
+subplot(1, 3, 2);
+imagesc(xrange, yrange, Ep);
+title('E field phase (focal plane)');
+subplot(1, 3, 3);
 imagesc(xrange, yrange, I);
 title('radiance (focal plane)');
 
-%% Generate plot of the intensity at the focal plane (same as above)
+%% Generate plot of the intensity along the beam (same as above)
 
 % Create the grid of points we want to view
 nx = 40;
 ny = 40;
-xrange = linspace(-8, 8, nx);
-yrange = linspace(-8, 8, ny);
+xrange = linspace(-2, 2, nx)*sca;
+yrange = linspace(-10, 10, ny)*sca;
 [xx, yy] = meshgrid(xrange, yrange);
 xyz = [xx(:) zeros(size(xx(:))) yy(:)].';
 
@@ -138,6 +146,13 @@ Ei=reshape(sqrt(sum(real(E).^2,1)),[nx,ny]);
 % Calculate the radiance
 I=reshape(sum(abs(E).^2,1),[nx,ny]);
 
+if strcmp(beam_type, 'scattered')
+  idx = ((xx - 1).^2 + yy.^2) <  0.5.^2;
+  I(idx) = NaN;
+  Ei(idx) = NaN;
+  Ep(idx) = NaN;
+end
+
 figure(2);
 subplot(1, 2, 1);
 imagesc(xrange, yrange, Ei);
@@ -149,33 +164,47 @@ title('radiance (cross-section)');
 %% Generate a figure showing the farfield
 
 %build grid:
-nt=80;
+nt=160;
 [x,y,z]=sphere(nt);
 
 %generate angular points for farfield:
 [~,theta,phi]=ott.utils.xyz2rtp(x,y,z);
 
+if strcmp(beam_type, 'scattered')
+  % Farfield visualisation requires incomming or outgoing
+  beam = beam.toOutgoing(ibeam);
+end
+
 %find far-field in theta, phi:
 [E,H]=beam.farfield(theta(:),phi(:));
 
-% Calculate the intensity of the E field
-Ei=reshape(sqrt(sum(real(E).^2,1)),[nt+1,nt+1]);
+% Calculate the phase of an E field component
+Ep = reshape(angle(E(3, :)),[nt+1,nt+1]);
 
-% Calculate the average phase of the E field
-% This should be similar to the pattern we put on a SLM
-Ep=reshape(sum(angle(E),1)/2.0,[nt+1,nt+1]);
+% Add a small translation, so it looks like a LG fork in farfield
+% This is the pattern we would put on a SLM
+slm_beam = beam.translateXyz(5, 0, 0);
+[E_slm,~]=slm_beam.farfield(theta(:),phi(:));
+Ep_slm = reshape(angle(E_slm(3, :)),[nt+1,nt+1]);
 
 % Calculate the radiance
 I=reshape(sum(abs(E).^2,1),[nt+1,nt+1]);
 
 figure(3);
 subplot(1, 3, 1);
-surf(x,y,z,Ei,'facecolor','interp','edgecolor','none')
-title('E field intensity (farfield)');
-subplot(1, 3, 2);
-surf(x,y,z,Ep,'facecolor','interp','edgecolor','none')
-title('E field phase (farfield)');
-subplot(1, 3, 3);
 surf(x,y,z,I,'facecolor','interp','edgecolor','none')
 title('radiance (farfield)');
+view(0, -90);
+subplot(1, 3, 2);
+surf(x,y,z,Ep,'facecolor','interp','edgecolor','none')
+title('phase (farfield)');
+view(0, -90);
+subplot(1, 3, 3);
+surf(x,y,z,Ep_slm,'facecolor','interp','edgecolor','none')
+title('phase + offset (farfield)');
+view(0, -90);
 
+% Make sure the user knows the beam is more interesting for scattered
+if strcmp(beam_type, 'scattered')
+  for ii = 1:3, subplot(1, 3, ii), view(3), end
+end

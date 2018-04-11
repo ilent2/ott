@@ -98,6 +98,12 @@ classdef BscPmGauss < ott.BscPointmatch
         ott.warning('external');
         error('Truncation angle given in degrees and radians');
       end
+      
+      % Estimate nmax from the beam waist (if not supplied)
+      nmax = p.Results.Nmax;
+      if isempty(nmax)
+        nmax = ott.ka2nmax(w0);
+      end
 
       % TODO: bsc_pointmatch_farfield.m had other arguments
       % optional parameters:
@@ -117,7 +123,6 @@ classdef BscPmGauss < ott.BscPointmatch
 
       zero_rejection_level = 1e-8;
 
-      medium_refractive_index = 1;
       beam_wavelength0 = 1;
 
       ott.warning('internal');
@@ -178,10 +183,17 @@ classdef BscPmGauss < ott.BscPointmatch
       elseif isempty(p.Results.angle) && isempty(p.Results.angle_deg)
         if isempty(p.Results.NA)
           NA = 1.02;
+          index = 1.33;
         else
           NA = p.Results.NA;
+          if ~isempty(p.Results.refractive_index)
+            index = p.Results.refractive_index;
+          else
+            ott.warning('external');
+            error('Need to specify refractive_index with NA');
+          end
         end
-        beam_angle_deg = asin(NA/medium_refractive_index)*180.0/pi;
+        beam_angle_deg = asin(NA/index)*180.0/pi;
       elseif ~isempty(p.Results.angle_deg)
         beam_angle_deg = p.Results.angle_deg;
       elseif ~isempty(p.Results.angle)
@@ -275,13 +287,15 @@ classdef BscPmGauss < ott.BscPointmatch
           
           beam_envelope(:,ii)=c(ii)*beam_envelope(:,ii)/aperture_power_normalization*mode_input_power;
           
-          mode_index_vector=[mode_index_vector;find(mm==azimuthal_mode+1-max([azimuthal,radial])|mm==azimuthal_mode-1+max([azimuthal,radial]))];
+          mode_index_vector=[mode_index_vector; ...
+              find(mm==azimuthal_mode+1-max([azimuthal,radial]) ...
+              | mm==azimuthal_mode-1+max([azimuthal,radial]))];
 
       end
       mode_index_vector=unique(mode_index_vector);
 
       beam_envelope=sum(beam_envelope,2);
-      outbeam = find(theta < pi-beam.truncation_angle);
+      outbeam = theta < pi-beam.truncation_angle;
       beam_envelope(outbeam) = 0;
 
       if ~isempty(offset)
@@ -302,7 +316,7 @@ classdef BscPmGauss < ott.BscPointmatch
         Ephi = - Ex .* sin(phi) + Ey .* cos(phi);
       end
 
-      e_field = [[ Etheta(:); Ephi(:) ]];
+      e_field = [ Etheta(:); Ephi(:) ];
 
       if axisymmetry
         nn=nn(mode_index_vector);

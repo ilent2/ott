@@ -46,6 +46,10 @@ classdef Bsc
     function [a, b, n, m] = make_beam_vector(a, b, n, m, Nmax)
       %MAKE_BEAM_VECTOR converts output of bsc_* functions to sparse vectors
 
+      if isempty(n)
+        error('No modes');
+      end
+
       if nargin < 5
         Nmax = max(n);
       end
@@ -182,11 +186,13 @@ classdef Bsc
       H = H * -1i;
     end
 
-    function [E, H] = emFieldXyz(beam, kxyz)
+    function [E, H] = emFieldXyz(beam, xyz)
       %EMFIELDXYZ calculates the E and H field at specified locations
 
+      kxyz = xyz * beam.k_medium;
+
       [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
-      nm = [ n.'; m.' ];
+      nm = [ n; m ];
 
       if strcmp(beam.type, 'incomming')
         S = ott.electromagnetic_field_xyz(kxyz.', nm, beam, [], []);
