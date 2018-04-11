@@ -10,11 +10,8 @@ function [z,kz] = axial_equilibrium(tmatrix,beam,z)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-
-% This function is not directly concerned with force/torque calculation
-ott.warning('ott:axialequilibrium:move', ...
-    'This function will move in a future release');
+% TODO: This function is not directly concerned with force/torque
+% calculation should it be here?
 
 ott.warning('internal');
 
@@ -32,7 +29,7 @@ power=beam.power();
 beam = beam / power;
 
 %start with three points each side over a 1/8 wavelength:
-zd=.25;
+zd=.25/(beam.k_medium/2/pi);
 dz=zd/5;
 zs0=[z-zd/2:dz:z+zd/2];
 zs=zs0;
@@ -84,7 +81,13 @@ while ~chkflg
         error('No stable equilibrium near z!')
     end
 end
-pl=polyfit(zs(max([1,indf-3]):min([length(zs),indf+3])),fz(max([1,indf-3]):min([length(fz),indf+3])),3);
+
+% Centre and scale for polyfit
+zsc = zs(max([1,indf-3]):min([length(zs),indf+3]));
+zsc_mid = mean(zsc);
+zsc = (zsc - zsc_mid)*beam.k_medium;
+
+pl=polyfit(zsc - zsc_mid,fz(max([1,indf-3]):min([length(fz),indf+3])),3);
 
 % %testing
 % plot(zs,fz,'.')
@@ -97,10 +100,14 @@ rts=rts(imag(rts)==0);
 
 dzf=polyval([3*pl(1),2*pl(2),pl(3)],rts);
 
+% Invert the scaling
+rts = rts/beam.k_medium + zsc_mid;
+dzf = dzf*beam.k_medium;
+
 rtsi=find(dzf<0);
 
-if length(rtsi)
-    [d,indz]=min(abs(rts(rtsi)-z));
+if ~isempty(rtsi)
+    [~,indz]=min(abs(rts(rtsi)-z));
     z=rts(rtsi(indz));
     kz=dzf(rtsi(indz));
 else

@@ -36,7 +36,9 @@ T = ott.Tmatrix.simple('sphere', radius, ...
 %% Find the equilibrium and trap stiffness in the x and x directions
 
 % Find the equilibrium in the z-direction
-[z,kz] = ott.axial_equilibrium(T, beam)
+[z,kz] = ott.axial_equilibrium(T, beam);
+disp(['Axial equilibrium: ' num2str(z) ' [m]']);
+disp(['Axial spring constant: ' num2str(kz) ' [Q/m]']);
 
 % Translate the beam to the z-axis equilibrium
 beam = beam.translateZ(z);
@@ -46,4 +48,6 @@ beam = beam.rotateY(pi/2.0);
 
 % Calculate the equilibrium in the x-direction
 [x,kx] = ott.axial_equilibrium(T, beam);
+disp(['Radial equilibrium: ' num2str(x) ' [m]']);
+disp(['Radial spring constant: ' num2str(kx) ' [Q/m]']);
 

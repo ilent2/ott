@@ -31,6 +31,8 @@ if length(varargin) == 1
   elseif strcmpi(varargin{1}, 'off')
     once = false;
     internal = 0;
+  elseif strcmpi(varargin{1}, 'on')
+    internal = 0;
   elseif strcmpi(varargin{1}, 'internal')
     internal = internal + 1;
     ott_warning_flag = true;
