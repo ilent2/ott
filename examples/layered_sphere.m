@@ -15,8 +15,7 @@
 addpath('../');
 
 % Make warnings less obtrusive
-ott_warning('once');
-change_warnings('off');
+ott.warning('once');
 
 % Specify refractive indices
 n_medium = 1.34;

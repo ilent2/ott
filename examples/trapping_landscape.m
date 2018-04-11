@@ -15,12 +15,8 @@
 % Add the toolbox to the path (assuming we are in ott/examples)
 addpath('../');
 
-import ott.*
-import ott.utils.*
-
 % Make warnings less obtrusive
-ott_warning('once');
-change_warnings('off');
+ott.warning('once');
 
 if exist ("OCTAVE_VERSION", "builtin")
     warning('ott:example_landscape:function','This code must be modified to run in octave, take the function defined at the bottom of this script and move it to above where it is first called.')
@@ -119,11 +115,6 @@ function structureOutput=landscape(index_range,size_range_rad,system_parameters)
 % structureOutput=will store the data as a structure. Outputs correctly scaled to RI and
 % radius, but not Q or k(Q,\lambda) to power. Re-use the index_range and size_range_rad as plot
 % vectors. Z equilibrium position/k will be NaN for any undefined values.
-%
-% PACKAGE INFO
-
-import ott.*
-import ott.utils.*
 
 verbose=0;
 if nargin<3

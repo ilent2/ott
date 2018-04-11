@@ -20,12 +20,8 @@
 % Add the toolbox to the path (assuming we are in ott/examples)
 addpath('../');
 
-import ott.*
-import ott.utils.*
-
 % Make warnings less obtrusive
-ott_warning('once');
-change_warnings('off');
+ott.warning('once');
 
 %% Create a particle to scatter the beams with
 

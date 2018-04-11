@@ -12,8 +12,7 @@ addpath('../');
 %% Describe the particle, beam and surrounding medium
 
 % Make warnings less obtrusive
-ott_warning('once');
-change_warnings('off');
+ott.warning('once');
 
 % Refractive index of particle and medium
 n_medium = 1.33;
