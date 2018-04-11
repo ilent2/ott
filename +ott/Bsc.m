@@ -234,7 +234,7 @@ classdef Bsc
               ['Apparent errors of ' num2str(aapparent_error) ...
                   ', ' num2str(bapparent_error) ]);
         end
-      else
+      elseif length(beam.a) < total_orders
         [arow_index,acol_index,aa] = find(beam.a);
         [brow_index,bcol_index,ba] = find(beam.b);
         beam.a = sparse(arow_index,acol_index,aa,total_orders,1);
@@ -278,9 +278,15 @@ classdef Bsc
         phi = r(3);
         r = r(1);
       end
-      [beam, D] = beam.rotateYz(theta, phi);
-      beam = beam.translateZ(r);
-      beam = D' * beam;
+
+      % Only do the rotation if we need it
+      if theta ~= 0 || phi ~= 0
+        [beam, D] = beam.rotateYz(theta, phi);
+        beam = beam.translateZ(r);
+        beam = D' * beam;
+      else
+        beam = beam.translateZ(r);
+      end
     end
 
     function [beam, D] = rotate(beam, R)

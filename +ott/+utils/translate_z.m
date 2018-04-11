@@ -41,7 +41,7 @@ if numel(z)>1
         [A{ii},B{ii}]=translate_z(nmax,z(ii));
     end
     C=0;
-    ott_warning('external');
+    ott.warning('external');
     return
 end
 
@@ -49,7 +49,7 @@ if z==0
     A=sparse(1:(nmax^2+nmax*2),1:(nmax^2+nmax*2),1);
     B=sparse((nmax^2+nmax*2),(nmax^2+nmax*2));
     C=A;
-    ott_warning('external');
+    ott.warning('external');
     return
 end
 
@@ -62,9 +62,10 @@ C = zeros(N,N,N);
 % Starting values, for m=0 and k=any -> n=0
 % Videen (38)
 k = 0:(N-1);
-C(:,1,1) = sqrt(2*k+1) .* sbesselj(k,2*pi*z);
 if z < 0
-    C(:,1,1) = sqrt(2*k+1) .* sbesselj(k,2*pi*abs(z)) .* (-1).^(k);
+  C(:,1,1) = sqrt(2*k+1) .* sbesselj(k,2*pi*abs(z)) .* (-1).^(k);
+else
+  C(:,1,1) = sqrt(2*k+1) .* sbesselj(k,2*pi*z);
 end
 
 % Do n=1 as a special case (Videen (40) with n=0,n'=k)
@@ -104,27 +105,22 @@ C(1,N,1) = sqrt(2*n+1)/n * ...
 % Only need to do positive m, since C(-m) = C(m)
 % Videen (41)
 for m = 1:(N-2)
-    kk = m:(N-2);
-    kk = kk(:);
-    nn = m:(N-2);
-    row1 = ones(size(nn));
-    C0 = C(kk+1,nn+1,m);
-    Cp = C(kk+2,nn+1,m);
-    Cm = C(kk,nn+1,m);
-    %     C(kk+1,nn+1,m+1) = sqrt(1./((2*kk+1)*((nn-m+1).*(nn+m)))) .* ...
-    %         ( sqrt(((kk-m+1).*(kk+m))*(2*nn+1)) .* C0 ...
-    %         - 2*pi*z * sqrt(((kk-m+2).*(kk-m+1))*row1) .* Cp ...
-    %         - 2*pi*z * sqrt(((kk+m).*(kk+m-1))*row1) .* Cm );
-    C(kk+1,nn+1,m+1) = sqrt(1./((2*kk+1)*((nn-m+1).*(nn+m)))) .* ...
-        ( sqrt(((kk-m+1).*(kk+m).*(2*kk+1)))*row1 .* C0 ...
-        -2*pi*z*sqrt((((kk-m+2).*(kk-m+1)))./((2*kk+3)))*row1.*Cp ...
-        -2*pi*z*sqrt((((kk+m).*(kk+m-1)))./((2*kk-1)))*row1.*Cm );
+  nn = m:(N-2);
+  kk = nn.';
+  C0 = C(kk+1,nn+1,m);
+  Cp = C(kk+2,nn+1,m);
+  Cm = C(kk,nn+1,m);
+  C(kk+1,nn+1,m+1) = sqrt(1./((2*kk+1)*((nn-m+1).*(nn+m)))) .* ...
+      ( sqrt(((kk-m+1).*(kk+m).*(2*kk+1))).*C0 ...
+      -2*pi*z*sqrt((((kk-m+2).*(kk-m+1)))./((2*kk+3))).*Cp ...
+      -2*pi*z*sqrt((((kk+m).*(kk+m-1)))./((2*kk-1))).*Cm );
 end
 
 % OK, that's the scalar coefficients
 % Time to find the vector coefficients - Videen (43) & (44)
 
-[nn,kk]=meshgrid([1:nmax],[1:nmax]);
+nn = 1:nmax;
+kk = nn.';
 
 matrixm=sqrt(kk.*(kk+1)) ./ sqrt(nn.*(nn+1));
 
@@ -147,16 +143,22 @@ toIndexx=(cix(:));
 A=t(:);
 B=zeros(size(A));
 
-for mmm=1:nmax
-    C0 = C(2:(nmax+1),2:(nmax+1),mmm+1);
-    Cp = C(3:(nmax+2),2:(nmax+1),mmm+1);
-    Cm = C(1:nmax,2:(nmax+1),mmm+1);
-    
-    t = matrixm.*(C0 - 2*pi*z./(kk+1) .* ...
-        sqrt((kk-mmm+1).*(kk+mmm+1)./((2*kk+1).*(2*kk+3))) .* Cp - ...
-        2*pi*z./kk.*sqrt((kk-mmm).*(kk+mmm)./((2*kk+1).*(2*kk-1))).*Cm);
+% Total size of A and B: sum((1:nmax).^2)*2 + nmax^2
 
-    tt=t(mmm:end,mmm:end);
+for mmm=1:nmax
+
+    sz = mmm:nmax;
+
+    C0 = C((1+mmm):(nmax+1),(1+mmm):(nmax+1),mmm+1);
+    Cp = C((2+mmm):(nmax+2),(1+mmm):(nmax+1),mmm+1);
+    Cm = C((mmm):nmax,(1+mmm):(nmax+1),mmm+1);
+
+    tt = matrixm(sz, sz).*(C0 - 2*pi*z./(kk(sz)+1) .* ...
+        sqrt((kk(sz)-mmm+1).*(kk(sz)+mmm+1) ...
+        ./((2*kk(sz)+1).*(2*kk(sz)+3))) .* Cp - ...
+        2*pi*z./kk(sz).*sqrt((kk(sz)-mmm) ...
+        .*(kk(sz)+mmm)./((2*kk(sz)+1).*(2*kk(sz)-1))).*Cm);
+
     ciys=ciy(mmm:end,mmm:end);
     cixs=cix(mmm:end,mmm:end);
     
@@ -164,12 +166,15 @@ for mmm=1:nmax
     toIndexx=[toIndexx;(cixs(:)+mmm);(cixs(:)-mmm)];
     A=[A;tt(:);tt(:)];
 
-    t = 1i*2*pi*z*mmm./(kk.*(kk+1)).*matrixm .* C0;
-    tt=t(mmm:end,mmm:end);
+    tt = mmm./(kk(sz).*(kk(sz)+1)).*matrixm(sz, sz) .* C0;
     B=[B;tt(:);-tt(:)];
 
 end
 
+% Keep B real until the end, makes things run faster
+B = 1i*2*pi*z*B;
+
+% This is faster than A = A + sparse(...) and A(sub2ind(...)) = [...]
 B=sparse(toIndexy,toIndexx,B,nmax*(nmax+2),nmax*(nmax+2));
 A=sparse(toIndexy,toIndexx,A,nmax*(nmax+2),nmax*(nmax+2));
 

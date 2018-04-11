@@ -81,13 +81,8 @@ beam = beam / beam.power();
 tic
 
 %calculate the force along z
-z = linspace(-8,8,80)*wavelength;
-fz = zeros(3, length(z));
-for nz = 1:length(z)
-  tbeam = beam.translateZ(z(nz));
-  sbeam = T * tbeam;
-  fz(:, nz) = ott.forcetorque(tbeam, sbeam);
-end
+z = [0;0;1]*linspace(-8,8,80)*wavelength0;
+fz = ott.forcetorque(beam, T, 'position', z);
 
 % Find the equilibrium along the z axis
 zeq = ott.find_equilibrium(z, fz(3, :));
@@ -98,20 +93,15 @@ end
 zeq = zeq(1);
 
 % Calculate force along x-axis (with z = zeq, if found)
-r = linspace(-4,4,80)*wavelength;
-fr = zeros(3, length(r));
-for nr = 1:length(r)
-  tbeam = beam.translateXyz([r(nr), 0.0, zeq]);
-  sbeam = T * tbeam;
-  fr(:, nr) = ott.forcetorque(tbeam, sbeam);
-end
+r = [1;0;0]*linspace(-4,4,80)*wavelength0 + [0;0;zeq];
+fr = ott.forcetorque(beam, T, 'position', r);
 
 % Finish timing the calculation
 toc
 
 % Generate the plots
 
-figure(1); plot(z/wavelength,fz(3, :));
+figure(1); plot(z(3, :)/wavelength0,fz(3, :));
 xlabel('{\it z} (x\lambda)');
 ylabel('{\it Q_z}');
 aa = axis;
@@ -120,7 +110,7 @@ line(aa(1:2),[ 0 0 ],'linestyle',':');
 line([0 0],aa(3:4),'linestyle',':');
 hold off;
 
-figure(2); plot(r/wavelength,fr(1, :));
+figure(2); plot(r(1, :)/wavelength0,fr(1, :));
 xlabel('{\it r} (x\lambda)');
 ylabel('{\it Q_r}');
 aa = axis;

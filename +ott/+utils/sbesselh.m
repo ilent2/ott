@@ -14,7 +14,6 @@ function [hn,dhn] = sbesselh(n,htype,kr)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
 ott.warning('internal');
 
 kr=kr(:);
@@ -26,7 +25,7 @@ end
 
 [n,kr]=meshgrid(n,kr);
 
-[hn] = ott.utils.besselh(n+1/2,htype,kr);
+[hn] = besselh(n+1/2,htype,kr);
 
 hn = sqrt(pi./(2*kr)) .* (hn);
 

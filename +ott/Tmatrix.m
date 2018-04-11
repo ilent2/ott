@@ -350,6 +350,11 @@ classdef Tmatrix
     function tmatrix = set.Nmax(tmatrix, nmax)
       %set.Nmax resizes the T-matrix
 
+      % Check if we need to do anything
+      if nmax == tmatrix.Nmax
+        return;
+      end
+
       if length(nmax) == 2
         nmax1 = nmax(1);
         nmax2 = nmax(2);
@@ -385,7 +390,7 @@ classdef Tmatrix
         [row_index,col_index,a] = find(A22);
         A22 = sparse(row_index,col_index,a,total_orders1,midpoint2);
 
-      else
+      elseif total_orders1 < midpoint1
 
         A11 = A11(1:total_orders1, :);
         A12 = A12(1:total_orders1, :);
@@ -409,7 +414,7 @@ classdef Tmatrix
         [row_index,col_index,a] = find(A22);
         A22 = sparse(row_index,col_index,a,total_orders1,total_orders2);
 
-      else
+      elseif total_orders2 < midpoint2
 
         A11 = A11(:, 1:total_orders2);
         A12 = A12(:, 1:total_orders2);
@@ -418,18 +423,22 @@ classdef Tmatrix
 
       end
 
-      magA = full(sum(sum(abs(tmatrix.data).^2)));
+      if total_orders1 < midpoint1 || total_orders2 < midpoint2
+        magA = full(sum(sum(abs(tmatrix.data).^2)));
+      end
 
       % Recombined T-matrix from quadrants
       tmatrix.data = [ A11 A12; A21 A22 ];
 
-      magB = full(sum(sum(abs(tmatrix.data).^2)));
-      apparent_error = abs( magA - magB )/magA;
+      if total_orders1 < midpoint1 || total_orders2 < midpoint2
+        magB = full(sum(sum(abs(tmatrix.data).^2)));
+        apparent_error = abs( magA - magB )/magA;
 
-      warning_error_level = 1e-6;
-      if apparent_error > warning_error_level
-          warning('ott:Tmatrix:set.Nmax:truncation', ...
-              ['Apparent error of ' num2str(apparent_error)]);
+        warning_error_level = 1e-6;
+        if apparent_error > warning_error_level
+            warning('ott:Tmatrix:set.Nmax:truncation', ...
+                ['Apparent error of ' num2str(apparent_error)]);
+        end
       end
     end
 
@@ -454,7 +463,8 @@ classdef Tmatrix
       if strcmp(tmatrix.type, 'total')
         % Nothing to do
       elseif strcmp(tmatrix.type, 'scattered')
-        tmatrix.data = 2.0*tmatrix.data + eye(size(tmatrix.data));
+        tmatrix.data = 0.5*(tmatrix.data - eye(size(tmatrix.data)));
+        tmatrix.type = 'total';
       else
         error('Unrecognized T-matrix type');
       end
@@ -464,7 +474,8 @@ classdef Tmatrix
       %TOSCATTERED get a scattered field T-matrix
 
       if strcmp(tmatrix.type, 'total')
-        tmatrix.data = 0.5*(tmatrix.data - eye(size(tmatrix.data)));
+        tmatrix.data = 2.0*tmatrix.data + eye(size(tmatrix.data));
+        tmatrix.type = 'scattered';
       elseif strcmp(tmatrix.type, 'scattered')
         % Nothing to do
       else

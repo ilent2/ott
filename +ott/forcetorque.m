@@ -1,4 +1,4 @@
-function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam)
+function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam, varargin)
 % FORCETORQUE calculate force/torque/spin in a 3D orthogonal space
 % If the beam shape coefficients are in the original coordinates,
 % this outputs the force, torque and spin in 3D carteisan coordinates.
@@ -10,11 +10,17 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam)
 %   [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCETORQUE(...) unpacks the
 %   force/torque/spin into separate output arguments.
 %
+% FORCETORQUE(ibeam, T, 'position', position) first applies a translation
+% to the beam.  position can be a 3xN array, resulting in multiple
+% force/torque calculations for each position.
+%
+% FORCETORQUE(ibeam, T, 'rotation', rotation) first applies a rotation
+% to the beam.  rotation can be a 3x3N array, resulting in
+% multiple calculations.  If both position and rotation are arrays,
+% the translation is applied first, followed by the rotation.
+%
 % n,m are the degree and order of modes contained in the system. They
 % can be the truncated n and m's.
-%
-% a,b,p,q are the incident modes and scattered modes respectively. These
-% must be full or sparse of the appropriate size!!!!!
 %
 % This uses mathematical result of Farsund et al., 1996, in the form of
 % Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
@@ -37,11 +43,80 @@ sx=0;
 sy=0;
 sz=0;
 
+% Parse optional inputs
+p = inputParser;
+p.addParameter('position', []);
+p.addParameter('rotation', []);
+p.parse(varargin{:});
+
 % Ensure beams are the same size
 if ibeam.Nmax > sbeam.Nmax
   sbeam.Nmax = ibeam.Nmax;
 elseif ibeam.Nmax < sbeam.Nmax
   ibeam.Nmax = sbeam.Nmax;
+end
+
+if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
+
+  position = [0,0,0];
+  npositions = 1;
+  if ~isempty(p.Results.position)
+    position = p.Results.position;
+    npositions = size(position, 2);
+  end
+
+  rotation = eye(3);
+  nrotations = 1;
+  if ~isempty(p.Results.rotation)
+    rotation = p.Results.rotation;
+    nrotations = size(rotation, 2)/3;
+  end
+
+  % Rename T-matrix
+  T = sbeam;
+  T = T.toScattered();
+
+  % Preallocate output
+  f = zeros(3, npositions*nrotations);
+  t = f;
+  s = f;
+
+  for ii = 1:npositions
+    for jj = 1:nrotations
+      tbeam = ibeam;
+      if ~isempty(p.Results.position)
+        tbeam = tbeam.translateXyz(position(:, ii));
+      end
+      if ~isempty(p.Results.rotation)
+        tbeam = tbeam.rotate(rotation(:, 3*(jj-1) + (1:3)));
+      end
+      sbeam = T * tbeam;
+      [fl,tl,sl] = ott.forcetorque(tbeam, sbeam);
+      f(:, (ii-1)*nrotations + jj) = fl;
+      t(:, (ii-1)*nrotations + jj) = tl;
+      s(:, (ii-1)*nrotations + jj) = sl;
+    end
+  end
+
+  % Move output to appropriate locations
+  if nargout > 3
+    fx = f(1, :);
+    fy = f(2, :);
+    fz = f(3, :);
+    tx = t(1, :);
+    ty = t(2, :);
+    tz = t(3, :);
+    sx = s(1, :);
+    sy = s(2, :);
+    sz = s(3, :);
+  else
+    fx = f;
+    fy = t;
+    fz = s;
+  end
+
+  ott.warning('external');
+  return;
 end
 
 % Ensure the beam is incomming-outgoing
