@@ -39,6 +39,7 @@ if numel(z)>1
         [A{ii},B{ii}]=translate_z(nmax,z(ii));
     end
     C=0;
+    ott_warning('external');
     return
 end
 
@@ -46,6 +47,7 @@ if z==0
     A=sparse(1:(nmax^2+nmax*2),1:(nmax^2+nmax*2),1);
     B=sparse((nmax^2+nmax*2),(nmax^2+nmax*2));
     C=A;
+    ott_warning('external');
     return
 end
 

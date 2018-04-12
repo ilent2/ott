@@ -20,6 +20,7 @@ function [B,C,P] = vsh(n,m,theta,phi)
 ott_warning('internal');
 
 if length(n)>1
+    ott_warning('external');
     error('n must be a scalar in this version')
 end
 

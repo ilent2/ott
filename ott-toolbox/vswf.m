@@ -30,6 +30,7 @@ function [M,N,M2,N2,M3,N3] = vswf(n,m,kr,theta,phi,htype)
 ott_warning('internal');
 
 if length(n)>1
+    ott_warning('external');
     error('n must be scalar in this version')
 end
 

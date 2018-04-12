@@ -82,6 +82,7 @@ switch beam_type
         [row]=find(and(final_mode(:,2)==azimuthal_mode,final_mode(:,3)==parity),1);
         
         if and(paraxial_order>1,isempty(row))
+            ott_warning('external');
             error('Observe parity convensions!')
         end
 end

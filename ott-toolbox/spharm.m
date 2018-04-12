@@ -23,6 +23,7 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 ott_warning('internal');
 
 if length(n)>1
+    ott_warning('external');
     error('n must be a scalar at present')
 end
 
@@ -75,6 +76,7 @@ Y = pnm .* expphi;
 if nargout <= 1
    Y=Y.';
    % Doesn't look like it
+   ott_warning('external');
    return
 end
 

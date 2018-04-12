@@ -41,6 +41,7 @@ if nargin==4
         b=a(labpq+1:end);
         a=a(1:labpq);
     else
+        ott_warning('external');
         error('[a;b] must be the same size as [p;q]!')
     end
 end

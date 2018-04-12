@@ -143,6 +143,7 @@ if verbose
 end
 
 if behaviour==0
+    ott_warning('external');
     error('no non-zero elements!')
 end
 
@@ -527,6 +528,7 @@ switch behaviour
         
         
     otherwise
+        ott_warning('external');
         error('ott:electromagnetic_field_xyz:notyetimplemented','This behaviour is not implemented.')
         
         
