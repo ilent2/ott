@@ -10,6 +10,9 @@ function w0 = lg_mode_w0( mode, angle )
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:lg_mode_w0:depreciated', ...
+    'lg_mode_w0.m file will be removed in ott1.4.');
+
 % Precalculated results for small l
 psi1 = [ 2.25262074788770;
    3.14619322065846;
