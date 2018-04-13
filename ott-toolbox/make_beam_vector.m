@@ -8,6 +8,10 @@ function [newa,newb,newn,newm] = make_beam_vector(olda,oldb,n,m,Nmax)
 % [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m) calculates Nmax from
 % max(n).
 %
+% Optional (will not calculate if n2, m2 not requested):
+% [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m);
+% [a2,b2,n2,m2] = make_beam_vector(a1,b1,n,m,Nmax);
+%
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

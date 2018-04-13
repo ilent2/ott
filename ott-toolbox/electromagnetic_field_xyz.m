@@ -573,7 +573,6 @@ if behaviour==7||behaviour==4||behaviour==5||behaviour==6
     
     ott_warning('ott:electromagnetic_field_xyz:internalfield', ...
         'Must scale grid for internal fields by relative refractive index.')
-    
 end
 
 if behaviour==2|behaviour==3|behaviour==6|behaviour==7

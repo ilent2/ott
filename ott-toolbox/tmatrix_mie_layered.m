@@ -121,5 +121,3 @@ if nargout>1
     t2=sparse([1:2*(nmax^2+2*nmax)],[1:2*(nmax^2+2*nmax)],[c(indexing);d(indexing)]);
     
 end
-
-end
