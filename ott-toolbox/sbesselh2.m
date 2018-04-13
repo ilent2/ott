@@ -12,6 +12,8 @@ function [hn,dhn] = sbesselh2(n,kr)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:sbesselh2:move', ...
+    'This file will move to ott.utils.sbesselh2');
 ott_warning('internal');
 
 kr=kr(:);

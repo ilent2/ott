@@ -29,6 +29,8 @@ function [r,n,rotsym,xyz_vec] = shapesurface(theta,phi,shape,parameters)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:shapesurface:move', ...
+    'This file will move to ott.utils.shapesurface');
 ott_warning('internal');
 
 % For a surface defined by

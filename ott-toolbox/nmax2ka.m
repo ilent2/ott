@@ -9,6 +9,9 @@ function ka = nmax2ka(Nmax)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:nmax2ka:move', ...
+    'This file will move to ott.utils.nmax2ka');
+
 for ii=1:length(Nmax)
     kas = roots([1 (-3*Nmax(ii)) (27+3*Nmax(ii).^2) (-Nmax(ii).^3)]);
     ka(ii) = kas(3);

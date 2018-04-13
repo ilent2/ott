@@ -11,6 +11,9 @@ function pnm=legendrerow(n,theta)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:legendrerow:move', ...
+    'This file will move to ott.utils.legendrerow');
+
 if n==0;
     pnm=1/sqrt(2*pi)/sqrt(2);
     return

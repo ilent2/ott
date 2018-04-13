@@ -7,6 +7,9 @@ function [output]=hermite(n,X);
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:hermite:move', ...
+    'This file will move to ott.utils.hermite');
+
 x=X(:);
 
 h=zeros(numel(x),max([n+1,2]));

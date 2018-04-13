@@ -20,6 +20,9 @@ function [A,B,C] = translate_z(nmax,z)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:translate_z:move', ...
+    'This file will move to ott.utils.translate_z');
+
 % Refs:
 % N. A. Gumerov and R. Duraiswami, "Recursions for the computation of
 % multipole translation and rotation coefficients for the 3-D Helmholtz

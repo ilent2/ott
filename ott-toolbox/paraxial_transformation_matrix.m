@@ -30,6 +30,8 @@ function [ modeweights col_modes row_modes ] = paraxial_transformation_matrix( p
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:paraxial_transformation_matrix:move', ...
+    'This file will move to ott.utils.paraxial_transformation_matrix');
 ott_warning('internal');
 
 if nargin==3

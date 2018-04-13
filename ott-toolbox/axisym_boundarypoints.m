@@ -9,6 +9,9 @@ function [rtp,n,ds]=axisym_boundarypoints(Nmax,rho,z);
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:axisym_boundarypoints:move', ...
+    'This file will move to ott.utils.axisym_boundarypoints');
+
 ott_warning('internal');
 
 % %%%%test values

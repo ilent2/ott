@@ -8,6 +8,7 @@ function x = isodd(input)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-%warning('ott:isodd:move','this function will move to ott.utils.isodd');
+ott_warning('ott:isodd:move', ...
+    'this function will move to ott.utils.isodd');
 
 x = logical(mod(input,2));

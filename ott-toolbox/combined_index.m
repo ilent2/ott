@@ -13,6 +13,9 @@ function [out1,out2] = combined_index(in1,in2)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:combined_index:move', ...
+    'This file will move to ott.utils.combined_index');
+
 % Sanity check
 if nargin == 1
    out1 = floor(sqrt(in1));

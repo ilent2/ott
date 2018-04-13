@@ -22,6 +22,9 @@ function [M,N,M2,N2,M3,N3] = vswf(n,m,kr,theta,phi,htype)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:vswf:move', ...
+    'This file will move to ott.utils.vswf');
+
 % Check input vectors
 % These must all be of equal length if non-scalar
 % and for good measure, we expand any scalar ones

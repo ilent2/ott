@@ -16,7 +16,8 @@ function [r,theta,phi] = xyz2rtp(x,y,z)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-%warning('ott:xyz2rtp:move','this function will move to ott.utils.xyz2rtp');
+ott_warning('ott:xyz2rtp:move', ...
+    'this function will move to ott.utils.xyz2rtp');
 
 if nargin == 1
    y = x(:,2);

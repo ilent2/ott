@@ -8,7 +8,7 @@ function x = iseven(input)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-%warning('ott:iseven:move','This function will be moved to ott.utils.iseven');
+ott_warning('ott:iseven:move', ...
+    'This function will be moved to ott.utils.iseven');
 
 x = logical(mod(mod(input,2)+1,2));
-

@@ -9,7 +9,8 @@ function wide_vector = threewide( a )
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-%warning('ott:threewide:move','this function will move to ott.utils.threewide');
+ott_warning('ott:threewide:move', ...
+    'this function will move to ott.utils.threewide');
 
 a = a(:);
 wide_vector = [ a a a ];

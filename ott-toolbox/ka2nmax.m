@@ -9,5 +9,8 @@ function Nmax = ka2nmax(ka)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:ka2nmax:move', ...
+    'This file will move to ott.utils.ka2nmax');
+
 Nmax = ka + 3 * ka.^(1/3);
 Nmax = ceil(Nmax);

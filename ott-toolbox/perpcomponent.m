@@ -11,6 +11,9 @@ function [Aperp,Apar] = perpcomponent( A, n )
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+ott_warning('ott:perpcomponent:move', ...
+    'This file will move to ott.utils.perpcomponent');
+
 % Make n a unit vector
 nmag = dot(n,n,2);
 nmag3 = threewide(nmag); % Only works for 3 component vectors
