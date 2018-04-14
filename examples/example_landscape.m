@@ -283,7 +283,7 @@ for particle=1:nParticles
                         p = pq(1:total_orders);
                         q = pq((total_orders+1):end);
                         
-                        [fx1,~,~,~,~,~]= forcetorque(n,m,aTx,bTx,p,q);
+                        [~,~,fx1,~,~,~,~,~,~]= forcetorque(n,m,aTx,bTx,p,q);
                         
                         aTx=Ad*Dx*a1+Bd*Dx*b1;
                         bTx=Ad*Dx*b1+Bd*Dx*a1;
@@ -292,7 +292,7 @@ for particle=1:nParticles
                         p = pq(1:total_orders);
                         q = pq((total_orders+1):end);
                         
-                        [fx0,~,~,~,~,~]= forcetorque(n,m,aTx,bTx,p,q);
+                        [~,~,fx0,~,~,~,~,~,~]= forcetorque(n,m,aTx,bTx,p,q);
                         
                         x_stiffness(index,particle)=(fx1-fx0)/2e-8;
                     else

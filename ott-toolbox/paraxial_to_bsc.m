@@ -192,7 +192,7 @@ if nargout==2
     mm=b;
 end
 if nargout==4
-    ci=combined_index(n,m);
+    ci=combined_index(nn,mm);
     a=a(ci);
     b=b(ci);
 end
