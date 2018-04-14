@@ -5,7 +5,9 @@ function LG = lgmode(p,l,r,phi,z,theta)
 % at locations given in polar coordinates [r, phi].
 % r is in units of the beam width; r and phi can be matrices of equal size.
 %
-% A = LGMODE(p,l,r,phi,theta) scales the beam waist according to the
+% A = LGMODE(p,l,r,phi,z) computes the modes with z as well.
+%
+% A = LGMODE(p,l,r,phi,z,theta) scales the beam waist according to the
 % beam convergence angle theta (in degrees): w0=1/tan(theta).
 %
 % This file is part of the optical tweezers toolbox.
@@ -14,33 +16,14 @@ function LG = lgmode(p,l,r,phi,z,theta)
 ott_warning('ott:lgmode:move', ...
     'This file will move to ott.utils.lgmode');
 
+w=paraxial_beam_waist(2*p+abs(l)); %Beam waist in normalized units.
+
 if nargin<6
-    theta=atan(1/pi)*180/pi;
+    theta=atan(w.^2/pi)*180/pi;
 end
 if nargin<5
 	z=0;
 end
-
-w = 1.; %Beam waist in normalized units.
-
-% if (l ~= 0)
-%     invL=1./abs(l );
-%     zz = exp(-(abs(l )+2.)*invL);
-%     w=-(1.+2*sqrt(invL)+invL); %This is a really good starting guess. It converges within 3 iterations for l=1:10000+
-%     
-%     w0=-w;
-%     
-%     while (abs(w-w0)>0.00001)
-%         w0=w;
-%         expw = exp(w);
-%         
-%         w=w0-(w0*expw+zz)/(expw+w0*expw); %Newton's rule... Usually this kind of method would find the real root i.e. W_0(z)... This finds W_{-1}(z) local to the beam waist of an LG beam.
-%         
-%     end
-%     
-%     w = sqrt(-abs(l )/2.*w); %Beam waist in normalized units
-%     
-% end
 
 k=2*pi;
 w0=w/pi/tan(abs(theta/180*pi));

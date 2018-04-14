@@ -1,26 +1,29 @@
 function HG=hgmode(m,n,x,y,z,theta);
-%HGMODE calcualtes HG mode
+% HGMODE calcualtes HG mode amplitude at z = 0
 %
 % A = HGMODE(m,n,x,y) calcualtes HG mode amplitude for mode [m,n] at
 % location [x,y].
 %
-% A = HGMODE(m,n,x,y,theta) scales the beam waist according to the
-% beam convergence angle theta (in degrees): w0=1/tan(theta).
+% A = HGMODE(m,n,x,y,z) calcualtes HG mode amplitude for mode [m,n] at
+% location [x,y,z].
 %
+% A = HGMODE(m,n,x,y,z,theta) scales the beam waist according to the
+% beam convergence angle theta (in degrees): w0=1/tan(theta).
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
 ott_warning('ott:hgmode:move', ...
     'This file will move to ott.utils.hgmode');
 
+w=paraxial_beam_waist(m+n); %Beam waist in normalized units.
+
 if nargin<6
-    theta=atan(1/pi)*180/pi;
+    theta=atan(w.^2/pi)*180/pi;
 end
 if nargin<5
 	z=0;
 end
-
-w = 1.; %Beam waist in normalized units.
 
 k=2*pi;
 w0=w/pi/tan(abs(theta/180*pi));

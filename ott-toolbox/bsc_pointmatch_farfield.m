@@ -8,11 +8,14 @@ function [nn,mm,a,b] = bsc_pointmatch_farfield( nmax, beam_type, ...
 %
 % Currently available types of beams [parameters]:
 % 0 Gauss-Hermite beam
-%   [ m n w0 P xcomponent ycomponent truncation_angle beam_offset ]
+%   [ m n beam_angle P xcomponent ycomponent truncation_angle beam_offset ]
 % 1 Laguerre-Gauss beam
-%   [ p l w0 P xcomponent ycomponent truncation_angle beam_offset ]
+%   [ p l beam_angle P xcomponent ycomponent truncation_angle beam_offset ]
 % 2 Ince-Gauss beam
-%   [ o m p xi w0 P xcomponent ycomponent truncation_angle beam_offset ]
+%   [ o m p xi beam_angle P xcomponent ycomponent truncation_angle beam_offset ]
+%
+% beam_angle is the angle of the incoming beam waist.
+% beam_offset is a three-column vector [x,y,z] of new beam origin.
 %
 % Optional parameters:
 %
@@ -91,7 +94,7 @@ keepz=(abs(modeweights(row,:))>0);
 initial_mode=initial_mode(keepz,:);
 c=modeweights(row,keepz);
 
-w0 = parameters(3);
+beam_angle = parameters(3);
 k = 2*pi * medium_refractive_index / beam_wavelength0;
 xcomponent = parameters(5);
 ycomponent = parameters(6);
@@ -173,38 +176,20 @@ np = length(theta);
 %   (speed_in_medium*kappa));
 
 central_amplitude = 1;
-rw = (k * w0)^2 * tan(theta).^2 / 2;
-dr = (k * w0) * (sec(theta)).^2 / 2;
+
+w0 = paraxial_beam_waist(paraxial_order);
+
+wscaling=1/tan(abs(beam_angle/180*pi));
+
+rw = 2*(wscaling * w0)^2 * tan(theta).^2 ;
+dr = (wscaling * w0) * (sec(theta)).^2 ;
 
 if aperture_function==2
     
-    % This is a solution to a problem created by lg_mode_w0... we need to
-    % normalise to the "mode size".
+    wscaling=1/sin(abs(beam_angle/180*pi));
     
-    w = 1.; %Beam waist in normalized units.
-    
-    if  paraxial_order ~= 0
-        invL=1./abs(paraxial_order );
-        z = exp(-(abs(paraxial_order )+2.)*invL);
-        w=-(1.+2*sqrt(invL)+invL); %This is a really good starting guess. It converges within 3 iterations for l=1:10000+
-        
-        wt=-w;
-        
-        while (abs(w-wt)>0.00001)
-            wt=w;
-            expw = exp(w);
-            
-            w=wt-(wt*expw+z)/(expw+wt*expw); %Newton's rule... Usually this kind of method would find the real root i.e. W_0(z)... This finds W_{-1}(z) local to the beam waist of an LG beam.
-            
-        end
-        
-        w = sqrt(-abs(paraxial_order )/2.*w); %Beam waist in normalized units
-        
-    end
-    
-    kw0=sqrt(1+((k * w0)/w./2).^2);
-    rw = 2*(w*kw0)^2 * sin(theta).^2 ;
-    dr = (w*kw0) * abs(cos(theta)) ;
+    rw = 2*(wscaling * w0)^2 * sin(theta).^2 ;
+    dr = (wscaling * w0) * abs(cos(theta)) ;
 end
 
 % degree and order of all modes
