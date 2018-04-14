@@ -136,8 +136,6 @@ k=2*pi*medium_index; %normalized units
 nTrans=100;
 theta=asin(system_parameters(1)/system_parameters(2));
 
-w0 = lg_mode_w0( [ 0 0 ], theta*180/pi );
-
 nParticles=length(relsize_range);
 nIndexes=length(relindex_range);
 z_equilibrium=zeros(nIndexes,nParticles);
@@ -162,7 +160,7 @@ for particle=1:nParticles
     %We calculate particle size, then refractive index. Therefore we can
     %calculate all needed translations now.
 
-    Nmax=ka2nmax(max([2*k*w0,k/medium_index*relsize_range(particle)*max(relindex_range)]));
+    Nmax=ka2nmax(max([2*k*.3,k/medium_index*relsize_range(particle)*max(relindex_range)]));
     if Nmax<13
         Nmax=13;
     end
@@ -170,7 +168,7 @@ for particle=1:nParticles
     total_orders=Nmax*(Nmax+2);
     
     %make beam and normalize power for force
-    [n0,m0,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 system_parameters(4:5) system_parameters(6) 0 0 0 ]);
+    [n0,m0,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 theta*180/pi 1 system_parameters(4:5) system_parameters(6) 0 0 0 ]);
     [a,b,n,m] = make_beam_vector(a0,b0,n0,m0,Nmax); %unpacked a,b,n,m;
     
     pwr=sqrt(sum(abs(a0).^2+abs(b0).^2));
@@ -198,7 +196,7 @@ for particle=1:nParticles
     end
     
     %rotation to x-axis
-    Rx = z_rotation_matrix(pi/2,0);
+    Rx = rotation_matrix([-sin(0),cos(0),0],pi/2);
     Dx = wigner_rotation_matrix(Nmax,Rx);
     
     %Translation along x-axis. To work out central difference...
@@ -222,7 +220,7 @@ for particle=1:nParticles
             p = pq(1:total_orders);
             q = pq((total_orders+1):end);
 
-            fz(trans) = force_z(n,m,aTa,bTa,p,q);
+            [~,~,fz(trans),~,~,~] = forcetorque(n,m,aTa,bTa,p,q);
             
         end
 %       figure(4);plot(position,fz);hold on;
@@ -285,7 +283,7 @@ for particle=1:nParticles
                         p = pq(1:total_orders);
                         q = pq((total_orders+1):end);
                         
-                        fx1= force_z(n,m,aTx,bTx,p,q);
+                        [~,~,fx1,~,~,~,~,~,~]= forcetorque(n,m,aTx,bTx,p,q);
                         
                         aTx=Ad*Dx*a1+Bd*Dx*b1;
                         bTx=Ad*Dx*b1+Bd*Dx*a1;
@@ -294,7 +292,7 @@ for particle=1:nParticles
                         p = pq(1:total_orders);
                         q = pq((total_orders+1):end);
                         
-                        fx0= force_z(n,m,aTx,bTx,p,q);
+                        [~,~,fx0,~,~,~,~,~,~]= forcetorque(n,m,aTx,bTx,p,q);
                         
                         x_stiffness(index,particle)=(fx1-fx0)/2e-8;
                     else

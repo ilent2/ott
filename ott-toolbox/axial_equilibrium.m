@@ -74,7 +74,7 @@ while ~chkflg
             q(1:length(pq)/2)=pq(length(pq)/2+1:end);
             
             %power has already been normalized to 1.
-            fz(ii)=force_z(n(:),m(:),a1(:),b1(:),p(:),q(:));
+            [~,~,fz(ii),~,~,~]=forcetorque(n(:),m(:),a1(:),b1(:),p(:),q(:));
         end
     end
     
