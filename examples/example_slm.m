@@ -154,7 +154,7 @@ for ii = 1:length(z)
     p = pq(1:length(pq)/2);
     q = pq(length(pq)/2+1:end);
     
-    fxyz3(:,ii) = force_torque_farsund(n,m,a2,b2,p,q);
+    fxyz3(:,ii) = forcetorque(n,m,a2,b2,p,q);
 
     W=wigner_rotation_matrix(Nmax,rotation_matrix([-sin(rtp1(ii,3)),cos(rtp1(ii,3)),0],rtp1(ii,2)));
 
@@ -165,7 +165,7 @@ for ii = 1:length(z)
     p = pq(1:length(pq)/2);
     q = pq(length(pq)/2+1:end);
     
-    fxyz1(:,ii) = force_torque_farsund(n,m,a2,b2,p,q);
+    fxyz1(:,ii) = forcetorque(n,m,a2,b2,p,q);
 
     W=wigner_rotation_matrix(Nmax,rotation_matrix([-sin(rtp2(ii,3)),cos(rtp2(ii,3)),0],rtp2(ii,2)));
 
@@ -176,7 +176,7 @@ for ii = 1:length(z)
     p = pq(1:length(pq)/2);
     q = pq(length(pq)/2+1:end);
     
-    fxyz2(:,ii) = force_torque_farsund(n,m,a2,b2,p,q);
+    fxyz2(:,ii) = forcetorque(n,m,a2,b2,p,q);
     
 end
 %%

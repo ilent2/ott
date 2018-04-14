@@ -83,7 +83,7 @@ b_full=sparse(nmax*(nmax+2),1);
 
 for ii=1:order+1
 
-    [n,m,a,b]=bsc_pointmatch_farfield(nmax,1,[lg_modes(ii,:) lg_mode_w0(lg_modes(ii,:),convergence_angle) 1 polarisation 90 ],'sintheta');
+    [n,m,a,b]=bsc_pointmatch_farfield(nmax,1,[lg_modes(ii,:) convergence_angle 1 polarisation 90 ],'sintheta');
 
     nmax=max(nmax,max(n));
 

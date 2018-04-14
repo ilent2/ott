@@ -60,14 +60,13 @@ diam_microns = radius * 1.064 * 2 / n_medium;
 % For a Gaussian beam: w0 = 2/(k*tan(theta))
 NA = 1.25;
 beam_angle = asin(NA/n_medium)*180/pi;
-w0 = lg_mode_w0( [ 0 0 ], beam_angle );
 
 % Polarisation. [ 1 0 ] is plane-polarised along the x-axis, [ 0 1 ] is
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
 polarisation = [ 1i 1 ];
 
 %Makes beam.
-[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 ]);
+[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 beam_angle 1 polarisation 90 ]);
 [a,b,n,m] = make_beam_vector(a0,b0,n,m);
 
 %Finds the root power (note this is different than dividing at the level of
@@ -161,7 +160,7 @@ for ii=2:numt
 %     [ft(2),tt(2)] = force_z(n,m,Dy*ad,Dy*bd,Dy*pd,Dy*qd); %Dy makes the z-force calculation the y-force calculation.
     
     %This method is more streamlined than the above.
-    [ft,tt] = force_torque_farsund(n,m,ad,bd,pd,qd);
+    [ft,tt] = forcetorque(n,m,ad,bd,pd,qd);
     
     %Dynamic time-stepping asymptotic with dtlim. We assume that no
     %multiplier is needed on the rotation to correct the error. There is
