@@ -27,15 +27,13 @@ if Nmax < 12
 end
 
 % a Gaussian beam: w0 = 2/(k*tan(theta))
-w0 = 0.2671; % Convergence half-angle of 50 degrees
-% Use lg_mode_w0 to find w0 from the angle
+beam_angle = 50; % Convergence half-angle of 50 degrees
 
 % Polarisation. [ 1 0 ] is plane-polarised along the x-axis, [ 0 1 ] is
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
 polarisation = [ 1 0 ];
 
-[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 w0 1 polarisation 90 ]);
-[a,b] = make_beam_vector(a0,b0,n,m);
+[a,b] = bsc_pointmatch_farfield(Nmax,1,[ 0 0 beam_angle 1 polarisation 90 ]);
 
 % If you're going to do a range of particles, then the T-matrix has to
 % calculated inside the loop.

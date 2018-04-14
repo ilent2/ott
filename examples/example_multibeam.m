@@ -16,10 +16,8 @@ polarization = [1 i];  %circular polarization
 
 Nmax = ka2nmax(2*pi*r_particle); %calculate limit of the expansion
 
-w0 = lg_mode_w0([0 0], beam_angle);
-
 %calculate the beam shape coefficients
-[n, m, a0, b0] = bsc_pointmatch_farfield(Nmax, 1, [0 0 w0 1 polarization 90 ]);
+[n, m, a0, b0] = bsc_pointmatch_farfield(Nmax, 1, [0 0 beam_angle 1 polarization 90 ]);
 [a, b, n, m] = make_beam_vector(a0, b0, n, m); %pack beam vector to full size
 
 %calculate the power of the two beam system:
@@ -38,7 +36,7 @@ a2 = aa * exp(2 * pi * 1i * 1/2); %shift half a wavelength (in z) in the medium.
 b2 = bb * exp(2 * pi * 1i * 1/2); %these phase shifts are for demonstration only...
 
 %calculate a rotation off the +z-axis
-R = z_rotation_matrix(pi/2,0);
+R = rotation_matrix([-sin(0),cos(0),0],pi/2);
 D = wigner_rotation_matrix(Nmax,R);
 
 %shift the beams so that they are symmetric around the origin:
@@ -65,7 +63,7 @@ pq = T * [a_total; b_total];                %calculate scattered BSC
 [n1,m1]=combined_index([1:Nmax^2 + 2 * Nmax].');
 
 %calculate force at point in z.
-Q_z = force_z(n1, m1, [a_total; b_total], pq) / power_total;
+[~,~,Q_z,~,~,~] = forcetorque(n1, m1, [a_total; b_total], pq) / power_total;
 
 %demonstrate success by plotting a line of force along the separation direction.
 figure(1)
@@ -81,7 +79,7 @@ for ii=1:100
     pq=T*[a_n;b_n];
     
     %plot the force in the x direction by rotating the spherical waves
-    Q_x = force_z(n1, m1, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+    [~,~,Q_x,~,~,~] = forcetorque(n1, m1, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
     plot(4*ii/100-2,Q_x,'bx')
 end
 hold off
@@ -93,7 +91,7 @@ Nmax = ka2nmax(2*pi*r_particle); %re-calculate limit of the expansion
 T = tmatrix_mie(Nmax,2*pi,2*pi*n_relative,r_particle);   %T-matrix for a Mie scatterer
 
 %calculate a rotation off the +z-axis
-R = z_rotation_matrix(pi/2,0);
+R = rotation_matrix([-sin(0),cos(0),0],pi/2);
 D = wigner_rotation_matrix(Nmax,R);
 
 av=[a,a]; %using old nmax
@@ -123,7 +121,7 @@ for ii=1:100
     %calculate the scattering...
     pq=T*[a_n;b_n];
     
-    Q_x = force_z(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+    [~,~,Q_x,~,~,~] = forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
     plot(4*ii/100-2,Q_x,'rx')
 end
 hold off
@@ -135,7 +133,7 @@ Nmax = ka2nmax(2*pi*r_particle); %re-calculate limit of the expansion
 T = tmatrix_mie(Nmax,2*pi,2*pi*n_relative,r_particle);   %T-matrix for a Mie scatterer
 
 %calculate a rotation off the +z-axis
-R = z_rotation_matrix(pi/2,0);
+R = rotation_matrix([-sin(0),cos(0),0],pi/2);
 D = wigner_rotation_matrix(Nmax,R);
 
 av=[a,a]; %using old nmax
@@ -156,9 +154,10 @@ for ii=1:100
         pq=T*[a_n;b_n];
         
         if jj==1
-            Q_x = force_z(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+            [~,~,Q_x,~,~,~] = forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
         else
-            Q_x = Q_x + force_z(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+            [~,~,temp_x,~,~,~]=forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+            Q_x = Q_x + temp_x;
         end
     end
     
@@ -186,9 +185,10 @@ for ii=1:100
         pq=T*[a_n;b_n];
         
         if jj==1
-            Q_x = force_z(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+            [~,~,Q_x,~,~,~] = forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
         else
-            Q_x = Q_x + force_z(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+            [~,~,temp_x,~,~,~]=forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+            Q_x = Q_x + temp_x;
         end
     end
     
