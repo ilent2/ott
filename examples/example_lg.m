@@ -61,13 +61,12 @@ diam_microns = radius * 1.064 * 2 / n_medium;
 % For a Gaussian beam: w0 = 2/(k*tan(theta))
 NA = 1.02;
 beam_angle = asin(NA/n_medium)*180/pi;
-w0 = lg_mode_w0( [ 0 3 ], beam_angle );
 
 % Polarisation. [ 1 0 ] is plane-polarised along the x-axis, [ 0 1 ] is
 % y-polarised, and [ 1 -i ] and [ 1 i ] are circularly polarised.
 polarisation = [ 1 i ];
 
-[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 3 w0 1 polarisation 90 ]);
+[n,m,a0,b0] = bsc_pointmatch_farfield(Nmax,1,[ 0 3 beam_angle 1 polarisation 90 ]);
 [a,b,n,m] = make_beam_vector(a0,b0,n,m);
 
 %% Insert tmatrix here %%
@@ -98,7 +97,7 @@ for nz = 1:length(z)
     p = pq(1:length(pq)/2);
     q = pq(length(pq)/2+1:end);
     
-    fz(nz) = force_z(n,m,a2,b2,p,q);
+    [~,~,fz(nz),~,~,~] = forcetorque(n,m,a2,b2,p,q);
     
 end
 
@@ -131,12 +130,12 @@ end
 [rt,theta,phi]=xyz2rtp(r,0,zeq);
 
 %calculate the x-axis coefficients for force calculation.
-Rx = z_rotation_matrix(pi/2,0);
+Rx = rotation_matrix([-sin(0),cos(0),0],pi/2);
 Dx = wigner_rotation_matrix(Nmax,Rx);
 
 for nr = 1:length(r)
     
-    R = z_rotation_matrix(theta(nr),phi(nr)); %calculates an appropriate axis rotation off z.
+    R = rotation_matrix([-sin(phi(nr)),cos(phi(nr)),0],theta(nr)); %calculates an appropriate axis rotation off z.
     D = wigner_rotation_matrix(Nmax,R);
     
     [A,B] = translate_z(Nmax,rt(nr));
@@ -147,7 +146,7 @@ for nr = 1:length(r)
     p = pq(1:length(pq)/2);
     q = pq(length(pq)/2+1:end);
     
-    fr(nr) = force_z(n,m,Dx*a2,Dx*b2,Dx*p,Dx*q); %Dx makes the z-force calculation the x-force calculation.
+    [~,~,fr(nr),~,~,~] = forcetorque(n,m,Dx*a2,Dx*b2,Dx*p,Dx*q); %Dx makes the z-force calculation the x-force calculation.
     
 end
 %     timetakes(ii)=toc;
