@@ -94,17 +94,17 @@ change_warnings('off');
 
   Common changes include:
 
-  > `lg_mode_w0` is now depreciated.  If you are using the output of
+  * `lg_mode_w0` is now depreciated.  If you are using the output of
     `lg_mode_w0` as input to the `bsc_*` functions, you should now pass
     the `beam_angle` into these functions instead of `w0`.
 
-  > `z_rotation_matrix` can be replaced with `rotz(phi_deg)*roty(theta_deg)`
+  * `z_rotation_matrix` can be replaced with `rotz(phi_deg)*roty(theta_deg)`
     where `phi_deg` and `theta_deg` are the azimuthal and axial
     rotations in degrees.
 
-  > There is now only one force/torque calculation function, `forcetorque`.
+  * There is now only one force/torque calculation function, `forcetorque`.
 
-  > `calc_rotation_matrix` can be replaced with `rotation_matrix`.
+  * `calc_rotation_matrix` can be replaced with `rotation_matrix`.
 
 * Run your code again, checking the result is correct.
 
