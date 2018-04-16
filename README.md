@@ -55,18 +55,73 @@ toolbox paper (pre-print).  Both are available on our
           c is the speed of light in free space,
           w is the angular optical frequency, in radians/s.
 
-To-do list
-----------
+Upgrading
+---------
 
-* Version 2 of the toolbox, an object orientated implementation with
-  a focus on simulating particles in optical traps rather than just
-  focussing on calculating optical forces/torques.  (in progress)
-  
-* Automatic choice of Nmax
+* Download the latest release of 1.3, add it to your Matlab path with
 
-* Graphical user interface (in progress)
+```
+addpath('ott-1.3/ott-toolbox');
+```
 
-* T-Matrix routines for arbitrary particles
+* Make sure change warnings are on, i.e. add the following to your code:
+
+```
+ott_warning('once');
+change_warnings('on');
+```
+
+* Run your code and take note of the warnings produced
+* Download the latest release of 1.4.  Remove 1.3 from your matlab path
+  and add 1.4 to your matlab path.
+
+```
+rmpath('ott-1.3/ott-toolbox');
+addpath('ott-1.4/ott-toolbox');
+```
+
+* Turn off change warnings, since these are now the warnings about
+  depreciations/changes to 1.5.
+
+```
+ott_warning('off');
+ott_warning('on');
+ott_warning('once');
+change_warnings('off');
+```
+
+* For each of the warnings that you noted before when you ran your
+  code for 1.3, change the appropriate lines.
+
+  Common changes include:
+
+  > `lg_mode_w0` is now depreciated.  If you are using the output of
+    `lg_mode_w0` as input to the `bsc_*` functions, you should now pass
+    the `beam_angle` into these functions instead of `w0`.
+
+  > `z_rotation_matrix` can be replaced with `rotz(phi_deg)*roty(theta_deg)`
+    where `phi_deg` and `theta_deg` are the azimuthal and axial
+    rotations in degrees.
+
+  > There is now only one force/torque calculation function, `forcetorque`.
+
+  > `calc_rotation_matrix` can be replaced with `rotation_matrix`.
+
+* Run your code again, checking the result is correct.
+
+Upcoming release
+----------------
+
+* Version 1.5 will introduce an object orientated interface for
+  beams and T-matrices.  Nmax will be hidden within the objects,
+  and automatic choice of Nmax will be done where possible.
+
+* Version 2 will introduces a focus on simulating particles in
+  optical traps rather than just focussing on calculating optical
+  forces and torques.  The plan is also to introduce geometric
+  optics, Rayleigh particles, and arbitrary T-matrix particles
+  calculated using DDA.  The toolbox will be more automated and
+  include a graphical user interface.
 
 Licence
 -------
