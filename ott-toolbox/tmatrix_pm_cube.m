@@ -182,8 +182,6 @@ end
 
 function [ncube,mcube,cicube]=nm_cube(n,m,Nmax)
 % nm_cube.m: Calculates which n, m and ci to use for a cube
-%
-% PACKAGE INFO
 
 %n = 1;
 %m = 2;

@@ -135,8 +135,6 @@ function [output,LGlookups,HGlookups]=genLG2HG(order_paraxial);
 % Usage:
 %
 % [modewieghts,LGlookups,HGlookups] = genLG2HG(paraxial_order)
-%
-% PACKAGE INFO
 
 n=[0:floor(order_paraxial/2)];
 k=n;
@@ -204,8 +202,6 @@ function [output,LGlookups,HGlookups]=genLG2vHG(order_paraxial);
 % Usage:
 %
 % [modewieghts,LGlookups,HGlookups] = genLG2vHG(paraxial_order)
-%
-% PACKAGE INFO
 
 n=[0:floor(order_paraxial/2)];
 k=n;
@@ -281,8 +277,6 @@ function [modeweights,LGlookups,IGlookups]=genLG2IG(order_paraxial,xi)
 % Usage:
 %
 % [modewieghts,LGlookups,IGlookups] = genLG2IG(paraxial_order,xi)
-%
-% PACKAGE INFO
 
 %first create the upper block... these are the fourier coefficients...
 [A_n,B_n]=incecoefficients(order_paraxial,xi);
@@ -337,8 +331,6 @@ function [modeweights,LGlookups,IGlookups]=genLG2vIG(order_paraxial,xi)
 % Usage:
 %
 % [modewieghts,LGlookups,IGlookups] = genLG2vIG(paraxial_order,xi)
-%
-% PACKAGE INFO
 
 %first create the upper block... these are the fourier coefficients...
 [A_n,B_n]=incecoefficients(order_paraxial,xi);

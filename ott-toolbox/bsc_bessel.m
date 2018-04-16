@@ -17,7 +17,8 @@ function [nn,mm,a,b]=bsc_bessel(nmax,theta,Etheta,Ephi,lmode)
 %
 % This code uses bsc_plane to generate the basis modes.
 %
-% PACKAGE INFO
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 debug=0;
 % %%%%%%%% test values %%%%%%%%%
