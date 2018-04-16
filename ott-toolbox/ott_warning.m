@@ -55,7 +55,7 @@ elseif ~ott_warning_flag
   % Turn off ott warning if once mode
   if length(varargin) >= 1
     warning_id = varargin{1};
-    if once && strcmpi(warning_id(1:3), 'ott')
+    if once && length(warning_id) > 3 && strcmpi(warning_id(1:3), 'ott')
       warning('off', warning_id);
     end
   end
