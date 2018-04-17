@@ -3,18 +3,23 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(n,m,a,b,p,q)
 % If the beam shape coefficients are in the original coordinates,
 % this outputs the force, torque and spin in 3D carteisan coordinates.
 %
-%   [fxyz,txyz,sxyz] = FORCETORQUE(...) calculates the force,
-%   torque and spin and stores them in [3, 1] column vectors.  Torque
-%   and spin can be omitted to only calculate the force or force and torque.
+% [fxyz,txyz,sxyz] = FORCETORQUE(n,m,a,b,p,q) calculates the force,
+% torque and spin using the incident a,b beam vectors and the scattered
+% p,q beam vectors.
 %
-%   [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCETORQUE(...) unpacks the
-%   force/torque/spin into separate output arguments.
+% Output is stored in [3, 1] column vectors.  If torque or spin are
+% omitted, only force or force/torque are calculated.
 %
 % n,m are the degree and order of modes contained in the system. They
 % can be the truncated n and m's.
-%
 % a,b,p,q are the incident modes and scattered modes respectively. These
 % must be full or sparse of the appropriate size!!!!!
+%
+% [...] = FORCETORQUE(n,m,ab,pq) as above but with the incident/scattered
+% beam vectors specified by single column vectors ab = [a;b] and pq = [p;q].
+%
+% [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCETORQUE(...) unpacks the
+% force/torque/spin into separate output arguments.
 %
 % This uses mathematical result of Farsund et al., 1996, in the form of
 % Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
@@ -22,6 +27,20 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(n,m,a,b,p,q)
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+if nargin == 4
+  % Split ab and pq vectors
+  ab = a;
+  pq = b;
+  a = ab(1:length(ab)/2);
+  b = ab(length(ab)/2+1:end);
+  p = pq(1:length(pq)/2);
+  q = pq(length(pq)/2+1:end);
+elseif nargin == 6
+  % Nothing to do
+else
+  error('ott:forcetorque:nargin', 'Invalid number of arguments');
+end
 
 ott_warning('internal');
 

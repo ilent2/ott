@@ -23,7 +23,7 @@ Nmax = ka2nmax(2*pi*r_particle); %calculate limit of the expansion
 %calculate the power of the two beam system:
 power_total = 2 * sum(abs(a).^2 + abs(b).^2);
 
-%Coherent beams: method 1 - Re-size Nmax, separate beams 1lambda in the x-direction
+%% Coherent beams: method 1 - Re-size Nmax, separate beams 1lambda in the x-direction
 %Let's make the a's and b's bigger by 1 wavelength (kr~12) each.
 Nmax=Nmax+12;
 aa = change_nmax(a,Nmax);
@@ -63,7 +63,8 @@ pq = T * [a_total; b_total];                %calculate scattered BSC
 [n1,m1]=combined_index([1:Nmax^2 + 2 * Nmax].');
 
 %calculate force at point in z.
-[~,~,Q_z,~,~,~] = forcetorque(n1, m1, [a_total; b_total], pq) / power_total;
+[~,~,Q_z,~,~,~] = forcetorque(n1, m1, [a_total; b_total], pq);
+Q_z = Q_z / power_total;
 
 %demonstrate success by plotting a line of force along the separation direction.
 figure(1)
@@ -79,14 +80,16 @@ for ii=1:100
     pq=T*[a_n;b_n];
     
     %plot the force in the x direction by rotating the spherical waves
-    [~,~,Q_x,~,~,~] = forcetorque(n1, m1, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+    [~,~,Q_x,~,~,~] = forcetorque(n1, m1, D*a_n, D*b_n, ...
+        D*pq(1:end/2), D*pq(end/2+1:end));
+    Q_x = Q_x / power_total;
     plot(4*ii/100-2,Q_x,'bx')
 end
 hold off
 vech=get(gca,'children'); %get the handles on the axis.
 h(1)=vech(1);             %extract a handle for the legend.
 
-%Coherent beams: method 2 - Separate beams 1lambda in the x-direction using only local regions.
+%% Coherent beams: method 2 - Separate beams 1lambda in the x-direction using only local regions.
 Nmax = ka2nmax(2*pi*r_particle); %re-calculate limit of the expansion
 T = tmatrix_mie(Nmax,2*pi,2*pi*n_relative,r_particle);   %T-matrix for a Mie scatterer
 
@@ -121,14 +124,16 @@ for ii=1:100
     %calculate the scattering...
     pq=T*[a_n;b_n];
     
-    [~,~,Q_x,~,~,~] = forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+    [~,~,Q_x,~,~,~] = forcetorque(n, m, D*a_n, D*b_n, ...
+        D*pq(1:end/2), D*pq(end/2+1:end));
+    Q_x = Q_x / power_total;
     plot(4*ii/100-2,Q_x,'rx')
 end
 hold off
 vech=get(gca,'children'); %get the handles on the axis.
 h(2)=vech(1);             %extract a handle for the legend.
 
-% Incoherent beams: adding forces...
+%% Incoherent beams: adding forces...
 Nmax = ka2nmax(2*pi*r_particle); %re-calculate limit of the expansion
 T = tmatrix_mie(Nmax,2*pi,2*pi*n_relative,r_particle);   %T-matrix for a Mie scatterer
 
@@ -154,10 +159,13 @@ for ii=1:100
         pq=T*[a_n;b_n];
         
         if jj==1
-            [~,~,Q_x,~,~,~] = forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+            [~,~,Q_x,~,~,~] = forcetorque(n, m, D*a_n, D*b_n, ...
+                D*pq(1:end/2), D*pq(end/2+1:end));
+            Q_x = Q_x / power_total;
         else
-            [~,~,temp_x,~,~,~]=forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
-            Q_x = Q_x + temp_x;
+            [~,~,temp_x,~,~,~]=forcetorque(n, m, D*a_n, D*b_n, ...
+                D*pq(1:end/2), D*pq(end/2+1:end));
+            Q_x = Q_x + temp_x / power_total;
         end
     end
     
@@ -167,7 +175,7 @@ hold off
 vech=get(gca,'children');
 h(3)=vech(1);
 
-%Incoherent beams: demonstrate that phase has no effect on incoherent beam method
+%% Incoherent beams: demonstrate that phase has no effect on incoherent beam method
 av=[a,a*exp(2*pi*1i*1/2)]; %phase shift the second beam wrt the first
 bv=[b,b*exp(2*pi*1i*1/2)]; %phase shift the second beam wrt the first
 
@@ -185,10 +193,13 @@ for ii=1:100
         pq=T*[a_n;b_n];
         
         if jj==1
-            [~,~,Q_x,~,~,~] = forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
+            [~,~,Q_x,~,~,~] = forcetorque(n, m, D*a_n, D*b_n, ...
+                D*pq(1:end/2), D*pq(end/2+1:end));
+            Q_x = Q_x / power_total;
         else
-            [~,~,temp_x,~,~,~]=forcetorque(n, m, D*a_n, D*b_n, D*pq(1:end/2), D*pq(end/2+1:end)) / power_total;
-            Q_x = Q_x + temp_x;
+            [~,~,temp_x,~,~,~]=forcetorque(n, m, D*a_n, D*b_n, ...
+                D*pq(1:end/2), D*pq(end/2+1:end));
+            Q_x = Q_x + temp_x / power_total;
         end
     end
     
@@ -198,11 +209,13 @@ hold off
 vech=get(gca,'children');
 h(4)=vech(1);
 
+%% Add legends and axis labels to figure
+
 grid on
-set(gca,'fontsize',16)
-xlabel('x [\lambda]','fontsize',16)
-ylabel('Q_x','fontsize',16)
-M={'large N_{max} coherent (phase shift)','small N_{max} coherent (no shift)','incoherent (no shift)','incoherent (phase shift)'};
-lh=legend(h,M);
+xlabel('x [\lambda]')
+ylabel('Q_x')
+M={'large N_{max} coherent (phase shift)', ...
+    'small N_{max} coherent (no shift)', ...
+    'incoherent (no shift)','incoherent (phase shift)'};
+legend(h,M);
 axis tight
-set(lh,'fontsize',16)

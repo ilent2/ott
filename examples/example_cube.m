@@ -77,14 +77,14 @@ pwr=sqrt(sum(abs(a).^2+abs(b).^2));
 a=a/pwr;
 b=b/pwr;
 
-%% Insert tmatrix here %%
-tic
+%% Calculate T-matrix for cube (if required) %%
+
 if clearT || ~exist('T','var')
-    disp('Calculating T-matrix for cube...')
-    T=tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k,k_particle,radius);
+  tic
+  disp('Calculating T-matrix for cube...')
+  T=tmatrix_pm_cube(Nmax,Nmax_medium,Nmax_particle,k,k_particle,radius);
+  disp(['It took: ', num2str(toc), ' seconds!'])
 end
-% T=tmatrix_mie(Nmax,k,k_particle,radius); %test dynamic simulation with sphere
-disp(['It took: ', num2str(toc), ' seconds!'])
 
 %% Dynamics Simulation %%
 % This dynamics simulation simulates the trap in some hypothetical

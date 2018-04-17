@@ -77,6 +77,10 @@ axialrestoringforce1=axialrestoringforce;
 transverserestoringforce=zeros([size(radius),1]);
 transverserestoringforce1=transverserestoringforce;
 for ii=1:length(radius)
+
+    disp(['Calculating radius ' num2str(ii) '/' ...
+        num2str(length(radius)) ' (' num2str(radius(ii)) ')']);
+
     %re-calculate grid because it's more accurate.
     z = linspace(-.5,max([1,radius(ii)])*n_particle,45)*n_medium; %in medium units
     r = linspace(0,max([1,radius(ii)])*1.33,25)*n_medium; %in medium units

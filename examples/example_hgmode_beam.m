@@ -56,7 +56,7 @@ end
 
 UHG=hgmode(m,n,X,Y,0*X,convergence_angle);
 
-h=figure(1)
+h=figure(1);
 set(h,'position',[80,80,750,750])
 subplot(2,2,1)
 imagesc(abs(U).^2);axis equal 
