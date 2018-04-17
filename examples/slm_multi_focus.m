@@ -1,4 +1,4 @@
-% example_slm.m computation for SLM.
+% Computation of multiple focusses generated using phase/amplitude SLM
 % 
 % Computes the BSCs for a three beam optical tweezers generated with phase 
 % only SLM. Instead of using a gratings and lenses algorithm, it translates
@@ -28,12 +28,15 @@ fillfactor=1;
 phase_mode=true;
 amplitude_mode=false;
 
+%% Setup the incident illumination
+
 %X and Y shall always be in normalised units.
-[X,Y]=meshgrid(linspace(-1,1,512),linspace(-1,1,512));
+x = linspace(-1, 1, 512);
+y = x;
+[X,Y]=meshgrid(x, y);
 
 % create incident laser beam, pick a Gaussian beam:
-incident_mode=lgmode(0,0,sqrt(X.^2+Y.^2)/fillfactor,atan2(Y,X));
-% incident_mode=hgmode(0,0,X,Y);
+incident_mode=ott.utils.lgmode(0,0,sqrt(X.^2+Y.^2)/fillfactor,atan2(Y,X));
 polarisation=[1,0];
 
 %% Plot the laser mode shape on the SLM
@@ -88,27 +91,25 @@ imagesc(phase_function)
 title('phase of grating')
 axis equal
 
-
 %% Compute beam that comes off SLM
 
 % Calculate Nmax: should be beam waist+max translation
-Nmax=ka2nmax(2*pi*nMedium*(.5+max(abs(g(:)))));
+Nmax=ott.utils.ka2nmax(2*pi*nMedium*(.5+max(abs(g(:)))));
 
 % Apply the grating to the incident beam
 output_mode=G.*incident_mode;
 
 % Calculate the beam shape coefficients of focussed beam
-[a,b]=paraxial_to_bsc(NA,output_mode,polarisation,{'nmax',Nmax});
+beam = ott.BscPmParaxial(NA, output_mode, ...
+    'polarisation', polarisation, 'Nmax', Nmax);
 
 %% create image of the resulting beams along two axes:
 
-[X1,Y1,Z1]=meshgrid(2*pi*linspace(-3,3),2*pi*linspace(-3,3),0);
-[X2,Z2,Y2]=meshgrid(2*pi*linspace(-3,3),2*pi*linspace(-3,3),0);
+[X1,Y1,Z1]=meshgrid(linspace(-3,3),linspace(-3,3),0);
+[X2,Z2,Y2]=meshgrid(linspace(-3,3),linspace(-3,3),0);
 
-[n,m]=combined_index([1:length(a)].');
-Es=electromagnetic_field_xyz([[X1(:),Y1(:),Z1(:)];[X2(:),Y2(:),Z2(:)]],[n;m],[a;b]);
-
-E2=sum(abs(Es.Eincident).^2,2);
+E = beam.emFieldXyz([[X1(:),Y1(:),Z1(:)];[X2(:),Y2(:),Z2(:)]].');
+E2=sum(abs(E).^2,1);
 
 %% plot beams
 %NOTE: Due to a legacy choice the plotted field components flip with
@@ -134,65 +135,23 @@ title('XZ fields around focal plane');
 
 %% compute some (approximate) forces on a sphere
 
-T=tmatrix_mie(Nmax,2*pi*nMedium,2*pi*1.5,.5);
+T = ott.Tmatrix.simple('sphere', 0.5, 'wavelength0', 1.0, ...
+    'index_medium', nMedium, 'index_particle', 1.5);
 
-x=linspace(-3,3,20);
-y=linspace(-3,3,20);
-z=linspace(-3,3,20);
+x = [1;0;0]*linspace(-3,3,20);
+y = [0;1;0]*linspace(-3,3,20);
+z = [0;0;1]*linspace(-3,3,20);
 
-fxyz1=zeros(3,length(x));
-fxyz2=zeros(3,length(y));
-fxyz3=zeros(3,length(z));
+fxyz1 = ott.forcetorque(beam, T, 'position', x);
+fxyz2 = ott.forcetorque(beam, T, 'position', y);
+fxyz3 = ott.forcetorque(beam, T, 'position', z);
 
-[rtp1]=xyz2rtp(1*x,0*x,0*x);
-[rtp2]=xyz2rtp(0*y,1*y,0*y);
-[rtp3]=xyz2rtp(0*z,0*z,1*z);
-
-%calculate the force along x,y,z independently
-for ii = 1:length(z)
-    
-    [A,B] = translate_z(Nmax,rtp3(ii,1)); % use same translation
-
-    W=wigner_rotation_matrix(Nmax,rotation_matrix([0,1,0],(1-sign(z(ii)))*pi/2));
-
-    a2 = W'*( A*W*a + B*W*b );
-    b2 = W'*( A*W*b + B*W*a );
-    
-    pq = T * [ a2; b2 ];
-    p = pq(1:length(pq)/2);
-    q = pq(length(pq)/2+1:end);
-    
-    fxyz3(:,ii) = forcetorque(n,m,a2,b2,p,q);
-
-    W=wigner_rotation_matrix(Nmax,rotation_matrix([-sin(rtp1(ii,3)),cos(rtp1(ii,3)),0],rtp1(ii,2)));
-
-    a2 = W'*( A*W*a + B*W*b );
-    b2 = W'*( A*W*b + B*W*a );
-    
-    pq = T * [ a2; b2 ];
-    p = pq(1:length(pq)/2);
-    q = pq(length(pq)/2+1:end);
-    
-    fxyz1(:,ii) = forcetorque(n,m,a2,b2,p,q);
-
-    W=wigner_rotation_matrix(Nmax,rotation_matrix([-sin(rtp2(ii,3)),cos(rtp2(ii,3)),0],rtp2(ii,2)));
-
-    a2 = W'*( A*W*a + B*W*b );
-    b2 = W'*( A*W*b + B*W*a );
-    
-    pq = T * [ a2; b2 ];
-    p = pq(1:length(pq)/2);
-    q = pq(length(pq)/2+1:end);
-    
-    fxyz2(:,ii) = forcetorque(n,m,a2,b2,p,q);
-    
-end
 %% Plot figures of forces
 % somewhat confusingly as we are moving the beam these plots are at
 % locations negative to their spot locations... double negative fixes this.
 figure(4)
 subplot(1, 3, 1);
-plot(x,fxyz1.')
+plot(x(1, :),fxyz1.')
 hold on
 plot(xlim,0*[1,1],'k','linewidth',1)
 hold off
@@ -203,7 +162,7 @@ legend('fx','fy','fz')
 title('X-translation');
 
 subplot(1, 3, 2);
-plot(y,fxyz2.')
+plot(y(2, :),fxyz2.')
 hold on
 plot(xlim,0*[1,1],'k','linewidth',1)
 hold off
@@ -214,7 +173,7 @@ legend('fx','fy','fz')
 title('Y-translation');
 
 subplot(1, 3, 3);
-plot(z,fxyz3.')
+plot(z(3, :),fxyz3.')
 hold on
 plot(xlim,0*[1,1],'k','linewidth',1)
 hold off

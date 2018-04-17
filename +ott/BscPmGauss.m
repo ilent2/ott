@@ -212,7 +212,7 @@ classdef BscPmGauss < ott.BscPointmatch
 
       aperture_function=0;
 
-      w0 = ott.paraxial_beam_waist(paraxial_order);
+      w0 = ott.utils.paraxial_beam_waist(paraxial_order);
       wscaling=1/tan(abs(beam_angle_deg/180*pi));
 
       % Store or calculate Nmax
