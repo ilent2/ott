@@ -36,7 +36,8 @@ incident_mode=lgmode(0,0,sqrt(X.^2+Y.^2)/fillfactor,atan2(Y,X));
 % incident_mode=hgmode(0,0,X,Y);
 polarisation=[1,0];
 
-%%
+%% Plot the laser mode shape on the SLM
+
 figure(1)
 contourf(X,Y,incident_mode,32)
 hold on
@@ -45,7 +46,7 @@ hold off
 title('mode shape on SLM and target NA zone (in white circle)')
 axis equal
 
-%%
+%% Create a pattern for the SLM
 %NOTE: This is not actually a paraxial system. We are assuming that
 %this field is proportional to the filling r and not the angle theta
 %create actual grating first and then compute SLM operation mode:
@@ -54,6 +55,7 @@ G=zeros(size(X));
 XG=X*NA/nMedium;
 YG=Y*NA/nMedium;
 PHI=atan2(YG,XG)/2/pi; %phi normalised from [-pi, pi] to [-.5,.5];
+
 % phase target: exp(1i*dot(k,r)). XG/YG are already \propto sin(theta).
 % Compute \propto cos(theta) component for z-motion:
 costheta=sign(NA)*sqrt(1-XG.^2-YG.^2);
@@ -74,6 +76,8 @@ end
 
 G=amplitude_function.*exp(1i*phase_function);
 
+%% Plot the amplitude and phase of the grating
+
 figure(2)
 subplot(1,2,1)
 imagesc(amplitude_function)
@@ -84,17 +88,19 @@ imagesc(phase_function)
 title('phase of grating')
 axis equal
 
-%%
-%Nmax should be beam waist+max translation:
-Nmax=ka2nmax(2*pi*nMedium*(.5+max(abs(g(:)))))
 
-%%
-%compute what comes off SLM:
+%% Compute beam that comes off SLM
+
+% Calculate Nmax: should be beam waist+max translation
+Nmax=ka2nmax(2*pi*nMedium*(.5+max(abs(g(:)))));
+
+% Apply the grating to the incident beam
 output_mode=G.*incident_mode;
+
+% Calculate the beam shape coefficients of focussed beam
 [a,b]=paraxial_to_bsc(NA,output_mode,polarisation,{'nmax',Nmax});
 
-%%
-% create image of the resulting beams along two axes:
+%% create image of the resulting beams along two axes:
 
 [X1,Y1,Z1]=meshgrid(2*pi*linspace(-3,3),2*pi*linspace(-3,3),0);
 [X2,Z2,Y2]=meshgrid(2*pi*linspace(-3,3),2*pi*linspace(-3,3),0);
@@ -115,6 +121,7 @@ contourf(X1/2/pi,Y1/2/pi,reshape(E2(1:end/2),size(X1)),32,'edgecolor','none');
 hold on
 plot(xlim,mean(ylim)*[1,1],'w:','linewidth',2)
 hold off
+title('XY fields around focal plane');
 xlabel('x')
 ylabel('y')
 axis equal
@@ -123,8 +130,9 @@ contourf(X2/2/pi,Z2/2/pi,reshape(E2(end/2+1:end),size(X1)),32,'edgecolor','none'
 axis equal
 xlabel('x')
 ylabel('z')
-%%
-%compute some (approximate) forces:
+title('XZ fields around focal plane');
+
+%% compute some (approximate) forces on a sphere
 
 T=tmatrix_mie(Nmax,2*pi*nMedium,2*pi*1.5,.5);
 
@@ -179,10 +187,11 @@ for ii = 1:length(z)
     fxyz2(:,ii) = forcetorque(n,m,a2,b2,p,q);
     
 end
-%%
+%% Plot figures of forces
 % somewhat confusingly as we are moving the beam these plots are at
 % locations negative to their spot locations... double negative fixes this.
 figure(4)
+subplot(1, 3, 1);
 plot(x,fxyz1.')
 hold on
 plot(xlim,0*[1,1],'k','linewidth',1)
@@ -191,8 +200,9 @@ grid on
 xlabel('x displacement')
 ylabel('force [Q]')
 legend('fx','fy','fz')
+title('X-translation');
 
-figure(5)
+subplot(1, 3, 2);
 plot(y,fxyz2.')
 hold on
 plot(xlim,0*[1,1],'k','linewidth',1)
@@ -201,8 +211,9 @@ grid on
 xlabel('y displacement')
 ylabel('force [Q]')
 legend('fx','fy','fz')
+title('Y-translation');
 
-figure(6)
+subplot(1, 3, 3);
 plot(z,fxyz3.')
 hold on
 plot(xlim,0*[1,1],'k','linewidth',1)
@@ -211,5 +222,4 @@ grid on
 xlabel('z displacement')
 ylabel('force [Q]')
 legend('fx','fy','fz')
-
-
+title('Z-translation');

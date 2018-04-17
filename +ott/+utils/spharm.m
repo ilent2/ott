@@ -78,7 +78,7 @@ Y = pnm .* expphi;
 if nargout <= 1
    Y=Y.';
    % Doesn't look like it
-   ott_warning('external');
+   ott.warning('external');
    return
 end
 

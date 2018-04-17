@@ -3,12 +3,12 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam, varargin)
 % If the beam shape coefficients are in the original coordinates,
 % this outputs the force, torque and spin in 3D carteisan coordinates.
 %
-%   [fxyz,txyz,sxyz] = FORCETORQUE(...) calculates the force,
-%   torque and spin and stores them in [3, 1] column vectors.  Torque
-%   and spin can be omitted to only calculate the force or force and torque.
+% [fxyz,txyz,sxyz] = FORCETORQUE(ibeam, sbeam) calculates the force,
+% torque and spin using the incident beam, ibeam, and the scattered
+% beam, sbeam.
 %
-%   [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCETORQUE(...) unpacks the
-%   force/torque/spin into separate output arguments.
+% Output is stored in [3, 1] column vectors.  If torque or spin are
+% omitted, only force or force/torque are calculated.
 %
 % FORCETORQUE(ibeam, T, 'position', position) first applies a translation
 % to the beam.  position can be a 3xN array, resulting in multiple
@@ -19,8 +19,8 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam, varargin)
 % multiple calculations.  If both position and rotation are arrays,
 % the translation is applied first, followed by the rotation.
 %
-% n,m are the degree and order of modes contained in the system. They
-% can be the truncated n and m's.
+% [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCETORQUE(...) unpacks the
+% force/torque/spin into separate output arguments.
 %
 % This uses mathematical result of Farsund et al., 1996, in the form of
 % Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
@@ -29,8 +29,6 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam, varargin)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.*
-import ott.utils.*
 ott.warning('internal');
 
 fx=0;
@@ -139,7 +137,7 @@ bt=[b;addv];
 pt=[p;addv];
 qt=[q;addv];
 
-ci=combined_index(n,m);
+ci=ott.utils.combined_index(n,m);
 
 %these preserve order and number of entries!
 np1=2*n+2;

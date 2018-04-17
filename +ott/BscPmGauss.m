@@ -98,12 +98,6 @@ classdef BscPmGauss < ott.BscPointmatch
         ott.warning('external');
         error('Truncation angle given in degrees and radians');
       end
-      
-      % Estimate nmax from the beam waist (if not supplied)
-      nmax = p.Results.Nmax;
-      if isempty(nmax)
-        nmax = ott.ka2nmax(w0);
-      end
 
       % TODO: bsc_pointmatch_farfield.m had other arguments
       % optional parameters:
@@ -173,8 +167,8 @@ classdef BscPmGauss < ott.BscPointmatch
       initial_mode=initial_mode(keepz,:);
       c=modeweights(row,keepz);
 
-      beam_angle_specified = isempty(p.Results.angle) ...
-          + isempty(p.Results.angle_deg) + isempty(p.Results.NA);
+      beam_angle_specified = ~isempty(p.Results.angle) ...
+          + ~isempty(p.Results.angle_deg) + ~isempty(p.Results.NA);
 
       % Find beam_angle_deg
       if beam_angle_specified > 1
@@ -186,11 +180,11 @@ classdef BscPmGauss < ott.BscPointmatch
           index = 1.33;
         else
           NA = p.Results.NA;
-          if ~isempty(p.Results.refractive_index)
-            index = p.Results.refractive_index;
+          if ~isempty(p.Results.index_medium)
+            index = p.Results.index_medium;
           else
             ott.warning('external');
-            error('Need to specify refractive_index with NA');
+            error('Need to specify index_medium with NA');
           end
         end
         beam_angle_deg = asin(NA/index)*180.0/pi;
@@ -221,7 +215,7 @@ classdef BscPmGauss < ott.BscPointmatch
 
       aperture_function=0;
 
-      w0 = paraxial_beam_waist(paraxial_order);
+      w0 = ott.paraxial_beam_waist(paraxial_order);
       wscaling=1/tan(abs(beam_angle_deg/180*pi));
 
       % Store or calculate Nmax
