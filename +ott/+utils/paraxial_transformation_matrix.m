@@ -81,7 +81,7 @@ switch 100*normal_mode+10*basis_in(1)+basis_out(1)
     case 122
         modeweights=genLG2IG(paraxial_order,basis_out(2))*genLG2IG(paraxial_order,basis_in(2))';
     otherwise
-        ott_warning('external');
+        ott.warning('external');
         error('unknown parameter')
 end
 

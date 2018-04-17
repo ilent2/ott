@@ -77,7 +77,7 @@ while ~chkflg
         end
     end
     if jj>5
-        ott_warning('external');
+        ott.warning('external');
         error('No stable equilibrium near z!')
     end
 end
@@ -111,7 +111,7 @@ if ~isempty(rtsi)
     z=rts(rtsi(indz));
     kz=dzf(rtsi(indz));
 else
-    ott_warning('external');
+    ott.warning('external');
     error('No stable equilibrium near z!')
 end
 

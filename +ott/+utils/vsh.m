@@ -21,7 +21,7 @@ import ott.utils.*
 ott.warning('internal');
 
 if length(n)>1
-    ott_warning('external');
+    ott.warning('external');
     error('n must be a scalar in this version')
 end
 

@@ -94,7 +94,7 @@ case 4
     d = parameters(1);
    
 otherwise
-   ott_warning('external');
+   ott.warning('external');
    error('Unknown shape');
    
 end
@@ -103,7 +103,7 @@ end
 if isempty(theta)
    r = [];
    n = [];
-    ott_warning('external');
+    ott.warning('external');
    return;
 end
 
@@ -318,7 +318,7 @@ r = r_cube_vec;
 n = n_vec;
 
 otherwise
-   ott_warning('external');
+   ott.warning('external');
    error('Unknown shape');
 end
 
