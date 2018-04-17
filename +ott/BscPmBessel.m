@@ -57,8 +57,6 @@ classdef BscPmBessel < ott.BscPointmatch
       axisymmetry = 1;
       %axisymmetry = 0;
 
-      zero_rejection_level = 1e-8;
-
       speed_of_light = 3.00e8;
       %medium_refractive_index = 1.33;
       medium_refractive_index = 1;
@@ -163,7 +161,6 @@ classdef BscPmBessel < ott.BscPointmatch
 
       np = length(theta);
 
-      coefficient_matrix = zeros(2*np,2*nmax);
       e_field = zeros(2*np,1);
 
       % Find electric field at all points
@@ -215,29 +212,8 @@ classdef BscPmBessel < ott.BscPointmatch
 
       e_field = [ Etheta(:); Ephi(:) ];
 
-      for n = 1:length(nn)
-          
-          % Now find E as appropriate for each mode
-          [B,C,P] = vsh(nn(n),mm(n),theta,phi);
-          coefficient_matrix(:,n) = [ C(:,2); C(:,3) ] * i^(nn(n)+1)/sqrt(nn(n)*(nn(n)+1));
-          coefficient_matrix(:,n+total_modes) = [ B(:,2); B(:,3) ] * i^nn(n)/sqrt(nn(n)*(nn(n)+1));
-          
-      end
-
-      %tic
-      %fprintf(1,'Beginning solution of linear system ... ');
-      expansion_coefficients = coefficient_matrix \ e_field;
-      %fprintf(1,'done!\n');
-      %toc
-
-      a = expansion_coefficients(1:total_modes);
-      b = expansion_coefficients((1+total_modes):end);
-
-      non_zero_elements = find( abs(a) + abs(b) > max(abs(a)+abs(b)) * zero_rejection_level );
-      a = a(non_zero_elements);
-      b = b(non_zero_elements);
-      nn = nn(non_zero_elements);
-      mm = mm(non_zero_elements);
+      % Do farfield point matching
+      [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, theta, phi);
     end
   end
 end

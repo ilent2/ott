@@ -26,7 +26,6 @@ classdef BscPmGauss < ott.BscPointmatch
     angle              % Angle of incomming beam waist
   end
 
-  % TODO: Generalize BscPointmatch for farfield and focal plane
   % TODO: Incorperate bsc_pointmatch_focalplane option for gaussian beams.
 
   methods (Static)
@@ -114,8 +113,6 @@ classdef BscPmGauss < ott.BscPointmatch
       import ott.utils.*
 
       axisymmetry = 1;
-
-      zero_rejection_level = 1e-8;
 
       beam_wavelength0 = 1;
 
@@ -321,37 +318,9 @@ classdef BscPmGauss < ott.BscPointmatch
         mm(removeels)=[];
       end
 
-      coefficient_matrix = zeros(2*np,2*length(nn));
+      % Do the point matching and store the result
+      [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, theta, phi);
 
-      for n = 1:max(nn)
-        ci=find(nn==n);
-        
-        [~,dtY,dpY]= spharm(n,mm(ci),theta,phi);
-        
-        coefficient_matrix(:,ci) = [dpY;-dtY] * 1i^(n+1)/sqrt(n*(n+1));
-        coefficient_matrix(:,ci+length(nn)) = [dtY;dpY] * 1i^(n)/sqrt(n*(n+1));
-      end
-
-      a=zeros(size(nn));
-      b=zeros(size(nn));
-
-      expansion_coefficients = coefficient_matrix \ e_field;
-      %fprintf(1,'done!\n');
-      %toc
-      a = expansion_coefficients(1:end/2,:);
-      b = expansion_coefficients(1+end/2:end,:);
-
-      pwr=abs(a).^2+abs(b).^2;
-      binaryvector=(pwr>zero_rejection_level*max(pwr));
-
-      nn=nn(binaryvector);
-      mm=mm(binaryvector);
-      a=a(binaryvector);
-      b=b(binaryvector);
-
-      % Make the beam vector and store the coefficients
-      [beam.a, beam.b] = beam.make_beam_vector(a, b, nn, mm);
-      
       % Normalize the beam power
       if ~isempty(p.Results.power)
         beam = p.Results.power * beam / beam.power();
