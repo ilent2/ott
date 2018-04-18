@@ -19,7 +19,10 @@ addpath('../');
 ott.warning('once');
 
 if exist ("OCTAVE_VERSION", "builtin")
-    warning('ott:example_landscape:function','This code must be modified to run in octave, take the function defined at the bottom of this script and move it to above where it is first called.')
+    warning('ott:example_landscape:function',   ...
+      ['This code must be modified to run in octave, take the function ', ...
+       'defined at the bottom of this script and move it to above where ', ...
+       'it is first called.']);
 end
 
 % Low res version.
@@ -146,9 +149,14 @@ fz=zeros([1,nTrans]);
 %% Setup beam
 
 beam = ott.BscPmGauss('NA', NA, 'polarisation', system_parameters(4:5), ...
-    'truncation_angle_deg', system_parameters(6), 'power', 1.0);
+    'truncation_angle_deg', system_parameters(6), 'power', 1.0, ...
+    'k_medium', k, 'index_medium', medium_index);
 
 %%%
+
+% The stiffness calculation uses additional translations, this might be
+% unsafe, but we will ignore the warnings for now
+warning('off', 'ott:Bsc:translateZ:outside_nmax');
 
 for particle=1:nParticles
     disp(['Particle: ' num2str(particle) '/' num2str(nParticles)]);
@@ -174,7 +182,7 @@ for particle=1:nParticles
     end
 
     % Precompute rotation to x-axis
-    [~, D] = beam.rotateY(pi/2);
+    [~, Dx] = beam.rotateY(pi/2);
     
     for index=1:nIndexes
         if verbose
@@ -236,31 +244,6 @@ for particle=1:nParticles
 %                         pause(1)
 
                         %calc transverse
-<<<<<<< HEAD
-                        [A,B]=translate_z(Nmax,z_equilibrium(index,particle));
-                        
-                        a1=(A*a+B*b);
-                        b1=(A*b+B*a);
-                        
-                        aTx=Au*Dx*a1+Bu*Dx*b1;
-                        bTx=Au*Dx*b1+Bu*Dx*a1;
-                        
-                        pq = (T) * [ aTx; bTx ];
-                        p = pq(1:total_orders);
-                        q = pq((total_orders+1):end);
-                        
-                        [~,~,fx1,~,~,~,~,~,~]= forcetorque(n,m,aTx,bTx,p,q);
-                        
-                        aTx=Ad*Dx*a1+Bd*Dx*b1;
-                        bTx=Ad*Dx*b1+Bd*Dx*a1;
-                        
-                        pq = (T) * [ aTx; bTx ];
-                        p = pq(1:total_orders);
-                        q = pq((total_orders+1):end);
-                        
-                        [~,~,fx0,~,~,~,~,~,~]= forcetorque(n,m,aTx,bTx,p,q);
-                        
-=======
                         tbeam = beam.translateZ(z_equilibrium(index,particle));
                         tbeam = Dx * tbeam;
 
@@ -269,15 +252,12 @@ for particle=1:nParticles
 
                         % Translate along the x direction and calc x force
                         xbeam = tbeam.translateZ(1e-8);
-                        f_ = ott.forcetorque(xbeam, T*xbeam);
-                        fx1 = f_(3);
+                        [~,~,fx1,~,~,~] = ott.forcetorque(xbeam, T*xbeam);
 
                         % Translate along the x direction and calc x force
                         xbeam = tbeam.translateZ(-1e-8);
-                        f_ = ott.forcetorque(xbeam, T*xbeam);
-                        fx0 = f_(3);
+                        [~,~,fx0,~,~,~] = ott.forcetorque(xbeam, T*xbeam);
 
->>>>>>> Started work on the 1.4.0 examples
                         x_stiffness(index,particle)=(fx1-fx0)/2e-8;
                     else
                         z_equilibrium(index,particle)=NaN; %also pretty good.

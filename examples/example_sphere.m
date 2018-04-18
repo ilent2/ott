@@ -85,7 +85,7 @@ z = [0;0;1]*linspace(-8,8,80)*wavelength0;
 fz = ott.forcetorque(beam, T, 'position', z);
 
 % Find the equilibrium along the z axis
-zeq = ott.find_equilibrium(z, fz(3, :));
+zeq = ott.find_equilibrium(z(3, :), fz(3, :));
 if isempty(zeq)
   warning('No axial equilibrium in range!')
   zeq=0;

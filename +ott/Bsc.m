@@ -409,7 +409,9 @@ classdef Bsc
       %SCATTER scatter a beam using a T-matrix
 
       % Ensure the Nmax for the inner dimension matches
+      ott.warning('internal');
       tmatrix.Nmax = [tmatrix.Nmax, beam.Nmax];
+      ott.warning('external');
 
       % Calculate the resulting beam
       beam = tmatrix.data * beam;

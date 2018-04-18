@@ -11,6 +11,9 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Add the toolbox path
+addpath('../');
+
 %define microscope target NA:
 NA=-1.33*sin(64.46*pi/180); %NA in water... (from bottom)
 nMedium=1.33;

@@ -23,8 +23,8 @@ radius = 1.0*wavelength/n_medium;
 
 %% Calculate the beam
 
-beam = ott.BscPmGauss('angle_deg', 50, ...
-    'polarisation', [ 1 0 ], 'power', 1.0);
+beam = ott.BscPmGauss('angle_deg', 50, 'polarisation', [ 1 0 ], ...
+    'index_medium', n_medium, 'wavelength0', wavelength0, 'power', 1.0);
 
 %% Calculate the particle T-matrix
 

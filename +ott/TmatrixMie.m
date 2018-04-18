@@ -58,10 +58,11 @@ classdef TmatrixMie < ott.Tmatrix
     function T = tmatrix_mie_layered(tmatrix, Nmax, internal)
       %TMATRIX_MIE code from tmatrix_mie_layered.m
 
-      k_layer=[tmatrix.k_particle,tmatrix.k_medium];
+      k_layer=[tmatrix.k_particle,tmatrix.k_medium]; % Medium on outside
+      radius=[tmatrix.radius,tmatrix.radius(end)]; % medium same as final layer
       n_layer=k_layer/2/pi;
 
-      n=[1:Nmax]; %n for nmax
+      n = 1:Nmax; %n for nmax
 
       lastElement=length(k_layer);
 
@@ -70,13 +71,13 @@ classdef TmatrixMie < ott.Tmatrix
 
       %generate all special functions first:
       if length(tmatrix.k_particle)>1
-          [jN,jNd] = sbesselj(n,[k_layer.*tmatrix.radius, ...
-              k_layer(2:end).*tmatrix.radius(1:end-1)]);
-          [hN,hNd] = sbesselh1(n,[k_layer.*tmatrix.radius, ...
-              k_layer(2:end).*tmatrix.radius(1:end-1)]);
+          [jN,jNd] = sbesselj(n,[k_layer.*radius, ...
+              k_layer(2:end).*radius(1:end-1)]);
+          [hN,hNd] = sbesselh1(n,[k_layer.*radius, ...
+              k_layer(2:end).*radius(1:end-1)]);
       else
-          [jN,jNd] = sbesselj(n,k_layer(:).*tmatrix.radius(:));
-          [hN,hNd] = sbesselh1(n,k_layer(:).*tmatrix.radius(:));
+          [jN,jNd] = sbesselj(n,k_layer(:).*radius(:));
+          [hN,hNd] = sbesselh1(n,k_layer(:).*radius(:));
       end
       jN=jN.';
       hN=hN.';
@@ -145,7 +146,7 @@ classdef TmatrixMie < ott.Tmatrix
 
       if internal == false
 
-        T=sparse([1:2*(Nmax^2+2*Nmax)],[1:2*(Nmax^2+2*Nmax)],[a(indexing);b(indexing)]);
+        T=sparse(1:2*(Nmax^2+2*Nmax),1:2*(Nmax^2+2*Nmax),[a(indexing);b(indexing)]);
 
       else
 
@@ -157,7 +158,7 @@ classdef TmatrixMie < ott.Tmatrix
         warning('ott:tmatrix_mie_layered:internalcoefficientwarning', ...
             ['The internal coefficients are for the outermost layer only...' ...
              ' the real ones are only defined for each layer.']);
-        T=sparse([1:2*(Nmax^2+2*Nmax)],[1:2*(Nmax^2+2*Nmax)],[c(indexing);d(indexing)]);
+        T=sparse(1:2*(Nmax^2+2*Nmax),1:2*(Nmax^2+2*Nmax),[c(indexing);d(indexing)]);
       end
     end
   end
@@ -236,7 +237,7 @@ classdef TmatrixMie < ott.Tmatrix
         if numel(tmatrix.radius) == 1
           Nmax = ott.utils.ka2nmax(tmatrix.k_medium*radius);
         else
-          Nmax = 100;
+          Nmax = max(ott.utils.ka2nmax(tmatrix.k_medium*radius(end)), 100);
         end
       else
         Nmax = p.Results.Nmax;

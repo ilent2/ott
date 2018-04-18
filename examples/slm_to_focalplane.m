@@ -3,6 +3,9 @@
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% Add the toolbox path
+addpath('../');
+
 % Numerical aperture of microscope
 NA = 1.02;
 
@@ -92,16 +95,17 @@ I=reshape(sum(abs(E).^2,1),[nx,ny]);
 figure(3);
 subplot(1, 3, 1);
 imagesc(xrange, yrange, Ei);
-axis('image');
-title('E field intensity (focal plane)');
+axis('image'); xlabel('X (\lambda)'); ylabel('Y (\lambda)');
+title('E field intensity');
 subplot(1, 3, 2);
 imagesc(xrange, yrange, Ep);
-axis('image');
-title('E field phase (focal plane)');
+axis('image'); xlabel('X (\lambda)'); ylabel('Y (\lambda)');
+title('E field phase');
 subplot(1, 3, 3);
 imagesc(xrange, yrange, I);
-axis('image');
-title('radiance (focal plane)');
+axis('image'); xlabel('X (\lambda)'); ylabel('Y (\lambda)');
+title('radiance');
+suptitle('At focal plane');
 
 %% Visualise the near fields (parallel to beam axis)
 
@@ -128,13 +132,14 @@ I=reshape(sum(abs(E).^2,1),[nx,ny]);
 figure(4);
 subplot(1, 3, 1);
 imagesc(xrange, yrange, Ei);
-axis('image');
-title('E field intensity (axial plane)');
+axis('image'); xlabel('X (\lambda)'); ylabel('Z (\lambda)');
+title('E field intensity');
 subplot(1, 3, 2);
 imagesc(xrange, yrange, Ep);
-axis('image');
-title('E field phase (axial plane)');
+axis('image'); xlabel('X (\lambda)'); ylabel('Z (\lambda)');
+title('E field phase');
 subplot(1, 3, 3);
 imagesc(xrange, yrange, I);
-axis('image');
-title('radiance (axial plane)');
+axis('image'); xlabel('X (\lambda)'); ylabel('Z (\lambda)');
+title('radiance');
+suptitle('Along beam axis');

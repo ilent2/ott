@@ -9,11 +9,24 @@ function eq = find_equilibrium(z, fz)
 %   equilibrium on.  We could do a similar thing for fz.
 
 % This function is not directly concerned with force/torque calculation
-warning('This function will move in a future release');
+ott.warning('This function will move in a future release');
+
+% Make sure the vectors are both colum vectors
+fz = fz(:);
+z = z(:);
+
+if numel(z) ~= numel(fz)
+  error('Number of elements in z and fz must be equal');
+end
 
 zeroindex=find(fz<0,1);
 
-if length(zeroindex)~=0
+% Scale z
+zmin = min(z);
+zmax = max(z);
+z = 2 * (z - zmin) / (zmax - zmin) - 1;
+
+if ~isempty(zeroindex)
     %fit to third order polynomial the local points. (only works when dz
     %sufficiently small)
     zrange = max([zeroindex-2,1]):min([zeroindex+2,length(z)]);
@@ -24,12 +37,17 @@ if length(zeroindex)~=0
     real_z=root_z(imag(root_z)==0); % finds real roots only.
 
     rootsofsign=polyval(dpz,real_z); %roots that are stable
-    eq=real_z(rootsofsign<0); %there is at most 1 stable root. critical roots give error.
+    zeq=real_z(rootsofsign<0); %there is at most 1 stable root. critical roots give error.
     try
-        eq=zeq(abs(zeq-z(zeroindex))==min(abs(zeq-z(zeroindex))));
+      eq=zeq(abs(zeq-z(zeroindex))==min(abs(zeq-z(zeroindex))));
+    catch
+      eq = [];
     end
 else
     eq=[];
 end
+
+% Unscale eq
+eq = (eq + 1)/2*(zmax - zmin) + zmin;
 
 end

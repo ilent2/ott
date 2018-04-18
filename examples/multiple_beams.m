@@ -45,7 +45,7 @@ displacement = 1.2*wavelength;
 phase = exp(2*pi*1i/0.1);
 
 % Range for force/displacement graph
-x = linspace(-8, 8, 80)*wavelength;
+x = linspace(-4, 4, 80)*wavelength;
 
 %% Coherent beams with expanded Nmax
 
@@ -103,8 +103,6 @@ for ii = 1:length(x)
   % Calculate the force
   fx3(:, ii) = ott.forcetorque(beam1, sbeam1) ...
       + ott.forcetorque(beam2, sbeam2);
-
->>>>>>> Started work on the 1.4.0 examples
 end
 
 %% Generate a figure showing the force displacement graphs

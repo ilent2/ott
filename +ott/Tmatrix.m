@@ -436,7 +436,7 @@ classdef Tmatrix
 
         warning_error_level = 1e-6;
         if apparent_error > warning_error_level
-            warning('ott:Tmatrix:set.Nmax:truncation', ...
+            ott.warning('ott:Tmatrix:set.Nmax:truncation', ...
                 ['Apparent error of ' num2str(apparent_error)]);
         end
       end

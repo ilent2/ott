@@ -45,7 +45,7 @@ while ~chkflg
         if fz(ii)==0
             tbeam = beam.translateZ(zs(ii));
             sbeam = tmatrix * tbeam;
-            [~,~,fz(ii),~,~,~]=forcetorque(tbeam, sbeam);
+            [~,~,fz(ii),~,~,~]=ott.forcetorque(tbeam, sbeam);
         end
     end
     

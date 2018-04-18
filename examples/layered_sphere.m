@@ -48,30 +48,33 @@ axialrestoringforce1 = axialrestoringforce;
 transverserestoringforce = zeros(length(radius), 1);
 transverserestoringforce1 = transverserestoringforce;
 
+tic
+
 % For each particle radius, calculate the axial and radial min trap depth
 for ii=1:length(radius)
 
-    % Calculate grid [in medium units]
-    z = linspace(-.5,max([1,radius(ii)])*n_particle,45)*n_medium;
-    r = linspace(0,max([1,radius(ii)])*1.33,25)*n_medium;
+    % Calculate grid [m]
+    z = linspace(-.5,max([1,radius(ii)])*n_particle,45)*wavelength;
+    r = linspace(0,max([1,radius(ii)])*1.33,25)*wavelength;
 
     % Calculate T-matrix for spherical particle with shepp
-    T = ott.Tmatrix.simple('sphere', [radius(ii), radius(ii)+1/n_shell/4], ...
+    T = ott.Tmatrix.simple('sphere', ...
+        [radius(ii), radius(ii)+1/n_shell/4]*wavelength, ...
         'k_medium', k*n_medium, ...
         'k_particle', k*[n_particle, n_shell]);
 
     % Calculate T-matrix for spherical particle without shell
-    T1 = ott.Tmatrix.simple('sphere', radius(ii), ...
+    T1 = ott.Tmatrix.simple('sphere', radius(ii)*wavelength, ...
         'k_medium', k*n_medium, 'k_particle', k*n_particle);
-    
+      
     % Calculate the force along the axial direction
     for nz = 1:length(z)
       tbeam = beam.translateXyz(0, 0, z(nz));
       sbeam = T * tbeam;
       sbeam1 = T1 * tbeam;
       
-      fz(:, nr) = ott.forcetorque(tbeam, sbeam);
-      fz1(:, nr) = ott.forcetorque(tbeam, sbeam1);
+      fz(:, nz) = ott.forcetorque(tbeam, sbeam);
+      fz1(:, nz) = ott.forcetorque(tbeam, sbeam1);
     end
 
     % Find the minimum axial restoring force
@@ -81,8 +84,10 @@ for ii=1:length(radius)
     % Find z-axis equilibrium
     zeq = ott.find_equilibrium(z, fz(3, :));
     if isempty(zeq)
-      warning(['No zeq in range (radius = ' num2str(radius(ii)) ')']);
+      ott.warning(['No zeq in range (radius = ' num2str(radius(ii)) ')']);
       zeq=0;
+    else
+      zeq = zeq(1);
     end
 
     % Calculate the radial force at z-axial equilibrium
@@ -99,6 +104,8 @@ for ii=1:length(radius)
     transverserestoringforce(ii) = min(fr(1, :));
     transverserestoringforce1(ii) = min(fr1(1, :));
 end
+
+disp(['Simulation took ' num2str(toc()) ' seconds']);
 
 %% Generate figures of the trap depth vs core radius
 
