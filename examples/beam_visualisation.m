@@ -120,12 +120,15 @@ figure(1);
 subplot(1, 3, 1);
 imagesc(xrange, yrange, Ei);
 title('E field intensity (focal plane)');
+xlabel('X [\lambda_0]'); ylabel('Y [\lambda_0]');
 subplot(1, 3, 2);
 imagesc(xrange, yrange, Ep);
 title('E field phase (focal plane)');
+xlabel('X [\lambda_0]'); ylabel('Y [\lambda_0]');
 subplot(1, 3, 3);
 imagesc(xrange, yrange, I);
 title('radiance (focal plane)');
+xlabel('X [\lambda_0]'); ylabel('Y [\lambda_0]');
 
 %% Generate plot of the intensity along the beam (same as above)
 
@@ -157,9 +160,11 @@ figure(2);
 subplot(1, 2, 1);
 imagesc(xrange, yrange, Ei);
 title('E field intensity (cross-section)');
+xlabel('X [\lambda_0]'); ylabel('Z [\lambda_0]');
 subplot(1, 2, 2);
 imagesc(xrange, yrange, I);
 title('radiance (cross-section)');
+xlabel('X [\lambda_0]'); ylabel('Z [\lambda_0]');
 
 %% Generate a figure showing the farfield
 
@@ -194,14 +199,17 @@ figure(3);
 subplot(1, 3, 1);
 surf(x,y,z,I,'facecolor','interp','edgecolor','none')
 title('radiance (farfield)');
+xlabel('X [r]'); ylabel('Y [r]');
 view(0, -90);
 subplot(1, 3, 2);
 surf(x,y,z,Ep,'facecolor','interp','edgecolor','none')
 title('phase (farfield)');
+xlabel('X [r]'); ylabel('Y [r]');
 view(0, -90);
 subplot(1, 3, 3);
 surf(x,y,z,Ep_slm,'facecolor','interp','edgecolor','none')
 title('phase + offset (farfield)');
+xlabel('X [r]'); ylabel('Y [r]');
 view(0, -90);
 
 % Make sure the user knows the beam is more interesting for scattered

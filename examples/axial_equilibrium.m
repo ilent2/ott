@@ -19,7 +19,7 @@ n_particle = 1.59;
 wavelength = 1064.0e-9;
 
 % Specify the particle radius (sphere)
-radius = 1.0*wavelength/n_medium;
+radius = 1.5*wavelength/n_medium;
 
 %% Calculate the beam
 
@@ -37,8 +37,8 @@ T = ott.Tmatrix.simple('sphere', radius, ...
 
 % Find the equilibrium in the z-direction
 [z,kz] = ott.axial_equilibrium(T, beam);
-disp(['Axial equilibrium: ' num2str(z) ' [m]']);
-disp(['Axial spring constant: ' num2str(kz) ' [Q/m]']);
+disp(['Axial equilibrium: ' num2str(z/wavelength) ' [wavelength0]']);
+disp(['Axial spring constant: ' num2str(kz*wavelength) ' [Q/wavelength0]']);
 
 % Translate the beam to the z-axis equilibrium
 beam = beam.translateZ(z);
@@ -48,6 +48,6 @@ beam = beam.rotateY(pi/2.0);
 
 % Calculate the equilibrium in the x-direction
 [x,kx] = ott.axial_equilibrium(T, beam);
-disp(['Radial equilibrium: ' num2str(x) ' [m]']);
-disp(['Radial spring constant: ' num2str(kx) ' [Q/m]']);
+disp(['Radial equilibrium: ' num2str(x/wavelength) ' [wavelength0]']);
+disp(['Radial spring constant: ' num2str(kx*wavelength) ' [Q/wavelength0]']);
 
