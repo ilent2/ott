@@ -43,6 +43,10 @@ classdef TmatrixPm < ott.Tmatrix
       %  TMATRIXPM(..., 'wavelength0', wavelength) specifies the
       %  wavelength in the vecuum, required when index_particle or
       %  index_medium are specified.
+      %
+      %  TMATRIXPM(..., 'distribution', m) specifies point distriution method
+      %      'angulargrid'    uses an angular grid of points
+      %      'random'         uses randomly distributed points
 
       % Handle different shapes
       if strcmp(shape, 'ellipsoid')
@@ -73,6 +77,7 @@ classdef TmatrixPm < ott.Tmatrix
       p.addParameter('wavelength_medium', []);
       p.addParameter('index_medium', []);
       p.addParameter('wavelength0', []);
+      p.addParameter('distribution', 'angulargrid');
       p.parse(varargin{:});
 
       % Get or estimate Nmax from the inputs
@@ -87,6 +92,7 @@ classdef TmatrixPm < ott.Tmatrix
       [~,~,rotational_symmetry] = ott.utils.shapesurface(...
           [],[],shape_idx,parameters);
 
+      % TODO: Squares: Do they have the same symetry optimisation?
       if rotational_symmetry
         ntheta = 4*(Nmax + 2);
         nphi = 1;
@@ -95,14 +101,22 @@ classdef TmatrixPm < ott.Tmatrix
         nphi = 3*(Nmax + 2)+1;
       end
 
-      [theta,phi] = ott.utils.angulargrid(ntheta,nphi);
-
-      % TODO: Different ways to distribute points (random points)
+      % Generate grid of points
+      if strcmpi(p.Results.distribution, 'angualrgird')
+        [theta,phi] = ott.utils.angulargrid(ntheta,nphi);
+      elseif strcmpi(p.Results.distribution, 'random')
+        xyz = 2*rand([ntheta*nphi,3]) - 1;
+        [~,theta,phi] = ott.utils.xyz2rtp(xyz);
+      else
+        error('Unrecognized option for distribution');
+      end
 
       [r,normals] = ott.utils.shapesurface(theta,phi,shape_idx,parameters);
 
-      % TODO: What does inputParser do with duplicate parameters?
-      ott.TmatrixPm(r, theta, phi, normals, varargin{:}, 'Nmax', Nmax, ...
+      % inputParser will take the last parameter, so varargin just needs to
+      % be before the replacements for varargin.
+      tmatrix = ott.TmatrixPm(r, theta, phi, normals, varargin{:}, ...
+          'Nmax', Nmax, ...
           'rotational_symmetry', rotational_symmetry);
     end
   end
