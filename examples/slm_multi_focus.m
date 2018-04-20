@@ -14,6 +14,9 @@
 % Add the toolbox path
 addpath('../');
 
+% Close open figures
+close all;
+
 %define microscope target NA:
 NA=-1.33*sin(64.46*pi/180); %NA in water... (from bottom)
 nMedium=1.33;

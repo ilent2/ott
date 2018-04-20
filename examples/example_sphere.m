@@ -9,6 +9,9 @@
 % Add the toolbox to the path (assuming we are in ott/examples)
 addpath('../');
 
+% Close open figures
+close all;
+
 %% Describe the particle, beam and surrounding medium
 
 % Make warnings less obtrusive

@@ -23,6 +23,9 @@
 % Add the toolbox to the path (assuming we are in ott/examples)
 addpath('../');
 
+% Close open figures
+close all;
+
 % Make warnings less obtrusive
 ott.warning('once');
 

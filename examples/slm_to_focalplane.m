@@ -6,6 +6,9 @@
 % Add the toolbox path
 addpath('../');
 
+% Close open figures
+close all;
+
 % Numerical aperture of microscope
 NA = 1.02;
 
@@ -105,7 +108,7 @@ subplot(1, 3, 3);
 imagesc(xrange, yrange, I);
 axis('image'); xlabel('X (\lambda)'); ylabel('Y (\lambda)');
 title('radiance');
-suptitle('At focal plane');
+set(gcf, 'Name','At focal plane','NumberTitle','off');
 
 %% Visualise the near fields (parallel to beam axis)
 
@@ -142,4 +145,4 @@ subplot(1, 3, 3);
 imagesc(xrange, yrange, I);
 axis('image'); xlabel('X (\lambda)'); ylabel('Z (\lambda)');
 title('radiance');
-suptitle('Along beam axis');
+set(gcf, 'Name','Along beam axis','NumberTitle','off');

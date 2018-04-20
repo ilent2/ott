@@ -12,6 +12,9 @@
 % Add the toolbox to the path (assuming we are in ott/examples)
 addpath('../');
 
+% Close open figures
+close all;
+
 %% Setup the beam
 
 % Select a beam type to visualise (gaussian, lg, hg, ig, addition, scattered)
@@ -119,16 +122,17 @@ end
 figure(1);
 subplot(1, 3, 1);
 imagesc(xrange, yrange, Ei);
-title('E field intensity (focal plane)');
+title('E field intensity');
 xlabel('X [\lambda_0]'); ylabel('Y [\lambda_0]');
 subplot(1, 3, 2);
 imagesc(xrange, yrange, Ep);
-title('E field phase (focal plane)');
+title('E field phase');
 xlabel('X [\lambda_0]'); ylabel('Y [\lambda_0]');
 subplot(1, 3, 3);
 imagesc(xrange, yrange, I);
-title('radiance (focal plane)');
+title('radiance');
 xlabel('X [\lambda_0]'); ylabel('Y [\lambda_0]');
+set(gcf, 'Name','Focal plane','NumberTitle','off');
 
 %% Generate plot of the intensity along the beam (same as above)
 
@@ -159,12 +163,13 @@ end
 figure(2);
 subplot(1, 2, 1);
 imagesc(xrange, yrange, Ei);
-title('E field intensity (cross-section)');
+title('E field intensity');
 xlabel('X [\lambda_0]'); ylabel('Z [\lambda_0]');
 subplot(1, 2, 2);
 imagesc(xrange, yrange, I);
-title('radiance (cross-section)');
+title('radiance');
 xlabel('X [\lambda_0]'); ylabel('Z [\lambda_0]');
+set(gcf, 'Name','cross-section','NumberTitle','off');
 
 %% Generate a figure showing the farfield
 
@@ -198,19 +203,20 @@ I=reshape(sum(abs(E).^2,1),[nt+1,nt+1]);
 figure(3);
 subplot(1, 3, 1);
 surf(x,y,z,I,'facecolor','interp','edgecolor','none')
-title('radiance (farfield)');
+title('radiance');
 xlabel('X [r]'); ylabel('Y [r]');
 view(0, -90);
 subplot(1, 3, 2);
 surf(x,y,z,Ep,'facecolor','interp','edgecolor','none')
-title('phase (farfield)');
+title('phase');
 xlabel('X [r]'); ylabel('Y [r]');
 view(0, -90);
 subplot(1, 3, 3);
 surf(x,y,z,Ep_slm,'facecolor','interp','edgecolor','none')
-title('phase + offset (farfield)');
+title('phase + offset');
 xlabel('X [r]'); ylabel('Y [r]');
 view(0, -90);
+set(gcf, 'Name','farfield','NumberTitle','off');
 
 % Make sure the user knows the beam is more interesting for scattered
 if strcmp(beam_type, 'scattered')
