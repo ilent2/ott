@@ -46,7 +46,7 @@ index_range=linspace(1.34,2.66,50);            %absolute refractive index
 tic
 %to see the proceedure for calculating a range of particle sizes and
 %refractive indexes open landscape()
-system_parameters=[1.3 1.33 1.07e-6 [1 i] 90 0];
+system_parameters=[1.3 1.33 1.07e-6 [1 1i] 90 0];
 structurelandscape=landscape(index_range,size_range_rad,system_parameters);
 toc
 
@@ -126,9 +126,9 @@ verbose=0;
 if nargin<3
     %standard parameters we use... NA 1.3, water, yt fibre, circular pol,90
     %deg truncation (probably should be 77.8).
-    system_parameters=[1.3 1.33 1.07e-6 [1 i] 90 0];
+    system_parameters=[1.3 1.33 1.07e-6 [1 1i] 90 0];
 else
-    system_parameters=[system_parameters(:)].';
+    system_parameters= system_parameters(:).';
 end
 
 %prep stuff
@@ -147,7 +147,6 @@ z_stiffness=z_equilibrium;
 x_stiffness=z_equilibrium;
 maxforcez=z_equilibrium;
 minforcez=z_equilibrium;
-fz=zeros([1,nTrans]);
 
 %% Setup beam
 
@@ -156,10 +155,6 @@ beam = ott.BscPmGauss('NA', NA, 'polarisation', system_parameters(4:5), ...
     'k_medium', k, 'index_medium', medium_index);
 
 %%%
-
-% The stiffness calculation uses additional translations, this might be
-% unsafe, but we will ignore the warnings for now
-warning('off', 'ott:Bsc:translateZ:outside_nmax');
 
 for particle=1:nParticles
     disp(['Particle: ' num2str(particle) '/' num2str(nParticles)]);
@@ -179,14 +174,18 @@ for particle=1:nParticles
     %calculate all needed translations now.
 
     % Precompute the beams
-    beams(1:length(position)) = beam;
+    beams = repmat(beam, 1, length(position));
     for trans=1:length(position)
       beams(trans) = beams(trans).translateZ(position(trans));
     end
 
     % Precompute rotation to x-axis
     [~, Dx] = beam.rotateY(pi/2);
-    
+
+    % Precompute the translation on the x-axis
+    dx = 2e-8/beam.k_medium*2*pi;
+    [~, A, B] = beam.translateZ(dx/2.0);
+
     for index=1:nIndexes
         if verbose
         disp(['Index: ' num2str(index) '/' num2str(nIndexes) ', rRI=' num2str(relindex_range(index))]);
@@ -196,9 +195,10 @@ for particle=1:nParticles
             'k_medium', k, 'k_particle', k*relindex_range(index));
 
         % Calculate axial force
+        fz=zeros(1,nTrans);
         for trans=1:nTrans
-          fz3 = ott.forcetorque(beams(trans), T*beams(trans));
-          fz(trans) = fz3(3);
+          [~,~,fz(trans),~,~,~] = ott.forcetorque(...
+              beams(trans), T*beams(trans));
         end
 
         [maxforcez(index,particle),mai]=max(fz);
@@ -222,19 +222,17 @@ for particle=1:nParticles
             
             %Calculate axial equilibrium accurately. I wouldn't trust k for
             %extreme marginal traps anyway.
-            zero_index=find(fz<0,1,'first');
             if mai<mii && (mii+2) <= nTrans && mai-2 >= 1
                 if numel(spliney)>0
                     zero_spline=find(spliney<0,1,'first');
                     if numel(zero_spline)>0
-                        zero_pm=splinex([zero_spline-2 zero_spline+2]);
                         %first guess
                         fs=polyfit(splinex(zero_spline-3:zero_spline+2),spliney(zero_spline-3:zero_spline+2),3);
                         
                         rts=roots(fs);
                         rts=rts(imag(rts)==0);
 
-                        [d,zmin]=min(abs(rts-splinex(zero_spline)));
+                        [~,zmin]=min(abs(rts-splinex(zero_spline)));
                         
                         z_equilibrium(index,particle)=rts(zmin); %also pretty good.
                         z_stiffness(index,particle)=-polyval([3*fs(1),2*fs(2),fs(3)],rts(zmin)); %not perfect but pretty good.
@@ -254,14 +252,14 @@ for particle=1:nParticles
                         % matrix calcultion outside this loop
 
                         % Translate along the x direction and calc x force
-                        xbeam = tbeam.translateZ(1e-8);
+                        xbeam = tbeam.translateZ(A, B);
                         [~,~,fx1,~,~,~] = ott.forcetorque(xbeam, T*xbeam);
 
                         % Translate along the x direction and calc x force
-                        xbeam = tbeam.translateZ(-1e-8);
+                        xbeam = tbeam.translateZ(A', B');
                         [~,~,fx0,~,~,~] = ott.forcetorque(xbeam, T*xbeam);
 
-                        x_stiffness(index,particle)=(fx1-fx0)/2e-8;
+                        x_stiffness(index,particle)=(fx1-fx0)/dx;
                     else
                         z_equilibrium(index,particle)=NaN; %also pretty good.
                         z_stiffness(index,particle)=NaN; %not perfect but pretty good.
@@ -269,7 +267,6 @@ for particle=1:nParticles
                     end
                 end
             else
-                zero_pm=position([zero_index-1 zero_index]);
                 z_equilibrium(index,particle)=NaN;
                 z_stiffness(index,particle)=NaN;
                 x_stiffness(index,particle)=NaN;
@@ -284,7 +281,5 @@ structureOutput.minforce=minforcez;
 structureOutput.zequilibrium=z_equilibrium;
 structureOutput.zstiffness=z_stiffness;
 structureOutput.xstiffness=x_stiffness;
-structureOutput.position=position; %grabs last position, I only want this for rayleigh stuff.
-structureOutput.fz=fz; %grabs last position, I only want this for rayleigh stuff.
 
 end

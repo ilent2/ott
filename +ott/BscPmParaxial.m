@@ -39,7 +39,7 @@ classdef BscPmParaxial < ott.BscPointmatch
       %  points, ntheta, and phi points, nphi. 
       %  default : ntheta=2*(nmax+1),  nphi=2*(nmax+1).
       % refractive index --- {{'ri',nMeidum}}, cell input of refractive index.
-      %  default : nMedium=1.33;
+      %  default : nMedium=1.0;
       %
       % NOTE: This current version will best work for "clean" beam modes, that
       % is, the desired field AFTER spatial filtering (If modelling an SLM/DMD).
@@ -49,7 +49,12 @@ classdef BscPmParaxial < ott.BscPointmatch
       p = inputParser;
       p.addParameter('verbose', false);
       p.addParameter('Nmax', 30);
-      p.addParameter('index_medium', 1.33);
+      
+      p.addParameter('wavelength0', 1);
+      p.addParameter('k_medium', []);
+      p.addParameter('index_medium', []);
+      p.addParameter('wavelength_medium', []);
+      
       p.addParameter('polarisation', [ 1 0 ]);
       p.addParameter('grid', []);
       p.addParameter('mapping', 'sintheta');
@@ -57,7 +62,13 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       verbose = p.Results.verbose;
       Nmax = p.Results.Nmax;
-      nMedium = p.Results.index_medium;
+      beam.k_medium = ott.Bsc.parser_k_medium(p);
+      
+      if isempty(p.Results.index_medium)
+        nMedium = 1.0;
+      else
+        nMedium = p.Results.index_medium;
+      end
 
       polarisation = p.Results.polarisation;
 
@@ -165,7 +176,6 @@ classdef BscPmParaxial < ott.BscPointmatch
       [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, theta, phi);
 
       beam.type = 'incomming';
-      beam.k_medium = 2*pi*nMedium;
     end
   end
 end

@@ -148,7 +148,7 @@ case 1
     r = zeros(size(theta));
     n = [r r r];
     sides = find( ( theta >= pi/2 - edge_angle ) ...
-        && ( theta <= pi/2 + edge_angle ) );
+        & ( theta <= pi/2 + edge_angle ) );
     top = find( theta < pi/2 - edge_angle );
     bottom = find( theta > pi/2 + edge_angle );
     ends = [ top; bottom ];

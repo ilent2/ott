@@ -29,14 +29,15 @@ classdef Bsc
     a           % Beam shape coefficients a vector
     b           % Beam shape coefficients b vector
     type        % Coefficient type (incomming, outgoing or regular)
-    
+
     k_medium    % Wavenumber in medium
 
     dz          % Distance the beam has been translated
   end
 
   properties (Dependent)
-    Nmax        % Current size of beam vectors
+    Nmax        % Size of beam vectors
+    power       % Power of the beam
   end
 
   methods (Abstract)
@@ -210,6 +211,16 @@ classdef Bsc
         error('Invalid beam type');
       end
     end
+    
+    function p = get.power(beam)
+      % get.power calculate the power of the beam
+      p = sum(abs(beam.a).^2 + abs(beam.b).^2);
+    end
+    
+    function beam = set.power(beam, p)
+      % set.power set the beam power
+      beam = sqrt(p / beam.power) * beam;
+    end
 
     function nmax = get.Nmax(beam)
       %get.Nmax calculates Nmax from the current size of the beam coefficients
@@ -218,6 +229,55 @@ classdef Bsc
 
     function beam = set.Nmax(beam, nmax)
       %set.Nmax resizes the beam vectors
+      beam = beam.set_Nmax(nmax);
+    end
+
+    function nbeam = shrink_Nmax(beam, varargin)
+      % SHRINK_NMAX reduces the size of the beam while preserving power
+
+      p = inputParser;
+      p.addParameter('tolerance', 1.0e-6);
+      p.parse(varargin{:});
+
+      amagA = full(sum(sum(abs(beam.a).^2)));
+      bmagA = full(sum(sum(abs(beam.b).^2)));
+
+      for ii = 1:beam.Nmax
+
+        total_orders = ott.utils.combined_index(ii, ii);
+        nbeam = beam;
+        nbeam.a = nbeam.a(1:total_orders);
+        nbeam.b = nbeam.b(1:total_orders);
+
+        amagB = full(sum(sum(abs(nbeam.a).^2)));
+        bmagB = full(sum(sum(abs(nbeam.b).^2)));
+
+        aapparent_error = abs( amagA - amagB )/amagA;
+        bapparent_error = abs( bmagA - bmagB )/bmagA;
+
+        if aapparent_error < p.Results.tolerance && ...
+            bapparent_error < p.Results.tolerance
+          break;
+        end
+      end
+    end
+
+    function beam = set_Nmax(beam, nmax, varargin)
+      % SET_NMAX resize the beam, with additional options
+      %
+      % SET_NMAX(nmax) sets the beam nmax.
+      %
+      % SET_NMAX(..., 'tolerance', tol) use tol as the warning error
+      % level tolerance for resizing the beam.
+      %
+      % SET_NMAX(..., 'powerloss', mode) action to take if a power
+      % loss is detected.  Can be 'ignore', 'warn' or 'error'.
+
+      p = inputParser;
+      p.addParameter('tolerance', 1.0e-6);
+      p.addParameter('powerloss', 'warn');
+      p.parse(varargin{:});
+
       total_orders = ott.utils.combined_index(nmax, nmax);
       if length(beam.a) > total_orders
 
@@ -230,15 +290,26 @@ classdef Bsc
         amagB = full(sum(sum(abs(beam.a).^2)));
         bmagB = full(sum(sum(abs(beam.b).^2)));
 
-        aapparent_error = abs( amagA - amagB )/amagA;
-        bapparent_error = abs( bmagA - bmagB )/bmagA;
+        if ~strcmpi(p.Results.powerloss, 'ignore')
 
-        warning_error_level = 1e-6;
-        if aapparent_error > warning_error_level || ...
-            bapparent_error > warning_error_level
-          warning('ott:Bsc:setNmax:truncation', ...
-              ['Apparent errors of ' num2str(aapparent_error) ...
-                  ', ' num2str(bapparent_error) ]);
+          aapparent_error = abs( amagA - amagB )/amagA;
+          bapparent_error = abs( bmagA - bmagB )/bmagA;
+
+          if aapparent_error > p.Results.tolerance || ...
+              bapparent_error > p.Results.tolerance
+            if strcmpi(p.Results.powerloss, 'warn')
+              warning('ott:Bsc:setNmax:truncation', ...
+                  ['Apparent errors of ' num2str(aapparent_error) ...
+                      ', ' num2str(bapparent_error) ]);
+            elseif strcmpi(p.Results.powerloss, 'error')
+              error('ott:Bsc:setNmax:truncation', ...
+                  ['Apparent errors of ' num2str(aapparent_error) ...
+                      ', ' num2str(bapparent_error) ]);
+            else
+              error('ott:Bsc:setNmax:truncation', ...
+                'powerloss should be one of ignore, warn or error');
+            end
+          end
         end
       elseif length(beam.a) < total_orders
         [arow_index,acol_index,aa] = find(beam.a);
@@ -248,22 +319,39 @@ classdef Bsc
       end
     end
 
-    function beam = translateZ(beam, z)
+    function [beam, A, B] = translateZ(beam, varargin)
       %TRANSLATEZ translate a beam along the z-axis
+      %
+      % TRANSLATEZ(z) translates by a distance z along the z axis.
+      %
+      % TRANSLATEZ(A, B) applies the translation given by A, B.
+      %
+      % [beam, A, B] = TRANSLATEZ(z) returns the translation matrices
+      % and translates the beam.
 
-      % Add a warning when the beam is translated outside nmax2ka(Nmax) 
-      % The first time may be OK, the second time does not have enough
-      % information.
-      if beam.dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
-        warning('ott:Bsc:translateZ:outside_nmax', ...
-            'Repeated translation of beam outside Nmax region');
+      if nargin == 2
+        z = varargin{1};
+
+        % Add a warning when the beam is translated outside nmax2ka(Nmax) 
+        % The first time may be OK, the second time does not have enough
+        % information.
+        if beam.dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
+          warning('ott:Bsc:translateZ:outside_nmax', ...
+              'Repeated translation of beam outside Nmax region');
+        end
+        beam.dz = beam.dz + abs(z);
+
+        % Convert to beam units
+        z = z * beam.k_medium / 2 / pi;
+
+        [A, B] = ott.utils.translate_z(beam.Nmax, z);
+      elseif nargin == 3
+        A = varargin{1};
+        B = varargin{2};
+      else
+        error('Wrong number of arguments');
       end
-      beam.dz = beam.dz + abs(z);
 
-      % Convert to beam units
-      z = z * beam.k_medium / 2 / pi;
-      
-      [A, B] = ott.utils.translate_z(beam.Nmax, z);
       beam = [ A B ; B A ] * beam;
     end
 
@@ -394,11 +482,6 @@ classdef Bsc
       end
     end
 
-    function p = power(beam)
-      %POWER calculate the power of the beam
-      p = sqrt(sum(abs(beam.a).^2 + abs(beam.b).^2));
-    end
-
     function beam = mrdivide(beam,o)
       %MRDIVIDE (op) divide the beam coefficients by a scalar
       beam.a = beam.a / o;
@@ -418,9 +501,9 @@ classdef Bsc
 
       % Assign a type to the resulting beam
       if strcmp(tmatrix.type, 'total')
-        beam.type = 'regular';
-      elseif strcmp(tmatrix.type, 'scattered')
         beam.type = 'outgoing';
+      elseif strcmp(tmatrix.type, 'scattered')
+        beam.type = 'regular';
       elseif strcmp(tmatrix.type, 'internal')
         beam.type = 'regular';
       else
@@ -435,7 +518,7 @@ classdef Bsc
       %    - Scalar multiplication
       %    - Matrix multiplication of a and b vectors: A*a, a*A
       %    - Matrix multiplication of [a;b] vector: T*[a;b]
-      
+
       if isa(a, 'ott.Bsc')
         beam = a;
         beam.a = beam.a * b;

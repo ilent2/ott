@@ -25,8 +25,7 @@ tmatrix.Nmax = Nmax;
 beam.Nmax = Nmax;
 
 % Normalise the beam power
-power=beam.power();
-beam = beam / power;
+beam.power = 1.0;
 
 %start with three points each side over a 1/8 wavelength:
 zd=.25/(beam.k_medium/2/pi);

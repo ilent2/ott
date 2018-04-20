@@ -56,11 +56,14 @@ tic
 % For each particle radius, calculate the axial and radial min trap depth
 for ii=1:length(radius)
 
+    disp(['Calculating radius ' num2str(ii) '/' ...
+        num2str(length(radius)) ' (' num2str(radius(ii)) ')']);
+
     % Calculate grid [m]
     z = linspace(-.5,max([1,radius(ii)])*n_particle,45)*wavelength;
     r = linspace(0,max([1,radius(ii)])*1.33,25)*wavelength;
 
-    % Calculate T-matrix for spherical particle with shepp
+    % Calculate T-matrix for spherical particle with shell
     T = ott.Tmatrix.simple('sphere', ...
         [radius(ii), radius(ii)+1/n_shell/4]*wavelength, ...
         'k_medium', k*n_medium, ...
@@ -117,6 +120,7 @@ plot(radius*n_medium,-axialrestoringforce);
 hold on
 plot(radius*n_medium,-axialrestoringforce1,':');
 hold off
+legend('shell', 'solid', 'Location', 'NorthWest');
 ylabel('axial force efficiency \it Q_z')
 xlabel('core radius [{\it{\lambda_{medium}}}]')
 xlim(([radius(1),radius(end)]*n_medium))
@@ -128,6 +132,7 @@ plot(radius*n_medium,-transverserestoringforce);
 hold on
 plot(radius*n_medium,-transverserestoringforce1,':');
 hold off
+legend('shell', 'solid', 'Location', 'NorthWest');
 ylabel('transverse force efficiency \it Q_r')
 xlabel('core radius [{\it{\lambda_{medium}}}]')
 xlim(([radius(1),radius(end)]*n_medium))

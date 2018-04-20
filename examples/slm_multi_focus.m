@@ -53,6 +53,7 @@ hold on
 plot(cos(linspace(0,2*pi)),sin(linspace(0,2*pi)),'w:','linewidth',1)
 hold off
 title('mode shape on SLM and target NA zone (in white circle)')
+xlabel('X [a.u.]'); ylabel('Y [a.u.]');
 axis image
 
 %% Create a pattern for the SLM
@@ -91,10 +92,12 @@ figure(2)
 subplot(1,2,1)
 imagesc(amplitude_function)
 title('amplitude of grating')
+xlabel('X [pixels]'); ylabel('Y [pixels]');
 axis image
 subplot(1,2,2)
 imagesc(phase_function)
 title('phase of grating')
+xlabel('X [pixels]'); ylabel('Y [pixels]');
 axis image
 
 %% Compute beam that comes off SLM
@@ -106,13 +109,13 @@ Nmax=ott.utils.ka2nmax(2*pi*nMedium*(.5+max(abs(g(:)))));
 output_mode=G.*incident_mode;
 
 % Calculate the beam shape coefficients of focussed beam
-beam = ott.BscPmParaxial(NA, output_mode, ...
+beam = ott.BscPmParaxial(NA, output_mode, 'index_medium', nMedium, ...
     'polarisation', polarisation, 'Nmax', Nmax);
 
 %% create image of the resulting beams along two axes:
 
-[X1,Y1,Z1]=meshgrid(linspace(-3,3),linspace(-3,3),0);
-[X2,Z2,Y2]=meshgrid(linspace(-3,3),linspace(-3,3),0);
+[X1,Y1,Z1]=meshgrid(linspace(-3,3)/nMedium,linspace(-3,3)/nMedium,0);
+[X2,Z2,Y2]=meshgrid(linspace(-3,3)/nMedium,linspace(-3,3)/nMedium,0);
 
 E = beam.emFieldXyz([[X1(:),Y1(:),Z1(:)];[X2(:),Y2(:),Z2(:)]].');
 E2=sum(abs(E).^2,1);
@@ -124,19 +127,19 @@ E2=sum(abs(E).^2,1);
 
 figure(3)
 subplot(1,2,1)
-contourf(X1/2/pi,Y1/2/pi,reshape(E2(1:end/2),size(X1)),32,'edgecolor','none');
+contourf(X1,Y1,reshape(E2(1:end/2),size(X1)),32,'edgecolor','none');
 hold on
 plot(xlim,mean(ylim)*[1,1],'w:','linewidth',2)
 hold off
 title('XY fields around focal plane');
-xlabel('x')
-ylabel('y')
+xlabel('x [\lambda_m]')
+ylabel('y [\lambda_m]')
 axis image
 subplot(1,2,2)
-contourf(X2/2/pi,Z2/2/pi,reshape(E2(end/2+1:end),size(X1)),32,'edgecolor','none');
+contourf(X2,Z2,reshape(E2(end/2+1:end),size(X1)),32,'edgecolor','none');
 axis image
-xlabel('x')
-ylabel('z')
+xlabel('x [\lambda_m]')
+ylabel('z [\lambda_m]')
 title('XZ fields around focal plane');
 
 %% compute some (approximate) forces on a sphere
@@ -144,9 +147,9 @@ title('XZ fields around focal plane');
 T = ott.Tmatrix.simple('sphere', 0.5, 'wavelength0', 1.0, ...
     'index_medium', nMedium, 'index_particle', 1.5);
 
-x = [1;0;0]*linspace(-3,3,20);
-y = [0;1;0]*linspace(-3,3,20);
-z = [0;0;1]*linspace(-3,3,20);
+x = [1;0;0]*linspace(-3,3,20)/nMedium;
+y = [0;1;0]*linspace(-3,3,20)/nMedium;
+z = [0;0;1]*linspace(-3,3,20)/nMedium;
 
 fxyz1 = ott.forcetorque(beam, T, 'position', x);
 fxyz2 = ott.forcetorque(beam, T, 'position', y);
@@ -162,7 +165,7 @@ hold on
 plot(xlim,0*[1,1],'k','linewidth',1)
 hold off
 grid on
-xlabel('x displacement')
+xlabel('x [\lambda_m]')
 ylabel('force [Q]')
 legend('fx','fy','fz')
 title('X-translation');
@@ -173,7 +176,7 @@ hold on
 plot(xlim,0*[1,1],'k','linewidth',1)
 hold off
 grid on
-xlabel('y displacement')
+xlabel('y [\lambda_m]')
 ylabel('force [Q]')
 legend('fx','fy','fz')
 title('Y-translation');
@@ -184,7 +187,7 @@ hold on
 plot(xlim,0*[1,1],'k','linewidth',1)
 hold off
 grid on
-xlabel('z displacement')
+xlabel('z [\lambda_m]')
 ylabel('force [Q]')
 legend('fx','fy','fz')
 title('Z-translation');

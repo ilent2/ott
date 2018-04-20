@@ -60,7 +60,7 @@ switch beam_type
     % calculate the beam angle ourselves and specify that
     beam_angle = asin(NA/n_medium);
     beam = ott.BscPmGauss('lg', [ 0 3 ], ...
-        'polarisation', polarisation, 'angle', beam_angle, ...
+        'polarisation', [ 1 1i ], 'angle', beam_angle, ...
         'index_medium', n_medium, 'wavelength0', wavelength0);
 
   case 'hg'
@@ -68,7 +68,7 @@ switch beam_type
     % Create a HG23 beam with circular polarisation
     beam_angle = asin(NA/n_medium);
     beam = ott.BscPmGauss('hg', [ 2 3 ], ...
-        'polarisation', polarisation, 'angle', beam_angle, ...
+        'polarisation', [ 1 1i ], 'angle', beam_angle, ...
         'index_medium', n_medium, 'wavelength0', wavelength0);
 
   otherwise
@@ -76,7 +76,7 @@ switch beam_type
 end
 
 % Normalize the beam power
-beam = beam / beam.power();
+beam.power = 1.0;
 
 %% Generate force/position graphs
 
@@ -84,7 +84,7 @@ beam = beam / beam.power();
 tic
 
 %calculate the force along z
-z = [0;0;1]*linspace(-8,8,80)*wavelength0;
+z = [0;0;1]*linspace(-8,8,80)*wavelength_medium;
 fz = ott.forcetorque(beam, T, 'position', z);
 
 % Find the equilibrium along the z axis
@@ -96,7 +96,7 @@ end
 zeq = zeq(1);
 
 % Calculate force along x-axis (with z = zeq, if found)
-r = [1;0;0]*linspace(-4,4,80)*wavelength0 + [0;0;zeq];
+r = [1;0;0]*linspace(-4,4,80)*wavelength_medium + [0;0;zeq];
 fr = ott.forcetorque(beam, T, 'position', r);
 
 % Finish timing the calculation
@@ -104,18 +104,18 @@ toc
 
 % Generate the plots
 
-figure(1); plot(z(3, :)/wavelength0,fz(3, :));
-xlabel('{\it z} (x\lambda)');
-ylabel('{\it Q_z}');
+figure(1); plot(z(3, :)/wavelength_medium,fz(3, :));
+xlabel('{\it z} [\lambda_m]');
+ylabel('{\it Q_z} [n_m P / c]');
 aa = axis;
 hold on;
 line(aa(1:2),[ 0 0 ],'linestyle',':');
 line([0 0],aa(3:4),'linestyle',':');
 hold off;
 
-figure(2); plot(r(1, :)/wavelength0,fr(1, :));
-xlabel('{\it r} (x\lambda)');
-ylabel('{\it Q_r}');
+figure(2); plot(r(1, :)/wavelength_medium,fr(1, :));
+xlabel('{\it r} [\lambda_m]');
+ylabel('{\it Q_r} [n_m P / c]');
 aa = axis;
 hold on;
 line(aa(1:2),[ 0 0 ],'linestyle',':');

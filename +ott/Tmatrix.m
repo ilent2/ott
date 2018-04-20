@@ -52,7 +52,7 @@ classdef Tmatrix
       p = inputParser;
       p.KeepUnmatched = true;
       p.addParameter('method', '');
-      p.addParameter('method_tol', 0);
+      p.addParameter('method_tol', []);
 
       % Things required for k_medium
       p.addParameter('k_medium', []);
@@ -351,7 +351,7 @@ classdef Tmatrix
       %set.Nmax resizes the T-matrix
 
       % Check if we need to do anything
-      if nmax == tmatrix.Nmax
+      if all(nmax == tmatrix.Nmax)
         return;
       end
 
@@ -363,12 +363,20 @@ classdef Tmatrix
         nmax2 = nmax(1);
       end
 
+
       total_orders1 = ott.utils.combined_index(nmax1, nmax1);
       total_orders2 = ott.utils.combined_index(nmax2, nmax2);
 
       midpoint1 = size(tmatrix.data, 1)/2;
       midpoint2 = size(tmatrix.data, 2)/2;
-
+      
+      % The current resizing method only works for scattered fields
+      % TODO: Write a better method that doesn't need this
+      old_type = tmatrix.type;
+      if total_orders1 > midpoint1 || total_orders2 > midpoint2
+        tmatrix = tmatrix.toScattered();
+      end
+      
       % Split T-matrix into quadrants
       A11 = tmatrix.data(1:midpoint1, 1:midpoint2);
       A12 = tmatrix.data(1:midpoint1, (midpoint2+1):end);
@@ -440,6 +448,11 @@ classdef Tmatrix
                 ['Apparent error of ' num2str(apparent_error)]);
         end
       end
+      
+      % If we were originally total field, convert back
+      if ~strcmpi(tmatrix.type, old_type)
+        tmatrix = tmatrix.toTotal();
+      end
     end
 
     function tmatrix = set.type(tmatrix, type)
@@ -457,13 +470,15 @@ classdef Tmatrix
       sbeam = ibeam.scatter(tmatrix);
     end
     
+    % TODO: Should the following functions be replaced by get/set functions
+    
     function tmatrix = toTotal(tmatrix)
       %TOTOTAL get a total field T-matrix
 
       if strcmp(tmatrix.type, 'total')
         % Nothing to do
       elseif strcmp(tmatrix.type, 'scattered')
-        tmatrix.data = 0.5*(tmatrix.data - eye(size(tmatrix.data)));
+        tmatrix.data = 2.0*tmatrix.data + speye(size(tmatrix.data));
         tmatrix.type = 'total';
       else
         error('Unrecognized T-matrix type');
@@ -474,7 +489,7 @@ classdef Tmatrix
       %TOSCATTERED get a scattered field T-matrix
 
       if strcmp(tmatrix.type, 'total')
-        tmatrix.data = 2.0*tmatrix.data + eye(size(tmatrix.data));
+        tmatrix.data = 0.5*(tmatrix.data - speye(size(tmatrix.data)));
         tmatrix.type = 'scattered';
       elseif strcmp(tmatrix.type, 'scattered')
         % Nothing to do

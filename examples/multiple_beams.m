@@ -38,17 +38,16 @@ T = ott.Tmatrix.simple('sphere', wavelength, 'index_medium', 1.0, ...
 % We will create displaced copies of this beam
 
 beam = ott.BscPmGauss('polarisation', [1 1i], 'angle_deg', 50, ...
-    'index_medium', 1.0, 'wavelength0', wavelength);
-beam = beam / beam.power();
+    'index_medium', 1.0, 'wavelength0', wavelength, 'power', 0.5);
 
 % Displacement of beams [wavelength_medium]
-displacement = 1.2*wavelength;
+displacement = 1.0*wavelength;
 
 % Phase shift for 2nd beam
 phase = exp(2*pi*1i/0.1);
 
 % Range for force/displacement graph
-x = linspace(-4, 4, 80)*wavelength;
+x = linspace(-2, 2, 80)*wavelength;
 
 %% Coherent beams with expanded Nmax
 

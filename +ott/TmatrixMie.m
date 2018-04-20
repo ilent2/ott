@@ -254,7 +254,7 @@ classdef TmatrixMie < ott.Tmatrix
 
       % Store the T-matrix type
       if p.Results.internal == false
-        tmatrix.type = 'total';
+        tmatrix.type = 'scattered';
       else
         tmatrix.type = 'internal';
       end

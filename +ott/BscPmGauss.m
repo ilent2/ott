@@ -47,7 +47,8 @@ classdef BscPmGauss < ott.BscPointmatch
       %     'ig'    Ince-Gauss      [ paraxial azimuthal parity elipticity ]
       %
       % BSCPMGAUSS(..., 'Nmax') specifies the desired Nmax for the beam.
-      % If omitted, Nmax is estimated using ka2nmax(k_medium*waist0).
+      % If omitted, Nmax is initially set to 100, the beam is calculated and
+      % Nmax is reduced so that the power does not drop significantly.
       %
       % TODO: Documentation
 
@@ -114,8 +115,6 @@ classdef BscPmGauss < ott.BscPointmatch
 
       axisymmetry = 1;
 
-      beam_wavelength0 = 1;
-
       ott.warning('internal');
 
       %radial and azimuthal polarisation.
@@ -138,7 +137,7 @@ classdef BscPmGauss < ott.BscPointmatch
           modeweights=eye(paraxial_order+1);
           row=(azimuthal_mode+paraxial_order)/2+1;
           
-          i2_out=[-paraxial_order:2:paraxial_order].';
+          i2_out= (-paraxial_order:2:paraxial_order).';
           i1_out=floor((paraxial_order-abs(i2_out))/2);
           
           initial_mode=[i1_out,i2_out];
@@ -192,8 +191,6 @@ classdef BscPmGauss < ott.BscPointmatch
       end
       beam.angle = beam_angle_deg * pi/180;
 
-      k = 2*pi; % * beam.k_medium;
-
       xcomponent = p.Results.polarisation(1);
       ycomponent = p.Results.polarisation(2);
       offset = p.Results.offset;
@@ -217,7 +214,7 @@ classdef BscPmGauss < ott.BscPointmatch
 
       % Store or calculate Nmax
       if isempty(p.Results.Nmax)
-        nmax = ott.utils.ka2nmax(w0*wscaling*k);
+        nmax = 100;
       else
         nmax = p.Results.Nmax;
       end
@@ -293,7 +290,7 @@ classdef BscPmGauss < ott.BscPointmatch
         rhat = rtpv2xyzv( ones(size(theta)), zeros(size(theta)), ...
             zeros(size(theta)), ones(size(theta)), theta, phi );
         [offset,rhat] = matchsize(offset,rhat);
-        phase_shift = exp( -1i * k * dot(offset,rhat,2) );
+        phase_shift = exp( -1i * beam.k_medium * dot(offset,rhat,2) );
         beam_envelope = beam_envelope .* phase_shift;
       end
       Ex = xcomponent * beam_envelope * central_amplitude;
@@ -312,7 +309,7 @@ classdef BscPmGauss < ott.BscPointmatch
       if axisymmetry
         nn=nn(mode_index_vector);
         mm=mm(mode_index_vector);
-        
+
         removeels=find(abs(mm)>paraxial_order+1);
         nn(removeels)=[];
         mm(removeels)=[];
@@ -321,9 +318,15 @@ classdef BscPmGauss < ott.BscPointmatch
       % Do the point matching and store the result
       [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, theta, phi);
 
+      % If no Nmax supplied, shrink the beam to the smallest size that
+      % preserves the beam power
+      if isempty(p.Results.Nmax)
+        beam = beam.shrink_Nmax();
+      end
+
       % Normalize the beam power
       if ~isempty(p.Results.power)
-        beam = p.Results.power * beam / beam.power();
+        beam.power = p.Results.power;
       end
 
       ott.warning('external');

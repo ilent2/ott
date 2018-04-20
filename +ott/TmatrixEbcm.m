@@ -72,13 +72,14 @@ classdef TmatrixEbcm < ott.Tmatrix
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)
         k_medium = ott.Tmatrix.parser_k_medium(p);
-        Nmax = ka2nmax(r_max * k_medium);
+        Nmax = ott.utils.ka2nmax(r_max * k_medium);
       else
         Nmax = p.Results.Nmax;
       end
 
       % Determine if we have rotational symetry
-      [~,~,rotational_symmetry] = shapesurface([],[],shape_idx,parameters);
+      [~,~,rotational_symmetry] = ott.utils.shapesurface(...
+          [],[],shape_idx,parameters);
 
       if rotational_symmetry ~= 1 && rotational_symmetry ~= 2
         error('Non axis symetric shapes not yet supported');
@@ -108,10 +109,10 @@ classdef TmatrixEbcm < ott.Tmatrix
         error('Unsupported shape type');
       end
 
-      [rtp,n,ds]=axisym_boundarypoints(Nmax,rho,z);
+      [rtp,n,ds]=ott.utils.axisym_boundarypoints(Nmax,rho,z);
 
       % TODO: What does inputParser do with duplicate parameters?
-      ott.TmatrixEbcm(rtp, n, ds, varargin{:}, 'Nmax', Nmax, ...
+      tmatrix = ott.TmatrixEbcm(rtp, n, ds, varargin{:}, 'Nmax', Nmax, ...
           'rotational_symmetry', rotational_symmetry);
     end
   end
@@ -180,6 +181,8 @@ classdef TmatrixEbcm < ott.Tmatrix
         % TODO: Add support for non axis symetric particles
         error('Only axis symetric particles supported');
       end
+      
+      [~,~,z] = ott.utils.rtp2xyz(rtp);
 
       mirrorsym=0;
       if sqrt(sum(abs(flipud(-z(:))./z(:)-1).^2))/length(z)<1e-15
@@ -193,9 +196,9 @@ classdef TmatrixEbcm < ott.Tmatrix
 
       Nn=zeros(Nmax,1);
 
-      kr=k_particle*rtp(:,1);
+      kr=tmatrix.k_particle*rtp(:,1);
       ikr=1./kr;
-      kr_=k_medium*rtp(:,1);
+      kr_=tmatrix.k_medium*rtp(:,1);
       ikr_=1./kr_;
 
       jkr=cell(Nmax,1);
@@ -210,6 +213,8 @@ classdef TmatrixEbcm < ott.Tmatrix
 
       Nm=repmat(Nn,[Nmax,1]);
       Nm=Nm.'.*Nm;
+      
+      import ott.utils.*;
 
       %make all the spharms and bessel functions NOW!!!!
       for ii=1:Nmax
@@ -246,14 +251,17 @@ classdef TmatrixEbcm < ott.Tmatrix
       jcount=0;
 
       fillnum=(2*Nmax+1);
-      rM=repmat(n(:,1),[1,fillnum]);
-      thetaM=repmat(n(:,2),[1,fillnum]);
+      rM=repmat(normals(:,1),[1,fillnum]);
+      thetaM=repmat(normals(:,2),[1,fillnum]);
       iKr=repmat(ikr,[1,fillnum]);
       iKr_=repmat(ikr_,[1,fillnum]);
       dS=repmat(ds,[1,fillnum]);
 
       pi2=2*pi;
       %%%% end setup containers
+      
+      k_medium = tmatrix.k_medium;
+      k_particle = tmatrix.k_particle;
 
       for jj=1:Nmax
         %remember that when phi = 0, conj(Yphi)=-Yphi, conj(Ytheta)=Ytheta.
@@ -365,7 +373,8 @@ classdef TmatrixEbcm < ott.Tmatrix
       %solve the T-matrix:
       tmatrix.data=-(RgQ/Q);
 
-      % TODO: Store the type of T-matrix (scattered/total)
+      % Store the type of T-matrix
+      tmatrix.type = 'scattered';
     end
   end
 end

@@ -102,7 +102,7 @@ classdef TmatrixPm < ott.Tmatrix
       end
 
       % Generate grid of points
-      if strcmpi(p.Results.distribution, 'angualrgird')
+      if strcmpi(p.Results.distribution, 'angulargrid')
         [theta,phi] = ott.utils.angulargrid(ntheta,nphi);
       elseif strcmpi(p.Results.distribution, 'random')
         xyz = 2*rand([ntheta*nphi,3]) - 1;
@@ -290,7 +290,8 @@ classdef TmatrixPm < ott.Tmatrix
         tmatrix.idata = T2;
       end
 
-      % TODO: Store the type of T-matrix (scattered/total)
+      % Store the type of T-matrix
+      tmatrix.type = 'scattered';
     end
 
     function tmatrix2 = getInternal(tmatrix)
