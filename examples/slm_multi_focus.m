@@ -53,7 +53,7 @@ hold on
 plot(cos(linspace(0,2*pi)),sin(linspace(0,2*pi)),'w:','linewidth',1)
 hold off
 title('mode shape on SLM and target NA zone (in white circle)')
-axis equal
+axis image
 
 %% Create a pattern for the SLM
 %NOTE: This is not actually a paraxial system. We are assuming that
@@ -91,11 +91,11 @@ figure(2)
 subplot(1,2,1)
 imagesc(amplitude_function)
 title('amplitude of grating')
-axis equal
+axis image
 subplot(1,2,2)
 imagesc(phase_function)
 title('phase of grating')
-axis equal
+axis image
 
 %% Compute beam that comes off SLM
 
@@ -131,10 +131,10 @@ hold off
 title('XY fields around focal plane');
 xlabel('x')
 ylabel('y')
-axis equal
+axis image
 subplot(1,2,2)
 contourf(X2/2/pi,Z2/2/pi,reshape(E2(end/2+1:end),size(X1)),32,'edgecolor','none');
-axis equal
+axis image
 xlabel('x')
 ylabel('z')
 title('XZ fields around focal plane');
