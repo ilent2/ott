@@ -340,21 +340,13 @@ classdef Tmatrix
       nmax2 = ott.utils.combined_index(size(tmatrix.data, 2)/2);
 
       % Support non-square T-matrices
-      if nmax1 == nmax2
-        nmax = nmax1;
-      else
-        nmax = [nmax1 nmax2];
-      end
+      nmax = [nmax1 nmax2];
     end
 
     function tmatrix = set.Nmax(tmatrix, nmax)
       %set.Nmax resizes the T-matrix
 
-      % Check if we need to do anything
-      if all(nmax == tmatrix.Nmax)
-        return;
-      end
-
+      % Convert the input to row/column sizes
       if length(nmax) == 2
         nmax1 = nmax(1);
         nmax2 = nmax(2);
@@ -363,6 +355,10 @@ classdef Tmatrix
         nmax2 = nmax(1);
       end
 
+      % Check if we need to do anything
+      if all([nmax1, nmax2] == tmatrix.Nmax)
+        return;
+      end
 
       total_orders1 = ott.utils.combined_index(nmax1, nmax1);
       total_orders2 = ott.utils.combined_index(nmax2, nmax2);

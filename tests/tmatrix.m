@@ -1,4 +1,7 @@
 
+% Ensure the ott package is in our path
+addpath('../');
+
 % Create a T-matrix for a sphere
 T = ott.Tmatrix.simple('sphere', 1.0, 'wavelength0', 1.0, ...
     'index_medium', 1.0, 'index_particle', 1.2);
@@ -20,6 +23,44 @@ assert(strcmpi(Tscat.toTotal.type, 'total'), ...
     'Conversion back to total');
 assert(strcmpi(Ttotal.toScattered.type, 'scattered'), ...
     'Conversion back to scattered');
+
+%% Check resizing T-matrix works
+Tnew1 = T;
+Tnew1.Nmax = Tnew1.Nmax + 5;
+assert(all(Tnew1.Nmax == T.Nmax + 5), ...
+    'Faild to increase Nmax with vector size');
+assert(all(size(Tnew1.data) > size(T.data)), ...
+    'Tmatrix size not actually increased (vector input)');
+
+Tnew2 = Tnew1;
+Tnew2.Nmax = T.Nmax;
+assert(all(Tnew2.Nmax == T.Nmax), ...
+    'Failed to decrease Nmax with vector size');
+assert(all(size(Tnew2.data) == size(T.data)), ...
+    'Tmatrix size not actually decreased (vector input)');
+
+Tnew1 = T;
+Tnew1.Nmax = T.Nmax(1) + 5;
+assert(all(Tnew1.Nmax == T.Nmax + 5), ...
+    'Faild to increase Nmax (scalar input)');
+assert(all(size(Tnew1.data) > size(T.data)), ...
+    'Tmatrix size not actually increased (scalar input)');
+
+Tnew1 = T;
+Tnew1.Nmax = [T.Nmax(1) + 5, T.Nmax(2)];
+assert(all(Tnew1.Nmax == [T.Nmax(1) + 5, T.Nmax(2)]), ...
+    'Faild to increase Nmax (uneven input)');
+assert(size(Tnew1.data, 1) > size(T.data, 1) ...
+    && size(Tnew1.data, 2) == size(T.data, 2), ...
+    'Tmatrix size not increased correctly (uneven input)');
+
+Tnew1 = T;
+Tnew1.Nmax(1) = T.Nmax(1) + 5;
+assert(all(Tnew1.Nmax == [T.Nmax(1) + 5, T.Nmax(2)]), ...
+    'Faild to increase Nmax (index input)');
+assert(size(Tnew1.data, 1) > size(T.data, 1) ...
+    && size(Tnew1.data, 2) == size(T.data, 2), ...
+    'Tmatrix size not increased correctly (index input)');
 
 %% Check resizing total conserves power
 Ttotal.Nmax = Ttotal.Nmax + 5;
