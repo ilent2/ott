@@ -25,6 +25,7 @@ close all;
 
 % Make warnings less obtrusive
 ott.warning('once');
+ott.change_warnings('off');
 
 %% Create a particle to scatter the beams with
 

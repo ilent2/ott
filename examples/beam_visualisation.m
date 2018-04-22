@@ -15,6 +15,9 @@ addpath('../');
 % Close open figures
 close all;
 
+% Turn off change warnings for examples
+ott.change_warnings('off');
+
 %% Setup the beam
 
 % Select a beam type to visualise (gaussian, lg, hg, ig, addition, scattered)

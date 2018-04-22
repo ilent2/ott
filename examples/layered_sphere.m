@@ -19,6 +19,7 @@ close all;
 
 % Make warnings less obtrusive
 ott.warning('once');
+ott.change_warnings('off');
 
 % Specify refractive indices
 n_medium = 1.34;

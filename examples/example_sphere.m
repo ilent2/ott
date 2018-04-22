@@ -16,6 +16,7 @@ close all;
 
 % Make warnings less obtrusive
 ott.warning('once');
+ott.change_warnings('off');
 
 % Refractive index of particle and medium
 n_medium = 1.33;

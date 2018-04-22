@@ -20,6 +20,7 @@ close all;
 
 % Make warnings less obtrusive
 ott.warning('once');
+ott.change_warnings('off');
 
 if exist ("OCTAVE_VERSION", "builtin")
     warning('ott:example_landscape:function',   ...

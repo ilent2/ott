@@ -9,6 +9,9 @@ addpath('../');
 % Close open figures
 close all;
 
+% Turn off change warnings for examples
+ott.change_warnings('off');
+
 % Numerical aperture of microscope
 NA = 1.02;
 
