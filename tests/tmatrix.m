@@ -24,36 +24,36 @@ end
 function testPower(testCase)
   %% Check that the total field T-matrix conserves power
   T = testCase.TestData.T;
-  checkWithTol(testCase, abs(1.0 - sum(abs(T.toTotal.data).^2, 2)), ...
+  checkWithTol(testCase, abs(1.0 - sum(abs(T.total.data).^2, 2)), ...
       'Power not conserved');
 
   %% Check resizing total conserves power
-  Ttotal = testCase.TestData.T.toTotal;
+  Ttotal = testCase.TestData.T.total;
   Ttotal.Nmax = Ttotal.Nmax + 5;
   checkWithTol(testCase, abs(1.0 - sum(abs(Ttotal.data).^2, 2)), ...
       'Resizing Ttotal doesnt conserve power');
 
   %% Check resizing scattered conserves power
-  Tscat = testCase.TestData.T.toScattered;
+  Tscat = testCase.TestData.T.scattered;
   Tscat.Nmax = Tscat.Nmax + 5;
-  checkWithTol(testCase, abs(1.0 - sum(abs(Tscat.toTotal.data).^2, 2)), ...
+  checkWithTol(testCase, abs(1.0 - sum(abs(Tscat.total.data).^2, 2)), ...
       'Resizing Ttotal doesnt conserve power');
 end
 
 function testConvert(testCase)
   %% Check we can convert to and from scattered and total field
 
-  Ttotal = testCase.TestData.T.toTotal;
-  Tscat = testCase.TestData.T.toScattered;
+  Ttotal = testCase.TestData.T.total;
+  Tscat = testCase.TestData.T.scattered;
 
   assert(strcmpi(Ttotal.type, 'total'), 'Conversion to total');
   assert(strcmpi(Tscat.type, 'scattered'), ...
       'Conversion to scattered');
 
   % Check conversions back
-  assert(strcmpi(Tscat.toTotal.type, 'total'), ...
+  assert(strcmpi(Tscat.total.type, 'total'), ...
       'Conversion back to total');
-  assert(strcmpi(Ttotal.toScattered.type, 'scattered'), ...
+  assert(strcmpi(Ttotal.scattered.type, 'scattered'), ...
       'Conversion back to scattered');
 end
 

@@ -65,7 +65,7 @@ if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
 
   % Rename T-matrix
   T = sbeam;
-  T = T.toScattered();
+  T = T.scattered;
 
   % Ensure the Nmax's match
   T.Nmax = [T.Nmax(1), ibeam.Nmax];

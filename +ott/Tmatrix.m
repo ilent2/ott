@@ -15,13 +15,17 @@ classdef Tmatrix
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
- properties (SetAccess=protected)
-  data            % The matrix this class encapsulates
-  type            % Type of T-matrix (total or scattered)
- end
+  properties (SetAccess=protected)
+    data          % The matrix this class encapsulates
+  end
+
+  properties (Access=private)
+    type_         % Type of T-matrix (actual value)
+  end
 
   properties (Dependent)
     Nmax          % Current size of T-matrix
+    type          % Type of T-matrix (total or scattered)
   end
 
   methods (Static)
@@ -386,10 +390,10 @@ classdef Tmatrix
       midpoint2 = size(tmatrix.data, 2)/2;
 
       % The current resizing method only works for scattered fields
-      % TODO: Write a better method that doesn't need this
       old_type = tmatrix.type;
-      if total_orders1 > midpoint1 || total_orders2 > midpoint2
-        tmatrix = tmatrix.toScattered();
+      if total_orders1 > midpoint1 || total_orders2 > midpoint2 ...
+          && strcmpi(old_type, 'total')
+        tmatrix.type = 'scattered';
       end
 
       % Split T-matrix into quadrants
@@ -473,52 +477,61 @@ classdef Tmatrix
       end
 
       % If we were originally total field, convert back
-      if ~strcmpi(tmatrix.type, old_type)
-        tmatrix = tmatrix.toTotal();
-      end
+      tmatrix.type = old_type;
+    end
+
+    function type = get.type(tmatrix)
+      % Get the T-matrix type
+      type = tmatrix.type_;
     end
 
     function tmatrix = set.type(tmatrix, type)
-      % Set the T-matrix type, checking that it is valid
-      if strcmp(type, 'total') || strcmp(type, 'internal') ...
-          || strcmp(type, 'scattered')
-        tmatrix.type = type;
-      else
-        error('Invalid type');
-      end
+      % Set the T-matrix type, converting if needed
+      tmatrix = tmatrix.set_type(type);
     end
-      
+
+    function tmatrix = set_type(tmatrix, type, varargin)
+      % SET_TYPE set T-matrix type with additional options
+
+      p = inputParser;
+      p.addParameter('convert', true);
+      p.parse(varargin{:});
+
+      % Check the type is valid
+      if ~strcmpi(type, 'total') && ~strcmpi(type, 'internal') ...
+          && ~strcmpi(type, 'scattered')
+        error('Invalid T-matrix type');
+      end
+
+      % Do type conversions
+      if p.Results.convert && ~isempty(tmatrix.type) ...
+          && ~strcmpi(tmatrix.type, type)
+        if strcmpi(tmatrix.type, 'scattered') && strcmpi(type, 'total')
+          tmatrix.data = 2.0*tmatrix.data + speye(size(tmatrix.data));
+        elseif strcmpi(tmatrix.type, 'total') && strcmpi(type, 'scattered')
+          tmatrix.data = 0.5*(tmatrix.data - speye(size(tmatrix.data)));
+        else
+          error('No known conversion');
+        end
+      end
+
+      % Set the type
+      tmatrix.type_ = type;
+    end
+
+    function tmatrix = total(tmatrix)
+      % TOTAL convert T-matrix to total
+      tmatrix.type = 'total';
+    end
+
+    function tmatrix = scattered(tmatrix)
+      % SCATTERED convert T-matrix to scattered
+      tmatrix.type = 'scattered';
+    end
+
     function sbeam = mtimes(tmatrix,ibeam)
       %MTIMES provide T-matrix multiplication overload
       sbeam = ibeam.scatter(tmatrix);
-    end
-    
-    % TODO: Should the following functions be replaced by get/set functions
-    
-    function tmatrix = toTotal(tmatrix)
-      %TOTOTAL get a total field T-matrix
-
-      if strcmp(tmatrix.type, 'total')
-        % Nothing to do
-      elseif strcmp(tmatrix.type, 'scattered')
-        tmatrix.data = 2.0*tmatrix.data + speye(size(tmatrix.data));
-        tmatrix.type = 'total';
-      else
-        error('Unrecognized T-matrix type');
-      end
-    end
-
-    function tmatrix=toScattered(tmatrix)
-      %TOSCATTERED get a scattered field T-matrix
-
-      if strcmp(tmatrix.type, 'total')
-        tmatrix.data = 0.5*(tmatrix.data - speye(size(tmatrix.data)));
-        tmatrix.type = 'scattered';
-      elseif strcmp(tmatrix.type, 'scattered')
-        % Nothing to do
-      else
-        error('Unrecognized T-matrix type');
-      end
     end
   end
 end
