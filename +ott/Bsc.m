@@ -211,12 +211,12 @@ classdef Bsc
         error('Invalid beam type');
       end
     end
-    
+
     function p = get.power(beam)
       % get.power calculate the power of the beam
       p = sum(abs(beam.a).^2 + abs(beam.b).^2);
     end
-    
+
     function beam = set.power(beam, p)
       % set.power set the beam power
       beam = sqrt(p / beam.power) * beam;
@@ -425,7 +425,7 @@ classdef Bsc
           roty(angley*180/pi)*rotx(anglex*180/pi));
     end
 
-    function beam = toOutgoing(beam, ibeam)
+    function beam = outgoing(beam, ibeam)
       %TOOUTGOING calculate the outgoing beam
       if strcmp(beam.type, 'outgoing')
         % Nothing to do
@@ -437,7 +437,7 @@ classdef Bsc
       end
     end
 
-    function beam = toRegular(beam, ibeam)
+    function beam = regular(beam, ibeam)
       %TOREGULAR calculate regular beam
       if strcmp(beam.type, 'outgoing')
         beam = 0.5*(beam - ibeam);

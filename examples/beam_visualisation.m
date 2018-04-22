@@ -185,7 +185,7 @@ nt=160;
 
 if strcmp(beam_type, 'scattered')
   % Farfield visualisation requires incomming or outgoing
-  beam = beam.toOutgoing(ibeam);
+  beam = beam.outgoing(ibeam);
 end
 
 %find far-field in theta, phi:
