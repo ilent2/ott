@@ -29,15 +29,14 @@ classdef BscPlane < ott.Bsc
       %     theta polar angle from +z axis (rad)
       %     phi   azimuthal angle, measured from +x towards +y axes (rad)
       %
+      % theta and phi can be arrays, in which case multiple VSWF
+      % expansions are calculated for each angle.
+      %
       %  BSCPLANE(..., 'Nmax', Nmax) and BSCPLANE(..., 'ka', ka)
       %  specify the region where the plane wave beam is valid.
       %
       %  BSCPLANE(..., 'polarisation', [ Etheta Ephi ]) specifies
       %  the polarisation in the theta and phi directions.
-
-      % TODO: The original bsc_plane.m function included support
-      % for array inputs theta, phi for multiple beams simulataniously.
-      % Is this something we want to support?
 
       beam = beam@ott.Bsc('incomming', varargin{:});
 
@@ -48,10 +47,25 @@ classdef BscPlane < ott.Bsc
       p.addParameter('ka', []);
       p.parse(varargin{:});
 
+      % If points aren't specified explicitly, use meshgrid
+      if length(theta) ~= length(phi)
+        [theta, phi] = meshgrid(theta, phi);
+        theta = theta(:);
+        phi = phi(:);
+      end
+
       % Store inputs
       beam.theta = theta;
       beam.phi = phi;
+
+      % Store polarisation
       beam.polarisation = p.Results.polarisation;
+      if size(p.Results.polarisation, 1) ~= length(phi)
+          && p.Results.polarisation == 1
+        beam.polarisation = repmat(beam.polarisation, length(phi), 1);
+      else
+        error('Polarisation must be either 1x2 or Nx2 (N = # beams)');
+      end
 
       % Parse ka/Nmax
       if isempty(p.Results.Nmax) && isempty(p.Results.ka)
@@ -69,8 +83,11 @@ classdef BscPlane < ott.Bsc
 
       ablength = ott.utils.combined_index(Nmax, Nmax);
 
-      a = zeros(ablength, 1);
-      b = zeros(ablength, 1);
+      a = zeros(ablength, length(beam.theta));
+      b = zeros(ablength, length(beam.theta));
+
+      Etheta = beam.polarisation(:, 1);
+      Ephi = beam.polarisation(:, 2);
 
       for n = 1:Nmax
         iter=[(n-1)*(n+1)+1:n*(n+2)];

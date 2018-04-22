@@ -38,6 +38,7 @@ classdef Bsc
   properties (Dependent)
     Nmax        % Size of beam vectors
     power       % Power of the beam
+    beams       % Number of beams in this Bsc object
   end
 
   methods (Abstract)
@@ -95,6 +96,15 @@ classdef Bsc
       end
 
       beam.dz = 0.0;
+    end
+
+    function beam = append(beam, other)
+      % APPEND joins two beam objects together
+
+      beam.Nmax = max(beam.Nmax, other.Nmax);
+      other.Nmax = beam.Nmax;
+      beam.a = [beam.a, other.a];
+      beam.b = [beam.b, other.b];
     end
 
     function [E, H] = farfield(beam, theta, phi)
@@ -222,9 +232,14 @@ classdef Bsc
       beam = sqrt(p / beam.power) * beam;
     end
 
+    function beams = get.beams(beam)
+      % get.beams get the number of beams in this object
+      beams = size(beam.a, 2);
+    end
+
     function nmax = get.Nmax(beam)
       %get.Nmax calculates Nmax from the current size of the beam coefficients
-      nmax = ott.utils.combined_index(length(beam.a));
+      nmax = ott.utils.combined_index(size(beam.a, 1));
     end
 
     function beam = set.Nmax(beam, nmax)
@@ -279,7 +294,7 @@ classdef Bsc
       p.parse(varargin{:});
 
       total_orders = ott.utils.combined_index(nmax, nmax);
-      if length(beam.a) > total_orders
+      if size(beam.a, 1) > total_orders
 
         amagA = full(sum(sum(abs(beam.a).^2)));
         bmagA = full(sum(sum(abs(beam.b).^2)));
@@ -311,7 +326,7 @@ classdef Bsc
             end
           end
         end
-      elseif length(beam.a) < total_orders
+      elseif size(beam.a, 1) < total_orders
         [arow_index,acol_index,aa] = find(beam.a);
         [brow_index,bcol_index,ba] = find(beam.b);
         beam.a = sparse(arow_index,acol_index,aa,total_orders,1);
@@ -476,7 +491,7 @@ classdef Bsc
 
     function [n, m] = getModeIndices(beam)
       %GETMODEINDICES gets the mode indices
-      [n, m] = ott.utils.combined_index([1:length(beam.a)].');
+      [n, m] = ott.utils.combined_index([1:size(beam.a, 1)].');
       if nargout == 1
         n = [n; m];
       end

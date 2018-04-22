@@ -12,12 +12,22 @@ classdef BscBessel < ott.Bsc
   end
 
   methods
-    function beam = BscBessel(nmax,theta,Etheta,Ephi,lmode)
+    function beam = BscBessel(nmax, theta, varargin)
       %BSCBESSEL construct a new bessel beam or bessel-like beam
       %
       % TODO: Documentation
 
       beam = beam@ott.Bsc();
+
+      % Parse optional inputs
+      p = inputParser;
+      p.addParameter('polerisation', [ 1 0 ]);
+      p.addParameter('lmode', 0);
+      p.parse(varargin);
+
+      Etheta = p.Results.polarisation(:, 1);
+      Ephi = p.Results.polarisation(:, 2);
+      lmode = p.Results.lmode;
 
       szT=size(theta);
       szE=size(Etheta);
@@ -85,7 +95,8 @@ classdef BscBessel < ott.Bsc
       Ephi=Ephi(:);
       Etheta=Etheta(:);
 
-      plane = BscPlane(nmax,1,theta,phi,Etheta,Ephi);
+      plane = ott.BscPlane(nmax, theta, phi, ...
+          'polarisation', [Etheta, Ephi]);
       a = plane.a;
       b = plane.b;
 
