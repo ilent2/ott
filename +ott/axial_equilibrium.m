@@ -10,8 +10,9 @@ function [z,kz] = axial_equilibrium(tmatrix,beam,z)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-% TODO: This function is not directly concerned with force/torque
-% calculation should it be here?
+% This function is not directly concerned with force/torque calculation
+ott.warning('ott:axialEquilibrium:move', ...
+    'This function will move in a future release');
 
 ott.warning('internal');
 
@@ -22,7 +23,7 @@ end
 % Ensure T-matrix and beam are the same size
 Nmax = max(tmatrix.Nmax, beam.Nmax);
 tmatrix.Nmax = Nmax;
-beam.Nmax = Nmax;
+beam.Nmax = Nmax(1);
 
 % Normalise the beam power
 beam.power = 1.0;

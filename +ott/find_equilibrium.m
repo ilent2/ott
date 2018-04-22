@@ -9,7 +9,8 @@ function eq = find_equilibrium(z, fz)
 %   equilibrium on.  We could do a similar thing for fz.
 
 % This function is not directly concerned with force/torque calculation
-ott.warning('This function will move in a future release');
+ott.warning('ott:findEquilibrium:move', ...
+    'This function will move in a future release');
 
 % Make sure the vectors are both colum vectors
 fz = fz(:);
