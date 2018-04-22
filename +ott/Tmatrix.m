@@ -345,6 +345,25 @@ classdef Tmatrix
 
     function tmatrix = set.Nmax(tmatrix, nmax)
       %set.Nmax resizes the T-matrix
+      tmatrix = tmatrix.set_Nmax(nmax);
+    end
+
+    function tmatrix = set_Nmax(tmatrix, nmax, varargin)
+      % SET_NMAX resize the T-matrix, with additional options
+      %
+      % SET_NMAX(nmax) sets the T-matrix Nmax.  nmax should be a
+      % scarar or 2 element vector with row/column Nmax.
+      %
+      % SET_NMAX(..., 'tolerance', tol) use tol as the warning error
+      % level tolerance for resizing the beam.
+      %
+      % SET_NMAX(..., 'powerloss', mode) action to take if a power
+      % loss is detected.  Can be 'ignore', 'warn' or 'error'.
+
+      p = inputParser;
+      p.addParameter('tolerance', 1.0e-6);
+      p.addParameter('powerloss', 'warn');
+      p.parse(varargin{:});
 
       % Convert the input to row/column sizes
       if length(nmax) == 2
@@ -365,14 +384,14 @@ classdef Tmatrix
 
       midpoint1 = size(tmatrix.data, 1)/2;
       midpoint2 = size(tmatrix.data, 2)/2;
-      
+
       % The current resizing method only works for scattered fields
       % TODO: Write a better method that doesn't need this
       old_type = tmatrix.type;
       if total_orders1 > midpoint1 || total_orders2 > midpoint2
         tmatrix = tmatrix.toScattered();
       end
-      
+
       % Split T-matrix into quadrants
       A11 = tmatrix.data(1:midpoint1, 1:midpoint2);
       A12 = tmatrix.data(1:midpoint1, (midpoint2+1):end);
@@ -438,13 +457,21 @@ classdef Tmatrix
         magB = full(sum(sum(abs(tmatrix.data).^2)));
         apparent_error = abs( magA - magB )/magA;
 
-        warning_error_level = 1e-6;
-        if apparent_error > warning_error_level
-            ott.warning('ott:Tmatrix:set.Nmax:truncation', ...
+        if apparent_error > p.Results.tolerance
+          if strcmpi(p.Results.powerloss, 'warn')
+            ott.warning('ott:Tmatrix:setNmax:truncation', ...
                 ['Apparent error of ' num2str(apparent_error)]);
+          elseif strcmpi(p.Results.powerloss, 'error')
+            error('ott:Tmatrix:setNmax:truncation', ...
+                ['Apparent error of ' num2str(apparent_error)]);
+          elseif strcmpi(p.Results.powerloss, 'ignore')
+            % Nothing to do
+          else
+            error('Unrecognized option for powerloss');
+          end
         end
       end
-      
+
       % If we were originally total field, convert back
       if ~strcmpi(tmatrix.type, old_type)
         tmatrix = tmatrix.toTotal();
