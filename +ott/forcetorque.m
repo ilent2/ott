@@ -47,13 +47,6 @@ p.addParameter('position', []);
 p.addParameter('rotation', []);
 p.parse(varargin{:});
 
-% Ensure beams are the same size
-if ibeam.Nmax > sbeam.Nmax
-  sbeam.Nmax = ibeam.Nmax;
-elseif ibeam.Nmax < sbeam.Nmax
-  ibeam.Nmax = sbeam.Nmax;
-end
-
 if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
 
   position = [0,0,0];
@@ -73,6 +66,9 @@ if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
   % Rename T-matrix
   T = sbeam;
   T = T.toScattered();
+
+  % Ensure the Nmax's match
+  T.Nmax = [T.Nmax(1), ibeam.Nmax];
 
   % Preallocate output
   f = zeros(3, npositions*nrotations);
@@ -115,6 +111,13 @@ if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
 
   ott.warning('external');
   return;
+end
+
+% Ensure beams are the same size
+if ibeam.Nmax > sbeam.Nmax
+  sbeam.Nmax = ibeam.Nmax;
+elseif ibeam.Nmax < sbeam.Nmax
+  ibeam.Nmax = sbeam.Nmax;
 end
 
 % Ensure the beam is incomming-outgoing
