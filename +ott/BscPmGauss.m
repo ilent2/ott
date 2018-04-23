@@ -84,7 +84,7 @@ classdef BscPmGauss < ott.BscPointmatch
       beam.mode = p.Results.mode;
       beam.polarisation = p.Results.polarisation;
       beam.offset = p.Results.offset;
-      beam.k_medium = ott.Bsc.parser_k_medium(p);
+      beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
 
       % Store truncation angle
       if isempty(p.Results.truncation_angle_deg) &&  ...

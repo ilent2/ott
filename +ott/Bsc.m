@@ -74,7 +74,7 @@ classdef Bsc
       m = m.';
     end
 
-    function k_medium = parser_k_medium(p)
+    function k_medium = parser_k_medium(p, default)
       %PARSER_K_MEDIUM helper to get k_medium from a parser object
 
       if ~isempty(p.Results.k_medium)
@@ -86,6 +86,8 @@ classdef Bsc
           error('wavelength0 must be specified to use index_medium');
         end
         k_medium = p.Results.index_medium*2.0*pi/p.Results.wavelength0;
+      elseif nargin == 2
+        k_medium = default;
       else
         error('Unable to determine k_medium from inputs');
       end

@@ -30,6 +30,7 @@ classdef TmatrixPm < ott.Tmatrix
       %   'superellipsoid'  Superellipsoid [ a b c e n ]
       %   'cone-tipped-cylinder'      [ radius height cone_height ]
       %   'cube'            Cube [ width ]
+      %   'sphere'          Sphere [ radius ]
       %
       %  TMATRIXPM(..., 'Nmax', Nmax) specifies the size of the
       %  T-matrix to use.  If not specified, the size is calculated
@@ -51,6 +52,10 @@ classdef TmatrixPm < ott.Tmatrix
       % Handle different shapes
       if strcmp(shape, 'ellipsoid')
         shape_idx = 0;
+        r_max = max(parameters);
+      elseif strcmpi(shape, 'sphere')
+        shape_idx = 0;
+        parameters = repmat(parameters, 3, 1);
         r_max = max(parameters);
       elseif strcmp(shape, 'cylinder')
         shape_idx = 1;
@@ -82,7 +87,7 @@ classdef TmatrixPm < ott.Tmatrix
 
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)
-        k_medium = ott.Tmatrix.parser_k_medium(p);
+        k_medium = ott.Tmatrix.parser_k_medium(p, 2*pi);
         Nmax = ott.utils.ka2nmax(r_max * k_medium);
       else
         Nmax = p.Results.Nmax;
@@ -173,14 +178,15 @@ classdef TmatrixPm < ott.Tmatrix
       p.addParameter('k_particle', []);
       p.addParameter('wavelength_particle', []);
       p.addParameter('index_particle', []);
+      p.addParameter('index_relative', []);
       p.addParameter('wavelength0', []);
       p.addParameter('internal', false);
       p.addParameter('rotational_symmetry', false);
       p.parse(varargin{:});
 
       % Store inputs k_medium and k_particle
-      tmatrix.k_medium = tmatrix.parser_k_medium(p);
-      tmatrix.k_particle = tmatrix.parser_k_particle(p);
+      [tmatrix.k_medium, tmatrix.k_particle] = ...
+          tmatrix.parser_wavenumber(p, 2*pi);
 
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)

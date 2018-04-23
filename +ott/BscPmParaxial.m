@@ -62,7 +62,7 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       verbose = p.Results.verbose;
       Nmax = p.Results.Nmax;
-      beam.k_medium = ott.Bsc.parser_k_medium(p);
+      beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
       
       if isempty(p.Results.index_medium)
         nMedium = 1.0;

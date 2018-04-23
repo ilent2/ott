@@ -25,6 +25,7 @@ classdef TmatrixEbcm < ott.Tmatrix
       %   'superellipsoid'  Superellipsoid [ a b c e n ]
       %   'cone-tipped-cylinder'      [ radius height cone_height ]
       %   'cube'            Cube [ width ]
+      %   'sphere'          Sphere [ radius ]
       %
       %  TMATRIXEBCM(..., 'Nmax', Nmax) specifies the size of the
       %  T-matrix to use.  If not specified, the size is calculated
@@ -42,6 +43,10 @@ classdef TmatrixEbcm < ott.Tmatrix
       % Handle different shapes
       if strcmp(shape, 'ellipsoid')
         shape_idx = 0;
+        r_max = max(parameters);
+      elseif strcmpi(shape, 'sphere')
+        shape_idx = 0;
+        parameters = repmat(parameters, 3, 1);
         r_max = max(parameters);
       elseif strcmp(shape, 'cylinder')
         shape_idx = 1;
@@ -71,7 +76,7 @@ classdef TmatrixEbcm < ott.Tmatrix
 
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)
-        k_medium = ott.Tmatrix.parser_k_medium(p);
+        k_medium = ott.Tmatrix.parser_k_medium(p, 2*pi);
         Nmax = ott.utils.ka2nmax(r_max * k_medium);
       else
         Nmax = p.Results.Nmax;
@@ -86,19 +91,19 @@ classdef TmatrixEbcm < ott.Tmatrix
       end
 
       % Handle different shapes (again)
-      if strcmp(shape, 'ellipsoid')
+      if strcmpi(shape, 'ellipsoid') || strcmpi(shape, 'sphere')
         % TODO: Can this be optimised?
-        [theta,phi] = angulargrid(4*(Nmax + 2),1);
-        [r,~] = shapesurface(theta,phi,shape_idx,parameters);
-        [rho, ~, z] = rtp2xyz(r, theta, phi);
+        [theta,phi] = ott.utils.angulargrid(4*(Nmax + 2),1);
+        [r,~] = ott.utils.shapesurface(theta,phi,shape_idx,parameters);
+        [rho, ~, z] = ott.utils.rtp2xyz(r, theta, phi);
       elseif strcmp(shape, 'cylinder')
         rho = parameters(1) * [ 0, 1, 1, 0 ];
         z = parameters(2)/2.0 * [ 1, 1, -1, -1 ];
       elseif strcmp(shape, 'superellipsoid')
         % TODO: Can this be optimised?
-        [theta,phi] = angulargrid(4*(Nmax + 2),1);
-        [r,~] = shapesurface(theta,phi,shape_idx,parameters);
-        [rho, ~, z] = rtp2xyz(r, theta, phi);
+        [theta,phi] = ott.utils.angulargrid(4*(Nmax + 2),1);
+        [r,~] = ott.utils.shapesurface(theta,phi,shape_idx,parameters);
+        [rho, ~, z] = ott.utils.rtp2xyz(r, theta, phi);
       elseif strcmp(shape, 'cone-tipped-cylinder')
         rho = parameters(1) * [ 0, 1, 1, 0 ];
         z = parameters(2)/2.0 * [ 1, 1, -1, -1 ] ...
@@ -162,13 +167,14 @@ classdef TmatrixEbcm < ott.Tmatrix
       p.addParameter('k_particle', []);
       p.addParameter('wavelength_particle', []);
       p.addParameter('index_particle', []);
+      p.addParameter('index_relative', []);
       p.addParameter('wavelength0', []);
       p.addParameter('rotational_symmetry', false);
       p.parse(varargin{:});
 
       % Store inputs k_medium and k_particle
-      tmatrix.k_medium = tmatrix.parser_k_medium(p);
-      tmatrix.k_particle = tmatrix.parser_k_particle(p);
+      [tmatrix.k_medium, tmatrix.k_particle] = ...
+          tmatrix.parser_wavenumber(p, 2*pi);
 
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)
