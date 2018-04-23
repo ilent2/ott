@@ -32,7 +32,9 @@ function testTranslate(testCase)
 
   [~, A, B] = beam.translateZ(dz);
 
-  tbeam2 = beam.translateZ(A, B);
+  tbeam2 = beam.translate(A, B);
+
+  tbeam3 = beam.translateZ(dz, 'Nmax', beam.Nmax - 5);
 
 end
 

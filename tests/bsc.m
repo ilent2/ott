@@ -44,18 +44,16 @@ function testTranslation(testCase)
     'Within', AbsoluteTolerance(tol)), ...
     'beam.translate(A, B) does not match translateZ');
 
-  xbeam1 = beam.translateXyz(dz, dz, 0);
+  xbeam1 = beam.translateXyz([dz, dz, 0]);
 
-  [~, AB] = beam.translateXyz(dz, dz, 0);
+  [~, AB] = beam.translateXyz([dz, dz, 0]);
   xbeam2 = AB * beam;
 
-  [~, A, B] = beam.translateXyz(dz, dz, 0);
+  [~, A, B] = beam.translateXyz([dz, dz, 0]);
   xbeam3 = beam.translate(A, B);
 
-  [~, A, B, D] = beam.translateXyz(dz, dz, 0);
+  [~, A, B, D] = beam.translateXyz([dz, dz, 0]);
   xbeam4 = beam.translateXyz(A, B, D);
-
-  xbeam5 = beam.translateXyz([dz, dz, 0]);
 
   % Check all beams are equal
   target = xbeam1.getCoefficients;
@@ -68,8 +66,21 @@ function testTranslation(testCase)
   testCase.verifyThat(xbeam4.getCoefficients, IsEqualTo(target, ...
     'Within', AbsoluteTolerance(tol)), ...
     'beam.translateXyz(A, B, D) does not match translateXyz');
-  testCase.verifyThat(xbeam5.getCoefficients, IsEqualTo(target, ...
-    'Within', AbsoluteTolerance(tol)), ...
-    'beam.translateXyz([x, y, z]) does not match translateXyz(xyz)');
+end
+
+function testUnevenTranslation(testCase)
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+
+  beam = testCase.TestData.beam;
+  beam.power = 1.0;
+  dz = pi/2;
+  tol = 1.0e-6;
+
+  tbeam = beam.translateZ(dz, 'Nmax', beam.Nmax - 5);
+  testCase.verifyThat(tbeam.Nmax, IsEqualTo(beam.Nmax - 5), ...
+    'Translated beam does not have correct Nmax');
+
 end
 

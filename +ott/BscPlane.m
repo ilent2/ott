@@ -138,9 +138,13 @@ classdef BscPlane < ott.Bsc
       % [beam, AB] = TRANSLATEZ(z) returns the A, B matricies packed
       % so they can be directly applied to the beam: tbeam = AB * beam
 
-      if nargin == 2
+      p = inputParser;
+      p.addOptional('z', []);
+      p.addParameter('Nmax', beam.Nmax);
+      p.parse(varargin{:});
 
-        z = varargin{1};
+      if ~isempty(p.Results.z)
+        z = p.Results.z;
 
         % Add a warning when the beam is translated outside nmax2ka(Nmax)
         beam.dz = beam.dz + abs(z);
@@ -150,11 +154,8 @@ classdef BscPlane < ott.Bsc
               'Repeated translation of beam outside Nmax region');
         end
 
-        [A, B] = ott.utils.translate_z(beam.Nmax, z);
+        [A, B] = ott.utils.translate_z([p.Results.Nmax, beam.Nmax], z);
 
-      elseif nargin == 3
-        A = varargin{1};
-        B = varargin{2};
       else
         error('Wrong number of arguments');
       end

@@ -368,9 +368,17 @@ classdef Bsc
       %
       % [beam, AB] = TRANSLATEZ(z) returns the A, B matricies packed
       % so they can be directly applied to the beam: tbeam = AB * beam.
+      %
+      % TRANSLATEZ(..., 'Nmax', Nmax) specifies the output beam Nmax.
+      % Takes advantage of not needing to calculate a full translation matrix.
 
-      if nargin == 2
-        z = varargin{1};
+      p = inputParser;
+      p.addOptional('z', []);
+      p.addParameter('Nmax', beam.Nmax);
+      p.parse(varargin{:});
+
+      if ~isempty(p.Results.z)
+        z = p.Results.z;
 
         % Add a warning when the beam is translated outside nmax2ka(Nmax) 
         % The first time may be OK, the second time does not have enough
@@ -384,7 +392,7 @@ classdef Bsc
         % Convert to beam units
         z = z * beam.k_medium / 2 / pi;
 
-        [A, B] = ott.utils.translate_z(beam.Nmax, z);
+        [A, B] = ott.utils.translate_z([p.Results.Nmax, beam.Nmax], z);
       else
         error('Wrong number of arguments');
       end
@@ -404,8 +412,6 @@ classdef Bsc
       % TRANSLATEXYZ(xyz) translate the beam to locations given by
       % the xyz coordinates, where xyz is a 3xN matrix of coordinates.
       %
-      % TRANSLATEXYZ(x, y, z) translate the beam to location x, y, z.
-      %
       % TRANSLATEXYZ(Az, Bz, D) translate the beam using
       % z-translation and rotation matricies.
       %
@@ -417,24 +423,25 @@ classdef Bsc
       %
       % [beam, AB] = TRANSLATEXYZ(...) returns the A, B matricies packed
       % so they can be directly applied to the beam: tbeam = AB * beam.
+      %
+      % TRANSLATEXYZ(..., 'Nmax', Nmax) specifies the output beam Nmax.
+      % Takes advantage of not needing to calculate a full translation matrix.
 
-      if nargin == 2 && any(size(varargin{1}) == 3)
-        % Assume first argument is xyz coordinates
-        x = varargin{1};
-        rtp = ott.utils.xyz2rtp(x(:).');
-        [varargout{1:nargout}] = beam.translateRtp(rtp);
-      elseif nargin == 4 && any(size(varargin{1}) == 1)
-        % Assume the 3 arguments are the x, y, z coordinates
-        x = varargin{1};
-        y = varargin{2};
-        z = varargin{3};
-        rtp = ott.utils.xyz2rtp(x, y, z);
-        [varargout{1:nargout}] = beam.translateRtp(rtp);
-      elseif nargin >= 2
-        % Assume the arguments are AB, [A, B] or [A, B, D]
-        [varargout{1:nargout}] = beam.translateRtp(varargin{:});
+      p = inputParser;
+      p.addOptional('opt1', []);    % xyz or Az
+      p.addOptional('opt2', []);    % [] or Bz
+      p.addOptional('opt3', []);    % [] or D
+      p.addParameter('Nmax', beam.Nmax);
+      p.parse(varargin{:});
+
+      if ~isempty(p.Results.opt1) && isempty(p.Results.opt2) ...
+          && isempty(p.Results.opt3)
+        xyz = p.Results.opt1;
+        rtp = ott.utils.xyz2rtp(xyz(:).');
+        [varargout{1:nargout}] = beam.translateRtp(rtp, ...
+            'Nmax', p.Results.Nmax);
       else
-        error('Not enough input arguments');
+        [varargout{1:nargout}] = beam.translateRtp(varargin{:});
       end
     end
 
@@ -443,8 +450,6 @@ classdef Bsc
       %
       % TRANSLATERTP(rtp) translate the beam to locations given by
       % the xyz coordinates, where rtp is a 3xN matrix of coordinates.
-      %
-      % TRANSLATERTP(r, t, p) translate the beam to location r, t, p.
       %
       % TRANSLATERTP(Az, Bz, D) translate the beam using
       % z-translation and rotation matricies.
@@ -457,25 +462,40 @@ classdef Bsc
       %
       % [beam, AB] = TRANSLATERTP(...) returns the A, B matricies packed
       % so they can be directly applied to the beam: tbeam = AB * beam.
+      %
+      % TRANSLATERTP(..., 'Nmax', Nmax) specifies the output beam Nmax.
+      % Takes advantage of not needing to calculate a full translation matrix.
+
+      p = inputParser;
+      p.addOptional('opt1', []);    % rtp or Az
+      p.addOptional('opt2', []);    % [] or Bz
+      p.addOptional('opt3', []);    % [] or D
+      p.addParameter('Nmax', beam.Nmax);
+      p.parse(varargin{:});
 
       % Handle input arguments
-      if nargin == 2 && any(size(varargin{1}) == 3)
+      if ~isempty(p.Results.opt1) && isempty(p.Results.opt2) ...
+          && isempty(p.Results.opt3)
+
         % Assume first argument is rtp coordinates
-        r = varargin{1}(1);
-        theta = varargin{1}(2);
-        phi = varargin{1}(3);
-      elseif nargin == 4 && any(size(varargin{1}) == 1)
-        r = varargin{1};
-        theta = varargin{2};
-        phi = varargin{3};
-      elseif nargin >= 2
+        r = p.Results.opt1(1);
+        theta = p.Results.opt1(2);
+        phi = p.Results.opt1(3);
+
+      elseif ~isempty(p.Results.opt1) && ~isempty(p.Results.opt2) ...
+          && ~isempty(p.Results.opt3)
+
         % Rotation/translation is already computed, apply it
-        A = varargin{1};
-        B = varargin{2};
-        D = varargin{3};
+        A = p.Results.opt1;
+        B = p.Results.opt2;
+        D = p.Results.opt3;
         beam = D * beam;
         beam = beam.translate(A, B);
-        beam = D' * beam;
+
+        % The beam might change size, so readjust D to match
+        sz = size(A, 1);
+        D2 = D(1:sz, 1:sz);
+        beam = D2' * beam;
         return;
       else
         error('Not enough input arguments');
@@ -484,17 +504,26 @@ classdef Bsc
       % Only do the rotation if we need it
       if theta ~= 0 || phi ~= 0
         [beam, D] = beam.rotateYz(theta, phi);
-        [beam, A, B] = beam.translateZ(r);
-        beam = D' * beam;
+        [beam, A, B] = beam.translateZ(r, 'Nmax', p.Results.Nmax);
+
+        % The beam might change size, so readjust D to match
+        sz = size(A, 1);
+        D2 = D(1:sz, 1:sz);
+        beam = D2' * beam;
       else
         D = eye(size(beam.a, 1));
-        [beam, A, B] = beam.translateZ(r);
+        [beam, A, B] = beam.translateZ(r, 'Nmax', p.Results.Nmax);
       end
 
       % Rotate the translation matricies
       if nargout <= 3
-        A = D' * A * D;
-        B = D' * B * D;
+
+        % The beam might change size, so readjust D to match
+        sz = size(A, 1);
+        D2 = D(1:sz, 1:sz);
+
+        A = D2' * A * D;
+        B = D2' * B * D;
 
         % Pack the rotated matricies into a single ABBA object
         if nargout == 2
