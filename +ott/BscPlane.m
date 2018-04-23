@@ -132,10 +132,11 @@ classdef BscPlane < ott.Bsc
       %
       % TRANSLATEZ(z) translates by a distance z along z axis.
       %
-      % TRANSLATEZ(A, B) applies the translation given by A, B.
-      %
       % [beam, A, B] = TRANSLATEZ(z) returns the translation matrices
       % and translated beam.
+      %
+      % [beam, AB] = TRANSLATEZ(z) returns the A, B matricies packed
+      % so they can be directly applied to the beam: tbeam = AB * beam
 
       if nargin == 2
 
@@ -158,7 +159,13 @@ classdef BscPlane < ott.Bsc
         error('Wrong number of arguments');
       end
 
-      beam = [ A B ; B A ] * beam;
+      % Apply the translation
+      beam = beam.translate(A, B);
+
+      % Pack the rotated matricies into a single ABBA object
+      if nargout == 2
+        A = [ A B ; B A ];
+      end
     end
   end
 end
