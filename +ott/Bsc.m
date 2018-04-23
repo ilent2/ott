@@ -351,15 +351,23 @@ classdef Bsc
       end
     end
 
+    function beam = translate(beam, A, B)
+      % TRANSLATE apply a translation using given translation matrices.
+      %
+      % TRANSLATE(A, B) applies the translation given by A, B.
+      beam = [ A B ; B A ] * beam;
+    end
+
     function [beam, A, B] = translateZ(beam, varargin)
       %TRANSLATEZ translate a beam along the z-axis
       %
       % TRANSLATEZ(z) translates by a distance z along the z axis.
       %
-      % TRANSLATEZ(A, B) applies the translation given by A, B.
-      %
       % [beam, A, B] = TRANSLATEZ(z) returns the translation matrices
-      % and translates the beam.
+      % and the translated beam.  See also Bsc.TRANSLATE.
+      %
+      % [beam, AB] = TRANSLATEZ(z) returns the A, B matricies packed
+      % so they can be directly applied to the beam: tbeam = AB * beam.
 
       if nargin == 2
         z = varargin{1};
@@ -377,41 +385,121 @@ classdef Bsc
         z = z * beam.k_medium / 2 / pi;
 
         [A, B] = ott.utils.translate_z(beam.Nmax, z);
-      elseif nargin == 3
-        A = varargin{1};
-        B = varargin{2};
       else
         error('Wrong number of arguments');
       end
 
-      beam = [ A B ; B A ] * beam;
-    end
+      % Apply the translation
+      beam = beam.translate(A, B);
 
-    function beam = translateXyz(beam, x, y, z)
-      %TRANSLATEXYZ translate the beam given Cartesian coordinates
-      if nargin == 2
-        rtp = ott.utils.xyz2rtp(x(:).');
-      else
-        rtp = ott.utils.xyz2rtp(x, y, z);
+      % Pack the rotated matricies into a single ABBA object
+      if nargout == 2
+        A = [ A B ; B A ];
       end
-      beam = beam.translateRtp(rtp);
     end
 
-    function beam = translateRtp(beam, r, theta, phi)
+    function varargout = translateXyz(beam, varargin)
+      %TRANSLATEXYZ translate the beam given Cartesian coordinates
+      %
+      % TRANSLATEXYZ(xyz) translate the beam to locations given by
+      % the xyz coordinates, where xyz is a 3xN matrix of coordinates.
+      %
+      % TRANSLATEXYZ(x, y, z) translate the beam to location x, y, z.
+      %
+      % TRANSLATEXYZ(Az, Bz, D) translate the beam using
+      % z-translation and rotation matricies.
+      %
+      % [beam, Az, Bz, D] = TRANSLATEXYZ(...) returns the z-translation
+      % matrices, the rotation matrix D, and the translated beam.
+      %
+      % [beam, A, B] = TRANSLATEXYZ(...) returns the translation matrices
+      % and the translated beam.
+      %
+      % [beam, AB] = TRANSLATEXYZ(...) returns the A, B matricies packed
+      % so they can be directly applied to the beam: tbeam = AB * beam.
+
+      if nargin == 2 && any(size(varargin{1}) == 3)
+        % Assume first argument is xyz coordinates
+        x = varargin{1};
+        rtp = ott.utils.xyz2rtp(x(:).');
+        [varargout{1:nargout}] = beam.translateRtp(rtp);
+      elseif nargin == 4 && any(size(varargin{1}) == 1)
+        % Assume the 3 arguments are the x, y, z coordinates
+        x = varargin{1};
+        y = varargin{2};
+        z = varargin{3};
+        rtp = ott.utils.xyz2rtp(x, y, z);
+        [varargout{1:nargout}] = beam.translateRtp(rtp);
+      elseif nargin >= 2
+        % Assume the arguments are AB, [A, B] or [A, B, D]
+        [varargout{1:nargout}] = beam.translateRtp(varargin{:});
+      else
+        error('Not enough input arguments');
+      end
+    end
+
+    function [beam, A, B, D] = translateRtp(beam, varargin)
       %TRANSLATERTP translate the beam given spherical coordinates
-      if nargin == 2
-        theta = r(2);
-        phi = r(3);
-        r = r(1);
+      %
+      % TRANSLATERTP(rtp) translate the beam to locations given by
+      % the xyz coordinates, where rtp is a 3xN matrix of coordinates.
+      %
+      % TRANSLATERTP(r, t, p) translate the beam to location r, t, p.
+      %
+      % TRANSLATERTP(Az, Bz, D) translate the beam using
+      % z-translation and rotation matricies.
+      %
+      % [beam, Az, Bz, D] = TRANSLATERTP(...) returns the z-translation
+      % matrices, the rotation matrix D, and the translated beam.
+      %
+      % [beam, A, B] = TRANSLATERTP(...) returns the translation matrices
+      % and the translated beam.
+      %
+      % [beam, AB] = TRANSLATERTP(...) returns the A, B matricies packed
+      % so they can be directly applied to the beam: tbeam = AB * beam.
+
+      % Handle input arguments
+      if nargin == 2 && any(size(varargin{1}) == 3)
+        % Assume first argument is rtp coordinates
+        r = varargin{1}(1);
+        theta = varargin{1}(2);
+        phi = varargin{1}(3);
+      elseif nargin == 4 && any(size(varargin{1}) == 1)
+        r = varargin{1};
+        theta = varargin{2};
+        phi = varargin{3};
+      elseif nargin >= 2
+        % Rotation/translation is already computed, apply it
+        A = varargin{1};
+        B = varargin{2};
+        D = varargin{3};
+        beam = D * beam;
+        beam = beam.translate(A, B);
+        beam = D' * beam;
+        return;
+      else
+        error('Not enough input arguments');
       end
 
       % Only do the rotation if we need it
       if theta ~= 0 || phi ~= 0
         [beam, D] = beam.rotateYz(theta, phi);
-        beam = beam.translateZ(r);
+        [beam, A, B] = beam.translateZ(r);
         beam = D' * beam;
       else
-        beam = beam.translateZ(r);
+        D = eye(size(beam.a, 1));
+        [beam, A, B] = beam.translateZ(r);
+      end
+
+      % Rotate the translation matricies
+      if nargout <= 3
+        A = D' * A * D;
+        B = D' * B * D;
+
+        % Pack the rotated matricies into a single ABBA object
+        if nargout == 2
+          A = [ A B ; B A ];
+        end
       end
     end
 
