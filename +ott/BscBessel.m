@@ -9,25 +9,41 @@ classdef BscBessel < ott.Bsc
 % See LICENSE.md for information about using/distributing this file.
 
   properties (SetAccess=protected)
+    theta
   end
 
   methods
     function beam = BscBessel(nmax, theta, varargin)
       %BSCBESSEL construct a new bessel beam or bessel-like beam
       %
-      % TODO: Documentation
+      % BSCBESSEL(nmax, theta) creates a new beam with size Nmax
+      % for angles theta.
+      %
+      % BSCBESSEL(..., 'lmode', lmode) specifies the orbital angualr
+      % momentum to apply to the beam, default 0.
+      %
+      % BSCBESSEL(..., 'k_medium', k) specifies the medium wavenumber,
+      % defaults to 2*pi, i.e. unit wavelength.
 
       beam = beam@ott.Bsc();
 
       % Parse optional inputs
       p = inputParser;
-      p.addParameter('polerisation', [ 1 0 ]);
+      p.addParameter('polarisation', [ 1 0 ]);
       p.addParameter('lmode', 0);
-      p.parse(varargin);
+      p.addParameter('debug', false);
+      p.addParameter('k_medium', 2*pi);
+      p.parse(varargin{:});
+
+      theta = theta(:);
+
+      beam.k_medium = p.Results.k_medium;
+      beam.theta = theta.';
 
       Etheta = p.Results.polarisation(:, 1);
       Ephi = p.Results.polarisation(:, 2);
       lmode = p.Results.lmode;
+      debug = p.Results.debug;
 
       szT=size(theta);
       szE=size(Etheta);
@@ -95,12 +111,12 @@ classdef BscBessel < ott.Bsc
       Ephi=Ephi(:);
       Etheta=Etheta(:);
 
-      plane = ott.BscPlane(nmax, theta, phi, ...
-          'polarisation', [Etheta, Ephi]);
+      plane = ott.BscPlane(theta, phi, ...
+          'polarisation', [Etheta, Ephi], 'Nmax', nmax);
       a = plane.a;
       b = plane.b;
 
-      ci=combined_index(nn,mm);
+      ci=ott.utils.combined_index(nn,mm);
 
       a=a(ci,:);
       b=b(ci,:);

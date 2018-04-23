@@ -129,7 +129,7 @@ classdef BscPointmatch < ott.Bsc
 
   methods
     function beam = BscPointmatch(varargin)
-      beam = beam@ott.Bsc(varargin{:});
+      beam = beam@ott.Bsc();
     end
   end
 end

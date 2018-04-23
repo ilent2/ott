@@ -62,9 +62,12 @@ classdef Bsc
 
       total_orders = ott.utils.combined_index(Nmax, Nmax);
       ci = ott.utils.combined_index(n, m);
+      nbeams = size(a, 2);
+      
+      [ci, cinbeams] = meshgrid(ci, 1:nbeams);
 
-      a = sparse(ci, 1, a, total_orders, 1);
-      b = sparse(ci, 1, b, total_orders, 1);
+      a = sparse(ci, cinbeams, a, total_orders, nbeams);
+      b = sparse(ci, cinbeams, b, total_orders, nbeams);
 
       [n, m] = ott.utils.combined_index(1:Nmax^2+2*Nmax);
       n = n.';
