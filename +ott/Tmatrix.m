@@ -67,7 +67,7 @@ classdef Tmatrix
       p.parse(varargin{:});
 
       % Parse k_medium
-      k_medium = ott.Tmatrix.parser_k_medium(p);
+      k_medium = ott.Tmatrix.parser_k_medium(p, 2.0*pi);
 
       % Handle the different particle cases
       switch shape
@@ -279,10 +279,36 @@ classdef Tmatrix
       end
     end
 
-    function k_medium = parser_k_medium(p)
-      %PARSER_K_MEDIUM helper to get k_medium from a parser object
+    function [km, kp] = parser_wavenumber(p, default)
+      % Parses both k_medium and k_particle, provides n_relative support
+      %
+      % default is the default value for k_medium;
 
-      % TODO: n_relative support
+      % Run the original parsers with default arguments
+      km = ott.Tmatrix.parser_k_medium(p, []);
+      kp = ott.Tmatrix.parser_k_particle(p, []);
+
+      % If we don't yet have any information, set km from default
+      if isempty(km) && isempty(kp)
+        km = default;
+      end
+
+      % Support for index_relative
+      if ~isempty(p.Results.index_relative)
+        if isempty(km) && ~isempty(kp)
+          km = kp ./ p.Results.index_relative;
+        elseif ~isempty(km) && isempty(kp)
+          kp = km .* p.Results.index_relative;
+        else
+          error('index_relative specified but both indices already known');
+        end
+      elseif isempty(kp)
+        error('Unable to determine particle wavenumber from inputs');
+      end
+    end
+
+    function k_medium = parser_k_medium(p, default)
+      %PARSER_K_MEDIUM helper to get k_medium from a parser object
 
       if ~isempty(p.Results.k_medium)
         k_medium = p.Results.k_medium;
@@ -293,15 +319,15 @@ classdef Tmatrix
           error('wavelength0 must be specified to use index_medium');
         end
         k_medium = p.Results.index_medium*2.0*pi/p.Results.wavelength0;
+      elseif nargin == 2
+        k_medium = default;
       else
         error('Unable to determine k_medium from inputs');
       end
     end
 
-    function k_particle = parser_k_particle(p)
+    function k_particle = parser_k_particle(p, default)
       %PARSER_K_PARTICLE helper to get k_particle from a parser object
-
-      % TODO: n_relative support
 
       if ~isempty(p.Results.k_particle)
         k_particle = p.Results.k_particle;
@@ -313,6 +339,8 @@ classdef Tmatrix
         end
         k_particle = p.Results.index_particle ...
             * 2.0*pi/p.Results.wavelength0;
+      elseif nargin == 2
+        k_particle = default;
       else
         error('Unable to determine k_particle from inputs');
       end

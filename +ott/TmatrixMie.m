@@ -185,11 +185,16 @@ classdef TmatrixMie < ott.Tmatrix
       %  or TMATRIXMIE(..., 'wavelength_medium', wavelength)
       %  or TMATRIXMIE(..., 'index_medium', index)
       %  specify the wavenumber, wavelength or index in the medium.
+      %  If not specified, the default is k_medium = 2*pi.
       %
       %  TMATRIXMIE(..., 'k_particle', k)
       %  or TMATRIXMIE(..., 'wavelength_particle', wavelength)
       %  or TMATRIXMIE(..., 'index_particle', index)
       %  specify the wavenumber, wavelength or index in the particle.
+      %
+      %  TMATRIXMIE(..., 'index_relative', n) can be used to specify
+      %  the relative refractive index if either the medium or particle
+      %  wavenumber can already be determined.
       %
       %  TMATRIXMIE(..., 'wavelength0', wavelength) specifies the
       %  wavelength in the vecuum, required when index_particle or
@@ -213,14 +218,15 @@ classdef TmatrixMie < ott.Tmatrix
       p.addParameter('k_particle', []);
       p.addParameter('wavelength_particle', []);
       p.addParameter('index_particle', []);
+      p.addParameter('index_relative', []);
       p.addParameter('wavelength0', []);
       p.addParameter('internal', false);
       p.parse(varargin{:});
 
       % Store inputs: radius, k_medium, k_particle
       tmatrix.radius = radius;
-      tmatrix.k_medium = tmatrix.parser_k_medium(p);
-      tmatrix.k_particle = tmatrix.parser_k_particle(p);
+      [tmatrix.k_medium, tmatrix.k_particle] = ...
+          tmatrix.parser_wavenumber(p, 2.0*pi);
 
       % Check radius and k_particle are similar lengths
       if numel(tmatrix.radius) ~= numel(tmatrix.k_particle)
