@@ -253,11 +253,11 @@ for particle=1:nParticles
                         % matrix calcultion outside this loop
 
                         % Translate along the x direction and calc x force
-                        xbeam = tbeam.translateZ(A, B);
+                        xbeam = tbeam.translate(A, B);
                         [~,~,fx1,~,~,~] = ott.forcetorque(xbeam, T*xbeam);
 
                         % Translate along the x direction and calc x force
-                        xbeam = tbeam.translateZ(A', B');
+                        xbeam = tbeam.translate(A', B');
                         [~,~,fx0,~,~,~] = ott.forcetorque(xbeam, T*xbeam);
 
                         x_stiffness(index,particle)=(fx1-fx0)/dx;

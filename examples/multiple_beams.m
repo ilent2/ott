@@ -59,8 +59,8 @@ Nmax = ott.utils.ka2nmax(ott.utils.nmax2ka(beam.Nmax) ...
 % Change the Nmax and create the two beams
 beam1 = beam;
 beam1.Nmax = Nmax;
-beam2 = beam1.translateXyz(displacement, 0, 0);
-beam1 = beam1.translateXyz(-displacement, 0, 0);
+beam2 = beam1.translateXyz([displacement, 0, 0]);
+beam1 = beam1.translateXyz([-displacement, 0, 0]);
 
 % Add the beams
 nbeam = beam1 + beam2 * phase;
@@ -68,7 +68,7 @@ nbeam = beam1 + beam2 * phase;
 % Calculate the force along the x-axis
 fx1 = zeros(3, length(x));
 for ii = 1:length(x)
-  tbeam = nbeam.translateXyz(x(ii), 0, 0);
+  tbeam = nbeam.translateXyz([x(ii), 0, 0]);
   sbeam = T * tbeam;
   fx1(:, ii) = ott.forcetorque(tbeam, sbeam);
 end
@@ -80,8 +80,8 @@ fx2 = zeros(3, length(x));
 for ii = 1:length(x)
 
   % Translate and add the beams
-  beam1 = beam.translateXyz(x(ii)+displacement, 0, 0);
-  beam2 = beam.translateXyz(x(ii)-displacement, 0, 0);
+  beam1 = beam.translateXyz([x(ii)+displacement, 0, 0]);
+  beam2 = beam.translateXyz([x(ii)-displacement, 0, 0]);
   tbeam = beam1 + beam2 * phase;
 
   % Scatter the beam and calculate the force
@@ -96,8 +96,8 @@ fx3 = zeros(3, length(x));
 for ii = 1:length(x)
 
   % Translate beams
-  beam1 = beam.translateXyz(x(ii)+displacement, 0, 0);
-  beam2 = beam.translateXyz(x(ii)-displacement, 0, 0) * phase;
+  beam1 = beam.translateXyz([x(ii)+displacement, 0, 0]);
+  beam2 = beam.translateXyz([x(ii)-displacement, 0, 0]) * phase;
 
   % Scatter the beams
   sbeam1 = T * beam1;

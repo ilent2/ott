@@ -55,6 +55,13 @@ function testConvert(testCase)
       'Conversion back to total');
   assert(strcmpi(Ttotal.scattered.type, 'scattered'), ...
       'Conversion back to scattered');
+
+  % Check string convert
+  import matlab.unittest.constraints.Matches;
+  Ttotal = testCase.TestData.T;
+  Ttotal.type = 'total';
+  testCase.verifyThat(Ttotal.type, Matches('total'), ...
+    'Incorrect type with string conversion');
 end
 
 function testResizing(testCase)

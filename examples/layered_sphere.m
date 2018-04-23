@@ -76,7 +76,7 @@ for ii=1:length(radius)
       
     % Calculate the force along the axial direction
     for nz = 1:length(z)
-      tbeam = beam.translateXyz(0, 0, z(nz));
+      tbeam = beam.translateXyz([0, 0, z(nz)]);
       sbeam = T * tbeam;
       sbeam1 = T1 * tbeam;
       
@@ -99,7 +99,7 @@ for ii=1:length(radius)
 
     % Calculate the radial force at z-axial equilibrium
     for nr = 1:length(r)
-      tbeam = beam.translateXyz(r(nr), 0, zeq);
+      tbeam = beam.translateXyz([r(nr), 0, zeq]);
       sbeam = T * tbeam;
       sbeam1 = T1 * tbeam;
       
