@@ -49,7 +49,7 @@ p.parse(varargin{:});
 
 if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
 
-  position = [0,0,0];
+  position = [0;0;0];
   npositions = 1;
   if ~isempty(p.Results.position)
     position = p.Results.position;
@@ -65,10 +65,7 @@ if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
 
   % Rename T-matrix
   T = sbeam;
-  T = T.scattered;
-
-  % Ensure the Nmax's match
-  T.Nmax = [T.Nmax(1), ibeam.Nmax];
+  T.type = 'scattered';
 
   % Preallocate output
   f = zeros(3, npositions*nrotations);
@@ -77,14 +74,9 @@ if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
 
   for ii = 1:npositions
     for jj = 1:nrotations
-      tbeam = ibeam;
-      if ~isempty(p.Results.position)
-        tbeam = tbeam.translateXyz(position(:, ii));
-      end
-      if ~isempty(p.Results.rotation)
-        tbeam = tbeam.rotate(rotation(:, 3*(jj-1) + (1:3)));
-      end
-      sbeam = T * tbeam;
+      [sbeam, tbeam] = ibeam.scatter(T, ...
+          'position', position(:, ii), ...
+          'rotation', rotation(:, 3*(jj-1) + (1:3)));
       [fl,tl,sl] = ott.forcetorque(tbeam, sbeam);
       f(:, (ii-1)*nrotations + jj) = fl;
       t(:, (ii-1)*nrotations + jj) = tl;

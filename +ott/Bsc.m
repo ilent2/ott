@@ -534,6 +534,13 @@ classdef Bsc
 
     function [beam, D] = rotate(beam, R)
       %ROTATE apply the rotation matrix R to the beam coefficients
+
+      % If no rotation, don't calculate wigner rotation matrix
+      if sum(sum((eye(3) - R).^2)) < 1e-6
+        D = eye(size(beam.a, 1));
+        return;
+      end
+
       D = ott.utils.wigner_rotation_matrix(beam.Nmax, R);
       beam = D * beam;
     end
@@ -637,23 +644,53 @@ classdef Bsc
       beam.b = beam.b / o;
     end
 
-    function beam = scatter(beam, tmatrix)
+    function [sbeam, beam] = scatter(beam, tmatrix, varargin)
       %SCATTER scatter a beam using a T-matrix
+      %
+      % [sbeam, beam] = SCATTER(beam, tmatrix) scatters the beam
+      % returning the scattered beam, sbeam, and the unscattered
+      % but possibly translated/rotated beam.
+      %
+      % SCATTER(..., 'position', xyz) applies a translation to the beam.
+      % SCATTER(..., 'rotation', R) applies a rotation to the beam.
+
+      p = inputParser;
+      p.addParameter('position', []);
+      p.addParameter('rotation', []);
+      p.parse(varargin{:});
+
+      % Apply translation to the beam (requires scattered T-matrix)
+      if ~isempty(p.Results.position)
+        tmatrix.type = 'scattered';
+        beam = beam.translateXyz(p.Results.position, 'Nmax', tmatrix.Nmax(2));
+      end
+
+      % Apply rotation to the beam
+      if ~isempty(p.Results.rotation)
+        beam = beam.rotate(p.Results.rotation);
+      end
 
       % Ensure the Nmax for the inner dimension matches
-      tmatrix.set_Nmax([tmatrix.Nmax(1), beam.Nmax], ...
-          'powerloss', 'ignore');
+      if strcmpi(tmatrix.type, 'scattered')
+        newNmax = min(tmatrix.Nmax(2), beam.Nmax);
+        tmatrix = tmatrix.set_Nmax([tmatrix.Nmax(1), newNmax], ...
+            'powerloss', 'ignore');
+        beam = beam.set_Nmax(newNmax, 'powerloss', 'ignore');
+      else
+        tmatrix = tmatrix.set_Nmax([tmatrix.Nmax(1), beam.Nmax], ...
+            'powerloss', 'ignore');
+      end
 
       % Calculate the resulting beam
-      beam = tmatrix.data * beam;
+      sbeam = tmatrix.data * beam;
 
       % Assign a type to the resulting beam
       if strcmp(tmatrix.type, 'total')
-        beam.type = 'outgoing';
+        sbeam.type = 'outgoing';
       elseif strcmp(tmatrix.type, 'scattered')
-        beam.type = 'regular';
+        sbeam.type = 'regular';
       elseif strcmp(tmatrix.type, 'internal')
-        beam.type = 'regular';
+        sbeam.type = 'regular';
       else
         error('Unrecognized T-matrix type');
       end
