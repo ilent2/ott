@@ -32,7 +32,11 @@ classdef Bsc
 
     k_medium    % Wavenumber in medium
 
-    dz          % Distance the beam has been translated
+    dz          % Absolute cumulative distance the beam has moved
+
+    % These can't be tracked using Matrix translation/rotations
+    %offset      % Offset applied to beam using translate functions
+    %direction   % Direction of beam applied using rotation functions
   end
 
   properties (Dependent)
@@ -230,6 +234,14 @@ classdef Bsc
     function beam = set.power(beam, p)
       % set.power set the beam power
       beam = sqrt(p / beam.power) * beam;
+    end
+
+    function beam = set.type(beam, type)
+      % Set the beam type, checking it is a valid type first
+      if ~any(strcmpi(type, {'incomming', 'outgoing', 'regular'}))
+        error('Invalid beam type');
+      end
+      beam.type = type;
     end
 
     function beams = get.beams(beam)

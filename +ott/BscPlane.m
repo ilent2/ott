@@ -32,20 +32,27 @@ classdef BscPlane < ott.Bsc
       % theta and phi can be arrays, in which case multiple VSWF
       % expansions are calculated for each angle.
       %
-      %  BSCPLANE(..., 'Nmax', Nmax) and BSCPLANE(..., 'ka', ka)
+      %  BSCPLANE(..., 'k_medium', k) specifies the wavenumber in the
+      %  medium.  Defaults to 2*pi, i.e. wavelength = 1.
+      %
+      %  BSCPLANE(..., 'Nmax', Nmax) and BSCPLANE(..., 'radius', a)
       %  specify the region where the plane wave beam is valid.
       %
       %  BSCPLANE(..., 'polarisation', [ Etheta Ephi ]) specifies
       %  the polarisation in the theta and phi directions.
 
-      beam = beam@ott.Bsc('incomming', varargin{:});
+      beam = beam@ott.Bsc();
 
       % Parse inputs
       p = inputParser;
       p.addParameter('polarisation', [ 1 1i ]);
       p.addParameter('Nmax', []);
-      p.addParameter('ka', []);
+      p.addParameter('radius', []);
+      p.addParameter('k_medium', 2*pi);
       p.parse(varargin{:});
+
+      beam.type = 'incomming';
+      beam.k_medium = p.Results.k_medium;
 
       % If points aren't specified explicitly, use meshgrid
       if length(theta) ~= length(phi)
@@ -60,20 +67,20 @@ classdef BscPlane < ott.Bsc
 
       % Store polarisation
       beam.polarisation = p.Results.polarisation;
-      if size(p.Results.polarisation, 1) ~= length(phi)
-          && p.Results.polarisation == 1
+      if size(p.Results.polarisation, 1) ~= length(phi) ...
+          && size(p.Results.polarisation, 1) == 1
         beam.polarisation = repmat(beam.polarisation, length(phi), 1);
       else
         error('Polarisation must be either 1x2 or Nx2 (N = # beams)');
       end
 
       % Parse ka/Nmax
-      if isempty(p.Results.Nmax) && isempty(p.Results.ka)
+      if isempty(p.Results.Nmax) && isempty(p.Results.radius)
         warning('ott:BscPlane:no_range', ...
             'No range specified for plane wave, using range of ka=1');
         Nmax = ott.utils.ka2nmax(1);
-      elseif ~isempty(p.Results.ka)
-        Nmax = ott.utils.ka2nmax(p.Results.ka);
+      elseif ~isempty(p.Results.radius)
+        Nmax = ott.utils.ka2nmax(p.Results.radius * beam.k_medium);
       elseif ~isempty(p.Results.Nmax)
         Nmax = p.Results.Nmax;
       else
@@ -101,7 +108,7 @@ classdef BscPlane < ott.Bsc
         Nn = 1/sqrt(n*(n+1));
 
         %Generate the farfield components of the VSWFs
-        [~,dtY,dpY] = spharm(n,[-n:n],theta,phi);
+        [~,dtY,dpY] = ott.utils.spharm(n,[-n:n],theta,phi);
 
         %equivalent to dot((1i)^(n+1)*C,E);
         a(iter,:) = 4*pi*Nn*(-1i)^(n+1)*(conj(dpY).*ET - conj(dtY).*EP).';
@@ -120,19 +127,38 @@ classdef BscPlane < ott.Bsc
       beam.b = sparse(b);
     end
 
-    function beam = translateZ(beam, z)
+    function [beam, A, B] = translateZ(beam, varargin)
       %TRANSLATEZ translate a beam along the z-axis
+      %
+      % TRANSLATEZ(z) translates by a distance z along z axis.
+      %
+      % TRANSLATEZ(A, B) applies the translation given by A, B.
+      %
+      % [beam, A, B] = TRANSLATEZ(z) returns the translation matrices
+      % and translated beam.
 
-      % Add a warning when the beam is translated outside nmax2ka(Nmax)
-      dz = dz + abs(z);
-      if dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
-        warning('ott:BscPlane:translateZ:outside_nmax', ...
-            'Repeated translation of beam outside Nmax region');
+      if nargin == 2
+
+        z = varargin{1};
+
+        % Add a warning when the beam is translated outside nmax2ka(Nmax)
+        beam.dz = beam.dz + abs(z);
+        disp(beam.k_medium);
+        if beam.dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
+          warning('ott:BscPlane:translateZ:outside_nmax', ...
+              'Repeated translation of beam outside Nmax region');
+        end
+
+        [A, B] = ott.utils.translate_z(beam.Nmax, z);
+
+      elseif nargin == 3
+        A = varargin{1};
+        B = varargin{2};
+      else
+        error('Wrong number of arguments');
       end
 
-      [A, B] = ott.utils.translate_z(beam.Nmax, z);
-      beam = blkdiag(A, B) * beam;
+      beam = [ A B ; B A ] * beam;
     end
   end
-
 end
