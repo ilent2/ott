@@ -4,6 +4,8 @@ function [A,B,C] = translate_z(nmax,z)
 %
 % [A,B] = translate_z(nmax,z) calculates translation matricies.
 % The matricies are use as: M' = A M + B N; N' = B M + A N.
+% nmax can be a single integer or two integers for the row, column nmax.
+% If the row, column indices don't match, A and B will not be square.
 %
 % [A,B,C] = translate_z(nmax,z) additionally, calculates C,
 % the scalar SWF translation coefficients in 3d packed form.
@@ -45,17 +47,28 @@ if numel(z)>1
     return
 end
 
+% Calculate Nmax for each dimension
+if numel(nmax) == 1
+  nmax1 = nmax;
+  nmax2 = nmax;
+else
+  nmax1 = nmax(1);
+  nmax2 = nmax(2);
+  nmax = max(nmax(1:2));
+end
+
 if z==0
-    A=sparse(1:(nmax^2+nmax*2),1:(nmax^2+nmax*2),1);
-    B=sparse((nmax^2+nmax*2),(nmax^2+nmax*2));
+    A=sparse(1:(nmax1^2+nmax1*2),1:(nmax2^2+nmax2*2),1);
+    B=sparse((nmax1^2+nmax1*2),(nmax2^2+nmax2*2));
     C=A;
     ott.warning('external');
     return
 end
 
 N = 3*nmax+5;
+N3 = min(nmax1, nmax2) + 1;
 
-C = zeros(N,N,N);
+C = zeros(N,N,N3);
 
 % First calculate the scalar translation coeffs
 
@@ -104,9 +117,9 @@ C(1,N,1) = sqrt(2*n+1)/n * ...
 % OK, now m other than m=0
 % Only need to do positive m, since C(-m) = C(m)
 % Videen (41)
-for m = 1:(N-2)
-  nn = m:(N-2);
-  kk = nn.';
+for m = 1:min(nmax1, nmax2)
+  nn = m:nmax1;
+  kk = (m:N-2).';
   C0 = C(kk+1,nn+1,m);
   Cp = C(kk+2,nn+1,m);
   Cm = C(kk,nn+1,m);
@@ -119,20 +132,21 @@ end
 % OK, that's the scalar coefficients
 % Time to find the vector coefficients - Videen (43) & (44)
 
-nn = 1:nmax;
-kk = nn.';
+nn = 1:nmax1;
+kk = (1:nmax2).';
 
 matrixm=sqrt(kk.*(kk+1)) ./ sqrt(nn.*(nn+1));
 
-central_iterator=[1:nmax].*[2:nmax+1];
+central_iterator1=[1:nmax1].*[2:nmax1+1];
+central_iterator2=[1:nmax2].*[2:nmax2+1];
 
-[ciy,cix]=meshgrid(central_iterator,central_iterator);
+[ciy,cix]=meshgrid(central_iterator1,central_iterator2);
 
 mmm=0;
 
-C0 = C(2:(nmax+1),2:(nmax+1),mmm+1);
-Cp = C(3:(nmax+2),2:(nmax+1),mmm+1);
-Cm = C(1:nmax,2:(nmax+1),mmm+1);
+C0 = C(2:(nmax2+1),2:(nmax1+1),mmm+1);
+Cp = C(3:(nmax2+2),2:(nmax1+1),mmm+1);
+Cm = C(1:nmax2,2:(nmax1+1),mmm+1);
 
 t = matrixm.*(C0 - 2*pi*z./(kk+1) .* ...
     sqrt((kk-mmm+1).*(kk+mmm+1)./((2*kk+1).*(2*kk+3))) .* Cp - ...
@@ -145,28 +159,29 @@ B=zeros(size(A));
 
 % Total size of A and B: sum((1:nmax).^2)*2 + nmax^2
 
-for mmm=1:nmax
+for mmm=1:min(nmax1, nmax2)
 
-    sz = mmm:nmax;
+    sz1 = mmm:nmax2;
+    sz2 = mmm:nmax1;
 
-    C0 = C((1+mmm):(nmax+1),(1+mmm):(nmax+1),mmm+1);
-    Cp = C((2+mmm):(nmax+2),(1+mmm):(nmax+1),mmm+1);
-    Cm = C((mmm):nmax,(1+mmm):(nmax+1),mmm+1);
+    C0 = C((1+mmm):(nmax2+1),(1+mmm):(nmax1+1),mmm+1);
+    Cp = C((2+mmm):(nmax2+2),(1+mmm):(nmax1+1),mmm+1);
+    Cm = C((mmm):nmax2,(1+mmm):(nmax1+1),mmm+1);
 
-    tt = matrixm(sz, sz).*(C0 - 2*pi*z./(kk(sz)+1) .* ...
-        sqrt((kk(sz)-mmm+1).*(kk(sz)+mmm+1) ...
-        ./((2*kk(sz)+1).*(2*kk(sz)+3))) .* Cp - ...
-        2*pi*z./kk(sz).*sqrt((kk(sz)-mmm) ...
-        .*(kk(sz)+mmm)./((2*kk(sz)+1).*(2*kk(sz)-1))).*Cm);
+    tt = matrixm(sz1, sz2).*(C0 - 2*pi*z./(kk(sz1)+1) .* ...
+        sqrt((kk(sz1)-mmm+1).*(kk(sz1)+mmm+1) ...
+        ./((2*kk(sz1)+1).*(2*kk(sz1)+3))) .* Cp - ...
+        2*pi*z./kk(sz1).*sqrt((kk(sz1)-mmm) ...
+        .*(kk(sz1)+mmm)./((2*kk(sz1)+1).*(2*kk(sz1)-1))).*Cm);
 
     ciys=ciy(mmm:end,mmm:end);
     cixs=cix(mmm:end,mmm:end);
-    
+
     toIndexy=[toIndexy;(ciys(:)+mmm);(ciys(:)-mmm)];
     toIndexx=[toIndexx;(cixs(:)+mmm);(cixs(:)-mmm)];
     A=[A;tt(:);tt(:)];
 
-    tt = mmm./(kk(sz).*(kk(sz)+1)).*matrixm(sz, sz) .* C0;
+    tt = mmm./(kk(sz1).*(kk(sz1)+1)).*matrixm(sz1, sz2) .* C0;
     B=[B;tt(:);-tt(:)];
 
 end
@@ -175,11 +190,11 @@ end
 B = 1i*2*pi*z*B;
 
 % This is faster than A = A + sparse(...) and A(sub2ind(...)) = [...]
-B=sparse(toIndexy,toIndexx,B,nmax*(nmax+2),nmax*(nmax+2));
-A=sparse(toIndexy,toIndexx,A,nmax*(nmax+2),nmax*(nmax+2));
+B=sparse(toIndexy,toIndexx,B,nmax1*(nmax1+2),nmax2*(nmax2+2));
+A=sparse(toIndexy,toIndexx,A,nmax1*(nmax1+2),nmax2*(nmax2+2));
 
 if nargout>2
-    C=C(1:nmax+1,1:nmax+1,1:nmax+1);
+    C=C(1:nmax+1,1:nmax+1,1:min(nmax1, nmax2)+1);
 end
 
 ott.warning('external');
