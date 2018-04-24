@@ -90,7 +90,7 @@ case 3
     
 case 4 
     % Cube
-    rotsym = 0;
+    rotsym = 3;
     d = parameters(1);
    
 otherwise
@@ -209,7 +209,7 @@ case 3
     r = zeros(size(theta));
     n = [r r r];
     sides = find( ( theta >= pi/2 - edge_angle ) ...
-        && ( theta <= pi/2 + edge_angle ) );
+        & ( theta <= pi/2 + edge_angle ) );
     top = find( theta < pi/2 - edge_angle );
     bottom = find( theta > pi/2 + edge_angle );
     ends = [ top; bottom ];
