@@ -182,6 +182,7 @@ classdef TmatrixPm < ott.Tmatrix
       p.addParameter('wavelength0', []);
       p.addParameter('internal', false);
       p.addParameter('rotational_symmetry', false);
+      p.addParameter('progress', []);
       p.parse(varargin{:});
 
       % Store inputs k_medium and k_particle
@@ -208,6 +209,16 @@ classdef TmatrixPm < ott.Tmatrix
       else
          T = zeros(2*total_orders,2*total_orders);
          T2 = zeros(2*total_orders,2*total_orders);
+      end
+
+      % Parse progress input
+      if ~isempty(p.Results.progress)
+        progress = p.Results.progress;
+        progress(progress < 1) = floor(...
+            progress(progress < 1) * ott.utils.combined_index(Nmax, Nmax));
+        if numel(progress) == 1
+          progress = [progress, progress];
+        end
       end
 
       import ott.utils.*
@@ -245,11 +256,16 @@ classdef TmatrixPm < ott.Tmatrix
           incident_wave_matrix(:,ci) = [ M2; N2 ];
           incident_wave_matrix(:,ci+total_orders) = [ N2; M2 ];
 
-          % TODO: Output progress
+          % Output progress
+          if ~isempty(p.Results.progress) && mod(ci, progress(1)) == 0
+            disp(['TmatrixPM:coefficient_matrix... ' ...
+                num2str(floor(ci/combined_index(Nmax, Nmax)*100.0)) '%']);
+          end
         end
       end
 
       for n = 1:Nmax
+
         for m = -n:n
 
           ci = combined_index(n,m);
@@ -283,7 +299,11 @@ classdef TmatrixPm < ott.Tmatrix
             T2(:,ci+total_orders) = Tcol((1+2*total_orders):4*total_orders,1);
           end
 
-          % TODO: Output progress
+          % Output progress
+          if ~isempty(p.Results.progress) && mod(ci, progress(2)) == 0
+            disp(['TmatrixPM:point_matching... ' ...
+                num2str(floor(ci/combined_index(Nmax, Nmax)*100.0)) '%']);
+          end
         end
       end
 
