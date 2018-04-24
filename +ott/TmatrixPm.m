@@ -50,28 +50,13 @@ classdef TmatrixPm < ott.Tmatrix
       %      'random'         uses randomly distributed points
 
       % Handle different shapes
-      if strcmp(shape, 'ellipsoid')
-        shape_idx = 0;
-        r_max = max(parameters);
-      elseif strcmpi(shape, 'sphere')
-        shape_idx = 0;
-        parameters = repmat(parameters, 3, 1);
-        r_max = max(parameters);
-      elseif strcmp(shape, 'cylinder')
-        shape_idx = 1;
-        r_max = sqrt(parameters(1)^2 + parameters(2)^2/4.0);
-      elseif strcmp(shape, 'superellipsoid')
-        shape_idx = 2;
-        r_max = max(parameters(1:3));
-      elseif strcmp(shape, 'cone-tipped-cylinder')
-        shape_idx = 3;
-        r_max = sqrt(parameters(1)^2 + parameters(2)^2/4.0);
-        r_max = max(r_max, parameters(2)/2.0 + parameters(3));
-      elseif strcmp(shape, 'cube')
-        shape_idx = 4;
-        r_max = sqrt(3.0*parameters(1)^2/4.0);
-      else
-        error('Unsupported shape type');
+      if ischar(shape)
+        shape = ott.shapes.Shape.simple(shape, parameters);
+      end
+
+      % Check the particle is star shaped
+      if ~isa(shape, 'ott.shapes.StarShape')
+        error('Only star shaped particles supported for now');
       end
 
       % Parse optional parameters
@@ -88,46 +73,91 @@ classdef TmatrixPm < ott.Tmatrix
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)
         k_medium = ott.Tmatrix.parser_k_medium(p, 2*pi);
-        Nmax = ott.utils.ka2nmax(r_max * k_medium);
+        Nmax = ott.utils.ka2nmax(shape.maxRadius * k_medium);
       else
         Nmax = p.Results.Nmax;
       end
 
-      % Determine if we have rotational symetry
-      [~,~,rotational_symmetry] = ott.utils.shapesurface(...
-          [],[],shape_idx,parameters);
+      % Get the rotational symmetry of the shape
+      [~,~, z_rotational_symmetry] = shape.axialSymmetry();
 
-      % TODO: Squares: Do they have the same symetry optimisation?
-      if rotational_symmetry
-        ntheta = 4*(Nmax + 2);
-        nphi = 1;
-      else
-        ntheta = 2*(Nmax + 2);
-        nphi = 3*(Nmax + 2)+1;
-      end
-
-      % Generate grid of points
-      if strcmpi(p.Results.distribution, 'angulargrid')
-        [theta,phi] = ott.utils.angulargrid(ntheta,nphi);
-      elseif strcmpi(p.Results.distribution, 'random')
-        xyz = 2*rand([ntheta*nphi,3]) - 1;
-        [~,theta,phi] = ott.utils.xyz2rtp(xyz);
-      else
-        error('Unrecognized option for distribution');
-      end
-
-      [r,normals] = ott.utils.shapesurface(theta,phi,shape_idx,parameters);
+      % Get the coordinates of the shape
+      rtp = shape.angulargrid(Nmax);
+      normals = shape.normals(rtp(:, 2), rtp(:, 3));
 
       % inputParser will take the last parameter, so varargin just needs to
       % be before the replacements for varargin.
-      tmatrix = ott.TmatrixPm(r, theta, phi, normals, varargin{:}, ...
+      tmatrix = ott.TmatrixPm(rtp, normals, varargin{:}, ...
           'Nmax', Nmax, ...
-          'rotational_symmetry', rotational_symmetry);
+          'mirror_symmetry', shape.mirrorSymmetry(), ...
+          'z_rotational_symmetry', z_rotational_symmetry);
     end
   end
 
+  methods (Access=protected)
+
+    function [coeff_matrix, incident_wave_matrix] = setup(tmatrix, ...
+        Nmax, r, theta, phi, normals, progress)
+      % SETUP calculates the coefficient and incident wave matrices
+
+      npoints = length(theta);
+      total_orders = ott.utils.combined_index(Nmax, Nmax);
+
+      % 3 vector components at each point, c/d,p/q coefficient per order
+      coeff_matrix = zeros(6*npoints,4*total_orders);
+      incident_wave_matrix = zeros(6*npoints,2*total_orders);
+
+      k_relative = tmatrix.k_particle/tmatrix.k_medium;
+
+      import ott.utils.vswf;
+      import ott.utils.perpcomponent;
+
+      for n = 1:Nmax
+        for m = -n:n
+
+          % INCIDENT-SCATTERED
+          [M1,N1,~,~,M2,N2] = vswf(n,m,tmatrix.k_medium*r,theta,phi);
+          [M3,N3] = vswf(n,m,tmatrix.k_particle*r,theta,phi,3);
+
+          ci = ott.utils.combined_index(n,m);
+
+          M1 = perpcomponent(M1,normals);
+          N1 = perpcomponent(N1,normals);
+          M2 = perpcomponent(M2,normals);
+          N2 = perpcomponent(N2,normals);
+          M3 = perpcomponent(M3,normals);
+          N3 = perpcomponent(N3,normals);
+          M1 = M1(:);
+          N1 = N1(:);
+          M2 = M2(:);
+          N2 = N2(:);
+          M3 = M3(:);
+          N3 = N3(:);
+
+          % 1 is outgoing field, 3 is particle field, 2 is incoming field
+          coeff_matrix(:,ci) = - [ M1; N1 ];
+          coeff_matrix(:,ci+total_orders) = - [ N1; M1 ];
+          coeff_matrix(:,ci+2*total_orders) = [ M3; k_relative*N3 ];
+          coeff_matrix(:,ci+3*total_orders) = [ N3; k_relative*M3 ];
+
+          incident_wave_matrix(:,ci) = [ M2; N2 ];
+          incident_wave_matrix(:,ci+total_orders) = [ N2; M2 ];
+
+          % Output progress
+          if progress ~= 0 && mod(ci, progress) == 0
+            disp(['TmatrixPM:setup (' num2str(ci) '/' ...
+                num2str(total_orders) ') ' ...
+                num2str(floor(ci/total_orders*100.0)) '%']);
+          end
+        end
+      end
+
+    end
+
+  end
+
   methods
-    function tmatrix = TmatrixPm(r, theta, phi, normals, varargin)
+    function tmatrix = TmatrixPm(rtp, normals, varargin)
       %TMATRIXPM calculates T-matrix using the point matching method
       %
       % TMATRIXPM(r, theta, phi, normals) uses points at r, theta, phi
@@ -163,9 +193,11 @@ classdef TmatrixPm < ott.Tmatrix
       %  TMATRIXPM(..., 'internal', internal) if true, encapsulates
       %  the internal T-matrix and discards the external T-matrix.
       %
-      %  TMATRIXPM(..., 'rotational_symmetry', sym) if true the particle
+      %  TMATRIXPM(..., 'z_rotational_symmetry', sym) if true the particle
       %  is assumed to be rotationally symmetric about the z-axis and
       %  phi must be all the same angle.
+      %
+      %  TMATRIXPM(..., 'mirror_symmetry', sym) not yet implemented.
 
       tmatrix = tmatrix@ott.Tmatrix();
 
@@ -181,7 +213,8 @@ classdef TmatrixPm < ott.Tmatrix
       p.addParameter('index_relative', []);
       p.addParameter('wavelength0', []);
       p.addParameter('internal', false);
-      p.addParameter('rotational_symmetry', false);
+      p.addParameter('z_rotational_symmetry', false);
+      p.addParameter('mirror_symmetry', false);
       p.addParameter('progress', []);
       p.parse(varargin{:});
 
@@ -196,20 +229,9 @@ classdef TmatrixPm < ott.Tmatrix
         Nmax = p.Results.Nmax;
       end
 
-      npoints = length(theta);
-      total_orders = Nmax * (Nmax+2);
-
-      % 3 vector components at each point, c/d,p/q coefficient per order
-      coeff_matrix = zeros(6*npoints,4*total_orders);
-      incident_wave_matrix = zeros(6*npoints,2*total_orders);
-
-      if p.Results.rotational_symmetry
-         T = sparse(2*total_orders,2*total_orders);
-         T2 = sparse(2*total_orders,2*total_orders);
-      else
-         T = zeros(2*total_orders,2*total_orders);
-         T2 = zeros(2*total_orders,2*total_orders);
-      end
+      r = rtp(:, 1);
+      theta = rtp(:, 2);
+      phi = rtp(:, 3);
 
       % Parse progress input
       if ~isempty(p.Results.progress)
@@ -219,58 +241,35 @@ classdef TmatrixPm < ott.Tmatrix
         if numel(progress) == 1
           progress = [progress, progress];
         end
+      else
+        progress = [0, 0];
+      end
+
+      % Calculate coefficient and incident wave matrices
+      [coeff_matrix, incident_wave_matrix] = tmatrix.setup(...
+          Nmax, r, theta, phi, normals, progress(1));
+
+      npoints = length(theta);
+      total_orders = ott.utils.combined_index(Nmax, Nmax);
+
+      if p.Results.z_rotational_symmetry == 0
+         T = sparse(2*total_orders,2*total_orders);
+         T2 = sparse(2*total_orders,2*total_orders);
+      else
+         T = zeros(2*total_orders,2*total_orders);
+         T2 = zeros(2*total_orders,2*total_orders);
       end
 
       import ott.utils.*
 
-      k_relative = tmatrix.k_particle/tmatrix.k_medium;
-
-      for n = 1:Nmax
-        for m = -n:n
-
-          % INCIDENT-SCATTERED
-          [M1,N1,~,~,M2,N2] = vswf(n,m,tmatrix.k_medium*r,theta,phi);
-          [M3,N3] = vswf(n,m,tmatrix.k_particle*r,theta,phi,3);
-
-          ci = combined_index(n,m);
-
-          M1 = perpcomponent(M1,normals);
-          N1 = perpcomponent(N1,normals);
-          M2 = perpcomponent(M2,normals);
-          N2 = perpcomponent(N2,normals);
-          M3 = perpcomponent(M3,normals);
-          N3 = perpcomponent(N3,normals);
-          M1 = M1(:);
-          N1 = N1(:);
-          M2 = M2(:);
-          N2 = N2(:);
-          M3 = M3(:);
-          N3 = N3(:);
-
-          % 1 is outgoing field, 3 is particle field, 2 is incoming field
-          coeff_matrix(:,ci) = - [ M1; N1 ];
-          coeff_matrix(:,ci+total_orders) = - [ N1; M1 ];
-          coeff_matrix(:,ci+2*total_orders) = [ M3; k_relative*N3 ];
-          coeff_matrix(:,ci+3*total_orders) = [ N3; k_relative*M3 ];
-
-          incident_wave_matrix(:,ci) = [ M2; N2 ];
-          incident_wave_matrix(:,ci+total_orders) = [ N2; M2 ];
-
-          % Output progress
-          if ~isempty(p.Results.progress) && mod(ci, progress(1)) == 0
-            disp(['TmatrixPM:coefficient_matrix... ' ...
-                num2str(floor(ci/combined_index(Nmax, Nmax)*100.0)) '%']);
-          end
-        end
-      end
-
+      % Generate T-matrix
       for n = 1:Nmax
 
         for m = -n:n
 
           ci = combined_index(n,m);
 
-          if p.Results.rotational_symmetry
+          if p.Results.z_rotational_symmetry == 0
             number_of_nm = 1 + Nmax - max(abs(m),1);
             nm_to_use = combined_index(max(abs(m),1):Nmax, ...
                 ones(1,number_of_nm)*m);

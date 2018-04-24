@@ -41,27 +41,19 @@ classdef TmatrixEbcm < ott.Tmatrix
       %  index_medium are specified.
 
       % Handle different shapes
-      if strcmp(shape, 'ellipsoid')
-        shape_idx = 0;
-        r_max = max(parameters);
-      elseif strcmpi(shape, 'sphere')
-        shape_idx = 0;
-        parameters = repmat(parameters, 3, 1);
-        r_max = max(parameters);
-      elseif strcmp(shape, 'cylinder')
-        shape_idx = 1;
-        r_max = sqrt(parameters(1)^2 + parameters(2)^2/4.0);
-      elseif strcmp(shape, 'superellipsoid')
-        shape_idx = 2;
-        r_max = max(parameters(1:3));
-      elseif strcmp(shape, 'cone-tipped-cylinder')
-        shape_idx = 3;
-        r_max = sqrt(parameters(1)^2 + parameters(2)^2/4.0);
-        r_max = max(r_max, parameters(2)/2.0 + parameters(3));
-      elseif strcmp(shape, 'cube')
-        error('Not yet implemented');
-      else
-        error('Unsupported shape type');
+      if ischar(shape)
+        shape = ott.shapes.Shape.simple(shape, parameters);
+      end
+
+      % Check the particle is star shaped
+      if ~isa(shape, 'ott.shapes.StarShape')
+        error('Only star shaped particles supported for now');
+      end
+
+      % Check that the particle is rotationally symmetric
+      axsym = shape.axialSymmetry();
+      if axsym(3) ~= 0
+        error('Only axially symetric particles supported for now');
       end
 
       % Parse optional parameters
@@ -77,48 +69,22 @@ classdef TmatrixEbcm < ott.Tmatrix
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)
         k_medium = ott.Tmatrix.parser_k_medium(p, 2*pi);
-        Nmax = ott.utils.ka2nmax(r_max * k_medium);
+        Nmax = ott.utils.ka2nmax(shape.maxRadius * k_medium);
       else
         Nmax = p.Results.Nmax;
       end
 
-      % Determine if we have rotational symetry
-      [~,~,rotational_symmetry] = ott.utils.shapesurface(...
-          [],[],shape_idx,parameters);
+      % Get the boudnary points
+      [rtp,n,ds] = shape.boundarypoints('Nmax', Nmax);
 
-      if rotational_symmetry ~= 1 && rotational_symmetry ~= 2
-        error('Non axis symetric shapes not yet supported');
-      end
+      % Get the z-axis mirror symmetry and rotational symmetry
+      [~, ~, z_rotational_symmetry] = shape.axialSymmetry();
+      [~, ~, z_mirror_symmetry] = shape.mirrorSymmetry();
 
-      % Handle different shapes (again)
-      if strcmpi(shape, 'ellipsoid') || strcmpi(shape, 'sphere')
-        % TODO: Can this be optimised?
-        [theta,phi] = ott.utils.angulargrid(4*(Nmax + 2),1);
-        [r,~] = ott.utils.shapesurface(theta,phi,shape_idx,parameters);
-        [rho, ~, z] = ott.utils.rtp2xyz(r, theta, phi);
-      elseif strcmp(shape, 'cylinder')
-        rho = parameters(1) * [ 0, 1, 1, 0 ];
-        z = parameters(2)/2.0 * [ 1, 1, -1, -1 ];
-      elseif strcmp(shape, 'superellipsoid')
-        % TODO: Can this be optimised?
-        [theta,phi] = ott.utils.angulargrid(4*(Nmax + 2),1);
-        [r,~] = ott.utils.shapesurface(theta,phi,shape_idx,parameters);
-        [rho, ~, z] = ott.utils.rtp2xyz(r, theta, phi);
-      elseif strcmp(shape, 'cone-tipped-cylinder')
-        rho = parameters(1) * [ 0, 1, 1, 0 ];
-        z = parameters(2)/2.0 * [ 1, 1, -1, -1 ] ...
-            + parameters(3) * [ 1, 0, 0, 1 ];
-      elseif strcmp(shape, 'cube')
-        error('Not yet implemented');
-      else
-        error('Unsupported shape type');
-      end
-
-      [rtp,n,ds]=ott.utils.axisym_boundarypoints(Nmax,rho,z);
-
-      % TODO: What does inputParser do with duplicate parameters?
+      % Calculate the T-matrix using EBCM
       tmatrix = ott.TmatrixEbcm(rtp, n, ds, varargin{:}, 'Nmax', Nmax, ...
-          'rotational_symmetry', rotational_symmetry);
+          'rotational_symmetry', z_rotational_symmetry, ...
+          'z_mirror_symmetry', z_mirror_symmetry);
     end
   end
 
@@ -155,6 +121,9 @@ classdef TmatrixEbcm < ott.Tmatrix
       %  TMATRIXEBCM(..., 'rotational_symmetry', sym) if true the particle
       %  is assumed to be rotationally symmetric about the z-axis and
       %  phi must be all the same angle.
+      %
+      %  TMATRIXEBCM(..., 'z_rotational_symmetry', sym) if true, the particle
+      %  is assumed to be mirror symmetric about the xy-plane.
 
       tmatrix = tmatrix@ott.Tmatrix();
 
@@ -169,7 +138,8 @@ classdef TmatrixEbcm < ott.Tmatrix
       p.addParameter('index_particle', []);
       p.addParameter('index_relative', []);
       p.addParameter('wavelength0', []);
-      p.addParameter('rotational_symmetry', false);
+      p.addParameter('rotational_symmetry', 1);
+      p.addParameter('z_mirror_symmetry', false);
       p.parse(varargin{:});
 
       % Store inputs k_medium and k_particle
@@ -183,17 +153,15 @@ classdef TmatrixEbcm < ott.Tmatrix
         Nmax = p.Results.Nmax;
       end
 
-      if p.Results.rotational_symmetry == false
+      % Check that the particle is rotationally symmetric
+      if p.Results.rotational_symmetry ~= 0
         % TODO: Add support for non axis symetric particles
         error('Only axis symetric particles supported');
       end
-      
+
       [~,~,z] = ott.utils.rtp2xyz(rtp);
 
-      mirrorsym=0;
-      if sqrt(sum(abs(flipud(-z(:))./z(:)-1).^2))/length(z)<1e-15
-          mirrorsym=1;
-      end
+      mirrorsym = p.Results.z_mirror_symmetry;
 
       %%%% set up containters
       Y=cell(Nmax,1);
