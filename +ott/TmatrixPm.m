@@ -211,6 +211,9 @@ classdef TmatrixPm < ott.Tmatrix
 
       tmatrix = tmatrix@ott.Tmatrix();
 
+      % TODO: Different T and T2 size
+      % TODO: Different row/column Nmax
+
       % Parse inputs
       p = inputParser;
       p.addParameter('Nmax', []);
@@ -305,11 +308,45 @@ classdef TmatrixPm < ott.Tmatrix
         end
       else
 
-        % No rotational or mirror symmetry
+        if p.Results.z_mirror_symmetry
 
-        Tcol = coeff_matrix \ incident_wave_matrix;
-        T = Tcol(1:2*total_orders,:);
-        T2 = Tcol((1+2*total_orders):4*total_orders,:);
+          % Only mirror symmetry
+          % Parity is conserved, even modes go to even modes, etc.
+          % Reference: https://arxiv.org/pdf/physics/0702045.pdf
+
+          T = sparse(2*total_orders,2*total_orders);
+          T2 = sparse(2*total_orders,2*total_orders);
+
+          [n, m] = ott.utils.combined_index((1:total_orders).');
+          even_modes = logical(mod(n + m, 2));
+          modes = [ even_modes; ~even_modes ];
+
+          % This is for future, using different T and T2 size
+          imodes = modes;
+          omodes = modes;
+          iomodes = [ omodes; imodes ];
+
+          % Solve for the even scattered modes
+          incident_wave_vectors = incident_wave_matrix(:, modes);
+          Tcol = coeff_matrix(:, iomodes) \ incident_wave_vectors;
+          T(omodes, modes) = Tcol(1:sum(omodes), :);
+          T2(imodes, modes) = Tcol((1+sum(omodes)):end, :);
+
+          % Solve for the odd scattered modes
+          incident_wave_vectors = incident_wave_matrix(:, ~modes);
+          Tcol = coeff_matrix(:, ~iomodes) \ incident_wave_vectors;
+          T(~omodes, ~modes) = Tcol(1:sum(~omodes),:);
+          T2(~imodes, ~modes) = Tcol((1+sum(~omodes)):end,:);
+
+        else
+
+          % No rotational or mirror symmetry
+
+          Tcol = coeff_matrix \ incident_wave_matrix;
+          T = Tcol(1:2*total_orders,:);
+          T2 = Tcol((1+2*total_orders):4*total_orders,:);
+
+        end
       end
 
       % Store the T-matrix data
