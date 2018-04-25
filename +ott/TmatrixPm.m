@@ -269,6 +269,11 @@ classdef TmatrixPm < ott.Tmatrix
 
       % Generate T-matrix
 
+      % TODO: Mirror symmetry with rotational symmetry
+      % TODO: Change grid in shape functions (we can calculate the
+      %     grid using the result of the symmetry function).
+      % TODO: Simplify mirrorSymmetry shape functions, mod(axisym, 2)
+
       if p.Results.z_rotational_symmetry == 0
 
         % Infinite rotational symmetry
@@ -276,36 +281,57 @@ classdef TmatrixPm < ott.Tmatrix
         T = sparse(2*total_orders,2*total_orders);
         T2 = sparse(2*total_orders,2*total_orders);
 
-        for n = 1:Nmax
-          for m = -n:n
+        [n, m] = ott.utils.combined_index((1:total_orders).');
 
-            ci = combined_index(n,m);
+        for mi = -Nmax:Nmax
 
-            number_of_nm = 1 + Nmax - max(abs(m),1);
-            nm_to_use = combined_index(max(abs(m),1):Nmax, ...
-                ones(1,number_of_nm)*m);
-            nm_to_use = [ nm_to_use nm_to_use+total_orders ];
-            all_indices = [ nm_to_use  nm_to_use+2*total_orders ];
+          % Scattered modes have the same m as incident modes
+          axial_modes = m == mi;
+          modes = [ axial_modes; axial_modes ];
 
-            incident_wave_vector = incident_wave_matrix(:,ci);
-            Tcol = coeff_matrix(:,all_indices) \ incident_wave_vector;
-            T(nm_to_use,ci) = Tcol(1:(2*number_of_nm),1);
-            T2(nm_to_use,ci) = Tcol((1+2*number_of_nm):(4*number_of_nm),1);
+          % This is for future, using different T and T2 size
+          imodes = modes;
+          omodes = modes;
+          iomodes = [ omodes; imodes ];
 
-            incident_wave_vector = incident_wave_matrix(:,ci+total_orders);
-            Tcol = coeff_matrix(:,all_indices) \ incident_wave_vector;
-            T(nm_to_use,ci+total_orders) = Tcol(1:(2*number_of_nm),1);
-            T2(nm_to_use,ci+total_orders) = ...
-                Tcol((1+2*number_of_nm):(4*number_of_nm),1);
+          % Scatter the modes
+          incident_wave_vectors = incident_wave_matrix(:, modes);
+          Tcol = coeff_matrix(:, iomodes) \ incident_wave_vectors;
+          T(omodes, modes) = Tcol(1:sum(omodes), :);
+          T2(imodes, modes) = Tcol((1+sum(omodes)):end, :);
 
-            % Output progress
-            if progress(2) ~= 0 && mod(ci, progress(2)) == 0
-              disp(['TmatrixPM:point_matching (' num2str(ci) '/' ...
-                  num2str(total_orders) ') ' ...
-                  num2str(floor(ci/total_orders*100.0)) '%']);
-            end
-          end
         end
+
+      elseif p.Results.z_rotational_symmetry ~= 1
+
+        % Discrete rotational symmetry
+
+        T = sparse(2*total_orders,2*total_orders);
+        T2 = sparse(2*total_orders,2*total_orders);
+
+        [n, m] = ott.utils.combined_index((1:total_orders).');
+
+        for mi = -Nmax:Nmax
+
+          % Calculate which modes preseve symmetry, m = +/- ip
+          axial_modes = mod(m - mi, p.Results.z_rotational_symmetry) == 0;
+          incm_modes = m == mi;
+          modes = [ axial_modes; axial_modes ];
+          imodes = [ incm_modes; incm_modes ];
+
+          % This is for future, using different T and T2 size
+          emodes = modes;
+          omodes = modes;
+          iomodes = [ omodes; emodes ];
+
+          % Scatter the modes
+          incident_wave_vectors = incident_wave_matrix(:, imodes);
+          Tcol = coeff_matrix(:, iomodes) \ incident_wave_vectors;
+          T(omodes, imodes) = Tcol(1:sum(omodes), :);
+          T2(emodes, imodes) = Tcol((1+sum(omodes)):end, :);
+
+        end
+
       else
 
         if p.Results.z_mirror_symmetry
