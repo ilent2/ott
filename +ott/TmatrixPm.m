@@ -76,10 +76,16 @@ classdef TmatrixPm < ott.Tmatrix
         Nmax = ott.utils.ka2nmax(shape.maxRadius * k_medium);
       else
         Nmax = p.Results.Nmax;
+
+        % We only support square matricies for now
+        if numel(Nmax) ~= 1
+          Nmax = max(Nmax(:));
+        end
       end
 
-      % Get the rotational symmetry of the shape
+      % Get the symmetry of the shape
       [~,~, z_rotational_symmetry] = shape.axialSymmetry();
+      [~,~, z_mirror_symmetry] = shape.mirrorSymmetry();
 
       % Get the coordinates of the shape
       rtp = shape.angulargrid(Nmax);
@@ -89,7 +95,7 @@ classdef TmatrixPm < ott.Tmatrix
       % be before the replacements for varargin.
       tmatrix = ott.TmatrixPm(rtp, normals, varargin{:}, ...
           'Nmax', Nmax, ...
-          'mirror_symmetry', shape.mirrorSymmetry(), ...
+          'z_mirror_symmetry', z_mirror_symmetry, ...
           'z_rotational_symmetry', z_rotational_symmetry);
     end
   end
@@ -97,11 +103,15 @@ classdef TmatrixPm < ott.Tmatrix
   methods (Access=protected)
 
     function [coeff_matrix, incident_wave_matrix] = setup(tmatrix, ...
-        Nmax, r, theta, phi, normals, progress)
+        Nmax, rtp, normals, progress)
       % SETUP calculates the coefficient and incident wave matrices
 
-      npoints = length(theta);
+      npoints = size(rtp, 1);
       total_orders = ott.utils.combined_index(Nmax, Nmax);
+
+      r = rtp(:, 1);
+      theta = rtp(:, 2);
+      phi = rtp(:, 3);
 
       % 3 vector components at each point, c/d,p/q coefficient per order
       coeff_matrix = zeros(6*npoints,4*total_orders);
@@ -197,7 +207,7 @@ classdef TmatrixPm < ott.Tmatrix
       %  is assumed to be rotationally symmetric about the z-axis and
       %  phi must be all the same angle.
       %
-      %  TMATRIXPM(..., 'mirror_symmetry', sym) not yet implemented.
+      %  TMATRIXPM(..., 'z_mirror_symmetry', sym) not yet implemented.
 
       tmatrix = tmatrix@ott.Tmatrix();
 
@@ -214,7 +224,7 @@ classdef TmatrixPm < ott.Tmatrix
       p.addParameter('wavelength0', []);
       p.addParameter('internal', false);
       p.addParameter('z_rotational_symmetry', false);
-      p.addParameter('mirror_symmetry', false);
+      p.addParameter('z_mirror_symmetry', false);
       p.addParameter('progress', []);
       p.parse(varargin{:});
 
@@ -224,14 +234,15 @@ classdef TmatrixPm < ott.Tmatrix
 
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)
-        Nmax = ka2nmax(max(r) * tmatrix.k_medium);
+        Nmax = ka2nmax(max(rtp(:, 1)) * tmatrix.k_medium);
       else
         Nmax = p.Results.Nmax;
-      end
 
-      r = rtp(:, 1);
-      theta = rtp(:, 2);
-      phi = rtp(:, 3);
+        % We only support square matricies for now
+        if numel(Nmax) ~= 1
+          Nmax = max(Nmax(:));
+        end
+      end
 
       % Parse progress input
       if ~isempty(p.Results.progress)
@@ -247,29 +258,26 @@ classdef TmatrixPm < ott.Tmatrix
 
       % Calculate coefficient and incident wave matrices
       [coeff_matrix, incident_wave_matrix] = tmatrix.setup(...
-          Nmax, r, theta, phi, normals, progress(1));
+          Nmax, rtp, normals, progress(1));
 
-      npoints = length(theta);
       total_orders = ott.utils.combined_index(Nmax, Nmax);
-
-      if p.Results.z_rotational_symmetry == 0
-         T = sparse(2*total_orders,2*total_orders);
-         T2 = sparse(2*total_orders,2*total_orders);
-      else
-         T = zeros(2*total_orders,2*total_orders);
-         T2 = zeros(2*total_orders,2*total_orders);
-      end
 
       import ott.utils.*
 
       % Generate T-matrix
-      for n = 1:Nmax
 
-        for m = -n:n
+      if p.Results.z_rotational_symmetry == 0
 
-          ci = combined_index(n,m);
+        % Infinite rotational symmetry
 
-          if p.Results.z_rotational_symmetry == 0
+        T = sparse(2*total_orders,2*total_orders);
+        T2 = sparse(2*total_orders,2*total_orders);
+
+        for n = 1:Nmax
+          for m = -n:n
+
+            ci = combined_index(n,m);
+
             number_of_nm = 1 + Nmax - max(abs(m),1);
             nm_to_use = combined_index(max(abs(m),1):Nmax, ...
                 ones(1,number_of_nm)*m);
@@ -286,24 +294,22 @@ classdef TmatrixPm < ott.Tmatrix
             T(nm_to_use,ci+total_orders) = Tcol(1:(2*number_of_nm),1);
             T2(nm_to_use,ci+total_orders) = ...
                 Tcol((1+2*number_of_nm):(4*number_of_nm),1);
-          else
-            incident_wave_vector = incident_wave_matrix(:,ci);
-            Tcol = coeff_matrix \ incident_wave_vector;
-            T(:,ci) = Tcol(1:2*total_orders,1);
-            T2(:,ci) = Tcol((1+2*total_orders):4*total_orders,1);
 
-            incident_wave_vector = incident_wave_matrix(:,ci+total_orders);
-            Tcol = coeff_matrix \ incident_wave_vector;
-            T(:,ci+total_orders) = Tcol(1:2*total_orders,1);
-            T2(:,ci+total_orders) = Tcol((1+2*total_orders):4*total_orders,1);
-          end
-
-          % Output progress
-          if ~isempty(p.Results.progress) && mod(ci, progress(2)) == 0
-            disp(['TmatrixPM:point_matching... ' ...
-                num2str(floor(ci/combined_index(Nmax, Nmax)*100.0)) '%']);
+            % Output progress
+            if progress(2) ~= 0 && mod(ci, progress(2)) == 0
+              disp(['TmatrixPM:point_matching (' num2str(ci) '/' ...
+                  num2str(total_orders) ') ' ...
+                  num2str(floor(ci/total_orders*100.0)) '%']);
+            end
           end
         end
+      else
+
+        % No rotational or mirror symmetry
+
+        Tcol = coeff_matrix \ incident_wave_matrix;
+        T = Tcol(1:2*total_orders,:);
+        T2 = Tcol((1+2*total_orders):4*total_orders,:);
       end
 
       % Store the T-matrix data
