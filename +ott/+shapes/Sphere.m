@@ -75,7 +75,7 @@ classdef Sphere < ott.shapes.StarShape & ott.shapes.AxisymShape
       end
     end
 
-    function varargout = angulargrid(shape, Nmax)
+    function varargout = angulargrid(shape, varargin)
       % ANGULARGRID calculate the angular grid and radii for the shape
       %
       % This is the default function with no symmetry optimisations.
@@ -85,8 +85,34 @@ classdef Sphere < ott.shapes.StarShape & ott.shapes.AxisymShape
       %
       % rtp = ANGULARGRID(Nmax) or [r, theta, phi] = ANGULARGRID(Nmax)
       % calculate the radii for the locations theta, phi.
+      %
+      % ANGULARGRID() uses a default Nmax of 100.
+      %
+      % ANGULARGRID(..., 'full', full) calculates
+      % an angular grid over the full sphere.
+      %
+      % ANGULARGRID(..., 'size', ntheta) uses ntheta for the number
+      % of points instead of Nmax for angular grid.
 
-      ntheta = 4*(Nmax + 2);
+      p = inputParser;
+      p.addOptional('Nmax', 100);
+      p.addParameter('full', false);
+      p.addParameter('size', []);
+      p.parse(varargin{:});
+
+      % Call the base class for full angular grid
+      if p.Results.full
+        [varargout{1:nargout}] = angulargrid@ott.shapes.StarShape(...
+            shape, varargin{:});
+        return;
+      end
+
+      % Calculate number of points for grid
+      if isempty(p.Results.size)
+        ntheta = 4*(p.Results.Nmax + 2);
+      else
+        ntheta = p.Results.size;
+      end
       nphi = 1;
 
       % TODO: There is also mirror symmetry

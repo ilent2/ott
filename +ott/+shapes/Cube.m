@@ -71,7 +71,7 @@ classdef Cube < ott.shapes.StarShape
       nxyz = nxyz ./ sqrt(dot(nxyz, nxyz, 2));
     end
 
-    function xyz = locations(shape, theta, phi)
+    function varargout = locations(shape, theta, phi)
       % LOCATIONS calculate the Cartessian coordinate locations
 
       theta = theta(:);
@@ -90,6 +90,14 @@ classdef Cube < ott.shapes.StarShape
       xyz(zplane, :) = xyz(zplane, :) ./ abs(xyz(zplane, 3));
 
       xyz = shape.width .* xyz / 2.0;
+      
+      if nargout == 1
+        varargout{1} = xyz;
+      else
+        varargout{1} = xyz(:, 1);
+        varargout{2} = xyz(:, 2);
+        varargout{3} = xyz(:, 3);
+      end
     end
 
     function r = radii(shape, theta, phi)
