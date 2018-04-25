@@ -116,6 +116,8 @@ classdef Superellipsoid < ott.shapes.StarShape
     function varargout = axialSymmetry(shape)
       % Return the axial symmetry for the particle
 
+      % TODO: Does this shape need a mirrorSymmetry function?
+
       % TODO: Fix these up
       bc = 1;
       ac = 1;
@@ -134,21 +136,6 @@ classdef Superellipsoid < ott.shapes.StarShape
         varargout{1} = bc;
         varargout{2} = ac;
         varargout{3} = ab;
-      end
-    end
-
-    function varargout = mirrorSymmetry(shape)
-      % Return the mirror symmetry for the particle
-
-      % TODO: Fix these up
-      vals = [ false, false, false ];
-
-      if nargout == 1
-        varargout{1} = vals;
-      else
-        varargout{1} = vals(1);
-        varargout{2} = vals(2);
-        varargout{3} = vals(3);
       end
     end
   end

@@ -269,11 +269,6 @@ classdef TmatrixPm < ott.Tmatrix
 
       % Generate T-matrix
 
-      % TODO: Mirror symmetry with rotational symmetry
-      % TODO: Change grid in shape functions (we can calculate the
-      %     grid using the result of the symmetry function).
-      % TODO: Simplify mirrorSymmetry shape functions, mod(axisym, 2)
-
       if p.Results.z_rotational_symmetry == 0
 
         % Infinite rotational symmetry
@@ -290,15 +285,47 @@ classdef TmatrixPm < ott.Tmatrix
           modes = [ axial_modes; axial_modes ];
 
           % This is for future, using different T and T2 size
-          imodes = modes;
+          emodes = modes;
           omodes = modes;
-          iomodes = [ omodes; imodes ];
+          iomodes = [ omodes; emodes ];
 
-          % Scatter the modes
-          incident_wave_vectors = incident_wave_matrix(:, modes);
-          Tcol = coeff_matrix(:, iomodes) \ incident_wave_vectors;
-          T(omodes, modes) = Tcol(1:sum(omodes), :);
-          T2(imodes, modes) = Tcol((1+sum(omodes)):end, :);
+          if p.Results.z_mirror_symmetry
+
+            % Correct the incident modes to include even/odd modes
+            even_modes = logical(mod(n + mi, 2));
+            imodes_evn = modes & [ even_modes; ~even_modes ];
+            imodes_odd = modes & [ ~even_modes; even_modes ];
+
+            % Correct the outgoing modes to include even/odd modes
+            even_modes = logical(mod(n + m, 2));
+            omodes_evn = omodes & [ even_modes; ~even_modes ];
+            omodes_odd = omodes & [ ~even_modes; even_modes ];
+            emodes_evn = emodes & [ even_modes; ~even_modes ];
+            emodes_odd = emodes & [ ~even_modes; even_modes ];
+            iomodes_evn = [ omodes_evn; emodes_evn ];
+            iomodes_odd = [ omodes_odd; emodes_odd ];
+
+            % Solve for the even scattered modes
+            incident_wave_vectors = incident_wave_matrix(:, imodes_evn);
+            Tcol = coeff_matrix(:, iomodes_evn) \ incident_wave_vectors;
+            T(omodes_evn, imodes_evn) = Tcol(1:sum(omodes_evn), :);
+            T2(emodes_evn, imodes_evn) = Tcol((1+sum(omodes_evn)):end, :);
+
+            % Solve for the even scattered modes
+            incident_wave_vectors = incident_wave_matrix(:, imodes_odd);
+            Tcol = coeff_matrix(:, iomodes_odd) \ incident_wave_vectors;
+            T(omodes_odd, imodes_odd) = Tcol(1:sum(omodes_odd), :);
+            T2(emodes_odd, imodes_odd) = Tcol((1+sum(omodes_odd)):end, :);
+
+          else
+
+            % Scatter the modes
+            incident_wave_vectors = incident_wave_matrix(:, modes);
+            Tcol = coeff_matrix(:, iomodes) \ incident_wave_vectors;
+            T(omodes, modes) = Tcol(1:sum(omodes), :);
+            T2(emodes, modes) = Tcol((1+sum(omodes)):end, :);
+
+          end
 
         end
 
@@ -324,11 +351,43 @@ classdef TmatrixPm < ott.Tmatrix
           omodes = modes;
           iomodes = [ omodes; emodes ];
 
-          % Scatter the modes
-          incident_wave_vectors = incident_wave_matrix(:, imodes);
-          Tcol = coeff_matrix(:, iomodes) \ incident_wave_vectors;
-          T(omodes, imodes) = Tcol(1:sum(omodes), :);
-          T2(emodes, imodes) = Tcol((1+sum(omodes)):end, :);
+          if p.Results.z_mirror_symmetry
+
+            % Correct the incident modes to include even/odd modes
+            even_modes = logical(mod(n + mi, 2));
+            imodes_evn = modes & [ even_modes; ~even_modes ];
+            imodes_odd = modes & [ ~even_modes; even_modes ];
+
+            % Correct the outgoing modes to include even/odd modes
+            even_modes = logical(mod(n + m, 2));
+            omodes_evn = omodes & [ even_modes; ~even_modes ];
+            omodes_odd = omodes & [ ~even_modes; even_modes ];
+            emodes_evn = emodes & [ even_modes; ~even_modes ];
+            emodes_odd = emodes & [ ~even_modes; even_modes ];
+            iomodes_evn = [ omodes_evn; emodes_evn ];
+            iomodes_odd = [ omodes_odd; emodes_odd ];
+
+            % Solve for the even scattered modes
+            incident_wave_vectors = incident_wave_matrix(:, imodes_evn);
+            Tcol = coeff_matrix(:, iomodes_evn) \ incident_wave_vectors;
+            T(omodes_evn, imodes_evn) = Tcol(1:sum(omodes_evn), :);
+            T2(emodes_evn, imodes_evn) = Tcol((1+sum(omodes_evn)):end, :);
+
+            % Solve for the even scattered modes
+            incident_wave_vectors = incident_wave_matrix(:, imodes_odd);
+            Tcol = coeff_matrix(:, iomodes_odd) \ incident_wave_vectors;
+            T(omodes_odd, imodes_odd) = Tcol(1:sum(omodes_odd), :);
+            T2(emodes_odd, imodes_odd) = Tcol((1+sum(omodes_odd)):end, :);
+
+          else
+
+            % Scatter the modes
+            incident_wave_vectors = incident_wave_matrix(:, imodes);
+            Tcol = coeff_matrix(:, iomodes) \ incident_wave_vectors;
+            T(omodes, imodes) = Tcol(1:sum(omodes), :);
+            T2(emodes, imodes) = Tcol((1+sum(omodes)):end, :);
+
+          end
 
         end
 

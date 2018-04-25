@@ -8,7 +8,6 @@ classdef AxisymShape < ott.shapes.Shape
 %   radii           Calculates the particle radii for angular coordinates
 %   normals         Calculates the particle normals for angular coorindates
 %   axialSymmetry   Returns x, y, z rotational symmetry (0 for infinite)
-%   mirrorSymmetry  Returns x, y, z mirror symmetry
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -24,7 +23,6 @@ classdef AxisymShape < ott.shapes.Shape
     radii(shape, theta, phi);
     normals(shape, theta, phi);
     axialSymmetry(shape);
-    mirrorSymmetry(shape);
 
     get_perimiter(shape, varargin);
   end

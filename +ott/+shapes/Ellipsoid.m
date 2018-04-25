@@ -126,17 +126,5 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
         varargout{3} = ab;
       end
     end
-
-    function varargout = mirrorSymmetry(shape)
-      % Return the mirror symmetry for the particle
-
-      if nargout == 1
-        varargout{1} = [ true, true, true ];
-      else
-        varargout{1} = true;
-        varargout{2} = true;
-        varargout{3} = true;
-      end
-    end
   end
 end

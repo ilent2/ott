@@ -21,12 +21,33 @@ classdef StarShape < ott.shapes.Shape
     radii(shape, theta, phi);
     normals(shape, theta, phi);
     axialSymmetry(shape);
-    mirrorSymmetry(shape);
 
     get_maxRadius(shape, varargin);
   end
 
   methods
+
+    function varargout = mirrorSymmetry(shape)
+      % Return the mirror symmetry for the particle
+      %
+      % Tries to determine the objects mirror symmetry from the
+      % axialSymmetry.  Should be overridden for more complex objects.
+
+      % First calculate the axial symmetry
+      axialSym = shape.axialSymmetry();
+      orthSym = mod(axialSym, 2) == 0;
+      mirrorSym = [ orthSym(2) | orthSym(3), ...
+          orthSym(1) | orthSym(3), orthSym(1) | orthSym(2) ];
+
+      if nargout == 1
+        varargout{1} = mirrorSym;
+      else
+        varargout{1} = mirrorSym(1);
+        varargout{2} = mirrorSym(2);
+        varargout{3} = mirrorSym(3);
+      end
+    end
+
     function r = get.maxRadius(shape)
       % Get the particle max radius
       r = shape.get_maxRadius();
@@ -114,15 +135,53 @@ classdef StarShape < ott.shapes.Shape
       p.parse(varargin{:});
 
       if isempty(p.Results.size)
+
+        % OTTv1 used something like the following, use it for now
+        % until we can think of something better.
+
         ntheta = 2*(p.Results.Nmax + 2);
         nphi = 3*(p.Results.Nmax + 2) + 1;
+
+        if ~p.Results.full
+
+          [~, ~, z_axial_symmetry] = shape.axialSymmetry();
+          if z_axial_symmetry == 0
+            ntheta = 4*(p.Results.Nmax + 2);
+            nphi = 1;
+          else
+            nphi = round(nphi / z_axial_symmetry);
+          end
+
+          [~, ~, z_mirror_symmetry] = shape.mirrorSymmetry();
+          if z_mirror_symmetry
+            ntheta = round(ntheta / 2);
+          end
+        end
       else
         ntheta = p.Results.size(1);
         nphi = p.Results.size(2);
       end
 
+      % Special case for inifite axial symmetry
+      [~, ~, z_axial_symmetry] = shape.axialSymmetry();
+      if ~p.Results.full && z_axial_symmetry == 0
+        nphi = 1;
+      end
+
       % Calculate the angular grid
       [theta, phi] = ott.utils.angulargrid(ntheta, nphi);
+
+      % Reduce the grid using z-symmetry and mirror symmetry
+      if ~p.Results.full
+        [~, ~, z_mirror_symmetry] = shape.mirrorSymmetry();
+        if z_mirror_symmetry
+          theta = theta / 2.0;    % [0, pi] -> [0, pi/2]
+        end
+
+        if z_axial_symmetry > 1
+          phi = phi / z_axial_symmetry;  % [0, 2pi] -> [0, 2pi/p]
+        end
+      end
 
       if nargout == 2
         varargout{1} = theta;
