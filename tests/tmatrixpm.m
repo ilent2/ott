@@ -150,3 +150,97 @@ function testSphereRot4Sym(testCase)
       'T-matrix does not match Mie T-matrix within tolerance (mirror)');
 
 end
+
+function testCube(testCase)
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+
+  % Only seems to work to about 1% agreement (good enough)
+  tol = 1.0e-1;
+
+  % Turn off warnings
+  warning('off', 'MATLAB:rankDeficientMatrix');
+
+  shape = ott.shapes.Shape.simple('cube', 1.0);
+  Nmax = 15;
+  aNmax = 20;
+
+  % 4th order rotational symmetry and no mirror
+  z_rotational_symmetry = 4;
+  z_mirror_symmetry = false;
+
+  rtp = shape.angulargrid(aNmax, 'full', true);
+  rtp = rtp(rtp(:, 3) < pi/2, :);
+  normals = shape.normals(rtp(:, 2), rtp(:, 3));
+
+  T1 = ott.TmatrixPm(rtp, normals, ...
+      'index_relative', 1.2, ...
+      'Nmax', Nmax, ...
+      'z_mirror_symmetry', z_mirror_symmetry, ...
+      'z_rotational_symmetry', z_rotational_symmetry);
+
+  % 1st order rotational symmetry and no mirror
+  z_rotational_symmetry = 1;
+  z_mirror_symmetry = false;
+
+  rtp = shape.angulargrid(aNmax, 'full', true);
+  normals = shape.normals(rtp(:, 2), rtp(:, 3));
+
+  T2 = ott.TmatrixPm(rtp, normals, ...
+      'index_relative', 1.2, ...
+      'Nmax', Nmax, ...
+      'z_mirror_symmetry', z_mirror_symmetry, ...
+      'z_rotational_symmetry', z_rotational_symmetry);
+
+  % 4th order rotational symmetry and mirror
+  z_rotational_symmetry = 4;
+  z_mirror_symmetry = true;
+
+  rtp = shape.angulargrid(aNmax, 'full', true);
+  rtp = rtp(rtp(:, 2) < pi/2, :);
+  rtp = rtp(rtp(:, 3) < pi/2, :);
+  normals = shape.normals(rtp(:, 2), rtp(:, 3));
+
+  T3 = ott.TmatrixPm(rtp, normals, ...
+      'index_relative', 1.2, ...
+      'Nmax', Nmax, ...
+      'z_mirror_symmetry', z_mirror_symmetry, ...
+      'z_rotational_symmetry', z_rotational_symmetry);
+
+  % 1st order rotational symmetry and mirror
+  z_rotational_symmetry = 1;
+  z_mirror_symmetry = true;
+
+  rtp = shape.angulargrid(aNmax, 'full', true);
+  rtp = rtp(rtp(:, 2) < pi/2, :);
+  normals = shape.normals(rtp(:, 2), rtp(:, 3));
+
+  T4 = ott.TmatrixPm(rtp, normals, ...
+      'index_relative', 1.2, ...
+      'Nmax', Nmax, ...
+      'z_mirror_symmetry', z_mirror_symmetry, ...
+      'z_rotational_symmetry', z_rotational_symmetry);
+
+  %% Verifications
+
+  testCase.verifyThat(T1.Nmax, IsEqualTo([Nmax, Nmax]), ...
+      'Nmax does not match (1)');
+  testCase.verifyThat(T2.Nmax, IsEqualTo([Nmax, Nmax]), ...
+      'Nmax does not match (2)');
+  testCase.verifyThat(T3.Nmax, IsEqualTo([Nmax, Nmax]), ...
+      'Nmax does not match (3)');
+  testCase.verifyThat(T4.Nmax, IsEqualTo([Nmax, Nmax]), ...
+      'Nmax does not match (4)');
+
+  testCase.verifyThat(T2.data, IsEqualTo(full(T1.data), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'T-matrix does not match (2)');
+  testCase.verifyThat(T3.data, IsEqualTo(T1.data, ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'T-matrix does not match (3)');
+  testCase.verifyThat(T4.data, IsEqualTo(T1.data, ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'T-matrix does not match (4)');
+
+end
