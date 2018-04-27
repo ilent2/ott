@@ -185,6 +185,7 @@ classdef TmatrixMie < ott.Tmatrix
         tmatrix = ott.TmatrixMie(shape.maxRadius, varargin{:});
       elseif ischar(shape) && strcmpi(shape, 'sphere') ...
           && ~isempty(p.Results.parameters)
+        varargin = varargin(2:end);
         tmatrix = ott.TmatrixMie(p.Results.parameters, varargin{:});
       else
         error('Must input either Shape object or string and parameters');
@@ -250,6 +251,7 @@ classdef TmatrixMie < ott.Tmatrix
       p.addParameter('index_relative', []);
       p.addParameter('wavelength0', []);
       p.addParameter('internal', false);
+      p.addParameter('shrink', true);
       p.parse(varargin{:});
 
       % Store inputs: radius, k_medium, k_particle
@@ -269,22 +271,9 @@ classdef TmatrixMie < ott.Tmatrix
 
       % If Nmax not specified, choose a good Nmax
       if isempty(p.Results.Nmax)
-        if numel(tmatrix.radius) == 1
-          Nmax = ott.utils.ka2nmax(tmatrix.k_medium*radius);
-        else
-          Nmax = max(ott.utils.ka2nmax(tmatrix.k_medium*radius(end)), 100);
-        end
+        Nmax = ott.utils.ka2nmax(tmatrix.k_medium*radius(end));
       else
         Nmax = p.Results.Nmax;
-      end
-
-      % TODO: For layered spheres, can we resize Nmax after calculation?
-
-      % Calculate the T-matrix and store it
-      if numel(tmatrix.radius) == 1
-        tmatrix.data = tmatrix.tmatrix_mie(Nmax, p.Results.internal);
-      else
-        tmatrix.data = tmatrix.tmatrix_mie_layered(Nmax, p.Results.internal);
       end
 
       % Store the T-matrix type
@@ -292,6 +281,27 @@ classdef TmatrixMie < ott.Tmatrix
         tmatrix.type = 'scattered';
       else
         tmatrix.type = 'internal';
+      end
+
+      % Calculate the T-matrix and store it
+      if numel(tmatrix.radius) == 1
+        tmatrix.data = tmatrix.tmatrix_mie(Nmax, p.Results.internal);
+      else
+
+        % Layered method needs at least Nmax=100 (apparently)
+        if p.Results.shrink && isempty(p.Results.Nmax)
+          oldNmax = Nmax;
+          Nmax = max(100, Nmax);
+        end
+
+        % Calculate T-matrix
+        tmatrix.data = tmatrix.tmatrix_mie_layered(Nmax, p.Results.internal);
+
+        % Shrink T-matrix (required type to be already set)
+        if p.Results.shrink
+          tmatrix.Nmax = oldNmax;
+        end
+
       end
     end
   end
