@@ -49,54 +49,61 @@ p.addParameter('position', []);
 p.addParameter('rotation', []);
 p.parse(varargin{:});
 
-if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
-
-  position = [0;0;0];
-  npositions = 1;
-  if ~isempty(p.Results.position)
-    position = p.Results.position;
-    npositions = size(position, 2);
-  end
-
-  rotation = eye(3);
-  nrotations = 1;
-  if ~isempty(p.Results.rotation)
-    rotation = p.Results.rotation;
-    nrotations = size(rotation, 2)/3;
-  end
+if isa(sbeam, 'ott.Tmatrix')
 
   % Rename T-matrix
   T = sbeam;
-  T.type = 'scattered';
+  nparticles = numel(T);
+
+  npositions = max(1, size(p.Results.position, 2));
+  nrotations = max(1, size(p.Results.rotation, 2)/3);
+
+  % Ensure all T-matricies have appropriate type
+  for ii = 1:nparticles
+    T(ii).type = 'scattered';
+  end
 
   % Preallocate output
-  f = zeros(3, npositions*nrotations);
+  f = zeros(3*numel(T), npositions*nrotations);
   t = f;
   s = f;
 
   for ii = 1:npositions
+
+    position = [];
+    if ~isempty(p.Results.position)
+      position = p.Results.position(:, ii);
+    end
+
     for jj = 1:nrotations
+
+      rotation = [];
+      if ~isempty(p.Results.rotation)
+        rotation = p.Results.rotation(:, 3*(jj-1) + (1:3));
+      end
+
+      % Calculate the scattered beams and translated beam
       [sbeam, tbeam] = ibeam.scatter(T, ...
-          'position', position(:, ii), ...
-          'rotation', rotation(:, 3*(jj-1) + (1:3)));
+          'position', position, 'rotation', rotation);
+
       [fl,tl,sl] = ott.forcetorque(tbeam, sbeam);
-      f(:, (ii-1)*nrotations + jj) = fl;
-      t(:, (ii-1)*nrotations + jj) = tl;
-      s(:, (ii-1)*nrotations + jj) = sl;
+      f(:, (ii-1)*nrotations + jj) = fl(:);
+      t(:, (ii-1)*nrotations + jj) = tl(:);
+      s(:, (ii-1)*nrotations + jj) = sl(:);
     end
   end
 
   % Move output to appropriate locations
   if nargout > 3
-    fx = f(1, :);
-    fy = f(2, :);
-    fz = f(3, :);
-    tx = t(1, :);
-    ty = t(2, :);
-    tz = t(3, :);
-    sx = s(1, :);
-    sy = s(2, :);
-    sz = s(3, :);
+    fx = f(1*(1:nparticles), :);
+    fy = f(2*(1:nparticles), :);
+    fz = f(3*(1:nparticles), :);
+    tx = t(1*(1:nparticles), :);
+    ty = t(2*(1:nparticles), :);
+    tz = t(3*(1:nparticles), :);
+    sx = s(1*(1:nparticles), :);
+    sy = s(2*(1:nparticles), :);
+    sz = s(3*(1:nparticles), :);
   else
     fx = f;
     fy = t;
@@ -105,6 +112,11 @@ if ~isempty(p.Results.position) || ~isempty(p.Results.rotation)
 
   ott.warning('external');
   return;
+end
+
+% Check the number of beams in each input
+if ibeam.Nbeams ~= sbeam.Nbeams && ibeam.Nbeams ~= 1 && sbeam.Nbeams ~= 1
+  error('Beam objects must contain same number of beams or 1 beam');
 end
 
 % Ensure beams are the same size
@@ -129,10 +141,10 @@ q=1i*q;
 
 addv=zeros(2*nmax+3,1);
 
-at=[a;addv];
-bt=[b;addv];
-pt=[p;addv];
-qt=[q;addv];
+at=[a;repmat(addv, 1, size(a, 2))];
+bt=[b;repmat(addv, 1, size(b, 2))];
+pt=[p;repmat(addv, 1, size(p, 2))];
+qt=[q;repmat(addv, 1, size(q, 2))];
 
 ci=ott.utils.combined_index(n,m);
 
@@ -147,35 +159,35 @@ cimp1=ci+1;
 %this is for m+1... if m+1>n then we'll ignore!
 kimp=(m>n-1);
 
-anp1=at(cinp1);
-bnp1=bt(cinp1);
-pnp1=pt(cinp1);
-qnp1=qt(cinp1);
+anp1=at(cinp1, :);
+bnp1=bt(cinp1, :);
+pnp1=pt(cinp1, :);
+qnp1=qt(cinp1, :);
 
-anp1mp1=at(cinp1mp1);
-bnp1mp1=bt(cinp1mp1);
-pnp1mp1=pt(cinp1mp1);
-qnp1mp1=qt(cinp1mp1);
+anp1mp1=at(cinp1mp1, :);
+bnp1mp1=bt(cinp1mp1, :);
+pnp1mp1=pt(cinp1mp1, :);
+qnp1mp1=qt(cinp1mp1, :);
 
-anp1mm1=at(cinp1mm1);
-bnp1mm1=bt(cinp1mm1);
-pnp1mm1=pt(cinp1mm1);
-qnp1mm1=qt(cinp1mm1);
+anp1mm1=at(cinp1mm1, :);
+bnp1mm1=bt(cinp1mm1, :);
+pnp1mm1=pt(cinp1mm1, :);
+qnp1mm1=qt(cinp1mm1, :);
 
-amp1=at(cimp1);
-bmp1=bt(cimp1);
-pmp1=pt(cimp1);
-qmp1=qt(cimp1);
+amp1=at(cimp1, :);
+bmp1=bt(cimp1, :);
+pmp1=pt(cimp1, :);
+qmp1=qt(cimp1, :);
 
-amp1(kimp)=0;
-bmp1(kimp)=0;
-pmp1(kimp)=0;
-qmp1(kimp)=0;
+amp1(kimp, :)=0;
+bmp1(kimp, :)=0;
+pmp1(kimp, :)=0;
+qmp1(kimp, :)=0;
 
-a=a(ci);
-b=b(ci);
-p=p(ci);
-q=q(ci);
+a=a(ci, :);
+b=b(ci, :);
+p=p(ci, :);
+q=q(ci, :);
 
 Az=m./n./(n+1).*imag(-(a).*conj(b)+conj(q).*(p)); %this has the correct sign... farsund. modes match.
 Bz=1./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ... %.*n

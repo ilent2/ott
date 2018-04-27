@@ -42,7 +42,7 @@ classdef Bsc
   properties (Dependent)
     Nmax        % Size of beam vectors
     power       % Power of the beam
-    beams       % Number of beams in this Bsc object
+    Nbeams      % Number of beams in this Bsc object
   end
 
   methods (Abstract)
@@ -249,9 +249,17 @@ classdef Bsc
       beam.type = type;
     end
 
-    function beams = get.beams(beam)
+    function nbeams = get.Nbeams(beam)
       % get.beams get the number of beams in this object
-      beams = size(beam.a, 2);
+      nbeams = size(beam.a, 2);
+    end
+
+    function bsc = beam(bsc, idx)
+      % BEAM get beams from a beam array object
+      %
+      % BEAM(idx) idx can be a linear index or a logical array.
+      bsc.a = bsc.a(:, idx);
+      bsc.b = bsc.b(:, idx);
     end
 
     function nmax = get.Nmax(beam)
@@ -316,8 +324,8 @@ classdef Bsc
         amagA = full(sum(sum(abs(beam.a).^2)));
         bmagA = full(sum(sum(abs(beam.b).^2)));
 
-        beam.a = beam.a(1:total_orders);
-        beam.b = beam.b(1:total_orders);
+        beam.a = beam.a(1:total_orders, :);
+        beam.b = beam.b(1:total_orders, :);
 
         amagB = full(sum(sum(abs(beam.a).^2)));
         bmagB = full(sum(sum(abs(beam.b).^2)));
@@ -346,8 +354,8 @@ classdef Bsc
       elseif size(beam.a, 1) < total_orders
         [arow_index,acol_index,aa] = find(beam.a);
         [brow_index,bcol_index,ba] = find(beam.b);
-        beam.a = sparse(arow_index,acol_index,aa,total_orders,1);
-        beam.b = sparse(brow_index,bcol_index,ba,total_orders,1);
+        beam.a = sparse(arow_index,acol_index,aa,total_orders,beam.Nbeams);
+        beam.b = sparse(brow_index,bcol_index,ba,total_orders,beam.Nbeams);
       end
     end
 
@@ -512,7 +520,8 @@ classdef Bsc
 
       % Only do the rotation if we need it
       if (theta ~= 0 && abs(theta) ~= pi) || phi ~= 0
-        [beam, D] = beam.rotateYz(theta, phi);
+        [beam, D] = beam.rotateYz(theta, phi, ...
+            'Nmax', max(oNmax, beam.Nmax));
         [beam, A, B] = beam.translateZ(r, 'Nmax', oNmax);
 
         % The beam might change size, so readjust D to match
@@ -520,7 +529,8 @@ classdef Bsc
         D2 = D(1:sz, 1:sz);
         beam = D2' * beam;
       else
-        D = eye(size(beam.a, 1));
+        dnmax = max(oNmax, beam.Nmax);
+        D = eye(ott.utils.combined_index(dnmax, dnmax));
         if abs(theta) == pi
           r = -r;
         end
@@ -546,53 +556,70 @@ classdef Bsc
       end
     end
 
-    function [beam, D] = rotate(beam, R)
+    function [beam, D] = rotate(beam, R, varargin)
       %ROTATE apply the rotation matrix R to the beam coefficients
+      %
+      % [beam, D] = ROTATE(R) generates the wigner rotation matrix, D,
+      % to rotate the beam.  R is the Cartesian rotation matrix
+      % describing the rotation.  Returns the rotated beam and D.
+      %
+      % ROTATE(..., 'Nmax', nmax) specifies the Nmax for the
+      % rotation matrix.  The beam Nmax is unchanged.
+
+      p = inputParser;
+      p.addParameter('Nmax', beam.Nmax);
+      p.parse(varargin{:});
 
       % If no rotation, don't calculate wigner rotation matrix
       if sum(sum((eye(3) - R).^2)) < 1e-6
-        D = eye(size(beam.a, 1));
+        D = eye(ott.utils.combined_index(p.Results.Nmax, p.Results.Nmax));
         return;
       end
 
-      D = ott.utils.wigner_rotation_matrix(beam.Nmax, R);
-      beam = D * beam;
+      D = ott.utils.wigner_rotation_matrix(p.Results.Nmax, R);
+
+      sz = size(beam.a, 1);
+      D2 = D(1:sz, 1:sz);
+      beam = D2 * beam;
     end
 
-    function [beam, D] = rotateX(beam, angle)
+    function [beam, D] = rotateX(beam, angle, varargin)
       %ROTATEX rotates the beam about the x-axis an angle in radians
-      [beam, D] = beam.rotate(rotx(angle*180/pi));
+      [beam, D] = beam.rotate(rotx(angle*180/pi), varargin{:});
     end
 
-    function [beam, D] = rotateY(beam, angle)
+    function [beam, D] = rotateY(beam, angle, varargin)
       %ROTATEX rotates the beam about the y-axis an angle in radians
-      [beam, D] = beam.rotate(roty(angle*180/pi));
+      [beam, D] = beam.rotate(roty(angle*180/pi), varargin{:});
     end
 
-    function [beam, D] = rotateZ(beam, angle)
+    function [beam, D] = rotateZ(beam, angle, varargin)
       %ROTATEX rotates the beam about the z-axis an angle in radians
-      [beam, D] = beam.rotate(rotz(angle*180/pi));
+      [beam, D] = beam.rotate(rotz(angle*180/pi), varargin{:});
     end
 
-    function [beam, D] = rotateXy(beam, anglex, angley)
+    function [beam, D] = rotateXy(beam, anglex, angley, varargin)
       %ROTATEX rotates the beam about the x then y axes
-      [beam, D] = beam.rotate(roty(angley*180/pi)*rotx(anglex*180/pi));
+      [beam, D] = beam.rotate(roty(angley*180/pi)*rotx(anglex*180/pi), ...
+          varargin{:});
     end
 
-    function [beam, D] = rotateXz(beam, anglex, anglez)
+    function [beam, D] = rotateXz(beam, anglex, anglez, varargin)
       %ROTATEX rotates the beam about the x then z axes
-      [beam, D] = beam.rotate(rotz(anglez*180/pi)*rotx(anglex*180/pi));
+      [beam, D] = beam.rotate(rotz(anglez*180/pi)*rotx(anglex*180/pi), ...
+          varargin{:});
     end
 
-    function [beam, D] = rotateYz(beam, angley, anglez)
+    function [beam, D] = rotateYz(beam, angley, anglez, varargin)
       %ROTATEX rotates the beam about the y then z axes
-      [beam, D] = beam.rotate(rotz(anglez*180/pi)*roty(angley*180/pi));
+      [beam, D] = beam.rotate(rotz(anglez*180/pi)*roty(angley*180/pi), ...
+          varargin{:});
     end
 
-    function [beam, D] = rotateXyz(beam, anglex, angley, anglez)
+    function [beam, D] = rotateXyz(beam, anglex, angley, anglez, varargin)
       %ROTATEX rotates the beam about the x, y then z axes
       [beam, D] = beam.rotate(rotz(anglez*180/pi)* ...
-          roty(angley*180/pi)*rotx(anglex*180/pi));
+          roty(angley*180/pi)*rotx(anglex*180/pi), varargin{:});
     end
 
     function beam = outgoing(beam, ibeam)
@@ -672,48 +699,94 @@ classdef Bsc
       % calculates the scattered beam and applies the inverse rotation,
       % effectively rotating the particle.
 
+      % TODO: Support for multiple rotations or translations
+
       p = inputParser;
       p.addParameter('position', []);
       p.addParameter('rotation', []);
       p.parse(varargin{:});
 
-      % Apply translation to the beam (requires scattered T-matrix)
+      % Determine the maximum tmatrix.Nmax(2) and check type
+      maxNmax1 = 0;
+      maxNmax2 = 0;
+      tType = tmatrix(1).type;
+      for ii = 1:numel(tmatrix)
+        maxNmax1 = max(maxNmax1, tmatrix(ii).Nmax(1));
+        maxNmax2 = max(maxNmax2, tmatrix(ii).Nmax(2));
+        if ~strcmpi(tmatrix(ii).type, tType)
+          error('T-matrices must be same type');
+        end
+      end
+
+      % If the T is scattered, we can save time by throwing away columns
+      if strcmpi(tmatrix(1).type, 'scattered')
+        maxNmax2 = min(maxNmax2, beam.Nmax);
+      end
+
+      % Ensure all T-matrices are the same size
+      for ii = 1:numel(tmatrix)
+        tmatrix(ii).Nmax = [maxNmax1, maxNmax2];
+      end
+
+      % Apply translation to the beam
       if ~isempty(p.Results.position)
-        tmatrix.type = 'scattered';
-        beam = beam.translateXyz(p.Results.position, 'Nmax', tmatrix.Nmax(2));
+
+        % Requires scattered beam, convert if needed
+        if ~strcmpi(tmatrix(1).type, 'scattered')
+          maxNmax2 = min(maxNmax2, beam.Nmax);
+          for ii = 1:numel(tmatrix)
+            tmatrix(ii).type = 'scattered';
+            tmatrix(ii).Nmax = [maxNmax1, maxNmax2];
+          end
+        end
+
+        % Apply translation
+        beam = beam.translateXyz(p.Results.position, 'Nmax', maxNmax2);
       end
 
       % Apply rotation to the beam
       rbeam = beam;
       if ~isempty(p.Results.rotation)
-        [rbeam, D] = rbeam.rotate(p.Results.rotation);
+        [rbeam, D] = rbeam.rotate(p.Results.rotation, ...
+            'Nmax', maxNmax1);
       end
 
       % Ensure the Nmax for the inner dimension matches
-      if strcmpi(tmatrix.type, 'scattered')
-        newNmax = min(tmatrix.Nmax(2), beam.Nmax);
-        tmatrix = tmatrix.set_Nmax([tmatrix.Nmax(1), newNmax], ...
-            'powerloss', 'ignore');
-        rbeam = rbeam.set_Nmax(newNmax, 'powerloss', 'ignore');
+      if strcmpi(tmatrix(1).type, 'scattered')
+        % T-matrix is already done
+        rbeam = rbeam.set_Nmax(maxNmax2, 'powerloss', 'ignore');
       else
-        tmatrix = tmatrix.set_Nmax([tmatrix.Nmax(1), rbeam.Nmax], ...
-            'powerloss', 'ignore');
+        for ii = 1:numel(tmatrix)
+          tmatrix(ii) = tmatrix(ii).set_Nmax([maxNmax1, rbeam.Nmax], ...
+              'powerloss', 'ignore');
+        end
+        ott.warning('ott:Bsc:scatter', ...
+            'It may be more optimal to use a scattered T-matrix');
       end
 
-      % Calculate the resulting beam
-      sbeam = tmatrix.data * rbeam;
+      % Calculate the resulting beams
+      sbeam = ott.Bsc();
+      for ii = 1:numel(tmatrix)
+        sbeam = sbeam.append(tmatrix(ii).data * rbeam);
+      end
 
       % Apply the inverse rotation
       if ~isempty(p.Results.rotation)
-        sbeam = D' * sbeam;
+
+        % This seems to take a long time
+        %sz = size(sbeam.a, 1);
+        %D2 = D(1:sz, 1:sz);
+        %sbeam = D2' * sbeam;
+
+        sbeam = sbeam.rotate(inv(p.Results.rotation));
       end
 
       % Assign a type to the resulting beam
-      if strcmp(tmatrix.type, 'total')
+      if strcmp(tmatrix(1).type, 'total')
         sbeam.type = 'outgoing';
-      elseif strcmp(tmatrix.type, 'scattered')
+      elseif strcmp(tmatrix(1).type, 'scattered')
         sbeam.type = 'regular';
-      elseif strcmp(tmatrix.type, 'internal')
+      elseif strcmp(tmatrix(1).type, 'internal')
         sbeam.type = 'regular';
       else
         error('Unrecognized T-matrix type');

@@ -58,8 +58,8 @@ else
 end
 
 if z==0
-    A=sparse(1:(nmax1^2+nmax1*2),1:(nmax2^2+nmax2*2),1);
-    B=sparse((nmax1^2+nmax1*2),(nmax2^2+nmax2*2));
+    A=speye(nmax1^2+nmax1*2, nmax2^2+nmax2*2);
+    B=sparse(nmax1^2+nmax1*2, nmax2^2+nmax2*2);
     C=A;
     ott.warning('external');
     return
