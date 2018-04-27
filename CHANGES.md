@@ -1,6 +1,15 @@
 Change history
 ==============
 
+Version 1.5
+-----------
+
+* Makes the toolbox a package
+* Creates a utils sub-package for non-essential functions, these functions may
+    be more susceptable to change in future releases.
+* Introduces Tmatrix and Bsc classes to manage/generate beams and T-matrices
+* Introduces a simple method of calculating T-matrices (Tmatrix.simple())
+
 Version 1.4
 -----------
 
