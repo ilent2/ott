@@ -152,3 +152,87 @@ function testAxialEquilibrium(testCase)
   testCase.verifyThat(kz, IsEqualTo(-6.258368435930368e+04, ...
         'Within', RelativeTolerance(tol)));
 end
+
+function testCube(testCase)
+
+  % Specify refractive indices
+  n_medium = 1.33;
+  n_particle = 1.57;
+
+  % Specify the wavelength in the freespace [m]
+  wavelength0 = 1064e-9;
+  wavelength_medium = wavelength0 / n_medium;
+
+  % Specify the size of the cube
+  width = 1.0*wavelength_medium;
+
+  beam = ott.BscPmGauss('NA', 1.25, 'polarisation', [ 1i 1 ], ...
+    'power', 1.0, 'index_medium', n_medium, 'wavelength0', wavelength0);
+
+  T = ott.Tmatrix.simple('cube', width, ...
+        'index_medium', n_medium, ...
+        'index_particle', n_particle, ...
+        'wavelength0', wavelength0);
+
+  x = [ 0; 1; 1 ];
+  Rw = rotz(45)*roty(45);
+
+  %% Calculate the force and torque by matching Nmax
+
+  % Ensure Nmax of beam and particle are the same (optimisation)
+  T1 = T;
+  beam1 = beam;
+  Nmax = max(beam.Nmax, T1.Nmax);
+  T1.Nmax = Nmax;
+  beam1.Nmax = Nmax;
+
+  % Translate the beam to the particle
+  tbeam = beam1.translateXyz(x * wavelength_medium);
+
+  % Rotate the beam to match the particle rotation
+  [rbeam, D] = tbeam.rotate(Rw);
+
+  % Scatter the beam and return from the particle frame to the lab frame
+  sbeam = D' * (T1 * rbeam);
+
+  % Calculate the force and the torque on the particle
+  [ff1,tt1] = ott.forcetorque(tbeam, sbeam);
+
+  %% Calculate the force and torque by shrinking the beam Nmax
+
+  % Translate the beam to the particle
+  tbeam = beam.translateXyz(x * wavelength_medium, 'Nmax', T.Nmax);
+
+  % Rotate the beam to match the particle rotation
+  [rbeam, D] = tbeam.rotate(Rw);
+
+  % Scatter the beam and return from the particle frame to the lab frame
+  sbeam = D' * (T * rbeam);
+
+  % Calculate the force and the torque on the particle
+  [ff2,tt2] = ott.forcetorque(tbeam, sbeam);
+
+  %% Calculate the force and torque in one line
+
+  [ff3,tt3] = ott.forcetorque(beam, T, ...
+      'position', x * wavelength_medium, 'rotation', Rw);
+
+  %% Check the calculated forces/torques match
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.RelativeTolerance;
+  tol = 1.0e-3;
+
+  testCase.verifyThat(ff1, IsEqualTo(ff2, ...
+        'Within', RelativeTolerance(tol)), 'Multiline force');
+
+  testCase.verifyThat(tt1, IsEqualTo(tt2, ...
+        'Within', RelativeTolerance(tol)), 'Multiline torque');
+
+  testCase.verifyThat(tt3, IsEqualTo(tt2, ...
+        'Within', RelativeTolerance(tol)), 'One line force');
+
+  testCase.verifyThat(tt3, IsEqualTo(tt2, ...
+        'Within', RelativeTolerance(tol)), 'One line torque');
+
+end

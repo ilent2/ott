@@ -96,5 +96,40 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
         varargout{3} = 0;
       end
     end
+
+    function varargout = surf(shape, varargin)
+      % SURF generate a visualisation of the shape
+      %
+      % SURF() displays a visualisation of the shape in the current figure.
+      %
+      % [X, Y, Z] = surf() calculates the coordinates and arranges them
+      % in a grid.
+
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addParameter('noendcap', false);
+      p.addParameter('points', []);
+      p.addParameter('npoints', 20);
+      p.parse(varargin{:});
+
+      if isempty(p.Results.points)
+
+        % Calculate the locations of the interesting points
+        edge_angle = atan(shape.height/(2*shape.radius));
+        theta = [ 0, pi/2 - edge_angle, pi/2 + edge_angle, pi ];
+        [~, phi] = ott.utils.angulargrid(1, p.Results.npoints(1));
+
+        % Remove endcaps if requested
+        if p.Results.noendcap
+          theta = theta(2:end-1);
+        end
+
+        [varargout{1:nargout}] = surf@ott.shapes.StarShape(...
+            shape, varargin{:}, 'points', { theta,  phi } );
+      else
+        [varargout{1:nargout}] = surf@ott.shapes.StarShape(...
+            shape, varargin{:} );
+      end
+    end
   end
 end

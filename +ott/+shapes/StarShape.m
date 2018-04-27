@@ -69,12 +69,43 @@ classdef StarShape < ott.shapes.Shape
       %
       % SURF() displays a visualisation of the shape in the current figure.
       %
+      % SURF(..., 'points', { theta, phi }) specifies the points to use.
+      %
+      % SURF(..., 'surfoptions', {varargin}) specifies the options to
+      % pass to the surf function.
+      %
       % [X, Y, Z] = surf() calculates the coordinates and arranges them
       % in a grid.
 
-      % Create a grid of points to plot
-      sz = [100, 100];
-      [theta, phi] = shape.angulargrid('full', true, 'size', sz);
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addParameter('points', []);
+      p.addParameter('npoints', [100, 100]);
+      p.addParameter('surfoptions', {});
+      p.parse(varargin{:});
+
+      % Get the points to use for the surface
+      if isempty(p.Results.points)
+
+        % Get the size from the user inputs
+        sz = p.Results.npoints;
+        if numel(sz) == 1
+          sz = [sz sz];
+        end
+
+        [theta, phi] = shape.angulargrid('full', true, 'size', sz);
+      else
+        theta = p.Results.points{1};
+        phi = p.Results.points{2};
+
+        if min(size(theta)) == 1 && min(size(phi)) == 1
+          [phi, theta] = meshgrid(phi, theta);
+        elseif size(theta) ~= size(phi)
+          error('theta and phi must be vectors or matricies of the same size');
+        end
+
+        sz = size(theta);
+      end
 
       % Calculate Cartesian coordinates
       [X, Y, Z] = shape.locations(theta, phi);
@@ -91,7 +122,7 @@ classdef StarShape < ott.shapes.Shape
 
       % Generate the surface
       if nargout == 0
-        surf(X, Y, Z, varargin{:});
+        surf(X, Y, Z, p.Results.surfoptions{:});
       else
         varargout = { X, Y, Z };
       end

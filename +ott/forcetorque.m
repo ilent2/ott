@@ -14,8 +14,10 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam, varargin)
 % to the beam.  position can be a 3xN array, resulting in multiple
 % force/torque calculations for each position.
 %
-% FORCETORQUE(ibeam, T, 'rotation', rotation) first applies a rotation
-% to the beam.  rotation can be a 3x3N array, resulting in
+% FORCETORQUE(ibeam, T, 'rotation', rotation) effectively applies a
+% rotation to the particle by first applying the rotation to the beam,
+% scattering the beam by the T-matrix and applying the inverse rotation
+% to the scattered beam.  rotation can be a 3x3N array, resulting in
 % multiple calculations.  If both position and rotation are arrays,
 % the translation is applied first, followed by the rotation.
 %
@@ -218,9 +220,9 @@ if nargout > 1
 end
 
 if nargout <= 3
-    fx=[fx;fy;fz];
-    fy=[tx;ty;tz];
-    fz=[sx;sy;sz];
+    fx=full([fx;fy;fz]);
+    fy=full([tx;ty;tz]);
+    fz=full([sx;sy;sz]);
 end
 
 ott.warning('external');

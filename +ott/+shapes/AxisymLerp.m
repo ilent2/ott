@@ -85,7 +85,13 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
       for ii = 2:length(corner_angles)
 
         % Find points that belong to this side
-        pts = theta >= corner_angles(ii-1) & theta < corner_angles(ii);
+        if ii == 2
+          pts = theta < corner_angles(ii);
+        elseif ii == length(corner_angles)
+          pts = theta >= corner_angles(ii-1);
+        else
+          pts = theta >= corner_angles(ii-1) & theta < corner_angles(ii);
+        end
 
         % Calculate side lengths of triangle O-C1-C2
         a = sqrt(shape.rho(ii-1).^2 + shape.z(ii-1).^2);
@@ -127,7 +133,13 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
       for ii = 2:length(corner_angles)
 
         % Find points that belong to this side
-        pts = theta >= corner_angles(ii-1) & theta < corner_angles(ii);
+        if ii == 2
+          pts = theta < corner_angles(ii);
+        elseif ii == length(corner_angles)
+          pts = theta >= corner_angles(ii-1);
+        else
+          pts = theta >= corner_angles(ii-1) & theta < corner_angles(ii);
+        end
 
         % Calculate the angle between the pt and the surface normal
         psi = segment_angles(ii-1) - theta(pts) - pi/2;
@@ -174,6 +186,33 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
         varargout{1} = true;
         varargout{2} = true;
         varargout{3} = zmirrorsym;
+      end
+    end
+
+    function varargout = surf(shape, varargin)
+      % SURF generate a visualisation of the shape
+      %
+      % SURF() displays a visualisation of the shape in the current figure.
+      %
+      % [X, Y, Z] = surf() calculates the coordinates and arranges them
+      % in a grid.
+
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addParameter('points', []);
+      p.addParameter('npoints', 20);
+      p.parse(varargin{:});
+
+      if isempty(p.Results.points)
+
+        theta = atan2(shape.z, shape.rho) + pi/2;
+        [~, phi] = ott.utils.angulargrid(1, p.Results.npoints);
+
+        [varargout{1:nargout}] = surf@ott.shapes.StarShape(...
+            shape, varargin{:}, 'points', { theta,  phi } );
+      else
+        [varargout{1:nargout}] = surf@ott.shapes.StarShape(...
+            shape, varargin{:} );
       end
     end
   end

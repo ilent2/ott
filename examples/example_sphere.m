@@ -40,36 +40,38 @@ NA = 1.02;
 
 %% Setup the T-matrix for the particle
 
+tic
+
 % Create a T-matrix for a sphere
 T = ott.Tmatrix.simple('sphere', radius, 'wavelength0', wavelength0, ...
     'index_medium', n_medium, 'index_particle', n_particle);
 
+disp(['T-matrix calculation took ' num2str(toc) ' seconds']);
+
 %% Setup the T-matrix for the beam
+
+tic
 
 switch beam_type
   case 'gaussian'
 
     % Create a simple Gaussian beam with circular polarisation
+    % We could also calculate the beam angle ourseves and specify that.
     beam = ott.BscPmGauss('NA', NA, 'polarisation', [ 1 1i ], ...
         'index_medium', n_medium, 'wavelength0', wavelength0);
 
   case 'lg'
 
     % Create a LG03 beam with circular polarisation
-    %
-    % We could have specified the NA as before but this time we
-    % calculate the beam angle ourselves and specify that
-    beam_angle = asin(NA/n_medium);
     beam = ott.BscPmGauss('lg', [ 0 3 ], ...
-        'polarisation', [ 1 1i ], 'angle', beam_angle, ...
+        'polarisation', [ 1 1i ], 'NA', NA, ...
         'index_medium', n_medium, 'wavelength0', wavelength0);
 
   case 'hg'
 
     % Create a HG23 beam with circular polarisation
-    beam_angle = asin(NA/n_medium);
     beam = ott.BscPmGauss('hg', [ 2 3 ], ...
-        'polarisation', [ 1 1i ], 'angle', beam_angle, ...
+        'polarisation', [ 1 1i ], 'NA', NA, ...
         'index_medium', n_medium, 'wavelength0', wavelength0);
 
   otherwise
@@ -79,9 +81,10 @@ end
 % Normalize the beam power
 beam.power = 1.0;
 
+disp(['Beam calculation took ' num2str(toc) ' seconds']);
+
 %% Generate force/position graphs
 
-% Time the calculation
 tic
 
 %calculate the force along z
@@ -100,10 +103,9 @@ zeq = zeq(1);
 r = [1;0;0]*linspace(-4,4,80)*wavelength_medium + [0;0;zeq];
 fr = ott.forcetorque(beam, T, 'position', r);
 
-% Finish timing the calculation
-toc
+disp(['Force calculation took ' num2str(toc) ' seconds']);
 
-% Generate the plots
+%% Generate the plots
 
 figure(1); plot(z(3, :)/wavelength_medium,fz(3, :));
 xlabel('{\it z} [\lambda_m]');

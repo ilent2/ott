@@ -473,6 +473,15 @@ classdef Bsc
       p.addParameter('Nmax', beam.Nmax);
       p.parse(varargin{:});
 
+      % Convert Nmax to a single number
+      if numel(p.Results.Nmax) == 1
+        oNmax = p.Results.Nmax;
+      elseif numel(p.Results.Nmax) == 2
+        oNmax = p.Results.Nmax(2);
+      else
+        error('Nmax must be 2 element vector or scalar');
+      end
+
       % Handle input arguments
       if ~isempty(p.Results.opt1) && isempty(p.Results.opt2) ...
           && isempty(p.Results.opt3)
@@ -502,9 +511,9 @@ classdef Bsc
       end
 
       % Only do the rotation if we need it
-      if theta ~= 0 || phi ~= 0
+      if (theta ~= 0 && abs(theta) ~= pi) || phi ~= 0
         [beam, D] = beam.rotateYz(theta, phi);
-        [beam, A, B] = beam.translateZ(r, 'Nmax', p.Results.Nmax);
+        [beam, A, B] = beam.translateZ(r, 'Nmax', oNmax);
 
         % The beam might change size, so readjust D to match
         sz = size(A, 1);
@@ -512,11 +521,14 @@ classdef Bsc
         beam = D2' * beam;
       else
         D = eye(size(beam.a, 1));
-        [beam, A, B] = beam.translateZ(r, 'Nmax', p.Results.Nmax);
+        if abs(theta) == pi
+          r = -r;
+        end
+        [beam, A, B] = beam.translateZ(r, 'Nmax', oNmax);
       end
 
       % Rotate the translation matricies
-      if nargout <= 3
+      if nargout == 3 || nargout == 2
 
         % The beam might change size, so readjust D to match
         sz = size(A, 1);
@@ -529,6 +541,8 @@ classdef Bsc
         if nargout == 2
           A = [ A B ; B A ];
         end
+      elseif nargout ~= 4 && nargout ~= 1
+        error('Insufficient number of output arguments');
       end
     end
 
@@ -649,10 +663,14 @@ classdef Bsc
       %
       % [sbeam, beam] = SCATTER(beam, tmatrix) scatters the beam
       % returning the scattered beam, sbeam, and the unscattered
-      % but possibly translated/rotated beam.
+      % but possibly translated beam.
       %
-      % SCATTER(..., 'position', xyz) applies a translation to the beam.
-      % SCATTER(..., 'rotation', R) applies a rotation to the beam.
+      % SCATTER(..., 'position', xyz) applies a translation to the beam
+      % before the beam is scattered by the particle.
+      %
+      % SCATTER(..., 'rotation', R) applies a rotation to the beam,
+      % calculates the scattered beam and applies the inverse rotation,
+      % effectively rotating the particle.
 
       p = inputParser;
       p.addParameter('position', []);
@@ -666,8 +684,9 @@ classdef Bsc
       end
 
       % Apply rotation to the beam
+      rbeam = beam;
       if ~isempty(p.Results.rotation)
-        beam = beam.rotate(p.Results.rotation);
+        [rbeam, D] = rbeam.rotate(p.Results.rotation);
       end
 
       % Ensure the Nmax for the inner dimension matches
@@ -675,14 +694,19 @@ classdef Bsc
         newNmax = min(tmatrix.Nmax(2), beam.Nmax);
         tmatrix = tmatrix.set_Nmax([tmatrix.Nmax(1), newNmax], ...
             'powerloss', 'ignore');
-        beam = beam.set_Nmax(newNmax, 'powerloss', 'ignore');
+        rbeam = rbeam.set_Nmax(newNmax, 'powerloss', 'ignore');
       else
-        tmatrix = tmatrix.set_Nmax([tmatrix.Nmax(1), beam.Nmax], ...
+        tmatrix = tmatrix.set_Nmax([tmatrix.Nmax(1), rbeam.Nmax], ...
             'powerloss', 'ignore');
       end
 
       % Calculate the resulting beam
-      sbeam = tmatrix.data * beam;
+      sbeam = tmatrix.data * rbeam;
+
+      % Apply the inverse rotation
+      if ~isempty(p.Results.rotation)
+        sbeam = D' * sbeam;
+      end
 
       % Assign a type to the resulting beam
       if strcmp(tmatrix.type, 'total')

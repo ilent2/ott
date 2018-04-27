@@ -41,6 +41,11 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
       r = max([shape.a, shape.b, shape.c]);
     end
 
+    function b = isSphere(shape)
+      % ISSPHERE Returns true if the shape is a sphere
+      b = shape.a == shape.b && shape.a == shape.c;
+    end
+
     function p = get_perimiter(shape)
       % Calculate the perimiter of the object
 

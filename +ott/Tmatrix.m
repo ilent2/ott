@@ -29,12 +29,18 @@ classdef Tmatrix
   end
 
   methods (Static)
-    function tmatrix = simple(shape, parameters, varargin)
+    function tmatrix = simple(shape, varargin)
       %SIMPLE constructs a T-matrix for a bunch of simple particles
       % This method creates an instance of one of the other T-matrix
       % classes and is here only as a helper method.
       %
-      % Supported shapes [parameters]:
+      % SIMPLE(shape) constructs a new simple T-matrix for the given
+      % ott.shapes.Shape object.
+      %
+      % SIMPLE(name, parameters) constructs a new T-matrix for the
+      % shape described by the name and parameters.
+      %
+      % Supported shape names [parameters]:
       %   'sphere'          Spherical (or layered sphere) [ radius ]
       %   'cylinder'        z-axis aligned cylinder [ radius height ]
       %   'ellipsoid'       Ellipsoid [ a b c]
@@ -55,6 +61,7 @@ classdef Tmatrix
       % Parse inputs
       p = inputParser;
       p.KeepUnmatched = true;
+      p.addOptional('parameters', []);
       p.addParameter('method', '');
       p.addParameter('method_tol', []);
 
@@ -69,135 +76,86 @@ classdef Tmatrix
       % Parse k_medium
       k_medium = ott.Tmatrix.parser_k_medium(p, 2.0*pi);
 
+      % Get a shape object from the inputs
+      if ischar(shape) && ~isempty(p.Results.parameters)
+        shape = ott.shapes.Shape.simple(shape, p.Results.parameters);
+        varargin = varargin(2:end);
+      elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
+        error('Must input either Shape object or string and parameters');
+      end
+
       % Handle the different particle cases
-      switch shape
-        case 'sphere'
-          if strcmp(p.Results.method, 'ebcm')
-            tmatrix = ott.TmatrixEbcm.simple(shape, parameters, varargin{:});
-          elseif strcmp(p.Results.method, 'pm')
-            tmatrix = ott.TmatrixPm.simple(shape, parameters, varargin{:});
-          elseif strcmp(p.Results.method, '') ...
-              || strcmp(p.Results.method, 'mie')
-            tmatrix = ott.TmatrixMie(parameters, varargin{:});
-          else
-            error('ott:Tmatrix:simple:no_method', 'Unsupported method');
+      if isa(shape, 'ott.shapes.Sphere') ...
+          || (isa(shape, 'ott.shapes.Ellipsoid') && shape.isSphere) ...
+          || (isa(shape, 'ott.shapes.Superellipsoid') && shape.isSphere)
+        if strcmpi(p.Results.method, 'ebcm')
+          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
+        elseif strcmpi(p.Results.method, 'pm')
+          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
+        elseif strcmpi(p.Results.method, '') ...
+            || strcmpi(p.Results.method, 'mie')
+          tmatrix = ott.TmatrixMie.simple(shape, varargin{:});
+        else
+          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
+        end
+      elseif isa(shape, 'ott.shapes.Ellipsoid')
+        if strcmp(p.Results.method, 'ebcm')
+          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
+        elseif strcmp(p.Results.method, '') ...
+            || strcmp(p.Results.method, 'pm')
+          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
+        else
+          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
+        end
+      elseif isa(shape, 'ott.shapes.Superellipsoid')
+        if strcmp(p.Results.method, 'ebcm')
+          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
+        elseif strcmp(p.Results.method, '') ...
+            || strcmp(p.Results.method, 'pm')
+          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
+        else
+          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
+        end
+      elseif isa(shape, 'ott.shapes.Cube')
+        if strcmp(p.Results.method, 'ebcm')
+          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
+        elseif strcmp(p.Results.method, '') ...
+            || strcmp(p.Results.method, 'pm')
+          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
+        else
+          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
+        end
+      elseif isa(shape, 'ott.shapes.Cylinder') ...
+          || isa(shape, 'ott.shapes.AxisymLerp')
+
+        method = p.Results.method;
+        if strcmp(method, '')
+
+          if isa(shape, 'ott.shapes.Cylinder')
+            parameters = [ shape.radius, shape.height ];
+          elseif isa(shape, 'ott.shapes.AxisymLerp')
+            parameters = [ max(shape.rho), max(shape.z) - min(shape.z) ];
           end
 
-        case 'ellipsoid'
-          if strcmp(p.Results.method, 'ebcm')
-            tmatrix = ott.TmatrixEbcm.simple(shape, parameters, varargin{:});
-          elseif strcmp(p.Results.method, '') ...
-              || strcmp(p.Results.method, 'pm')
-            tmatrix = ott.TmatrixPm.simple(shape, parameters, varargin{:});
-          else
-            error('ott:Tmatrix:simple:no_method', 'Unsupported method');
+          method = ott.Tmatrix.cylinder_preferred_method(...
+              parameters, k_medium, p.Results.method_tol);
+
+          if strcmp(method, 'other')
+            warning('ott:Tmatrix:simple:no_cylinder_method', ...
+                'No good method found for cylinder, falling back to EBCM');
+            method = 'ebcm';
           end
+        end
 
-        case 'superellipsoid'
-          if strcmp(p.Results.method, 'ebcm')
-            tmatrix = ott.TmatrixEbcm.simple(shape, parameters, varargin{:});
-          elseif strcmp(p.Results.method, '') ...
-              || strcmp(p.Results.method, 'pm')
-            tmatrix = ott.TmatrixPm.simple(shape, parameters, varargin{:});
-          else
-            error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-          end
-
-        case 'cube'
-          if strcmp(p.Results.method, 'ebcm')
-            tmatrix = ott.TmatrixEbcm.simple(shape, parameters, varargin{:});
-          elseif strcmp(p.Results.method, '') ...
-              || strcmp(p.Results.method, 'pm')
-            tmatrix = ott.TmatrixPm.simple(shape, parameters, varargin{:});
-          else
-            error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-          end
-
-        case 'cylinder'
-          method = p.Results.method;
-          if strcmp(method, '')
-            method = ott.Tmatrix.cylinder_preferred_method(...
-                parameters, k_medium, p.Results.method_tol);
-
-            if strcmp(method, 'other')
-              warning('ott:Tmatrix:simple:no_cylinder_method', ...
-                  'No good method found for cylinder, falling back to EBCM');
-              method = 'ebcm';
-            end
-          end
-
-          if strcmp(method, 'ebcm')
-            tmatrix = ott.TmatrixEbcm.simple(shape, parameters, varargin{:});
-          elseif strcmp(method, 'pm')
-            tmatrix = ott.TmatrixPm.simple(shape, parameters, varargin{:});
-          else
-            error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-          end
-            
-        case 'cone-tipped-cylinder'
-          method = p.Results.method;
-          if strcmp(method, '')
-
-            radius = parameters(1);
-            height = parameters(2);
-            cone_height = parameters(3);
-
-            % Using a cylinder with the same volume as the cone cylinder
-            cparameters = [ radius, height + 0.5*cone_height ];
-
-            method = ott.Tmatrix.cylinder_preferred_method(...
-                cparameters, k_medium, p.Results.method_tol);
-
-            if strcmp(method, 'other')
-              warning('ott:Tmatrix:simple:no_cylinder_method', ...
-                  'No good method found for cylinder, falling back to EBCM');
-              method = 'ebcm';
-            end
-          end
-
-          if strcmp(method, 'ebcm')
-            tmatrix = ott.TmatrixEbcm.simple(shape, parameters, varargin{:});
-          elseif strcmp(method, 'pm')
-            tmatrix = ott.TmatrixPm.simple(shape, parameters, varargin{:});
-          else
-            error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-          end
-
-        case 'axisym'
-
-          % TODO: We should check the particle is somewhat cylinder shaped
-          % TODO: Does the particle need to be star shaped?
-
-          method = p.Results.method;
-          if strcmp(method, '')
-
-            rho = parameters(:, 1);
-            maxr = max(abs(parameters(:, 2)));
-            height = max(rho) - min(rho);
-
-            % Using the max radius and range of z values for cylinder shape
-            cparameters = [ maxr, height ];
-
-            method = ott.Tmatrix.cylinder_preferred_method(...
-                cparameters, k_medium, p.Results.method_tol);
-
-            if strcmp(method, 'other')
-              warning('ott:Tmatrix:simple:no_cylinder_method', ...
-                  'No good method found for cylinder, falling back to EBCM');
-              method = 'ebcm';
-            end
-          end
-
-          if strcmp(method, 'ebcm')
-            tmatrix = ott.TmatrixEbcm.simple(shape, parameters, varargin{:});
-          elseif strcmp(method, 'pm')
-            tmatrix = ott.TmatrixPm.simple(shape, parameters, varargin{:});
-          else
-            error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-          end
-
-        otherwise
-          error('ott:Tmatrix:simple:no_shape', 'Unsupported particle shape');
+        if strcmp(method, 'ebcm')
+          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
+        elseif strcmp(method, 'pm')
+          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
+        else
+          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
+        end
+      else
+        error('ott:Tmatrix:simple:no_shape', 'Unsupported particle shape');
       end
     end
 

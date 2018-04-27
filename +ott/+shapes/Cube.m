@@ -89,8 +89,9 @@ classdef Cube < ott.shapes.StarShape
       xyz(yplane, :) = xyz(yplane, :) ./ abs(xyz(yplane, 2));
       xyz(zplane, :) = xyz(zplane, :) ./ abs(xyz(zplane, 3));
 
-      xyz = shape.width .* xyz / 2.0;
-      
+      xyz(:, 3) = shape.width .* xyz(:, 3) / 2.0;
+      xyz(:, 1:2) = sqrt(2) * shape.width .* xyz(:, 1:2) / 2.0;
+
       if nargout == 1
         varargout{1} = xyz;
       else
@@ -124,6 +125,36 @@ classdef Cube < ott.shapes.StarShape
         varargout{1} = 4;
         varargout{2} = 4;
         varargout{3} = 4;
+      end
+    end
+
+    function varargout = surf(shape, varargin)
+      % SURF generate a visualisation of the shape
+      %
+      % SURF() displays a visualisation of the shape in the current figure.
+      %
+      % [X, Y, Z] = surf() calculates the coordinates and arranges them
+      % in a grid.
+
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addParameter('noendcap', false);
+      p.addParameter('points', []);
+      p.parse(varargin{:});
+
+      if isempty(p.Results.points)
+        theta = [ 0, pi/4, 3*pi/4, pi ];
+        phi = [ 0, pi/2, pi, 3*pi/2 ] + pi/4;
+
+        if p.Results.noendcap
+          theta = theta(2:end-1);
+        end
+
+        [varargout{1:nargout}] = surf@ott.shapes.StarShape(...
+            shape, varargin{:}, 'points', { theta,  phi } );
+      else
+        [varargout{1:nargout}] = surf@ott.shapes.StarShape(...
+            shape, varargin{:});
       end
     end
   end

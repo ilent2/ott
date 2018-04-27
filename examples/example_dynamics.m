@@ -46,50 +46,47 @@ particle_type = 'cube';
 
 %% Generate beam
 
+tic
+
 beam = ott.BscPmGauss('NA', 1.25, 'polarisation', [ 1i 1 ], ...
     'power', 1.0, 'index_medium', n_medium, 'wavelength0', wavelength0);
+
+disp(['Beam calculation took ' num2str(toc) ' seconds']);
 
 %% Calculate T-matrix
 
 tic
+
 switch particle_type
   case 'sphere'
-    T = ott.Tmatrix.simple('sphere', width/2, ...
-        'index_medium', n_medium, ...
-        'index_particle', n_particle, ...
-        'wavelength0', wavelength0);
 
+    % Describe the shape
+    shape = ott.shapes.Shape.simple('sphere', width/2);
+
+    % Specify the initial position
     x_initial = [1;1;1]/5;
-    [X, Y, Z] = sphere();
-    X = X * width/2;
-    Y = Y * width/2;
-    Z = Z * width/2;
 
     % Set a limit on the max time step, needed for stability, empirically found
     dtlim=0.001;
 
   case 'cylinder'
-    T = ott.Tmatrix.simple('cylinder', [ 0.5*width, width ], ...
-        'index_medium', n_medium, ...
-        'index_particle', n_particle, ...
-        'wavelength0', wavelength0);
 
+    % Describe the shape
+    shape = ott.shapes.Shape.simple('cylinder', [0.5*width, width]);
+
+    % Specify the initial position
     x_initial = [1;1;1]/2;
-    [X, Y, Z] = cylinder(width/2);
-    Z = (Z - 0.5) * width;
 
     % Set a limit on the max time step, needed for stability, empirically found
     dtlim=0.025;
 
   case 'cube'
-    T = ott.Tmatrix.simple('cube', width, ...
-        'index_medium', n_medium, ...
-        'index_particle', n_particle, ...
-        'wavelength0', wavelength0);
 
+    % Describe the shape
+    shape = ott.shapes.Shape.simple('cube', width);
+
+    % Specify the initial position
     x_initial = [1;1;1]/2;
-    [X, Y, Z] = cylinder(width/2*sqrt(2), 4);
-    Z = (Z - 0.5) * width;
 
     % Set a limit on the max time step, needed for stability, empirically found
     dtlim=0.025;
@@ -97,13 +94,24 @@ switch particle_type
   otherwise
     error('Unsupported particle type');
 end
-disp(['Calculating T-matrix took ', num2str(toc), ' seconds!']);
+
+T = ott.Tmatrix.simple(shape, ...
+    'index_medium', n_medium, ...
+    'index_particle', n_particle, ...
+    'wavelength0', wavelength0);
+
+[X, Y, Z] = shape.surf('noendcap', true, 'npoints', 20);
+
+disp(['Calculating T-matrix took ', num2str(toc), ' seconds']);
 
 %% Dynamics Simulation
 % This dynamics simulation simulates the trap in some hypothetical
 % substance. It does not represent any physical system except that it
 % displays the same kind of dynamics as a trapped particle capable of
 % rotation.
+
+% Time the simulation
+tic;
 
 numt=75;            % number of time steps
 x=zeros(3,numt);    % array of particle positions
@@ -122,24 +130,11 @@ Rtotal=zeros(numt*3,3);
 Rw = rotz(0)*roty(0);
 Rtotal(1:3,:) = Rw;
 
-% Ensure Nmax of beam and particle are the same (optimisation)
-Nmax = max(beam.Nmax, T.Nmax);
-T.Nmax = Nmax;
-beam.Nmax = Nmax;
-
 for ii=2:numt
 
-    % Translate the beam to the particle
-    tbeam = beam.translateXyz(x(:, ii-1) * wavelength_medium);
-
-    % Rotate the beam to match the particle rotation
-    [rbeam, D] = tbeam.rotate(Rw);
-
-    % Scatter the beam and return from the particle frame to the lab frame
-    sbeam = D' * (T * rbeam);
-
     % Calculate the force and the torque on the particle
-    [ft,tt] = ott.forcetorque(tbeam, sbeam);
+    [ft,tt] = ott.forcetorque(beam, T, ...
+        'position', x(:, ii-1) * wavelength_medium, 'rotation', Rw);
 
     % Dynamic time-stepping asymptotic with dtlim. We assume that no
     % multiplier is needed on the rotation to correct the error. There is
@@ -158,6 +153,9 @@ for ii=2:numt
     % Store the time
     tvec(ii)=tvec(ii-1)+dt;
 end
+
+% Finish timing the calculation
+disp(['Simulating dynamics took ' num2str(toc) ' seconds']);
 
 % Create a plot of the trajectory
 figure(2)
@@ -195,7 +193,7 @@ for ii=1:numt
   xlabel('x');
   ylabel('y');
   zlabel('z');
-  grid on 
+  grid on
   axis equal
   axis([-1,1,-1,1,-1,1]*width)
   title('Particle trajectory and orientation with time.')
@@ -233,7 +231,7 @@ for ii=1:numt
 end
 
 %% save movie
-if strcmp(lower(input('Save movie (y/n)? ','s')),'y')
+if strcmpi(input('Save movie (y/n)? ','s'),'y')
   nm=input('File name (warning overwrites without asking): ','s');
   v = VideoWriter([pwd filesep nm '.avi']);
   open(v);

@@ -163,6 +163,35 @@ classdef TmatrixMie < ott.Tmatrix
     end
   end
 
+  methods (Static)
+    function tmatrix = simple(shape, varargin)
+      %SIMPLE construct a T-matrix using Mie solution for a sphere.
+      %
+      % SIMPLE(shape) constructs a new simple T-matrix for the given
+      % ott.shapes.Shape object.  Shape must implement a maxRadius
+      % method, the result of which is used as the sphere radius.
+      %
+      % SIMPLE(name, parameters) constructs a new T-matrix for the
+      % shape described by the name and parameters.  The name must
+      % be 'sphere' and the parameters must be the radius.
+
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addOptional('parameters', []);
+      p.parse(varargin{:});
+
+      % Handle different shapes
+      if isa(shape, 'ott.shapes.Shape') && isempty(p.Results.parameters)
+        tmatrix = ott.TmatrixMie(shape.maxRadius, varargin{:});
+      elseif ischar(shape) && strcmpi(shape, 'sphere') ...
+          && ~isempty(p.Results.parameters)
+        tmatrix = ott.TmatrixMie(p.Results.parameters, varargin{:});
+      else
+        error('Must input either Shape object or string and parameters');
+      end
+    end
+  end
+
   methods
     function tmatrix = TmatrixMie(radius, varargin)
       %TMATRIXMIE construct a new Mie T-matrix for a sphere with size radius.

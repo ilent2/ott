@@ -16,10 +16,16 @@ classdef TmatrixEbcm < ott.Tmatrix
   end
 
   methods (Static)
-    function tmatrix = simple(shape, parameters, varargin)
+    function tmatrix = simple(shape, varargin)
       %SIMPLE construct a T-matrix using EBCM for a simple shape.
       %
-      % Supported shapes [parameters]:
+      % SIMPLE(shape) constructs a new simple T-matrix for the given
+      % ott.shapes.Shape object.
+      %
+      % SIMPLE(name, parameters) constructs a new T-matrix for the
+      % shape described by the name and parameters.
+      %
+      % Supported shape names [parameters]:
       %   'ellipsoid'       Ellipsoid [ a b c]
       %   'cylinder'        z-axis aligned cylinder [ radius height ]
       %   'superellipsoid'  Superellipsoid [ a b c e n ]
@@ -40,9 +46,17 @@ classdef TmatrixEbcm < ott.Tmatrix
       %  wavelength in the vecuum, required when index_particle or
       %  index_medium are specified.
 
-      % Handle different shapes
-      if ischar(shape)
-        shape = ott.shapes.Shape.simple(shape, parameters);
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addOptional('parameters', []);
+      p.parse(varargin{:});
+
+      % Get a shape object from the inputs
+      if ischar(shape) && ~isempty(p.Results.parameters)
+        shape = ott.shapes.Shape.simple(shape, p.Results.parameters);
+        varargin = varargin(2:end);
+      elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
+        error('Must input either Shape object or string and parameters');
       end
 
       % Check the particle is star shaped
