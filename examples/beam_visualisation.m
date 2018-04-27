@@ -196,7 +196,7 @@ Ep = reshape(angle(E(3, :)),[nt+1,nt+1]);
 
 % Add a small translation, so it looks like a LG fork in farfield
 % This is the pattern we would put on a SLM
-slm_beam = beam.translateXyz([5, 0, 0]);
+slm_beam = beam.translateXyz([5; 0; 0]);
 [E_slm,~]=slm_beam.farfield(theta(:),phi(:));
 Ep_slm = reshape(angle(E_slm(3, :)),[nt+1,nt+1]);
 

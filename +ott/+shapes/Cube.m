@@ -84,13 +84,16 @@ classdef Cube < ott.shapes.StarShape
       yplane = logical(planes(:, 2));
       zplane = logical(planes(:, 3));
 
+      % For points, ensure the point belongs to only one plane
+      yplane = yplane & ~xplane;
+      zplane = zplane & ~xplane & ~yplane;
+
       % Rescale the vectors so they sit on the cube
       xyz(xplane, :) = xyz(xplane, :) ./ abs(xyz(xplane, 1));
       xyz(yplane, :) = xyz(yplane, :) ./ abs(xyz(yplane, 2));
       xyz(zplane, :) = xyz(zplane, :) ./ abs(xyz(zplane, 3));
 
-      xyz(:, 3) = shape.width .* xyz(:, 3) / 2.0;
-      xyz(:, 1:2) = sqrt(2) * shape.width .* xyz(:, 1:2) / 2.0;
+      xyz = xyz .* shape.width / 2.0;
 
       if nargout == 1
         varargout{1} = xyz;
@@ -143,7 +146,8 @@ classdef Cube < ott.shapes.StarShape
       p.parse(varargin{:});
 
       if isempty(p.Results.points)
-        theta = [ 0, pi/4, 3*pi/4, pi ];
+        ang = atan2(1, sqrt(2));
+        theta = [ 0, pi/2 - ang, pi/2 + ang, pi ];
         phi = [ 0, pi/2, pi, 3*pi/2 ] + pi/4;
 
         if p.Results.noendcap

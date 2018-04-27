@@ -38,8 +38,12 @@ T = ott.Tmatrix.simple('sphere', wavelength, 'index_medium', 1.0, ...
 %% Create a simple gaussian beam
 % We will create displaced copies of this beam
 
+tic
+
 beam = ott.BscPmGauss('polarisation', [1 1i], 'angle_deg', 50, ...
     'index_medium', 1.0, 'wavelength0', wavelength, 'power', 0.5);
+
+disp(['Generating base beam took ' num2str(toc) ' seconds']);
 
 % Displacement of beams [wavelength_medium]
 displacement = 1.0*wavelength;
@@ -52,6 +56,8 @@ x = linspace(-2, 2, 80)*wavelength;
 
 %% Coherent beams with expanded Nmax
 
+tic
+
 % Calculate new Nmax
 Nmax = ott.utils.ka2nmax(ott.utils.nmax2ka(beam.Nmax) ...
     + displacement*T.k_medium);
@@ -59,29 +65,28 @@ Nmax = ott.utils.ka2nmax(ott.utils.nmax2ka(beam.Nmax) ...
 % Change the Nmax and create the two beams
 beam1 = beam;
 beam1.Nmax = Nmax;
-beam2 = beam1.translateXyz([displacement, 0, 0]);
-beam1 = beam1.translateXyz([-displacement, 0, 0]);
+beam2 = beam1.translateXyz([displacement; 0; 0]);
+beam1 = beam1.translateXyz([-displacement; 0; 0]);
 
 % Add the beams
 nbeam = beam1 + beam2 * phase;
 
 % Calculate the force along the x-axis
-fx1 = zeros(3, length(x));
-for ii = 1:length(x)
-  tbeam = nbeam.translateXyz([x(ii), 0, 0]);
-  sbeam = T * tbeam;
-  fx1(:, ii) = ott.forcetorque(tbeam, sbeam);
-end
+fx1 = ott.forcetorque(nbeam, T, 'position', [1;0;0] * x);
+
+disp(['Calculation with expanded Nmax took ' num2str(toc) ' seconds']);
 
 %% Coherent beams with same Nmax
+
+tic
 
 fx2 = zeros(3, length(x));
 
 for ii = 1:length(x)
 
   % Translate and add the beams
-  beam1 = beam.translateXyz([x(ii)+displacement, 0, 0]);
-  beam2 = beam.translateXyz([x(ii)-displacement, 0, 0]);
+  beam1 = beam.translateXyz([x(ii)+displacement; 0; 0]);
+  beam2 = beam.translateXyz([x(ii)-displacement; 0; 0]);
   tbeam = beam1 + beam2 * phase;
 
   % Scatter the beam and calculate the force
@@ -89,24 +94,18 @@ for ii = 1:length(x)
   fx2(:, ii) = ott.forcetorque(tbeam, sbeam);
 end
 
+disp(['Calculation with same Nmax took ' num2str(toc) ' seconds']);
+
 %% Incoherent beams
 
-fx3 = zeros(3, length(x));
+tic
 
-for ii = 1:length(x)
+fx3 = ott.forcetorque(beam, T, ...
+    'position', [1;0;0] * x + [displacement; 0; 0]);
+fx3 = fx3 + ott.forcetorque(beam * phase, T, ...
+    'position', [1;0;0] * x - [displacement; 0; 0]);
 
-  % Translate beams
-  beam1 = beam.translateXyz([x(ii)+displacement, 0, 0]);
-  beam2 = beam.translateXyz([x(ii)-displacement, 0, 0]) * phase;
-
-  % Scatter the beams
-  sbeam1 = T * beam1;
-  sbeam2 = T * beam2;
-
-  % Calculate the force
-  fx3(:, ii) = ott.forcetorque(beam1, sbeam1) ...
-      + ott.forcetorque(beam2, sbeam2);
-end
+disp(['Incoherent calculation took ' num2str(toc) ' seconds']);
 
 %% Generate a figure showing the force displacement graphs
 

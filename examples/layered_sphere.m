@@ -35,24 +35,30 @@ k = 2*pi/wavelength;
 % Radius of particle to use [freespace units]
 radius = linspace(.25,2.5,50)/n_medium;
 
+%% Generate beam
+
+tic
+
 % Gaussian beam with circular polarisation
 beam = ott.BscPmGauss('NA', 1.02, 'polarisation', [ 1 1i ], ...
     'power', 1.0, 'index_medium', n_medium, 'wavelength0', wavelength);
 
+disp(['Beam calculation took ' num2str(toc) ' seconds']);
+
+%% Calculate trap depths for a bunch of different spheres
+
+tic
+
 % Allocate spcae for the arrays
 z = zeros(1, 45);
 r = zeros(1, 25);
-fz = zeros(3, length(z));
-fr = zeros(3, length(r));
-fz1 = fz;
-fr1 = fr;
+fz = zeros(6, length(z));
+fr = zeros(6, length(r));
 
 axialrestoringforce = zeros(length(radius), 1);
 axialrestoringforce1 = axialrestoringforce;
 transverserestoringforce = zeros(length(radius), 1);
 transverserestoringforce1 = transverserestoringforce;
-
-tic
 
 % For each particle radius, calculate the axial and radial min trap depth
 for ii=1:length(radius)
@@ -65,7 +71,7 @@ for ii=1:length(radius)
     r = linspace(0,max([1,radius(ii)])*1.33,25)*wavelength;
 
     % Calculate T-matrix for spherical particle with shell
-    T = ott.Tmatrix.simple('sphere', ...
+    T = ott.TmatrixMie.simple('sphere', ...
         [radius(ii), radius(ii)+1/n_shell/4]*wavelength, ...
         'k_medium', k*n_medium, ...
         'k_particle', k*[n_particle, n_shell]);
@@ -73,21 +79,15 @@ for ii=1:length(radius)
     % Calculate T-matrix for spherical particle without shell
     T1 = ott.Tmatrix.simple('sphere', radius(ii)*wavelength, ...
         'k_medium', k*n_medium, 'k_particle', k*n_particle);
-      
+
     % Calculate the force along the axial direction
-    for nz = 1:length(z)
-      tbeam = beam.translateXyz([0, 0, z(nz)]);
-      sbeam = T * tbeam;
-      sbeam1 = T1 * tbeam;
-      
-      fz(:, nz) = ott.forcetorque(tbeam, sbeam);
-      fz1(:, nz) = ott.forcetorque(tbeam, sbeam1);
-    end
+    % The force arrays contain the x, y, z force for both particles
+    fz = ott.forcetorque(beam, [T, T1], 'position', [0;0;1] * z);
 
     % Find the minimum axial restoring force
     axialrestoringforce(ii) = min(fz(3, :));
-    axialrestoringforce1(ii) = min(fz1(3, :));
-    
+    axialrestoringforce1(ii) = min(fz(6, :));
+
     % Find z-axis equilibrium
     zeq = ott.find_equilibrium(z, fz(3, :));
     if isempty(zeq)
@@ -98,18 +98,12 @@ for ii=1:length(radius)
     end
 
     % Calculate the radial force at z-axial equilibrium
-    for nr = 1:length(r)
-      tbeam = beam.translateXyz([r(nr), 0, zeq]);
-      sbeam = T * tbeam;
-      sbeam1 = T1 * tbeam;
-      
-      fr(:, nr) = ott.forcetorque(tbeam, sbeam);
-      fr1(:, nr) = ott.forcetorque(tbeam, sbeam1);
-    end
-    
+    fr = ott.forcetorque(beam, [T, T1], ...
+        'position', [1;0;0] * r + [0;0;zeq]);
+
     % Find the minimum transverse restoring force
     transverserestoringforce(ii) = min(fr(1, :));
-    transverserestoringforce1(ii) = min(fr1(1, :));
+    transverserestoringforce1(ii) = min(fr(4, :));
 end
 
 disp(['Simulation took ' num2str(toc()) ' seconds']);

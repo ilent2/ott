@@ -8,7 +8,7 @@ function testConstruct(testCase)
   import matlab.unittest.constraints.IsEqualTo;
   beam = ott.BscPlane([0.0, pi/4], [0.0, 0.0], 'radius', 1.0);
 
-  testCase.verifyThat(beam.beams, IsEqualTo(2), ...
+  testCase.verifyThat(beam.Nbeams, IsEqualTo(2), ...
     'Incorrect number of beams stored');
 
   nmax = 12;
@@ -27,7 +27,7 @@ function testTranslate(testCase)
   tbeam1 = beam.translateZ(dz);
 
   import matlab.unittest.constraints.IsEqualTo;
-  testCase.verifyThat(tbeam1.beams, IsEqualTo(2), ...
+  testCase.verifyThat(tbeam1.Nbeams, IsEqualTo(2), ...
     'Incorrect number of beams after translation');
 
   [~, A, B] = beam.translateZ(dz);

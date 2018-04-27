@@ -148,7 +148,6 @@ classdef BscPlane < ott.Bsc
 
         % Add a warning when the beam is translated outside nmax2ka(Nmax)
         beam.dz = beam.dz + abs(z);
-        disp(beam.k_medium);
         if beam.dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
           warning('ott:BscPlane:translateZ:outside_nmax', ...
               'Repeated translation of beam outside Nmax region');

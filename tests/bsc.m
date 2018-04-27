@@ -44,15 +44,15 @@ function testTranslation(testCase)
     'Within', AbsoluteTolerance(tol)), ...
     'beam.translate(A, B) does not match translateZ');
 
-  xbeam1 = beam.translateXyz([dz, dz, 0]);
+  xbeam1 = beam.translateXyz([dz; dz; 0]);
 
-  [~, AB] = beam.translateXyz([dz, dz, 0]);
+  [~, AB] = beam.translateXyz([dz; dz; 0]);
   xbeam2 = AB * beam;
 
-  [~, A, B] = beam.translateXyz([dz, dz, 0]);
+  [~, A, B] = beam.translateXyz([dz; dz; 0]);
   xbeam3 = beam.translate(A, B);
 
-  [~, A, B, D] = beam.translateXyz([dz, dz, 0]);
+  [~, A, B, D] = beam.translateXyz([dz; dz; 0]);
   xbeam4 = beam.translateXyz(A, B, D);
 
   % Check all beams are equal

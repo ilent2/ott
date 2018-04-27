@@ -8,7 +8,7 @@ function testConstruct(testCase)
   beam = ott.BscBessel(12, [0.0, pi/4]);
 
   import matlab.unittest.constraints.IsEqualTo;
-  testCase.verifyThat(beam.beams, IsEqualTo(2), ...
+  testCase.verifyThat(beam.Nbeams, IsEqualTo(2), ...
     'Incorrect number of beams stored');
 
 end

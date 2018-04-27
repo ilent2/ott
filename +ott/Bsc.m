@@ -110,10 +110,15 @@ classdef Bsc
     function beam = append(beam, other)
       % APPEND joins two beam objects together
 
-      beam.Nmax = max(beam.Nmax, other.Nmax);
-      other.Nmax = beam.Nmax;
-      beam.a = [beam.a, other.a];
-      beam.b = [beam.b, other.b];
+      if beam.Nbeams == 0
+        % Copy the other beam, preserves properties
+        beam = other;
+      else
+        beam.Nmax = max(beam.Nmax, other.Nmax);
+        other.Nmax = beam.Nmax;
+        beam.a = [beam.a, other.a];
+        beam.b = [beam.b, other.b];
+      end
     end
 
     function [E, H] = farfield(beam, theta, phi)
@@ -385,6 +390,10 @@ classdef Bsc
       p.addParameter('Nmax', beam.Nmax);
       p.parse(varargin{:});
 
+      if nargout ~= 1 && numel(p.Results.z) > 1
+        error('Multiple output with multiple translations not supported');
+      end
+
       if ~isempty(p.Results.z)
         z = p.Results.z;
 
@@ -400,13 +409,16 @@ classdef Bsc
         % Convert to beam units
         z = z * beam.k_medium / 2 / pi;
 
-        [A, B] = ott.utils.translate_z([p.Results.Nmax, beam.Nmax], z);
+        ibeam = beam;
+        beam = ott.Bsc();
+
+        for ii = 1:numel(z)
+          [A, B] = ott.utils.translate_z([p.Results.Nmax, ibeam.Nmax], z(ii));
+          beam = beam.append(ibeam.translate(A, B));
+        end
       else
         error('Wrong number of arguments');
       end
-
-      % Apply the translation
-      beam = beam.translate(A, B);
 
       % Pack the rotated matricies into a single ABBA object
       if nargout == 2
@@ -445,7 +457,7 @@ classdef Bsc
       if ~isempty(p.Results.opt1) && isempty(p.Results.opt2) ...
           && isempty(p.Results.opt3)
         xyz = p.Results.opt1;
-        rtp = ott.utils.xyz2rtp(xyz(:).');
+        rtp = ott.utils.xyz2rtp(xyz.').';
         [varargout{1:nargout}] = beam.translateRtp(rtp, ...
             'Nmax', p.Results.Nmax);
       else
@@ -495,9 +507,9 @@ classdef Bsc
           && isempty(p.Results.opt3)
 
         % Assume first argument is rtp coordinates
-        r = p.Results.opt1(1);
-        theta = p.Results.opt1(2);
-        phi = p.Results.opt1(3);
+        r = p.Results.opt1(1, :);
+        theta = p.Results.opt1(2, :);
+        phi = p.Results.opt1(3, :);
 
       elseif ~isempty(p.Results.opt1) && ~isempty(p.Results.opt2) ...
           && ~isempty(p.Results.opt3)
@@ -506,35 +518,43 @@ classdef Bsc
         A = p.Results.opt1;
         B = p.Results.opt2;
         D = p.Results.opt3;
-        beam = D * beam;
+        beam = beam.rotate('wigner', D);
         beam = beam.translate(A, B);
-
-        % The beam might change size, so readjust D to match
-        sz = size(A, 1);
-        D2 = D(1:sz, 1:sz);
-        beam = D2' * beam;
+        beam = beam.rotate('wigner', D');
         return;
       else
         error('Not enough input arguments');
       end
 
-      % Only do the rotation if we need it
-      if (theta ~= 0 && abs(theta) ~= pi) || phi ~= 0
-        [beam, D] = beam.rotateYz(theta, phi, ...
-            'Nmax', max(oNmax, beam.Nmax));
-        [beam, A, B] = beam.translateZ(r, 'Nmax', oNmax);
+      if numel(r) ~= 1 && nargout ~= 1
+        error('Multiple output with multiple translations not supported');
+      end
 
-        % The beam might change size, so readjust D to match
-        sz = size(A, 1);
-        D2 = D(1:sz, 1:sz);
-        beam = D2' * beam;
+      % Only do the rotation if we need it
+      if any((theta ~= 0 & abs(theta) ~= pi) | phi ~= 0)
+
+        ibeam = beam;
+        beam = ott.Bsc();
+
+        for ii = 1:numel(r)
+          [tbeam, D] = ibeam.rotateYz(theta(ii), phi(ii), ...
+              'Nmax', max(oNmax, ibeam.Nmax));
+          [tbeam, A, B] = tbeam.translateZ(r(ii), 'Nmax', oNmax);
+          beam = beam.append(tbeam.rotate('wigner', D'));
+        end
       else
         dnmax = max(oNmax, beam.Nmax);
         D = eye(ott.utils.combined_index(dnmax, dnmax));
-        if abs(theta) == pi
-          r = -r;
+
+        % Replace rotations by 180 with negative translations
+        idx = abs(theta) == pi;
+        r(idx) = -r(idx);
+
+        if numel(r) == 1
+          [beam, A, B] = beam.translateZ(r, 'Nmax', oNmax);
+        else
+          beam = beam.translateZ(r, 'Nmax', oNmax);
         end
-        [beam, A, B] = beam.translateZ(r, 'Nmax', oNmax);
       end
 
       % Rotate the translation matricies
@@ -556,31 +576,49 @@ classdef Bsc
       end
     end
 
-    function [beam, D] = rotate(beam, R, varargin)
+    function [beam, D] = rotate(beam, varargin)
       %ROTATE apply the rotation matrix R to the beam coefficients
       %
       % [beam, D] = ROTATE(R) generates the wigner rotation matrix, D,
       % to rotate the beam.  R is the Cartesian rotation matrix
       % describing the rotation.  Returns the rotated beam and D.
       %
+      % beam = ROTATE('wigner', D) applies the precomputed rotation.
+      % This will only work if Nmax ~= 1.
+      %
       % ROTATE(..., 'Nmax', nmax) specifies the Nmax for the
-      % rotation matrix.  The beam Nmax is unchanged.
+      % rotation matrix.  The beam Nmax is unchanged.  If nmax is smaller
+      % than the beam Nmax, this argument is ignored.
 
       p = inputParser;
+      p.addOptional('R', []);
       p.addParameter('Nmax', beam.Nmax);
+      p.addParameter('wigner', []);
       p.parse(varargin{:});
 
-      % If no rotation, don't calculate wigner rotation matrix
-      if sum(sum((eye(3) - R).^2)) < 1e-6
-        D = eye(ott.utils.combined_index(p.Results.Nmax, p.Results.Nmax));
-        return;
+      if ~isempty(p.Results.R) && isempty(p.Results.wigner)
+
+        R = p.Results.R;
+
+        % If no rotation, don't calculate wigner rotation matrix
+        if sum(sum((eye(3) - R).^2)) < 1e-6
+          D = eye(ott.utils.combined_index(p.Results.Nmax, p.Results.Nmax));
+          return;
+        end
+
+        D = ott.utils.wigner_rotation_matrix(...
+            max(beam.Nmax, p.Results.Nmax), R);
+        beam = beam.rotate('wigner', D);
+
+      elseif ~isempty(p.Results.wigner) && isempty(p.Results.R)
+
+        sz = size(beam.a, 1);
+        D2 = p.Results.wigner(1:sz, 1:sz);
+        beam = D2 * beam;
+
+      else
+        error('One of wigner or R must be specified');
       end
-
-      D = ott.utils.wigner_rotation_matrix(p.Results.Nmax, R);
-
-      sz = size(beam.a, 1);
-      D2 = D(1:sz, 1:sz);
-      beam = D2 * beam;
     end
 
     function [beam, D] = rotateX(beam, angle, varargin)
@@ -774,9 +812,7 @@ classdef Bsc
       if ~isempty(p.Results.rotation)
 
         % This seems to take a long time
-        %sz = size(sbeam.a, 1);
-        %D2 = D(1:sz, 1:sz);
-        %sbeam = D2' * sbeam;
+        %sbeam = sbeam.rotate('wigner', D');
 
         sbeam = sbeam.rotate(inv(p.Results.rotation));
       end

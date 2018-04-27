@@ -47,7 +47,8 @@ index_range=linspace(1.34,2.66,50);            %absolute refractive index
 tic
 %to see the proceedure for calculating a range of particle sizes and
 %refractive indexes open landscape()
-system_parameters=[1.3 1.33 1.07e-6 [1 1i] 90 0];
+n_medium = 1.33;
+system_parameters=[1.3 n_medium 1.07e-6 [1 1i] 90 0];
 structurelandscape=landscape(index_range,size_range_rad,system_parameters);
 toc
 
@@ -66,7 +67,8 @@ ylabel(cax,'Q_z^{min} [unitless]');
 
 %plot the maximum force.
 figure(2)
-[d,pax]=contourf(size_range_rad*2*1e6,index_range,structurelandscape.maxforce,20);
+[d,pax]=contourf(size_range_rad*2*1e6,index_range, ...
+  structurelandscape.maxforce,20);
 set(pax,'edgecolor','none')
 xlabel('particle diameter [{{\mu}{m}}]');
 ylabel('refractive index [unitless]');
@@ -76,7 +78,8 @@ ylabel(cax,'Q_z^{max} [unitless]');
 
 %plot the z quilibrium position.
 figure(3)
-[d,pax]=contourf(size_range_rad*2*1e6,index_range,structurelandscape.zequilibrium,20);
+[d,pax]=contourf(size_range_rad*2*1e6,index_range,...
+  structurelandscape.zequilibrium*n_medium,20);
 set(pax,'edgecolor','none')
 xlabel('particle diameter [{{\mu}{m}}]');
 ylabel('refractive index [unitless]');
@@ -86,7 +89,8 @@ ylabel(cax,'z [k{\lambda}]');
 
 %plot the axial stiffness.
 figure(4)
-[d,pax]=contourf(size_range_rad*2*1e6,index_range,structurelandscape.zstiffness,20);
+[d,pax]=contourf(size_range_rad*2*1e6,index_range, ...
+  structurelandscape.zstiffness/n_medium,20);
 set(pax,'edgecolor','none')
 xlabel('particle diameter [{{\mu}{m}}]');
 ylabel('refractive index [unitless]');
@@ -96,7 +100,8 @@ ylabel(cax,'k_z [k^{-1}\lambda^{-1}]');
 
 %plot the transverse stiffness.
 figure(5)
-[d,pax]=contourf(size_range_rad*2*1e6,index_range,structurelandscape.xstiffness,20);
+[d,pax]=contourf(size_range_rad*2*1e6,index_range, ...
+  structurelandscape.xstiffness/n_medium,20);
 set(pax,'edgecolor','none')
 xlabel('particle diameter [{{\mu}{m}}]');
 ylabel('refractive index [unitless]');
@@ -155,7 +160,13 @@ beam = ott.BscPmGauss('NA', NA, 'polarisation', system_parameters(4:5), ...
     'truncation_angle_deg', system_parameters(6), 'power', 1.0, ...
     'k_medium', k, 'index_medium', medium_index);
 
-%%%
+%% Determine the max Nmax
+% This is an optimisation, most of the time you don't need to do this
+% since ott.forcetorque does it for you, but the following does
+% translations and rotations manually.
+maxNmax = ott.utils.ka2nmax(k * max(relsize_range));
+
+%% Run the simulation
 
 for particle=1:nParticles
     disp(['Particle: ' num2str(particle) '/' num2str(nParticles)]);
@@ -175,15 +186,12 @@ for particle=1:nParticles
     %calculate all needed translations now.
 
     % Precompute the beams
-    beams = repmat(beam, 1, length(position));
-    for trans=1:length(position)
-      beams(trans) = beams(trans).translateZ(position(trans));
-    end
+    beams = beam.translateZ(position, 'Nmax', maxNmax);
 
     % Precompute rotation to x-axis
     [~, Dx] = beam.rotateY(pi/2);
 
-    % Precompute the translation on the x-axis
+    % Precompute the translation on the x-axis (keep A, B invertable)
     dx = 2e-8/beam.k_medium*2*pi;
     [~, A, B] = beam.translateZ(dx/2.0);
 
@@ -196,23 +204,19 @@ for particle=1:nParticles
             'k_medium', k, 'k_particle', k*relindex_range(index));
 
         % Calculate axial force
-        fz=zeros(1,nTrans);
-        for trans=1:nTrans
-          [~,~,fz(trans),~,~,~] = ott.forcetorque(...
-              beams(trans), T*beams(trans));
-        end
+        fz = ott.forcetorque(beams, T);
 
-        [maxforcez(index,particle),mai]=max(fz);
-        [minforcez(index,particle),mii]=min(fz);
-        
+        [maxforcez(index,particle),mai]=max(fz(3, :));
+        [minforcez(index,particle),mii]=min(fz(3, :));
+
         %if minforcez < 1e-8*max(fz)
             if mai<mii && (mii+2) <= nTrans && mai-2 >= 1
                 %Splines have good convergence properties within a defined
                 %region. This is fast.
                 splinex=linspace(position(mai-2),position(mii+2),300);
-                splinef=spline(position(mai-2:mii+2),fz(mai-2:mii+2));
+                splinef=spline(position(mai-2:mii+2),fz(3, mai-2:mii+2));
                 spliney=ppval(splinef,splinex);
-                
+
                 maxforcez(index,particle)=max(spliney);
                 minforcez(index,particle)=min(spliney);
             else
@@ -220,7 +224,7 @@ for particle=1:nParticles
                 spliney=[];
                 splinex=[];
             end
-            
+
             %Calculate axial equilibrium accurately. I wouldn't trust k for
             %extreme marginal traps anyway.
             if mai<mii && (mii+2) <= nTrans && mai-2 >= 1
@@ -229,15 +233,15 @@ for particle=1:nParticles
                     if numel(zero_spline)>0
                         %first guess
                         fs=polyfit(splinex(zero_spline-3:zero_spline+2),spliney(zero_spline-3:zero_spline+2),3);
-                        
+
                         rts=roots(fs);
                         rts=rts(imag(rts)==0);
 
                         [~,zmin]=min(abs(rts-splinex(zero_spline)));
-                        
+
                         z_equilibrium(index,particle)=rts(zmin); %also pretty good.
                         z_stiffness(index,particle)=-polyval([3*fs(1),2*fs(2),fs(3)],rts(zmin)); %not perfect but pretty good.
-                        
+
 %                         figure(4)
 %                         plot(z_equilibrium(index,particle),0,'r.')
 %                         plot([z_equilibrium(index,particle)-position(2)+position(1),z_equilibrium(index,particle)+position(2)-position(1)],-[z_stiffness(index,particle)*(z_equilibrium(index,particle)-position(2)+position(1)),z_stiffness(index,particle)*(z_equilibrium(index,particle)+position(2)-position(1))]+mean([z_stiffness(index,particle)*(z_equilibrium(index,particle)-position(2)+position(1)),z_stiffness(index,particle)*(z_equilibrium(index,particle)+position(2)-position(1))]),'r')
@@ -245,20 +249,17 @@ for particle=1:nParticles
 %                         hold off
 %                         pause(1)
 
-                        %calc transverse
+                        %calc transverse (keep Nmax the same)
                         tbeam = beam.translateZ(z_equilibrium(index,particle));
-                        tbeam = Dx * tbeam;
-
-                        % TODO: The old version put the translateZ part
-                        % matrix calcultion outside this loop
+                        tbeam = tbeam.rotate('wigner', Dx);
 
                         % Translate along the x direction and calc x force
                         xbeam = tbeam.translate(A, B);
-                        [~,~,fx1,~,~,~] = ott.forcetorque(xbeam, T*xbeam);
+                        [~,~,fx1,~,~,~] = ott.forcetorque(xbeam, T);
 
                         % Translate along the x direction and calc x force
                         xbeam = tbeam.translate(A', B');
-                        [~,~,fx0,~,~,~] = ott.forcetorque(xbeam, T*xbeam);
+                        [~,~,fx0,~,~,~] = ott.forcetorque(xbeam, T);
 
                         x_stiffness(index,particle)=(fx1-fx0)/dx;
                     else
@@ -272,9 +273,9 @@ for particle=1:nParticles
                 z_stiffness(index,particle)=NaN;
                 x_stiffness(index,particle)=NaN;
             end
-        
+
     end
-    
+
 end
 disp('Output is in calculation units which should be easily convertible into SI.')
 structureOutput.maxforce=maxforcez;

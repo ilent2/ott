@@ -144,7 +144,7 @@ function testValues(testCase)
       'Cone-tipped cylinder rotational symmetry incorrect');
 
   % Test a cube
-  shape = Shape.simple('cube', [ 1 ]);
+  shape = Shape.simple('cube', 1);
   r = shape.radii(theta, phi);
   n = shape.normals(theta, phi);
   [~, ~, rotsym] = shape.axialSymmetry();

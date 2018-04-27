@@ -64,7 +64,7 @@ if isa(sbeam, 'ott.Tmatrix')
   end
 
   % Preallocate output
-  f = zeros(3*numel(T), npositions*nrotations);
+  f = zeros(3*numel(T), npositions*nrotations*ibeam.Nbeams);
   t = f;
   s = f;
 
@@ -87,9 +87,12 @@ if isa(sbeam, 'ott.Tmatrix')
           'position', position, 'rotation', rotation);
 
       [fl,tl,sl] = ott.forcetorque(tbeam, sbeam);
-      f(:, (ii-1)*nrotations + jj) = fl(:);
-      t(:, (ii-1)*nrotations + jj) = tl(:);
-      s(:, (ii-1)*nrotations + jj) = sl(:);
+
+      % Unpack the calculated force
+      idx = ((ii-1)*nrotations + (jj-1))*ibeam.Nbeams + 1;
+      f(:, idx:idx+ibeam.Nbeams - 1) = reshape(fl, 3*numel(T), ibeam.Nbeams);
+      t(:, idx:idx+ibeam.Nbeams - 1) = reshape(tl, 3*numel(T), ibeam.Nbeams);
+      s(:, idx:idx+ibeam.Nbeams - 1) = reshape(sl, 3*numel(T), ibeam.Nbeams);
     end
   end
 

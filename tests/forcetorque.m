@@ -157,7 +157,7 @@ function testMultiBeam(testCase)
       'Within', AbsoluteTolerance(tol)), ...
       'Beam2 force does not match (1)');
 
-  % Compare the result to the individual beams (requires other tests to pass)
+  % Calculate force and torque from two arrays of beams
   [f, t] = ott.forcetorque(pbeam, sbeam);
 
   testCase.verifyThat(size(f), IsEqualTo([3, 2]), ...
@@ -171,4 +171,30 @@ function testMultiBeam(testCase)
       'Within', AbsoluteTolerance(tol)), ...
       'Beam2 force does not match (2)');
 
+  % Calculate force and torque from T-matrix and array of beams
+  [f, t] = ott.forcetorque(pbeam, T, 'position', [0;0;1]*[0, pi/2]);
+
+  beam3 = pbeam.beam(1).translateZ(pi/2);
+  beam4 = pbeam.beam(2).translateZ(pi/2);
+  [f3, t1] = ott.forcetorque(beam3, T*beam3);
+  [f4, t2] = ott.forcetorque(beam4, T*beam4);
+
+  testCase.verifyThat(size(f), IsEqualTo([3, 4]), ...
+      'Beam1 force size incorrect (2)');
+
+  testCase.verifyThat(f1(:), IsEqualTo(f(1:3).', ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Beam1 force does not match (3)');
+
+  testCase.verifyThat(f2(:), IsEqualTo(f(4:6).', ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Beam2 force does not match (3)');
+
+  testCase.verifyThat(f3(:), IsEqualTo(f(7:9).', ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Beam3 force does not match (3)');
+
+  testCase.verifyThat(f4(:), IsEqualTo(f(10:12).', ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Beam4 force does not match (3)');
 end
