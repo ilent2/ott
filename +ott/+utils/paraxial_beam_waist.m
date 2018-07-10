@@ -1,5 +1,5 @@
 function w=paraxial_beam_waist(paraxial_order);
-% PARAXIAL_BEAM WAIST computes the re-normlaised beam waist for high-order
+% PARAXIAL_BEAM_WAIST computes the re-normlaised beam waist for high-order
 % gaussian beams using a recursion to find a particular root of the function
 % x.^\lambda exp(-x^2).
 %

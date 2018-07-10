@@ -1,12 +1,12 @@
-function [M,N,M2,N2,M3,N3] = vswfsph2cart(n,m,kr,theta,phi,htype)
-% VSWFSPH2CART vector spherical harmonics spherical coordinate input,
+function [M,N,M2,N2,M3,N3] = vswfcart(n,m,kr,theta,phi,htype)
+% VSWFCART vector spherical harmonics spherical coordinate input,
 % cartesian output.
 %
-% [M1,N1,M2,N2,M3,N3] = vswfsph2cart(n,m,kr,theta,phi) calculates the
+% [M1,N1,M2,N2,M3,N3] = VSWFCART(n,m,kr,theta,phi) calculates the
 % outgoing M1,N1, incomming M2,N2 and regular M3,N3 VSWF.
 % kr, theta, phi are vectors of equal length, or scalar.
 %
-% [M,N] = VSWFSPH2CART(n,m,kr,theta,phi,type) calculates only the
+% [M,N] = VSWFCART(n,m,kr,theta,phi,type) calculates only the
 % requested VSWF, where type is
 %     1 -> outgoing solution - h(1)
 %     2 -> incoming solution - h(2)
