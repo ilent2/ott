@@ -1,6 +1,9 @@
 classdef Shape
 %Shape abstract class for optical tweezers toolbox shapes
 %
+% Methods (abstract):
+%   inside(shape, ...) determine if point is inside shape
+%
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
@@ -50,6 +53,10 @@ classdef Shape
           error('Unsupported simple particle shape');
       end
     end
+  end
+
+  methods (Abstract)
+    inside(shape, varargin)   % Determine if point is inside shape
   end
 
   methods

@@ -140,6 +140,26 @@ classdef StarShape < ott.shapes.Shape
           [ zeros(size(theta)), theta, phi ]);
     end
 
+    function b = inside(shape, radius, theta, phi)
+      % INSIDE determine if point is inside the shape
+      %
+      % b = inside(shape, radius, theta, phi) determine if the
+      % point described by radius, theta (polar), phi (azimuthal)
+      % is inside the shape.
+
+      theta = theta(:);
+      phi = phi(:);
+      radius = radius(:);
+      [radius,theta,phi] = ott.utils.matchsize(radius,theta,phi);
+
+      assert(all(radius >= 0), 'Radii must be positive');
+
+      % Determine if points are less than shape radii
+      r = shape.radii(theta, phi);
+      b = radius < r;
+
+    end
+
     function varargout = angulargrid(shape, varargin)
       % ANGULARGRID calculate the angular grid and radii for the shape
       %
