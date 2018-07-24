@@ -49,10 +49,12 @@ classdef BscPlane < ott.Bsc
       p.addParameter('Nmax', []);
       p.addParameter('radius', []);
       p.addParameter('k_medium', 2*pi);
+      p.addParameter('omega', 2*pi);
       p.parse(varargin{:});
 
       beam.type = 'incomming';
       beam.k_medium = p.Results.k_medium;
+      beam.omega = p.Results.omega;
 
       % If points aren't specified explicitly, use meshgrid
       if length(theta) ~= length(phi)

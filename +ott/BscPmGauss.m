@@ -38,19 +38,29 @@ classdef BscPmGauss < ott.BscPointmatch
     function beam = BscPmGauss(varargin)
       %BSCPMGAUSS construct a new IG, HG or LG gaussian beam.
       %
-      % BSCPMGAUSS() constructs a new Gassian beam (LG00).
+      % BSCPMGAUSS(...) constructs a new Gassian beam (LG00).
       %
-      % BSCPMGAUSS(type, mode) constructs a new beam with the given type.
+      % BSCPMGAUSS(type, mode, ...) constructs a new beam with the given type.
       % Supported types [mode]:
       %     'lg'    Laguarre-Gauss  [ radial azimuthal ]
       %     'hg'    Hermite-Gauss   [ m n ]
       %     'ig'    Ince-Gauss      [ paraxial azimuthal parity elipticity ]
       %
-      % BSCPMGAUSS(..., 'Nmax') specifies the desired Nmax for the beam.
-      % If omitted, Nmax is initially set to 100, the beam is calculated and
-      % Nmax is reduced so that the power does not drop significantly.
+      % Optional named parameters:
+      %   'Nmax'              Truncation number for beam shape coefficients.
+      %       If omitted, Nmax is initially set to 100, the beam is
+      %       calculated and Nmax is reduced so that the power does
+      %       not drop significantly.
       %
-      % TODO: Documentation
+      %   'NA'                Numerical aperture of objective
+      %   'polarisation'      Polarisation of the beam
+      %
+      %   'k_medium'          Wave number in medium
+      %   'index_medium'      Refractive index of medium
+      %   'wavelength_medium' Wavelength in medium
+      %
+      %   'wavelength0'       Wavelength in vacuum
+      %   'offset'            Offset of the beam from origin
 
       beam = beam@ott.BscPointmatch(varargin{:});
       beam.type = 'incomming';
@@ -66,6 +76,7 @@ classdef BscPmGauss < ott.BscPointmatch
       p.addParameter('wavelength0', 1);
       p.addParameter('power', []);
 
+      p.addParameter('omega', 2*pi);
       p.addParameter('k_medium', []);
       p.addParameter('index_medium', []);
       p.addParameter('wavelength_medium', []);
@@ -85,6 +96,7 @@ classdef BscPmGauss < ott.BscPointmatch
       beam.polarisation = p.Results.polarisation;
       beam.offset = p.Results.offset;
       beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
+      beam.omega = p.Results.omega;
 
       % Store truncation angle
       if isempty(p.Results.truncation_angle_deg) &&  ...

@@ -30,6 +30,7 @@ classdef Bsc
     b           % Beam shape coefficients b vector
     type        % Coefficient type (incomming, outgoing or regular)
 
+    omega       % Angular frequency of beam
     k_medium    % Wavenumber in medium
 
     dz          % Absolute cumulative distance the beam has moved
@@ -43,6 +44,9 @@ classdef Bsc
     Nmax        % Size of beam vectors
     power       % Power of the beam
     Nbeams      % Number of beams in this Bsc object
+
+    wavelength  % Wavelength of beam
+    speed       % Speed of beam in medium
   end
 
   methods (Abstract)
@@ -63,7 +67,7 @@ classdef Bsc
       total_orders = ott.utils.combined_index(Nmax, Nmax);
       ci = ott.utils.combined_index(n, m);
       nbeams = size(a, 2);
-      
+
       [ci, cinbeams] = meshgrid(ci, 1:nbeams);
 
       a = sparse(ci, cinbeams, a, total_orders, nbeams);
@@ -238,12 +242,27 @@ classdef Bsc
 
     function p = get.power(beam)
       % get.power calculate the power of the beam
-      p = sum(abs(beam.a).^2 + abs(beam.b).^2);
+      p = full(sum(abs(beam.a).^2 + abs(beam.b).^2));
     end
 
     function beam = set.power(beam, p)
       % set.power set the beam power
       beam = sqrt(p / beam.power) * beam;
+    end
+
+    function lambda = get.wavelength(beam)
+      % Get the beam wavelength
+      lambda = 2*pi/beam.k_medium;
+    end
+
+    function beam = set.wavelength(beam, lambda)
+      % Set the beam wavelength
+      beam.k_medium = 2*pi/lambda;
+    end
+
+    function speed = get.speed(beam)
+      % Get the speed of the beam in medium
+      speed = beam.omega / beam.k_medium;
     end
 
     function beam = set.type(beam, type)
