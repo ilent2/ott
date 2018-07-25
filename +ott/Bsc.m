@@ -240,6 +240,64 @@ classdef Bsc
       end
     end
 
+    function im = visualise(beam, varargin)
+      % Create a visualisation of the beam
+      %
+      % visualise(...) displays an image of the beam in the current
+      % figure window.
+      %
+      % im = visualise(...) returns a image of the beam.
+      %
+      % Optional named arguments:
+      %     'size'    [ x, y ]    Width and height of image
+      %     'field'   type        Type of field to calculate
+      %     'axis'    ax          Axis to visualise ('x', 'y', 'z')
+      %     'offset'  offset      Plane offset along axis
+
+      p = inputParser;
+      p.addParameter('field', 'irradiance');
+      p.addParameter('size', [ 80, 80 ]);
+      p.addParameter('axis', 'z');
+      p.addParameter('offset', 0.0);
+      p.parse(varargin{:});
+
+      range = ott.utils.nmax2ka(beam.Nmax)/beam.k_medium;
+
+      xrange = linspace(-1, 1, p.Results.size(1))*range;
+      yrange = linspace(-1, 1, p.Results.size(2))*range;
+      [xx, yy, zz] = meshgrid(xrange, yrange, p.Results.offset);
+
+      % Generate the xyz grid for the used requested plane
+      switch p.Results.axis
+        case 'x'
+          xyz = [zz(:), yy(:), xx(:)];
+        case 'y'
+          xyz = [yy(:), zz(:), xx(:)];
+        case 'z'
+          xyz = [xx(:), yy(:), zz(:)];
+        otherwise
+          error('Unknown axis name specified');
+      end
+
+      % Calculate the electric field
+      E = beam.emFieldXyz(xyz.');
+
+      if strcmpi(p.Results.field, 'irradiance')
+
+        im = reshape(sqrt(sum(abs(E).^2, 1)), p.Results.size);
+
+      else
+        error('Unknown field visualisation type value');
+      end
+
+      % Display the visualisation
+      if nargout == 0
+        imagesc(xrange, yrange, im);
+        axis image;
+      end
+
+    end
+
     function p = get.power(beam)
       % get.power calculate the power of the beam
       p = full(sum(abs(beam.a).^2 + abs(beam.b).^2));
