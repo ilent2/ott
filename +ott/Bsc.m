@@ -10,7 +10,7 @@ classdef Bsc
 %   translateXyz    Translation to xyz using rotations and z translations
 %   translateRtp    Translation to rtp using rotations and z translations
 %   farfield        Calculate fields in farfield
-%   emfieldXyz      Calculate fields at specified locations
+%   emFieldXyz      Calculate fields at specified locations
 %   set.Nmax        Resize the beam shape coefficient vectors
 %   get.Nmax        Get the current size of the beam shape coefficient vectors
 %   getCoefficients Get the beam coefficients [a, b]
@@ -57,7 +57,7 @@ classdef Bsc
       %MAKE_BEAM_VECTOR converts output of bsc_* functions to sparse vectors
 
       if isempty(n)
-        error('No modes');
+        error('OTT:BSC:make_beam_vector:no_modes', 'No modes');
       end
 
       if nargin < 5
@@ -127,6 +127,10 @@ classdef Bsc
 
     function [E, H] = farfield(beam, theta, phi)
       %FARFIELD finds far field at locations thieta, phi.
+      %
+      % [E, H] = beam.farfield(theta, phi) calculates the farfield
+      % at locations theta, phi.  Returns 3xN matricies of the fields
+      % in spherical coordinates (r, t, p), the radial component is zero.
 
       [theta,phi] = ott.utils.matchsize(theta,phi);
 
@@ -217,6 +221,10 @@ classdef Bsc
 
     function [E, H] = emFieldXyz(beam, xyz)
       %EMFIELDXYZ calculates the E and H field at specified locations
+      %
+      % [E, H] = beam.emFieldXyz(xyz) calculates the complex field
+      % at locations xyz.  xyz should be a 3xN matrix of locations.
+      % Returns 3xN matrices for the E and H field at these locations.
 
       kxyz = xyz * beam.k_medium;
 
@@ -271,10 +279,13 @@ classdef Bsc
       switch p.Results.axis
         case 'x'
           xyz = [zz(:), yy(:), xx(:)];
+          alabels = {'Z', 'Y'};
         case 'y'
           xyz = [yy(:), zz(:), xx(:)];
+          alabels = {'Z', 'X'};
         case 'z'
           xyz = [xx(:), yy(:), zz(:)];
+          alabels = {'X', 'Y'};
         otherwise
           error('Unknown axis name specified');
       end
@@ -284,7 +295,7 @@ classdef Bsc
 
       if strcmpi(p.Results.field, 'irradiance')
 
-        im = reshape(sqrt(sum(abs(E).^2, 1)), p.Results.size);
+        imout = reshape(sqrt(sum(abs(E).^2, 1)), p.Results.size);
 
       else
         error('Unknown field visualisation type value');
@@ -292,8 +303,13 @@ classdef Bsc
 
       % Display the visualisation
       if nargout == 0
-        imagesc(xrange, yrange, im);
+        imagesc(xrange, yrange, imout);
+        xlabel(alabels{1});
+        ylabel(alabels{2});
         axis image;
+      else
+        % So we don't display the output if not requested
+        im = imout;
       end
 
     end
