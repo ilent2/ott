@@ -12,6 +12,8 @@ Installation
 ------------
 
 To use the toolbox, download or clone the GitHub repository.
+You will also need a modern version of MATLAB, we recommend
+updating to at least 2018a.
 This version of the toolbox is released as a package, `+ott`, which
 contains a collection of functions for calculating T-matrices, beam
 coefficients, force and torques.
