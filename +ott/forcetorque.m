@@ -3,6 +3,10 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam, varargin)
 % If the beam shape coefficients are in the original coordinates,
 % this outputs the force, torque and spin in 3D carteisan coordinates.
 %
+% Units are beam power.  Force results should be multipled by n/c
+% and torque results multiplied by 1/omega, assuiming the beam coefficients
+% already have the correct units for power.
+%
 % [fxyz,txyz,sxyz] = FORCETORQUE(ibeam, sbeam) calculates the force,
 % torque and spin using the incident beam, ibeam, and the scattered
 % beam, sbeam.
@@ -48,6 +52,14 @@ p = inputParser;
 p.addParameter('position', []);
 p.addParameter('rotation', []);
 p.parse(varargin{:});
+
+% Check sizes of inputs
+assert(size(p.Results.position, 1) == 3 ...
+    || numel(p.Results.position) == 0, ...
+    'position must either be a empty array or 3xN array');
+assert(size(p.Results.rotation, 1) == 3 ...
+    || numel(p.Results.rotation) == 0, ...
+    'rotation must either be a empty array or 3x3N array');
 
 if isa(sbeam, 'ott.Tmatrix')
 
