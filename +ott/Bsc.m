@@ -136,11 +136,14 @@ classdef Bsc
     end
 
     function [E, H] = farfield(beam, theta, phi)
-      %FARFIELD finds far field at locations thieta, phi.
+      %FARFIELD finds far field at locations theta, phi.
       %
       % [E, H] = beam.farfield(theta, phi) calculates the farfield
-      % at locations theta, phi.  Returns 3xN matricies of the fields
+      % at locations theta, phi.  Returns 3xN matrices of the fields
       % in spherical coordinates (r, t, p), the radial component is zero.
+      %
+      % Theta is the rotation off the z-axis, phi is the rotation about
+      % the z-axis.
 
       [theta,phi] = ott.utils.matchsize(theta,phi);
 
@@ -270,6 +273,79 @@ classdef Bsc
         H = S.Hinternal.';
       else
         error('Invalid beam type');
+      end
+    end
+
+    function im = visualiseFarfield(beam, varargin)
+      % Create a 2-D visualisation of the farfield of the beam
+      %
+      % visualiseFarfield(...) displays an image of the farfield in
+      % the current figure window.
+      %
+      % im = visualiseFarfield(...) returns a 2-D image of the farfield.
+      %
+      % Optional named arguments:
+      %     'size'    [ x, y ]    Size of the image
+      %     'direction'  dir      Hemisphere direction ('pos' or 'neg')
+      %     'field'   type        Type of field to calculate
+      %     'mapping' map         Mapping from sphere to plane ('sin', 'tan')
+      %     'range'   [ x, y ]    Range of points to visualise
+
+      p = inputParser;
+      p.addParameter('size', [80, 80]);
+      p.addParameter('direction', 'pos');
+      p.addParameter('field', 'irradiance');
+      p.addParameter('mapping', 'sin');
+      p.addParameter('range', [1, 1]);
+      p.parse(varargin{:});
+
+      % Calculate image locations
+      xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
+      yrange = linspace(-1, 1, p.Results.size(2))*p.Results.range(2);
+      [xx, yy] = meshgrid(xrange, yrange);
+
+      % Calculate spherical coordinates for pixels
+      phi = atan2(yy, xx);
+      rr = sqrt(xx.^2 + yy.^2);
+      switch p.Results.mapping
+        case 'sin'
+          theta = asin(rr);
+        case 'tan'
+          theta = atan(rr);
+        otherwise
+          error('Unknown mapping argument value, must be sin or tan');
+      end
+
+      % Determine if the points need calculating
+      pinside = imag(theta) == 0;
+      iphi = phi(pinside);
+      itheta = theta(pinside);
+
+      % Calculate the fields in the farfield
+      [ioutputE, ioutputH] = beam.farfield(itheta(:), iphi(:));
+
+      % Generate the requested field
+      if strcmpi(p.Results.field, 'irradiance')
+
+        dataout = sqrt(sum(abs(ioutputE).^2, 1));
+
+      else
+        error('Unknown field visualisation type value');
+      end
+
+      % Pack the result into the images
+      imout = zeros(p.Results.size);
+      imout(pinside) = dataout;
+
+      % Display the visualisation
+      if nargout == 0
+        imagesc(xrange, yrange, imout);
+        xlabel('X');
+        ylabel('Y');
+        axis image;
+      else
+        % So we don't display the output if not requested
+        im = imout;
       end
     end
 
