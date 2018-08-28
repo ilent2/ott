@@ -160,6 +160,27 @@ classdef StarShape < ott.shapes.Shape
 
     end
 
+    function b = insideXyz(shape, x, y, z)
+      % INSIDEXYZ determine if Cartesian point is inside the shape
+      %
+      % b = inside(shape, x, y, z) determine if the Cartesian point
+      % [x, y, z] is inside the star shaped object.
+      %
+      % See also INSIDE.
+
+      % Ensure the sizes match
+      x = x(:);
+      y = y(:);
+      z = z(:);
+      [x, y, z] = ott.utils.matchsize(x, y, z);
+
+      % Convert to spherical coordinates
+      [r, t, p] = ott.utils.xyz2rtp(x, y, z);
+
+      % Call the spherical coordinate version
+      b = shape.inside(r, t, p);
+    end
+
     function varargout = angulargrid(shape, varargin)
       % ANGULARGRID calculate the angular grid and radii for the shape
       %
