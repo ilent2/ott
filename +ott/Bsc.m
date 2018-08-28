@@ -101,6 +101,16 @@ classdef Bsc
   methods
     function beam = Bsc(a, b, type, varargin)
       %BSC construct a new beam object
+      
+      p = inputParser;
+      p.addParameter('like', []);
+      p.parse(varargin{:});
+      
+      if ~isempty(p.Results.like)
+        beam.omega = p.Results.like.omega;
+        beam.k_medium = p.Results.like.k_medium;
+        beam.dz = p.Results.like.dz;
+      end
 
       if nargin ~= 0
         beam.a = a;
@@ -219,28 +229,43 @@ classdef Bsc
       H = H * -1i;
     end
 
-    function [E, H] = emFieldXyz(beam, xyz)
+    function [E, H] = emFieldXyz(beam, xyz, varargin)
       %EMFIELDXYZ calculates the E and H field at specified locations
       %
       % [E, H] = beam.emFieldXyz(xyz) calculates the complex field
       % at locations xyz.  xyz should be a 3xN matrix of locations.
       % Returns 3xN matrices for the E and H field at these locations.
+      %
+      % Optional named arguments:
+      %    'calcE'   bool   calculate E field (default: true)
+      %    'calcH'   bool   calculate H field (default: nargout == 2)
+      %
+      % If either calcH or calcE is false, the function still returns
+      % E and H as matricies of all zeros.
 
+      p = inputParser;
+      p.addParameter('calcE', true);
+      p.addParameter('calcH', nargout == 2);
+      p.parse(varargin{:});
+      
       kxyz = xyz * beam.k_medium;
 
       [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
       nm = [ n; m ];
 
       if strcmp(beam.type, 'incomming')
-        S = ott.electromagnetic_field_xyz(kxyz.', nm, beam, [], []);
+        S = ott.electromagnetic_field_xyz(kxyz.', nm, beam, [], [], ...
+          'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
         E = S.Eincident.';
         H = S.Hincident.';
       elseif strcmp(beam.type, 'outgoing')
-        S = ott.electromagnetic_field_xyz(kxyz.', nm, [], beam, []);
+        S = ott.electromagnetic_field_xyz(kxyz.', nm, [], beam, [], ...
+          'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
         E = S.Escattered.';
         H = S.Hscattered.';
       elseif strcmp(beam.type, 'regular')
-        S = ott.electromagnetic_field_xyz(kxyz.', nm, [], [], beam);
+        S = ott.electromagnetic_field_xyz(kxyz.', nm, [], [], beam, ...
+          'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
         E = S.Einternal.';
         H = S.Hinternal.';
       else
@@ -260,19 +285,20 @@ classdef Bsc
       %     'size'    [ x, y ]    Width and height of image
       %     'field'   type        Type of field to calculate
       %     'axis'    ax          Axis to visualise ('x', 'y', 'z')
-      %     'offset'  offset      Plane offset along axis
+      %     'offset'  offset      Plane offset along axis (default: 0.0)
+      %     'range'   [ x, y ]    Range of points to visualise
 
       p = inputParser;
       p.addParameter('field', 'irradiance');
       p.addParameter('size', [ 80, 80 ]);
       p.addParameter('axis', 'z');
       p.addParameter('offset', 0.0);
+      p.addParameter('range', ...
+          [1,1]*ott.utils.nmax2ka(beam.Nmax)/beam.k_medium);
       p.parse(varargin{:});
 
-      range = ott.utils.nmax2ka(beam.Nmax)/beam.k_medium;
-
-      xrange = linspace(-1, 1, p.Results.size(1))*range;
-      yrange = linspace(-1, 1, p.Results.size(2))*range;
+      xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
+      yrange = linspace(-1, 1, p.Results.size(2))*p.Results.range(2);
       [xx, yy, zz] = meshgrid(xrange, yrange, p.Results.offset);
 
       % Generate the xyz grid for the used requested plane

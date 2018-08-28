@@ -197,6 +197,8 @@ classdef TmatrixMie < ott.Tmatrix
     function tmatrix = TmatrixMie(radius, varargin)
       %TMATRIXMIE construct a new Mie T-matrix for a sphere with size radius.
       %
+      % tmatirx = TmatrixMie(radius, ...)
+      %
       % If radius and k_particle (see bellow) are vectors, calculates the
       % coefficients for a leyered sphere with radius and k_particle
       % specifying the radius and wavenumber of each layer starting

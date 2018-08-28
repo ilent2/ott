@@ -517,7 +517,19 @@ classdef Tmatrix
 
     function sbeam = mtimes(tmatrix,ibeam)
       %MTIMES provide T-matrix multiplication overload
-      sbeam = ibeam.scatter(tmatrix);
+      if isa(ibeam, 'ott.Bsc')
+        sbeam = ibeam.scatter(tmatrix);
+      else
+        % Provide default matrix multiplication
+        sbeam = tmatrix;
+        sbeam.data = sbeam.data * ibeam;
+      end
+    end
+    
+    function tmatrixs = uminus(tmatrix)
+      %UMINUS unary minus for T-matrix
+      tmatrixs = tmatrix;
+      tmatrixs.data = -tmatrixs.data;
     end
   end
 end

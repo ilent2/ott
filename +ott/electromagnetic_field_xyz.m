@@ -31,6 +31,10 @@ function [structureoutput]=electromagnetic_field_xyz(kxyz,nm, ...
 % S = ELECTROMAGNETIC_FIELD_XYZ(..., 'displacementfield', dis)
 % may be used in future.
 %
+% Optional named arguments:
+%     'calcE'   bool   calculate E field (default: true)
+%     'calcH'   bool   calculate H field (default: true)
+%
 % NOTE: If internal fields are calculated only the theta and phi components
 % of E are continuous at the boundary. Conversely, only the kr component of
 % D is continuous at the boundary.
@@ -45,11 +49,13 @@ p.addParameter('relativerefractiveindex', 1);
 p.addParameter('tolerance', 1e-8);
 p.addParameter('displacementfield', 0);
 p.addParameter('verbose', false);
+p.addParameter('calcE', true);
+p.addParameter('calcH', true);
 p.parse(varargin{:});
 
 relindx = p.Results.relativerefractiveindex;
-tol = p.Results.tolerance;
-dfield = p.Results.displacementfield;
+% tol = p.Results.tolerance;
+% dfield = p.Results.displacementfield;
 verbose = p.Results.verbose;
 
 ott.warning('internal');
@@ -98,7 +104,7 @@ r_new(r_new==0)=1e-15;
 %less than tol of the max.
 
 if verbose
-    behaviour
+    disp(['emfieldxyz behaviour:', num2str(behaviour)]);
 end
 
 E1 = zeros(size(kxyz));
@@ -120,7 +126,7 @@ switch behaviour
         
         for nn = 1:max(un)
             if verbose
-                nn
+                disp(['emfieldxyz nn:', num2str(nn)]);
             end
             
             Nn = 1/sqrt(nn*(nn+1));
@@ -135,22 +141,40 @@ switch behaviour
                 
                 expimphi=exp(1i*M.*PHI);%repmat(,[1,3]);
                 
+                % Create full Y, Ytheta, Yphi, expimphi matrices (opt, R2018a)
+                Yf = Y(indTheta, :);
+                Ythetaf = Ytheta(indTheta, :);
+                Yphif = Yphi(indTheta, :);
+                expimphif = expimphi(indPhi, :);
+                
                 jnU=jn(indR);
                 djnU=djn(indR);
                 kr=r_new(indR);
                 
+                % Now we use full matrices, we can use matmul (opt, R2018a)
+                % TODO: Repeat this optimisation elsewhere
+                if p.Results.calcE
+                  aidx = full(a(vv));
+                  bidx = full(b(vv));
+                  E1(:,1)=E1(:,1)+Nn*nn*(nn+1)./kr.*jnU.*(Yf.*expimphif)*bidx(:);
+                  E1(:,2)=E1(:,2)+Nn*((jnU(:).*Yphif.*expimphif)*aidx(:)+(djnU(:).*Ythetaf.*expimphif)*bidx(:));
+                  E1(:,3)=E1(:,3)+Nn*((-jnU(:).*Ythetaf.*expimphif)*aidx(:)+(djnU(:).*Yphif.*expimphif)*bidx(:));
+                end
+                
                 for ii=1:length(vv)
                     index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
-                    E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
-                    E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
-                    E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    if p.Results.calcE
+%                     E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Yf(:,ii).*expimphif(:,ii);
+%                     E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphif(:,ii)+b(index)*djnU.*Ythetaf(:,ii)).*expimphif(:,ii);
+%                     E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ythetaf(:,ii)+b(index)*djnU.*Yphif(:,ii)).*expimphif(:,ii);
+                    end
                     
-                    %if nargout>1
+                    if p.Results.calcH
                     H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
-                    %end
+                    end
                     
                 end
             end
@@ -162,10 +186,10 @@ switch behaviour
         
         for nn = 1:max(un)
             if verbose
-                nn
+                disp(['emfieldxyz nn:', num2str(nn)]);
             end
   
-           Nn = 1/sqrt(nn*(nn+1));
+%            Nn = 1/sqrt(nn*(nn+1));
            vv=find(n==nn);
             
             if ~isempty(vv)
@@ -188,16 +212,17 @@ switch behaviour
                 for ii=1:length(vv)
                     index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
+                    if p.Results.calcE
                     E2(:,1)=E2(:,1)+Nn*q(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E2(:,2)=E2(:,2)+Nn*(p(index)*hnU.*Yphi(indTheta,ii)+q(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E2(:,3)=E2(:,3)+Nn*(-p(index)*hnU.*Ytheta(indTheta,ii)+q(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    end
                     
-                    %                     if nargout>1
+                    if p.Results.calcH
                     H2(:,1)=H2(:,1)+Nn*p(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H2(:,2)=H2(:,2)+Nn*(q(index)*hnU.*Yphi(indTheta,ii)+p(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H2(:,3)=H2(:,3)+Nn*(-q(index)*hnU.*Ytheta(indTheta,ii)+p(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
-                    
-                    %                     end
+                    end
                     
                 end
             end
@@ -209,7 +234,7 @@ switch behaviour
         
         for nn = 1:max(un)
             if verbose
-                nn
+                disp(['emfieldxyz nn:', num2str(nn)]);
             end
             Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
@@ -234,6 +259,7 @@ switch behaviour
                 for ii=1:length(vv)
                     index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
+                    if p.Results.calcE
                     E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
@@ -241,8 +267,9 @@ switch behaviour
                     E2(:,1)=E2(:,1)+Nn*q(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E2(:,2)=E2(:,2)+Nn*(p(index)*hnU.*Yphi(indTheta,ii)+q(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E2(:,3)=E2(:,3)+Nn*(-p(index)*hnU.*Ytheta(indTheta,ii)+q(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    end
                     
-                    %                     if nargout>1
+                    if p.Results.calcH
                     H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
@@ -250,7 +277,7 @@ switch behaviour
                     H2(:,1)=H2(:,1)+Nn*p(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H2(:,2)=H2(:,2)+Nn*(q(index)*hnU.*Yphi(indTheta,ii)+p(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H2(:,3)=H2(:,3)+Nn*(-q(index)*hnU.*Ytheta(indTheta,ii)+p(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
-                    %                     end
+                    end
                     
                 end
             end
@@ -260,7 +287,7 @@ switch behaviour
     case 4
         for nn = 1:max(un)
             if verbose
-                nn
+                disp(['emfieldxyz nn:', num2str(nn)]);
             end
             Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
@@ -268,37 +295,39 @@ switch behaviour
             if ~isempty(vv)
                 [Y,Ytheta,Yphi] = spharm(nn,m(vv),theta_new,zeros(size(theta_new)));
                 
-                [jn,djn]=sbesselj(nn,r_new);
+%                 [jn,djn]=sbesselj(nn,r_new);
                 [jnr,djnr]=sbesselj(nn,relindx*r_new); %relindx*
-                [hn,dhn]=sbesselh1(nn,r_new);
+%                 [hn,dhn]=sbesselh1(nn,r_new);
                 
                 [M,PHI]=meshgrid(1i*m(vv),phi_new);
                 
                 expimphi=repmat(exp(M.*PHI),[1,3]);
                 
-                jnU=jn(indR);
-                djnU=djn(indR);
+%                 jnU=jn(indR);
+%                 djnU=djn(indR);
                 
                 jnrU=jnr(indR);
                 djnrU=djnr(indR);
                 
-                hnU=hn(indR);
-                dhnU=dhn(indR);
+%                 hnU=hn(indR);
+%                 dhnU=dhn(indR);
                 
                 kr=r_new(indR);
                 
                 for ii=1:length(vv)
                     index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
+                    if p.Results.calcE
                     E3(:,1)=E3(:,1)+Nn*d(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E3(:,2)=E3(:,2)+Nn*(c(index)*jnrU.*Yphi(indTheta,ii)+d(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E3(:,3)=E3(:,3)+Nn*(-c(index)*jnrU.*Ytheta(indTheta,ii)+d(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    end
                     
+                    if p.Results.calcH
                     H3(:,1)=H3(:,1)+Nn*c(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H3(:,2)=H3(:,2)+Nn*(d(index)*jnrU.*Yphi(indTheta,ii)+c(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H3(:,3)=H3(:,3)+Nn*(-d(index)*jnrU.*Ytheta(indTheta,ii)+c(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
-                    
-                    %                     end
+                    end
                     
                 end
             end
@@ -308,7 +337,7 @@ switch behaviour
     case 5
         for nn = 1:max(un)
             if verbose
-                nn
+                disp(['emfieldxyz nn:', num2str(nn)]);
             end
             Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
@@ -334,6 +363,7 @@ switch behaviour
                 for ii=1:length(vv)
                     index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
+                    if p.Results.calcE
                     E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
@@ -341,8 +371,9 @@ switch behaviour
                     E3(:,1)=E3(:,1)+Nn*d(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E3(:,2)=E3(:,2)+Nn*(c(index)*jnrU.*Yphi(indTheta,ii)+d(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E3(:,3)=E3(:,3)+Nn*(-c(index)*jnrU.*Ytheta(indTheta,ii)+d(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    end
                     
-                    %                     if nargout>1
+                    if p.Results.calcH
                     H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
@@ -350,8 +381,7 @@ switch behaviour
                     H3(:,1)=H3(:,1)+Nn*c(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H3(:,2)=H3(:,2)+Nn*(d(index)*jnrU.*Yphi(indTheta,ii)+c(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H3(:,3)=H3(:,3)+Nn*(-d(index)*jnrU.*Ytheta(indTheta,ii)+c(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
-                    
-                    %                     end
+                    end
                     
                 end
             end
@@ -361,7 +391,7 @@ switch behaviour
     case 6
         for nn = 1:max(un)
             if verbose
-                nn
+                disp(['emfieldxyz nn:', num2str(nn)]);
             end
             Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
@@ -388,6 +418,7 @@ switch behaviour
                     index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
 
+                    if p.Results.calcE
                     E2(:,1)=E2(:,1)+Nn*q(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E2(:,2)=E2(:,2)+Nn*(p(index)*hnU.*Yphi(indTheta,ii)+q(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E2(:,3)=E2(:,3)+Nn*(-p(index)*hnU.*Ytheta(indTheta,ii)+q(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
@@ -395,9 +426,9 @@ switch behaviour
                     E3(:,1)=E3(:,1)+Nn*d(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E3(:,2)=E3(:,2)+Nn*(c(index)*jnrU.*Yphi(indTheta,ii)+d(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E3(:,3)=E3(:,3)+Nn*(-c(index)*jnrU.*Ytheta(indTheta,ii)+d(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    end
                     
-                    %                     if nargout>1
-            
+                    if p.Results.calcH
                     H2(:,1)=H2(:,1)+Nn*p(index)*nn*(nn+1)./kr.*hnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H2(:,2)=H2(:,2)+Nn*(q(index)*hnU.*Yphi(indTheta,ii)+p(index)*dhnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H2(:,3)=H2(:,3)+Nn*(-q(index)*hnU.*Ytheta(indTheta,ii)+p(index)*dhnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
@@ -405,8 +436,7 @@ switch behaviour
                     H3(:,1)=H3(:,1)+Nn*c(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H3(:,2)=H3(:,2)+Nn*(d(index)*jnrU.*Yphi(indTheta,ii)+c(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H3(:,3)=H3(:,3)+Nn*(-d(index)*jnrU.*Ytheta(indTheta,ii)+c(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
-                    
-                    %                     end
+                    end
                     
                 end
             end
@@ -416,7 +446,7 @@ switch behaviour
     case 7
         for nn = 1:max(un)
             if verbose
-                nn
+                disp(['emfieldxyz nn:', num2str(nn)]);
             end
             Nn = 1/sqrt(nn*(nn+1));
             vv=find(n==nn);
@@ -446,6 +476,7 @@ switch behaviour
                 for ii=1:length(vv)
                     index=vv(ii);%nn*(nn+1)+m(vv(ii))
                     
+                    if p.Results.calcE
                     E1(:,1)=E1(:,1)+Nn*b(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E1(:,2)=E1(:,2)+Nn*(a(index)*jnU.*Yphi(indTheta,ii)+b(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E1(:,3)=E1(:,3)+Nn*(-a(index)*jnU.*Ytheta(indTheta,ii)+b(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
@@ -457,8 +488,9 @@ switch behaviour
                     E3(:,1)=E3(:,1)+Nn*d(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     E3(:,2)=E3(:,2)+Nn*(c(index)*jnrU.*Yphi(indTheta,ii)+d(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     E3(:,3)=E3(:,3)+Nn*(-c(index)*jnrU.*Ytheta(indTheta,ii)+d(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
+                    end
                     
-                    %                     if nargout>1
+                    if p.Results.calcH
                     H1(:,1)=H1(:,1)+Nn*a(index)*nn*(nn+1)./kr.*jnU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H1(:,2)=H1(:,2)+Nn*(b(index)*jnU.*Yphi(indTheta,ii)+a(index)*djnU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H1(:,3)=H1(:,3)+Nn*(-b(index)*jnU.*Ytheta(indTheta,ii)+a(index)*djnU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
@@ -470,8 +502,7 @@ switch behaviour
                     H3(:,1)=H3(:,1)+Nn*c(index)*nn*(nn+1)./kr/relindx.*jnrU.*Y(indTheta,ii).*expimphi(indPhi,ii);
                     H3(:,2)=H3(:,2)+Nn*(d(index)*jnrU.*Yphi(indTheta,ii)+c(index)*djnrU.*Ytheta(indTheta,ii)).*expimphi(indPhi,ii);
                     H3(:,3)=H3(:,3)+Nn*(-d(index)*jnrU.*Ytheta(indTheta,ii)+c(index)*djnrU.*Yphi(indTheta,ii)).*expimphi(indPhi,ii);
-                    
-                    %                     end
+                    end
                     
                 end
             end
