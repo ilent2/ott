@@ -22,8 +22,12 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam, varargin)
 % rotation to the particle by first applying the rotation to the beam,
 % scattering the beam by the T-matrix and applying the inverse rotation
 % to the scattered beam.  rotation can be a 3x3N array, resulting in
-% multiple calculations.  If both position and rotation are arrays,
+% multiple calculations.
+%
+% If both position and rotation are present,
 % the translation is applied first, followed by the rotation.
+% If both position and rotation are arrays, they must have the same
+% number of locations (N) or a single location (N=1).
 %
 % [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCETORQUE(...) unpacks the
 % force/torque/spin into separate output arguments.
@@ -70,42 +74,54 @@ if isa(sbeam, 'ott.Tmatrix')
   npositions = max(1, size(p.Results.position, 2));
   nrotations = max(1, size(p.Results.rotation, 2)/3);
 
+  if npositions ~= 1 && nrotations ~= 1 && npositions ~= nrotations
+    error('OTT:forcetorque:nlocations', ...
+      'Number of positions/rotations should be equal or 1');
+  end
+
+  nlocations = max([npositions, nrotations]);
+
   % Ensure all T-matricies have appropriate type
   for ii = 1:nparticles
     T(ii).type = 'scattered';
   end
 
   % Preallocate output
-  f = zeros(3*numel(T), npositions*nrotations*ibeam.Nbeams);
+  f = zeros(3*numel(T), nlocations*ibeam.Nbeams);
   t = f;
   s = f;
 
-  for ii = 1:npositions
+  for ii = 1:nlocations
 
     position = [];
     if ~isempty(p.Results.position)
-      position = p.Results.position(:, ii);
-    end
-
-    for jj = 1:nrotations
-
-      rotation = [];
-      if ~isempty(p.Results.rotation)
-        rotation = p.Results.rotation(:, 3*(jj-1) + (1:3));
+      if npositions == 1
+        position = p.Results.position;
+      else
+        position = p.Results.position(:, ii);
       end
-
-      % Calculate the scattered beams and translated beam
-      [sbeam, tbeam] = ibeam.scatter(T, ...
-          'position', position, 'rotation', rotation);
-
-      [fl,tl,sl] = ott.forcetorque(tbeam, sbeam);
-
-      % Unpack the calculated force
-      idx = ((ii-1)*nrotations + (jj-1))*ibeam.Nbeams + 1;
-      f(:, idx:idx+ibeam.Nbeams - 1) = reshape(fl, 3*numel(T), ibeam.Nbeams);
-      t(:, idx:idx+ibeam.Nbeams - 1) = reshape(tl, 3*numel(T), ibeam.Nbeams);
-      s(:, idx:idx+ibeam.Nbeams - 1) = reshape(sl, 3*numel(T), ibeam.Nbeams);
     end
+
+    rotation = [];
+    if ~isempty(p.Results.rotation)
+      if nrotations == 1
+        rotation = p.Results.rotation;
+      else
+        rotation = p.Results.rotation(:, 3*(ii-1) + (1:3));
+      end
+    end
+
+    % Calculate the scattered beams and translated beam
+    [sbeam, tbeam] = ibeam.scatter(T, ...
+        'position', position, 'rotation', rotation);
+
+    [fl,tl,sl] = ott.forcetorque(tbeam, sbeam);
+
+    % Unpack the calculated force
+    idx = (ii-1)*ibeam.Nbeams + 1;
+    f(:, idx:idx+ibeam.Nbeams - 1) = reshape(fl, 3*numel(T), ibeam.Nbeams);
+    t(:, idx:idx+ibeam.Nbeams - 1) = reshape(tl, 3*numel(T), ibeam.Nbeams);
+    s(:, idx:idx+ibeam.Nbeams - 1) = reshape(sl, 3*numel(T), ibeam.Nbeams);
   end
 
   % Move output to appropriate locations

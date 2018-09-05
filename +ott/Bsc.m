@@ -135,7 +135,7 @@ classdef Bsc
       end
     end
 
-    function [E, H] = farfield(beam, theta, phi)
+    function [E, H, data] = farfield(beam, theta, phi, varargin)
       %FARFIELD finds far field at locations theta, phi.
       %
       % [E, H] = beam.farfield(theta, phi) calculates the farfield
@@ -144,6 +144,25 @@ classdef Bsc
       %
       % Theta is the rotation off the z-axis, phi is the rotation about
       % the z-axis.
+      %
+      % [E, H, data] = beam.farfield(theta, phi, 'saveData', true) outputs
+      % a matrix of data the can be used for repeated calculation.
+      %
+      % Optional named arguments:
+      %    'calcE'   bool   calculate E field (default: true)
+      %    'calcH'   bool   calculate H field (default: nargout == 2)
+      %    'saveData' bool  save data for repeated calculation (default: false)
+      %    'data'    data   data saved for repeated calculation.
+      %
+      % If either calcH or calcE is false, the function still returns
+      % E and H as matricies of all zeros.
+
+      ip = inputParser;
+      ip.addParameter('calcE', true);
+      ip.addParameter('calcH', nargout >= 2);
+      ip.addParameter('saveData', false);
+      ip.addParameter('data', []);
+      ip.parse(varargin{:});
 
       [theta,phi] = ott.utils.matchsize(theta,phi);
 
@@ -184,44 +203,78 @@ classdef Bsc
 
       [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
 
+      % Alocate memory for output data
+      data = [];
+      if ip.Results.saveData
+        data = zeros(numel(indY), 0);
+      end
+      
+      % Start a counter for accessing the data
+      if ~isempty(ip.Results.data)
+        dataCount = 0;
+      end
+      
       for nn = 1:max(n)
 
         vv=find(n==nn);
-        [Y,Ytheta,Yphi] = ott.utils.spharm(nn,m(vv), ...
-            theta_new,zeros(size(theta_new)));
-
-        [M,PHI]=meshgrid(m(vv),phi_new);
-
-        expimphi=repmat(exp(1i*M.*PHI),[1,3]);
 
         %this makes the vectors go down in m for n.
         % has no effect if old version code.
         Nn = 1/sqrt(nn*(nn+1));
 
-        for ii=1:length(vv)
-          index=nn*(nn+1)+m(vv(ii));
+        % Create index arrays for a, b, q, p
+        index=nn*(nn+1)+m(vv);
+        aidx = full(a(index));
+        bidx = full(b(index));
+        pidx = full(p(index));
+        qidx = full(q(index));
+        
+        if isempty(ip.Results.data)
 
-          TEMP=Nn*(((1i)^(nn+1) * a(index)+(-1i)^(nn+1) ...
-              * p(index)).*Yphi(:,ii)+((1i)^nn * b(index) ...
-              +(-1i)^nn * q(index)).*Ytheta(:,ii));
-          Etheta=Etheta+TEMP(indY).*expimphi(indP,ii);
+          [~,Ytheta,Yphi] = ott.utils.spharm(nn,m(vv), ...
+              theta_new,zeros(size(theta_new)));
 
-          TEMP=Nn*(-((1i)^(nn+1) * a(index)+(-1i)^(nn+1) ...
-              * p(index)).*Ytheta(:,ii)+((1i)^nn * b(index) ...
-              +(-1i)^nn * q(index)).*Yphi(:,ii));
-          Ephi=Ephi+TEMP(indY).*expimphi(indP,ii);
+          [M,PHI]=meshgrid(m(vv),phi_new);
 
-          if nargout>1
-            TEMP=Nn*(((1i)^(nn+1) * b(index)+(-1i)^(nn+1) ...
-                * q(index)).*Yphi(:,ii)+((1i)^nn * a(index) ...
-                +(-1i)^nn * p(index)).*Ytheta(:,ii));
-            Htheta=Htheta+TEMP(indY).*expimphi(indP,ii);
+          expimphi=exp(1i*M.*PHI);
 
-            TEMP=Nn*(-((1i)^(nn+1) * b(index)+(-1i)^(nn+1) ...
-                * q(index)).*Ytheta(:,ii)+((1i)^nn * a(index) ...
-                +(-1i)^nn * p(index)).*Yphi(:,ii));
-            Hphi=Hphi+TEMP(indY).*expimphi(indP,ii);
+          % Create full matrices (opt, R2018a)
+          YthetaExpf = Ytheta(indY, :).*expimphi(indP, :);
+          YphiExpf = Yphi(indY, :).*expimphi(indP, :);
+          
+          % Save the data if requested
+          if ip.Results.saveData
+            data(:, end+(1:size(Ytheta, 2))) = YthetaExpf;
+            data(:, end+(1:size(Ytheta, 2))) = YphiExpf;
           end
+          
+        else
+          
+          % Load the data if present
+          YthetaExpf = ip.Results.data(:, dataCount+(1:length(vv)));
+          dataCount = dataCount + length(vv);
+          YphiExpf = ip.Results.data(:, dataCount+(1:length(vv)));
+          dataCount = dataCount + length(vv);
+          
+        end
+
+        % Now we use full matrices, we can use matmul (opt, R2018a)
+        if ip.Results.calcE
+          Etheta = Etheta + Nn * ...
+            ( YphiExpf*((1i)^(nn+1)*aidx + (-1i)^(nn+1)*pidx) ...
+            + YthetaExpf*((1i)^nn*bidx + (-1i)^nn*qidx) );
+          Ephi = Ephi + Nn * ...
+            (-YthetaExpf*((1i)^(nn+1)*aidx + (-1i)^(nn+1)*pidx) ...
+            + YphiExpf*((1i)^nn*bidx + (-1i)^nn*qidx) );
+        end
+        
+        if ip.Results.calcH
+          Htheta = Etheta + Nn * ...
+            ( YphiExpf*((1i)^(nn+1)*bidx + (-1i)^(nn+1)*qidx) ...
+            + YthetaExpf*((1i)^nn*aidx + (-1i)^nn*pidx) );
+          Hphi = Ephi + Nn * ...
+            (-YthetaExpf*((1i)^(nn+1)*bidx + (-1i)^(nn+1)*qidx) ...
+            + YphiExpf*((1i)^nn*aidx + (-1i)^nn*pidx) );
         end
       end
 
@@ -232,23 +285,30 @@ classdef Bsc
       H = H * -1i;
     end
 
-    function [E, H] = emFieldXyz(beam, xyz, varargin)
+    function [E, H, data] = emFieldXyz(beam, xyz, varargin)
       %EMFIELDXYZ calculates the E and H field at specified locations
       %
       % [E, H] = beam.emFieldXyz(xyz) calculates the complex field
       % at locations xyz.  xyz should be a 3xN matrix of locations.
       % Returns 3xN matrices for the E and H field at these locations.
       %
+      % [E, H, data] = beam.emFieldXyz(..., 'saveData', true) outputs
+      % a matrix of data the can be used for repeated calculation.
+      %
       % Optional named arguments:
       %    'calcE'   bool   calculate E field (default: true)
       %    'calcH'   bool   calculate H field (default: nargout == 2)
+      %    'saveData' bool  save data for repeated calculation (default: false)
+      %    'data'    data   data saved for repeated calculation.
       %
       % If either calcH or calcE is false, the function still returns
       % E and H as matricies of all zeros.
 
       p = inputParser;
       p.addParameter('calcE', true);
-      p.addParameter('calcH', nargout == 2);
+      p.addParameter('calcH', nargout >= 2);
+      p.addParameter('saveData', false);
+      p.addParameter('data', []);
       p.parse(varargin{:});
       
       kxyz = xyz * beam.k_medium;
@@ -257,17 +317,20 @@ classdef Bsc
       nm = [ n; m ];
 
       if strcmp(beam.type, 'incomming')
-        S = ott.electromagnetic_field_xyz(kxyz.', nm, beam, [], [], ...
+        [S, data] = ott.electromagnetic_field_xyz(kxyz.', nm, beam, [], [], ...
+          'saveData', p.Results.saveData, 'data', p.Results.data, ...
           'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
         E = S.Eincident.';
         H = S.Hincident.';
       elseif strcmp(beam.type, 'outgoing')
-        S = ott.electromagnetic_field_xyz(kxyz.', nm, [], beam, [], ...
+        [S, data] = ott.electromagnetic_field_xyz(kxyz.', nm, [], beam, [], ...
+          'saveData', p.Results.saveData, 'data', p.Results.data, ...
           'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
         E = S.Escattered.';
         H = S.Hscattered.';
       elseif strcmp(beam.type, 'regular')
-        S = ott.electromagnetic_field_xyz(kxyz.', nm, [], [], beam, ...
+        [S, data] = ott.electromagnetic_field_xyz(kxyz.', nm, [], [], beam, ...
+          'saveData', p.Results.saveData, 'data', p.Results.data, ...
           'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
         E = S.Einternal.';
         H = S.Hinternal.';
@@ -276,7 +339,7 @@ classdef Bsc
       end
     end
 
-    function im = visualiseFarfield(beam, varargin)
+    function [im, data] = visualiseFarfield(beam, varargin)
       % Create a 2-D visualisation of the farfield of the beam
       %
       % visualiseFarfield(...) displays an image of the farfield in
@@ -284,12 +347,20 @@ classdef Bsc
       %
       % im = visualiseFarfield(...) returns a 2-D image of the farfield.
       %
+      % [im, data] = visualiseFarfield(..., 'saveData', true) returns the
+      % saved data that can be used for repeated calculation.
+      %
+      %    TODO: Should the data object instead be a callable object?
+      %     This would make the interface simpler.
+      %
       % Optional named arguments:
       %     'size'    [ x, y ]    Size of the image
       %     'direction'  dir      Hemisphere direction ('pos' or 'neg')
       %     'field'   type        Type of field to calculate
       %     'mapping' map         Mapping from sphere to plane ('sin', 'tan')
       %     'range'   [ x, y ]    Range of points to visualise
+      %    'saveData' bool  save data for repeated calculation (default: false)
+      %    'data'    data   data saved for repeated calculation.
 
       p = inputParser;
       p.addParameter('size', [80, 80]);
@@ -297,6 +368,8 @@ classdef Bsc
       p.addParameter('field', 'irradiance');
       p.addParameter('mapping', 'sin');
       p.addParameter('range', [1, 1]);
+      p.addParameter('saveData', nargout == 2);
+      p.addParameter('data', []);
       p.parse(varargin{:});
 
       % Calculate image locations
@@ -321,8 +394,10 @@ classdef Bsc
       iphi = phi(pinside);
       itheta = theta(pinside);
 
-      % Calculate the fields in the farfield
-      [ioutputE, ioutputH] = beam.farfield(itheta(:), iphi(:));
+      % Calculate the electric field in the farfield
+      [ioutputE, ~, data] = beam.farfield(itheta(:), iphi(:), ...
+        'saveData', p.Results.saveData, 'data', p.Results.data, ...
+        'calcE', true, 'calcH', false);
 
       % Generate the requested field
       if strcmpi(p.Results.field, 'irradiance')
@@ -349,7 +424,7 @@ classdef Bsc
       end
     end
 
-    function im = visualise(beam, varargin)
+    function [im, data] = visualise(beam, varargin)
       % Create a visualisation of the beam
       %
       % visualise(...) displays an image of the beam in the current
@@ -371,6 +446,8 @@ classdef Bsc
       p.addParameter('offset', 0.0);
       p.addParameter('range', ...
           [1,1]*ott.utils.nmax2ka(beam.Nmax)/beam.k_medium);
+      p.addParameter('saveData', nargout == 2);
+      p.addParameter('data', []);
       p.parse(varargin{:});
 
       xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
@@ -393,7 +470,9 @@ classdef Bsc
       end
 
       % Calculate the electric field
-      E = beam.emFieldXyz(xyz.');
+      [E, ~, data] = beam.emFieldXyz(xyz.', ...
+          'saveData', p.Results.saveData, 'data', p.Results.data, ...
+          'calcE', true', 'calcH', false);
 
       if strcmpi(p.Results.field, 'irradiance')
 

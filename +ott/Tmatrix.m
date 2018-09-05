@@ -308,7 +308,7 @@ classdef Tmatrix
  methods (Abstract)
  end
 
- methods (Access=protected)
+ methods
   function tmatrix = Tmatrix(data, type)
     %TMATRIX construct a new T-matrix object
     %
@@ -321,9 +321,7 @@ classdef Tmatrix
       tmatrix.type = type;
     end
   end
- end
-
-  methods
+  
     function nmax = get.Nmax(tmatrix)
       %get.Nmax calculate Nmax from the current T-matrix data
       nmax1 = ott.utils.combined_index(size(tmatrix.data, 1)/2);
