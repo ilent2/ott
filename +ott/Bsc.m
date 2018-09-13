@@ -104,7 +104,14 @@ classdef Bsc
       
       p = inputParser;
       p.addParameter('like', []);
+      p.addParameter('k_medium', 2.0*pi);
+      p.addParameter('omega', 2*pi);
+      p.addParameter('dz', 0.0);
       p.parse(varargin{:});
+      
+      beam.dz = p.Results.dz;
+      beam.k_medium = p.Results.k_medium;
+      beam.omega = p.Results.omega;
       
       if ~isempty(p.Results.like)
         beam.omega = p.Results.like.omega;
@@ -117,8 +124,6 @@ classdef Bsc
         beam.b = b;
         beam.type = type;
       end
-
-      beam.dz = 0.0;
     end
 
     function beam = append(beam, other)
