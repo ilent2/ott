@@ -273,7 +273,14 @@ classdef TmatrixMie < ott.Tmatrix
 
       % If Nmax not specified, choose a good Nmax
       if isempty(p.Results.Nmax)
-        Nmax = ott.utils.ka2nmax(tmatrix.k_medium*radius(end));
+
+        % Different Nmax for internal and external
+        if p.Results.internal == false
+          Nmax = ott.utils.ka2nmax(tmatrix.k_medium*radius(end));
+        else
+          Nmax = ott.utils.ka2nmax(tmatrix.k_particle(end)*radius(end));
+        end
+
       else
         Nmax = p.Results.Nmax;
       end
