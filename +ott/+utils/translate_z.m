@@ -1,4 +1,4 @@
-function [A,B,C] = translate_z(nmax,z)
+function [A,B,C] = translate_z(nmax,z, varargin)
 % TRANSLATE_Z calculates translation matricies for translation of
 % VSWFs along z axis.
 %
@@ -19,10 +19,19 @@ function [A,B,C] = translate_z(nmax,z)
 % Time *may* be saved by taking the conjugate transpose instead of
 % calculating translations in the positive or negative direction.
 %
+% Optional named parameters:
+%     'type'    str     Type of translation matrix to generate.
+%
+%
+% Translation matrix types:
+%     'sbesselj'            regular to regular
+%     'sbesselh1'           outgoing to regular
+%     'sbesselh2'           incoming to regular
+%     'sbesselh1farfield'   outgoing to regular far-field limit
+%     'sbesselh2farfield'   incoming to regular far-field limit
+%
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
-
-import ott.utils.*
 
 % Refs:
 % N. A. Gumerov and R. Duraiswami, "Recursions for the computation of
@@ -34,7 +43,12 @@ import ott.utils.*
 % Scattering from Microstructures", Lecture Notes in Physics 534,
 % Springer-Verlag, Berlin, 2000
 
+import ott.utils.*
 ott.warning('internal');
+
+p = inputParser;
+p.addParameter('type', 'sbesselj');
+p.parse(varargin{:});
 
 if numel(z)>1
     A=cell(numel(z),1);
@@ -75,10 +89,59 @@ C = zeros(N,N,N3);
 % Starting values, for m=0 and k=any -> n=0
 % Videen (38)
 k = 0:(N-1);
-if z < 0
-  C(:,1,1) = sqrt(2*k+1) .* sbesselj(k,2*pi*abs(z)) .* (-1).^(k);
-else
-  C(:,1,1) = sqrt(2*k+1) .* sbesselj(k,2*pi*z);
+
+switch p.Results.type
+  case 'sbesselj'       % regular to regular
+    if z < 0
+      C(:,1,1) = sqrt(2*k+1) .* sbesselj(k,2*pi*abs(z)) .* (-1).^(k);
+    else
+      C(:,1,1) = sqrt(2*k+1) .* sbesselj(k,2*pi*z);
+    end
+
+  case 'sbesselh1'      % outgoing to regular
+    if z < 0
+      C(:,1,1) = sqrt(2*k+1) .* sbesselh1(k,2*pi*abs(z)) .* (-1).^(k);
+    else
+      C(:,1,1) = sqrt(2*k+1) .* sbesselh1(k,2*pi*z);
+    end
+
+  case 'sbesselh2'      % incoming to regular
+    if z < 0
+      C(:,1,1) = sqrt(2*k+1) .* sbesselh2(k,2*pi*abs(z)) .* (-1).^(k);
+    else
+      C(:,1,1) = sqrt(2*k+1) .* sbesselh2(k,2*pi*z);
+    end
+
+  case 'sbesselh1farfield'    % outgoing to regular
+
+    if 2*pi*abs(z) <= (N-1).^2
+      ott.warning('Farfield limit may not be satisfied');
+    end
+
+    h1limit = (-1i).^k./(1i*2*pi*abs(z)) .* exp(1i*2*pi*abs(z));
+
+    if z < 0
+      C(:,1,1) = sqrt(2*k+1) .* h1limit .* (-1).^(k);
+    else
+      C(:,1,1) = sqrt(2*k+1) .* h1limit;
+    end
+
+  case 'sbesselh2farfield'    % incoming to regular
+
+    if 2*pi*abs(z) <= (N-1).^2
+      ott.warning('Farfield limit may not be satisfied');
+    end
+
+    h2limit = (1i).^k./(-1i*2*pi*abs(z)) .* exp(-1i*2*pi*abs(z));
+
+    if z < 0
+      C(:,1,1) = sqrt(2*k+1) .* h2limit .* (-1).^(k);
+    else
+      C(:,1,1) = sqrt(2*k+1) .* h2limit;
+    end
+
+  otherwise
+    error('OTT:UTILS:translate_z:type_error', 'Unknown translation type');
 end
 
 % Do n=1 as a special case (Videen (40) with n=0,n'=k)
