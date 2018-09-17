@@ -7,7 +7,7 @@ classdef BscPmGauss < ott.BscPointmatch
 %   polarisation        Beam polarisation
 %   truncation_angle    Truncation angle for beam
 %   offset              Offset for original beam calculation
-%   angle               Angle of incomming beam waist
+%   angle               Angle of incoming beam waist
 %
 % BscPmGauss methods:
 %
@@ -23,7 +23,7 @@ classdef BscPmGauss < ott.BscPointmatch
     polarisation       % Beam polarisation
     truncation_angle   % Truncation angle for beam
     offset             % Offset for original beam calculation
-    angle              % Angle of incomming beam waist
+    angle              % Angle of incoming beam waist
   end
 
   % TODO: Incorperate bsc_pointmatch_focalplane option for gaussian beams.
@@ -63,7 +63,7 @@ classdef BscPmGauss < ott.BscPointmatch
       %   'offset'            Offset of the beam from origin
 
       beam = beam@ott.BscPointmatch(varargin{:});
-      beam.type = 'incomming';
+      beam.type = 'incoming';
 
       % Parse inputs
       p = inputParser;

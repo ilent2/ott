@@ -157,7 +157,7 @@ elseif ibeam.Nmax < sbeam.Nmax
   ibeam.Nmax = sbeam.Nmax;
 end
 
-% Ensure the beam is incomming-outgoing
+% Ensure the beam is incoming-outgoing
 sbeam = sbeam.outgoing(ibeam);
 
 % Get the relevent beam coefficients

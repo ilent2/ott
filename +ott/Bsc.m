@@ -4,6 +4,7 @@ classdef Bsc
 % Bsc properties:
 %   a               Beam shape coefficients a vector
 %   b               Beam shape coefficients b vector
+%   type            Beam type (incoming, outgoing or scattered)
 %
 % Bsc methods:
 %   translateZ      Translates the beam along the z axis
@@ -28,7 +29,6 @@ classdef Bsc
   properties (SetAccess=protected)
     a           % Beam shape coefficients a vector
     b           % Beam shape coefficients b vector
-    type        % Coefficient type (incomming, outgoing or regular)
 
     omega       % Angular frequency of beam
     k_medium    % Wavenumber in medium
@@ -38,6 +38,10 @@ classdef Bsc
     % These can't be tracked using Matrix translation/rotations
     %offset      % Offset applied to beam using translate functions
     %direction   % Direction of beam applied using rotation functions
+  end
+
+  properties
+    type        % Beam type (incoming, outgoing or regular)
   end
 
   properties (Dependent)
@@ -180,7 +184,7 @@ classdef Bsc
       Htheta=zeros(length(theta),1);
       Hphi=zeros(length(theta),1);
 
-      if strcmp(beam.type, 'incomming')
+      if strcmp(beam.type, 'incoming')
 
         a = beam.a;
         b = beam.b;
@@ -196,7 +200,7 @@ classdef Bsc
 
       else
 
-        % TODO: Can we convert from regular to incomming + outgoing?
+        % TODO: Can we convert from regular to incoming + outgoing?
         error('Unsupported beam type');
 
       end
@@ -321,7 +325,7 @@ classdef Bsc
       [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
       nm = [ n; m ];
 
-      if strcmp(beam.type, 'incomming')
+      if strcmp(beam.type, 'incoming')
         [S, data] = ott.electromagnetic_field_xyz(kxyz.', nm, beam, [], [], ...
           'saveData', p.Results.saveData, 'data', p.Results.data, ...
           'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
@@ -527,8 +531,8 @@ classdef Bsc
 
     function beam = set.type(beam, type)
       % Set the beam type, checking it is a valid type first
-      if ~any(strcmpi(type, {'incomming', 'outgoing', 'regular'}))
-        error('Invalid beam type');
+      if ~any(strcmpi(type, {'incoming', 'outgoing', 'regular'}))
+        error('OTT:Bsc:set_type:invalid_value', 'Invalid beam type');
       end
       beam.type = type;
     end
@@ -947,7 +951,7 @@ classdef Bsc
         beam = 2*beam + ibeam;
         beam.type = 'outgoing';
       else
-        error('Unable to convert incomming beam to outgoing beam');
+        error('Unable to convert incoming beam to outgoing beam');
       end
     end
 
@@ -959,7 +963,7 @@ classdef Bsc
       elseif strcmp(beam.type, 'regular')
         % Nothing to do
       else
-        error('Unable to convert incomming beam to outgoing beam');
+        error('Unable to convert incoming beam to outgoing beam');
       end
     end
 

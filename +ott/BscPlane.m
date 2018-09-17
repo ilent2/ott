@@ -52,7 +52,7 @@ classdef BscPlane < ott.Bsc
       p.addParameter('omega', 2*pi);
       p.parse(varargin{:});
 
-      beam.type = 'incomming';
+      beam.type = 'incoming';
       beam.k_medium = p.Results.k_medium;
       beam.omega = p.Results.omega;
 

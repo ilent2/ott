@@ -177,7 +177,7 @@ classdef BscPmParaxial < ott.BscPointmatch
       % Do the point matching and store the result
       [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, theta, phi);
 
-      beam.type = 'incomming';
+      beam.type = 'incoming';
     end
   end
 end
