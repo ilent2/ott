@@ -33,8 +33,8 @@ function [A,B,C] = translate_z(nmax,z, varargin)
 %
 % Methods are:
 %     'gumerov'         Use Gumerov method (recommended)
-%     'videen'          Use Videen method.  Faster, not recommended for
-%           large translations of the beam (unstable).
+%     'videen'          Use Videen method.  (not recommended for
+%           large translations of the beam, unstable)
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -291,14 +291,15 @@ A=sparse(toIndexy,toIndexx,A,nmax1*(nmax1+2),nmax2*(nmax2+2));
 
 end % calculate_AB
 
-function C_ndnm = translate_z_gumerov(nmax1, nmax2, nmax, z, p)
+function C = translate_z_gumerov(nmax1, nmax2, nmax, r, p)
 % Optimised implementation from Alex
 
 % Having pre-computed a_nm it's fast?
 % nmax=3;
 % r=0.1;
 
-%some "setup" values:s
+%some "setup" values:
+mmax=min(nmax1,nmax2);
 m=0;
 fval=2*nmax+1;
 nd=[m:fval];
@@ -321,14 +322,14 @@ for jj=1:nmax
 end
 
 %create "C":
-C=zeros(nmax+2,nmax+1,nmax+1);
-C(:,:,1)=C_ndn0(2:(nmax+3),2:(nmax+2));
+C=zeros(nmax2+2,nmax1+1,mmax+1);
+C(:,:,1)=C_ndn0(2:(nmax2+3),2:(nmax1+2));
 
 %Having computed anm for m=0; cases we now can compute anm for all
 %remaining cases:
 ANM=anm_l([0:2*nmax+1].',[1:nmax]);
 IANM=1./ANM;
-for m=1:nmax
+for m=1:mmax
 
     %having computed the zonal coefficients we now compute the "diagonal ones"
     %(tesseral)
@@ -351,23 +352,8 @@ for m=1:nmax
     end
     C_ndn0=C_ndn1;
 
-    C(:,:,m+1)=C_ndn0(2:(nmax+3),2:(nmax+2));
+    C(:,:,m+1)=C_ndn0(2:(nmax2+3),2:(nmax1+2));
 
-end
-
-% OK, now m other than m=0
-% Only need to do positive m, since C(-m) = C(m)
-% Videen (41)
-for m = 1:min(nmax1, nmax2)
-  nn = m:nmax1;
-  kk = (m:N-2).';
-  C0 = C(kk+1,nn+1,m);
-  Cp = C(kk+2,nn+1,m);
-  Cm = C(kk,nn+1,m);
-  C(kk+1,nn+1,m+1) = sqrt(1./((2*kk+1)*((nn-m+1).*(nn+m)))) .* ...
-      ( sqrt(((kk-m+1).*(kk+m).*(2*kk+1))).*C0 ...
-      -2*pi*z*sqrt((((kk-m+2).*(kk-m+1)))./((2*kk+3))).*Cp ...
-      -2*pi*z*sqrt((((kk+m).*(kk+m-1)))./((2*kk-1))).*Cm );
 end
 
 end % translate_z_gumerov
