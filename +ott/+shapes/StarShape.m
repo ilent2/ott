@@ -128,6 +128,50 @@ classdef StarShape < ott.shapes.Shape
       end
     end
 
+    function varargout = voxels(shape, spacing, varargin)
+      % Generate an array of xyz coordinates for voxels inside the shape
+      %
+      % voxels(spacing) shows a visualisation of the shape with
+      % circles placed at locations on a Cartesian grid.
+      %
+      % xyz = voxels(spacing) returns the voxel locations.
+      %
+      % Optional named arguments:
+      %     'plotoptions'   Options to pass to the plot3 function
+      %     'visualise'     Show the visualisation (default: nargout == 0)
+
+      p = inputParser;
+      p.addParameter('plotoptions', {...
+          'MarkerFaceColor', 'w', ...
+          'MarkerEdgeColor', [.5 .5 .5], ...
+          'MarkerSize', 50*spacing});
+      p.addParameter('visualise', nargout == 0);
+      p.parse(varargin{:});
+
+      % Calculate range of dipoles
+      numr = ceil(shape.maxRadius / spacing);
+      rrange = (-numr:numr)*spacing;
+
+      % Generate the voxel grid
+      [xx, yy, zz] = meshgrid(rrange, rrange, rrange);
+
+      % Determine which points are inside
+      mask = shape.insideXyz(xx, yy, zz);
+      xyz = [xx(mask).'; yy(mask).'; zz(mask).'];
+
+      % Visualise the result
+      if p.Results.visualise
+        plot3(xyz(1,:), xyz(2,:), xyz(3,:), 'o', p.Results.plotoptions{:});
+        axis equal
+        title(['spacing = ' num2str(spacing) ', N = ' int2str(numel(mask))])
+      end
+
+      % Assign output
+      if nargout ~= 0
+        varargout = {xyz};
+      end
+    end
+
     function n = normalsXyz(shape, theta, phi)
       % NORMALSXYZ calculates Cartessian normals
 
