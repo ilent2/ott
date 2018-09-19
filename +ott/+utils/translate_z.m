@@ -307,7 +307,19 @@ nd=[m:fval];
 kr=2*pi*r;
 
 %compute seed functions:
-C_nd00=[sqrt(2*nd+1).*sbesselj(nd,kr)];
+switch p.Results.type
+  case 'sbesselj'       % regular to regular
+    C_nd00=[sqrt(2*nd+1).*sbesselj(nd,kr)];
+
+  case 'sbesselh1'      % outgoing to regular
+    C_nd00=[sqrt(2*nd+1).*sbesselh1(nd,kr)];
+
+  case 'sbesselh2'      % incoming to regular
+    C_nd00=[sqrt(2*nd+1).*sbesselh2(nd,kr)];
+
+  otherwise
+    error('OTT:UTILS:translate_z:type_error', 'Unknown translation type');
+end
 
 C_ndn0=zeros(length(nd)+1,length(nd)+1);
 C_ndn0(1+[1:length(C_nd00)],2)=C_nd00;
