@@ -21,6 +21,7 @@ function [A,B,C] = translate_z(nmax,z, varargin)
 %
 % Optional named parameters:
 %     'type'    str     Type of translation matrix to generate.
+%     'method'  str     Method to calculate translation matrix.
 %
 %
 % Translation matrix types:
@@ -29,6 +30,11 @@ function [A,B,C] = translate_z(nmax,z, varargin)
 %     'sbesselh2'           incoming to regular
 %     'sbesselh1farfield'   outgoing to regular far-field limit
 %     'sbesselh2farfield'   incoming to regular far-field limit
+%
+% Methods are:
+%     'gumerov'         Use Gumerov method (recommended)
+%     'videen'          Use Videen method.  Faster, not recommended for
+%           large translations of the beam (unstable).
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -48,13 +54,14 @@ ott.warning('internal');
 
 p = inputParser;
 p.addParameter('type', 'sbesselj');
+p.addParameter('method', 'gumerov');
 p.parse(varargin{:});
 
 if numel(z)>1
     A=cell(numel(z),1);
     B=A;
     for ii=1:numel(z)
-        [A{ii},B{ii}]=translate_z(nmax,z(ii));
+        [A{ii},B{ii}]=translate_z(nmax,z(ii), varargin{:});
     end
     C=0;
     ott.warning('external');
@@ -78,6 +85,28 @@ if z==0
     ott.warning('external');
     return
 end
+
+% Calculate the scalar coefficients
+switch p.Results.method
+  case 'videen'
+    C = translate_z_videen(nmax1, nmax2, nmax, z, p);
+  case 'gumerov'
+    C = translate_z_gumerov(nmax1, nmax2, nmax, z, p);
+  otherwise
+    error('OTT:UTILS:translate_z:unknown_method', 'Unknown method');
+end
+
+[A,B] = calculate_AB(C, nmax1, nmax2, nmax, z, p);
+
+if nargout>2
+    C=C(1:nmax+1,1:nmax+1,1:min(nmax1, nmax2)+1);
+end
+
+ott.warning('external');
+
+end
+
+function C = translate_z_videen(nmax1, nmax2, nmax, z, p)
 
 N = 3*nmax+5;
 N3 = min(nmax1, nmax2) + 1;
@@ -192,6 +221,10 @@ for m = 1:min(nmax1, nmax2)
       -2*pi*z*sqrt((((kk+m).*(kk+m-1)))./((2*kk-1))).*Cm );
 end
 
+end % translate_z_videen
+
+function [A,B] = calculate_AB(C, nmax1, nmax2, nmax, z, p)
+
 % OK, that's the scalar coefficients
 % Time to find the vector coefficients - Videen (43) & (44)
 
@@ -256,8 +289,100 @@ B = 1i*2*pi*z*B;
 B=sparse(toIndexy,toIndexx,B,nmax1*(nmax1+2),nmax2*(nmax2+2));
 A=sparse(toIndexy,toIndexx,A,nmax1*(nmax1+2),nmax2*(nmax2+2));
 
-if nargout>2
-    C=C(1:nmax+1,1:nmax+1,1:min(nmax1, nmax2)+1);
+end % calculate_AB
+
+function C_ndnm = translate_z_gumerov(nmax1, nmax2, nmax, z, p)
+% Optimised implementation from Alex
+
+% Having pre-computed a_nm it's fast?
+% nmax=3;
+% r=0.1;
+
+%some "setup" values:s
+m=0;
+fval=2*nmax+1;
+nd=[m:fval];
+
+kr=2*pi*r;
+
+%compute seed functions:
+C_nd00=[sqrt(2*nd+1).*sbesselj(nd,kr)];
+
+C_ndn0=zeros(length(nd)+1,length(nd)+1);
+C_ndn0(1+[1:length(C_nd00)],2)=C_nd00;
+C_ndn0(2,1+[1:length(C_nd00)])=((-1).^(nd).*C_nd00).';
+
+%gumerov's zonal coefficients are m=0. Compute columns, limited by diagonal:
+%compute lower diagonal first:
+for jj=1:nmax
+    ii=[jj:fval-jj].';
+    C_ndn0(ii+2,ii(1)+2)=(anm_l(ii(1)-2,0).*C_ndn0(ii+2,ii(1))-anm_l(ii,0).*C_ndn0(ii+3,ii(1)+1)+anm_l(ii-1,0).*C_ndn0(ii+1,ii(1)+1))./anm_l(ii(1)-1,0);
+    C_ndn0(ii(1)+2,ii+2)=((-1).^(jj+ii).*C_ndn0(ii+2,ii(1)+2)).';
 end
 
-ott.warning('external');
+%create "C":
+C=zeros(nmax+2,nmax+1,nmax+1);
+C(:,:,1)=C_ndn0(2:(nmax+3),2:(nmax+2));
+
+%Having computed anm for m=0; cases we now can compute anm for all
+%remaining cases:
+ANM=anm_l([0:2*nmax+1].',[1:nmax]);
+IANM=1./ANM;
+for m=1:nmax
+
+    %having computed the zonal coefficients we now compute the "diagonal ones"
+    %(tesseral)
+    %i.e. ones which generate m on the first column we then reproduce the same
+    %commputation for the n nd recursion:
+
+    nd=[m:fval-m].';
+    C_nd1m=(bnm_l(nd,-m).*C_ndn0(nd+1,m+1)-bnm_l(nd+1,m-1).*C_ndn0(nd+3,m+1))./bnm_l(m,(-m));
+
+    %having computed the first seed column we now recur the elements:
+    C_ndn1=zeros(size(C_ndn0)); %make zero as we re-use
+    C_ndn1([1:length(C_nd1m)]+m+1,m+2)=C_nd1m;
+    C_ndn1(m+2,[1:length(C_nd1m)]+m+1)=((-1).^(nd+m).*C_nd1m).';
+
+    for jj=m+1:nmax
+        ii=[jj:fval-jj].';
+%         C_ndn1(ii+2,ii(1)+2)=(anm(ii(1)-2,m).*C_ndn1(ii+2,ii(1))-anm(ii,m).*C_ndn1(ii+3,ii(1)+1)+anm(ii-1,m).*C_ndn1(ii+1,ii(1)+1))./anm(ii(1)-1,m);
+        C_ndn1(ii+2,ii(1)+2)=(ANM(ii(1)-1,m).*C_ndn1(ii+2,ii(1))-ANM(ii+1,m).*C_ndn1(ii+3,ii(1)+1)+ANM(ii,m).*C_ndn1(ii+1,ii(1)+1)).*IANM(ii(1),m);
+        C_ndn1(ii(1)+2,ii+2)=((-1).^(jj+ii).*C_ndn1(ii+2,ii(1)+2)).';
+    end
+    C_ndn0=C_ndn1;
+
+    C(:,:,m+1)=C_ndn0(2:(nmax+3),2:(nmax+2));
+
+end
+
+% OK, now m other than m=0
+% Only need to do positive m, since C(-m) = C(m)
+% Videen (41)
+for m = 1:min(nmax1, nmax2)
+  nn = m:nmax1;
+  kk = (m:N-2).';
+  C0 = C(kk+1,nn+1,m);
+  Cp = C(kk+2,nn+1,m);
+  Cm = C(kk,nn+1,m);
+  C(kk+1,nn+1,m+1) = sqrt(1./((2*kk+1)*((nn-m+1).*(nn+m)))) .* ...
+      ( sqrt(((kk-m+1).*(kk+m).*(2*kk+1))).*C0 ...
+      -2*pi*z*sqrt((((kk-m+2).*(kk-m+1)))./((2*kk+3))).*Cp ...
+      -2*pi*z*sqrt((((kk+m).*(kk+m-1)))./((2*kk-1))).*Cm );
+end
+
+end % translate_z_gumerov
+
+function a_nm = anm_l(n,m);
+% For translate_z_gumerov
+fn=1./(2*n+1)./(2*n+3);
+a_nm=sqrt((n+abs(m)+1).*(n-abs(m)+1).*fn);
+a_nm(n<0)=0;
+a_nm(abs(m)>n)=0;
+end
+
+function b_nm = bnm_l(n,m);
+% For translate_z_gumerov
+b_nm=(2*(m<0)-1).*sqrt((n-m-1).*(n-m)./(2*n-1)./(2*n+1));
+b_nm(abs(m)>n)=0;
+end
+
