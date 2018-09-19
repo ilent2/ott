@@ -137,17 +137,19 @@ function testAxialEquilibrium(testCase)
 
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.RelativeTolerance;
+  import matlab.unittest.constraints.AbsoluteTolerance;
   
   tol = 0.01;
+  tolm = 1e-9;
 
-  testCase.verifyThat(x, IsEqualTo(-3.352932506691190e-24, ...
-        'Within', RelativeTolerance(tol)));
+  testCase.verifyThat(x, IsEqualTo(0.0, ...
+        'Within', AbsoluteTolerance(tolm)));
 
   testCase.verifyThat(kx, IsEqualTo(-2.450214062064871e+05, ...
         'Within', RelativeTolerance(tol)));
 
   testCase.verifyThat(z, IsEqualTo(4.023474767793779e-07, ...
-        'Within', RelativeTolerance(tol)));
+        'Within', AbsoluteTolerance(tolm)));
 
   testCase.verifyThat(kz, IsEqualTo(-6.258368435930368e+04, ...
         'Within', RelativeTolerance(tol)));
