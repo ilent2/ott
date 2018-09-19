@@ -48,12 +48,18 @@ classdef BscPlane < ott.Bsc
       p.addParameter('polarisation', [ 1 1i ]);
       p.addParameter('Nmax', []);
       p.addParameter('radius', []);
-      p.addParameter('k_medium', 2*pi);
+      p.addParameter('wavelength0', 1);
+      p.addParameter('power', []);
+
       p.addParameter('omega', 2*pi);
+      p.addParameter('k_medium', []);
+      p.addParameter('index_medium', []);
+      p.addParameter('wavelength_medium', []);
+
       p.parse(varargin{:});
 
       beam.type = 'incoming';
-      beam.k_medium = p.Results.k_medium;
+      beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
 
       % If points aren't specified explicitly, use meshgrid
@@ -70,10 +76,11 @@ classdef BscPlane < ott.Bsc
       % Store polarisation
       beam.polarisation = p.Results.polarisation;
       if size(p.Results.polarisation, 1) ~= length(phi) ...
-          && size(p.Results.polarisation, 1) == 1
-        beam.polarisation = repmat(beam.polarisation, length(phi), 1);
-      else
+          && size(p.Results.polarisation, 1) ~= 1
         error('Polarisation must be either 1x2 or Nx2 (N = # beams)');
+      end
+      if size(p.Results.polarisation, 1) ~= length(phi)
+        beam.polarisation = repmat(beam.polarisation, length(phi), 1);
       end
 
       % Parse ka/Nmax
@@ -118,8 +125,8 @@ classdef BscPlane < ott.Bsc
         b(iter,:) = 4*pi*Nn*(-1i)^(n)  *(conj(dtY).*ET + conj(dpY).*EP).';
       end
 
-      p = abs(a).^2 + abs(b).^2;
-      non_zeros = p > 1e-15*max(p);
+      pw = abs(a).^2 + abs(b).^2;
+      non_zeros = pw > 1e-15*max(pw);
 
       a(~non_zeros) = 0;
       b(~non_zeros) = 0;
@@ -127,6 +134,11 @@ classdef BscPlane < ott.Bsc
       % Store the coefficients
       beam.a = sparse(a);
       beam.b = sparse(b);
+
+      % Normalize the beam power
+      if ~isempty(p.Results.power)
+        beam.power = p.Results.power;
+      end
     end
 
     function [beam, A, B] = translateZ(beam, varargin)
