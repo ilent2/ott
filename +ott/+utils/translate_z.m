@@ -108,6 +108,8 @@ end
 
 function C = translate_z_videen(nmax1, nmax2, nmax, z, p)
 
+import ott.utils.*
+
 N = 3*nmax+5;
 N3 = min(nmax1, nmax2) + 1;
 
@@ -225,6 +227,8 @@ end % translate_z_videen
 
 function [A,B] = calculate_AB(C, nmax1, nmax2, nmax, z, p)
 
+import ott.utils.*
+
 % OK, that's the scalar coefficients
 % Time to find the vector coefficients - Videen (43) & (44)
 
@@ -293,6 +297,8 @@ end % calculate_AB
 
 function C = translate_z_gumerov(nmax1, nmax2, nmax, r, p)
 % Optimised implementation from Alex
+
+import ott.utils.*
 
 % Having pre-computed a_nm it's fast?
 % nmax=3;
