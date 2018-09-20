@@ -67,18 +67,24 @@ classdef AxisymShape < ott.shapes.Shape
 
       % Calculate the point spacing
       ds = shape.perimiter / ntheta / 2.0;
-      s = 0:ds:(shape.perimiter/2.0);
 
-      % TODO: This isn't optimal for all shapes
-      % We should be able to optimise this interface
-      % TODO: This won't work if we don't provide Nmax
-      % Why doesn't this work with more points?
-      [theta, phi] = ott.utils.angulargrid(4*(Nmax + 2), 1);
+      % Sample points along the boundary, this isn't needed if
+      % we have a shape described by a finite set of boundary points
+      % TODO: How many points should we sample?
+      % TODO: Better way for shapes described by finite points
+      % Angular grid doesn't include top and bottom, so we add them
+      [theta, phi] = ott.utils.angulargrid(ntheta*2, 1);
+      theta = [0.0; theta; pi];
+      phi = [phi(1); phi; phi(end)];
+      
       xyz = shape.locations(theta, phi);
       rho = xyz(:, 1);
       z = xyz(:, 3);
 
       % The following is based on axisym_boundarypoints from OTTv1
+
+      % Calculate length of each line segment
+      s=sqrt((rho(2:end)-rho(1:end-1)).^2+(z(2:end)-z(1:end-1)).^2);
 
       %Don't ask me how this works. It does. It's simple algebra in the end...
       %and yes, it can be done more intelligently.
@@ -100,14 +106,14 @@ classdef AxisymShape < ott.shapes.Shape
               drho=(rho(ii)-rho(ii-1))/N*ones(Nused,1);
 
               rhot=cumsum(drho)-drho/2-sdeficit*drho(1);
-              rhoout([ncum+[1:Nused]])=rho(ii-1)+rhot;
+              rhoout(ncum+(1:Nused))=rho(ii-1)+rhot;
 
               dz=(z(ii)-z(ii-1))/N*ones(Nused,1);
 
               zt=cumsum(dz)-dz/2-sdeficit*dz(1);
-              zout([ncum+[1:Nused]])=z(ii-1)+zt;
+              zout(ncum+(1:Nused))=z(ii-1)+zt;
 
-              nxyz([ncum+[1:Nused]],:)=repmat(nc,[length(zt),1]);
+              nxyz(ncum+(1:Nused),:)=repmat(nc,[length(zt),1]);
 
               sdeficit=(N-Nused+sdeficit);
           else
