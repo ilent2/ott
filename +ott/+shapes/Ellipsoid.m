@@ -66,8 +66,9 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
       p = 1.0;
       nmax = 100;
       tol = 1.0e-3;
+      nchooseks = @(n, k) gamma(n)./(gamma(n - k).*gamma(k));
       for ii = 1:nmax
-        newp = nchoosek(0.5, ii).^2.*h.^ii;
+        newp = nchooseks(0.5, ii).^2.*h.^ii;
         p = p + newp;
         if abs(newp) < tol
           break;
