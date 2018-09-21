@@ -72,34 +72,58 @@ classdef TmatrixEbcm < ott.Tmatrix
 
       % Parse optional parameters
       p = inputParser;
-      p.KeepUnmatched = true;
       p.addParameter('Nmax', []);
+      p.addParameter('wavelength0', []);
+      p.addParameter('internal', false);
+      p.addParameter('npts', []);
+      p.addParameter('invmethod', []);
+      
+      p.addParameter('index_relative', []);
+      
       p.addParameter('k_medium', []);
       p.addParameter('wavelength_medium', []);
       p.addParameter('index_medium', []);
-      p.addParameter('wavelength0', []);
+      
+      p.addParameter('k_particle', []);
+      p.addParameter('wavelength_particle', []);
+      p.addParameter('index_particle', []);
+      
       p.parse(varargin{:});
 
       % Get or estimate Nmax from the inputs
+      [k_medium, k_particle] = ott.Tmatrix.parser_wavenumber(p, 2*pi);
       if isempty(p.Results.Nmax)
-        k_medium = ott.Tmatrix.parser_k_medium(p, 2*pi);
-        Nmax = ott.utils.ka2nmax(shape.maxRadius * k_medium);
+        if p.Results.internal
+          Nmax = ott.utils.ka2nmax(shape.maxRadius * k_particle);
+        else
+          Nmax = ott.utils.ka2nmax(shape.maxRadius * k_medium);
+        end
       else
         Nmax = p.Results.Nmax;
       end
 
       % Get the boudnary points
-      [rtp,n,ds] = shape.boundarypoints('Nmax', Nmax);
+      if isempty(p.Results.npts)
+        [rtp,n,ds] = shape.boundarypoints('Nmax', Nmax);
+      else
+        [rtp,n,ds] = shape.boundarypoints('npts', p.Results.npts);
+      end
 
       % Get the z-axis mirror symmetry and rotational symmetry
       [~, ~, z_rotational_symmetry] = shape.axialSymmetry();
       [~, ~, z_mirror_symmetry] = shape.mirrorSymmetry();
 
       % Calculate the T-matrix using EBCM
-      tmatrix = ott.TmatrixEbcm(rtp, n, ds, varargin{:}, 'Nmax', Nmax, ...
+      tmatrix = ott.TmatrixEbcm(rtp, n, ds, 'Nmax', Nmax, ...
+          'k_medium', k_medium, 'k_particle', k_particle, ...
           'rotational_symmetry', z_rotational_symmetry, ...
-          'z_mirror_symmetry', z_mirror_symmetry);
+          'z_mirror_symmetry', z_mirror_symmetry, ...
+          'invmethod', p.Results.invmethod, ...
+          'internal', p.Results.internal);
     end
+  end
+  
+  methods (Static, Hidden)
   end
 
   methods
@@ -142,47 +166,61 @@ classdef TmatrixEbcm < ott.Tmatrix
       tmatrix = tmatrix@ott.Tmatrix();
 
       % Parse inputs
-      p = inputParser;
-      p.addParameter('Nmax', []);
-      p.addParameter('k_medium', []);
-      p.addParameter('wavelength_medium', []);
-      p.addParameter('index_medium', []);
-      p.addParameter('k_particle', []);
-      p.addParameter('wavelength_particle', []);
-      p.addParameter('index_particle', []);
-      p.addParameter('index_relative', []);
-      p.addParameter('wavelength0', []);
-      p.addParameter('rotational_symmetry', 1);
-      p.addParameter('z_mirror_symmetry', false);
-      p.parse(varargin{:});
+      pa = inputParser;
+      pa.addParameter('Nmax', []);
+      pa.addParameter('k_medium', []);
+      pa.addParameter('wavelength_medium', []);
+      pa.addParameter('index_medium', []);
+      pa.addParameter('k_particle', []);
+      pa.addParameter('wavelength_particle', []);
+      pa.addParameter('index_particle', []);
+      pa.addParameter('index_relative', []);
+      pa.addParameter('wavelength0', []);
+      pa.addParameter('rotational_symmetry', 1);
+      pa.addParameter('z_mirror_symmetry', false);
+      pa.addParameter('internal', false);
+      pa.addParameter('invmethod', []);
+      pa.parse(varargin{:});
 
       % Store inputs k_medium and k_particle
       [tmatrix.k_medium, tmatrix.k_particle] = ...
-          tmatrix.parser_wavenumber(p, 2*pi);
+          tmatrix.parser_wavenumber(pa, 2*pi);
 
       % Get or estimate Nmax from the inputs
-      if isempty(p.Results.Nmax)
-        Nmax = ka2nmax(max(rtp(:, 1)) * tmatrix.k_medium);
+      if isempty(pa.Results.Nmax)
+        maxRadius = max(rtp(:, 1));
+        if p.Results.internal
+          Nmax = ott.utils.ka2nmax(maxRadius * tmatrix.k_particle);
+        else
+          Nmax = ott.utils.ka2nmax(maxRadius * tmatrix.k_medium);
+        end
       else
-        Nmax = p.Results.Nmax;
+        Nmax = pa.Results.Nmax;
       end
 
       % Check that the particle is rotationally symmetric
-      if p.Results.rotational_symmetry ~= 0
+      if pa.Results.rotational_symmetry ~= 0
         % TODO: Add support for non axis symetric particles
         error('Only axis symetric particles supported');
       end
+      
+      % Choose default value for inverse method
+      invmethod = pa.Results.invmethod;
+      if isempty(invmethod)
+        if imag(tmatrix.k_particle) == 0.0
+          % TODO: We should also check if k_particle is small
+          invmethod = 'inv';
+        else
+          invmethod = 'forwardslash';
+        end
+      end
 
-      [~,~,z] = ott.utils.rtp2xyz(rtp);
-
-      mirrorsym = p.Results.z_mirror_symmetry;
+      mirrorsym = pa.Results.z_mirror_symmetry;
 
       %%%% set up containters
       Y=cell(Nmax,1);
       Ytheta=Y;
       Yphi=Y;
-
-      Nn=zeros(Nmax,1);
 
       kr=tmatrix.k_particle*rtp(:,1);
       ikr=1./kr;
@@ -197,10 +235,15 @@ classdef TmatrixEbcm < ott.Tmatrix
       djkr_=djkr;
       dhkr_=djkr_;
 
-      Nn=1./sqrt([1:Nmax].*([1:Nmax]+1));
+      Nn=1./sqrt((1:Nmax).*((1:Nmax)+1));
 
       Nm=repmat(Nn,[Nmax,1]);
       Nm=Nm.'.*Nm;
+      
+      % Check kr
+      if any(kr == 0)
+        error('kr must not be zero');
+      end
       
       import ott.utils.*;
 
@@ -219,16 +262,18 @@ classdef TmatrixEbcm < ott.Tmatrix
 
       end
 
-      lengthJs=Nmax^2*(Nmax+2)-sum([1:Nmax-1].*([1:Nmax-1]+1));
+      lengthJs=Nmax^2*(Nmax+2)-sum((1:Nmax-1).*((1:Nmax-1)+1));
       J11=zeros(lengthJs,1);
       J12=J11;
       J21=J11;
       J22=J11;
 
-      RgJ11=J11;
-      RgJ12=J11;
-      RgJ21=J11;
-      RgJ22=J11;
+      if ~pa.Results.internal
+        RgJ11=J11;
+        RgJ12=J11;
+        RgJ21=J11;
+        RgJ22=J11;
+      end
 
       i_indexes=J11;
       j_indexes=J11;
@@ -257,15 +302,15 @@ classdef TmatrixEbcm < ott.Tmatrix
         for kk=1:Nmax
           p=min(kk,jj);
 
-          indexzk=kk+1+[-p:p];
-          indexzj=jj+1+[-p:p];
+          indexzk=kk+1+(-p:p);
+          indexzj=jj+1+(-p:p);
 
-          els=[1:length(indexzk)];
+          els= 1:length(indexzk);
 
           jindx=jcount+els;
 
-          i_indexes(jindx)=kk*(kk+1)+[-p:p];
-          j_indexes(jindx)=jj*(jj+1)+[-p:p];
+          i_indexes(jindx)=kk*(kk+1)+(-p:p);
+          j_indexes(jindx)=jj*(jj+1)+(-p:p);
 
           %Calculate the cross products of the spherical harmonics
           YtYp=-Ytheta{jj}(:,indexzj).*Yphi{kk}(:,indexzk);
@@ -282,21 +327,27 @@ classdef TmatrixEbcm < ott.Tmatrix
 
           %calculate the cross products of spherical bessel functions.
           jh_=repmat(jkr{jj}.*(hkr_{kk}),[1,fillnum]);
-          jj_=repmat(jkr{jj}.*jkr_{kk},[1,fillnum]);
+          if ~pa.Results.internal
+            jj_=repmat(jkr{jj}.*jkr_{kk},[1,fillnum]);
+          end
 
           jdh_=repmat(jkr{jj}.*(dhkr_{kk}),[1,fillnum]);
           djh_=repmat(djkr{jj}.*(hkr_{kk}),[1,fillnum]);
 
-          jdj_=repmat(jkr{jj}.*djkr_{kk},[1,fillnum]);
-          djj_=repmat(djkr{jj}.*jkr_{kk},[1,fillnum]);
+          if ~pa.Results.internal
+            jdj_=repmat(jkr{jj}.*djkr_{kk},[1,fillnum]);
+            djj_=repmat(djkr{jj}.*jkr_{kk},[1,fillnum]);
+          end
 
           djdh_=repmat(djkr{jj}.*(dhkr_{kk}),[1,fillnum]);
-          djdj_=repmat(djkr{jj}.*djkr_{kk},[1,fillnum]);
+          if ~pa.Results.internal
+            djdj_=repmat(djkr{jj}.*djkr_{kk},[1,fillnum]);
+          end
 
           % perform the cross product followed by dotting the
           % normal vector and summing over the area elements.
 
-          mfac=(-1).^([-p:p]);
+          mfac=(-1).^(-p:p);      % ilent2: this causes problems?
           if ~(mirrorsym&&(rem(jj,2)==rem(kk,2)))
             J11(jindx) = mfac.*(pi2*Nm(jj,kk)* ...
                 sum(dS(:,els).*rM(:,els).*jh_(:,els).*(YtYp-YpYt),1));
@@ -306,13 +357,15 @@ classdef TmatrixEbcm < ott.Tmatrix
                 jdh_(:,els).*YYp - kk*(kk+1)*iKr_(:,els).* ...
                 djh_(:,els).*YpY)),1));
 
-            RgJ11(jindx)=mfac.*(pi2*Nm(jj,kk)*sum(dS(:,els).* ...
-                rM(:,els).*jj_(:,els).*(YtYp-YpYt),1));
-            RgJ22(jindx)=mfac.*(pi2*Nm(jj,kk)*sum(dS(:,els).* ...
-                (rM(:,els).*djdj_(:,els).*(YtYp-YpYt) ...
-                -thetaM(:,els).*(jj*(jj+1)*iKr(:,els).* ...
-                jdj_(:,els).*YYp - kk*(kk+1)*iKr_(:,els).* ...
-                djj_(:,els).*YpY)),1));
+            if ~pa.Results.internal
+              RgJ11(jindx)=mfac.*(pi2*Nm(jj,kk)*sum(dS(:,els).* ...
+                  rM(:,els).*jj_(:,els).*(YtYp-YpYt),1));
+              RgJ22(jindx)=mfac.*(pi2*Nm(jj,kk)*sum(dS(:,els).* ...
+                  (rM(:,els).*djdj_(:,els).*(YtYp-YpYt) ...
+                  -thetaM(:,els).*(jj*(jj+1)*iKr(:,els).* ...
+                  jdj_(:,els).*YYp - kk*(kk+1)*iKr_(:,els).* ...
+                  djj_(:,els).*YpY)),1));
+            end
           end
 
           if ~(mirrorsym&&(rem(jj,2)~=rem(kk,2)))
@@ -324,12 +377,14 @@ classdef TmatrixEbcm < ott.Tmatrix
                 (-rM(:,els).*djh_(:,els).*(YtYt+YpYp) ...
                 +jj*(jj+1)*iKr(:,els).*thetaM(:,els).*jh_(:,els).*YYt),1));
 
-            RgJ12(jindx)=mfac.*(pi2*Nm(jj,kk)*sum(dS(:,els).* ...
-                (rM(:,els).*jdj_(:,els).*(YpYp+YtYt) ...
-                -kk*(kk+1)*iKr_(:,els).*thetaM(:,els).*jj_(:,els).*YtY),1));
-            RgJ21(jindx)=mfac.*(pi2*Nm(jj,kk)*sum(dS(:,els).* ...
-                (-rM(:,els).*djj_(:,els).*(YtYt+YpYp) ...
-                +jj*(jj+1)*iKr(:,els).*thetaM(:,els).*jj_(:,els).*YYt),1));
+            if ~pa.Results.internal
+              RgJ12(jindx)=mfac.*(pi2*Nm(jj,kk)*sum(dS(:,els).* ...
+                  (rM(:,els).*jdj_(:,els).*(YpYp+YtYt) ...
+                  -kk*(kk+1)*iKr_(:,els).*thetaM(:,els).*jj_(:,els).*YtY),1));
+              RgJ21(jindx)=mfac.*(pi2*Nm(jj,kk)*sum(dS(:,els).* ...
+                  (-rM(:,els).*djj_(:,els).*(YtYt+YpYp) ...
+                  +jj*(jj+1)*iKr(:,els).*thetaM(:,els).*jj_(:,els).*YYt),1));
+            end
           end
           jcount=jcount+length(indexzj);
 
@@ -342,27 +397,66 @@ classdef TmatrixEbcm < ott.Tmatrix
       Qv(2*lengthJs+1:lengthJs*3)=1i*k_medium*(k_particle*J22+k_medium*J11);
       Qv(3*lengthJs+1:lengthJs*4)=1i*k_medium*(k_particle*J12+k_medium*J21);
 
-      RgQv(1:lengthJs)=1i*k_medium*(k_particle*RgJ21+k_medium*RgJ12);
-      RgQv(lengthJs+1:lengthJs*2)=1i*k_medium* ...
-          (k_particle*RgJ11+k_medium*RgJ22);
-      RgQv(2*lengthJs+1:lengthJs*3)=1i*k_medium* ...
-          (k_particle*RgJ22+k_medium*RgJ11);
-      RgQv(3*lengthJs+1:lengthJs*4)=1i*k_medium* ...
-          (k_particle*RgJ12+k_medium*RgJ21);
+      if ~pa.Results.internal
+        RgQv(1:lengthJs)=1i*k_medium*(k_particle*RgJ21+k_medium*RgJ12);
+        RgQv(lengthJs+1:lengthJs*2)=1i*k_medium* ...
+            (k_particle*RgJ11+k_medium*RgJ22);
+        RgQv(2*lengthJs+1:lengthJs*3)=1i*k_medium* ...
+            (k_particle*RgJ22+k_medium*RgJ11);
+        RgQv(3*lengthJs+1:lengthJs*4)=1i*k_medium* ...
+            (k_particle*RgJ12+k_medium*RgJ21);
+      end
 
       %Convert the vectors of Q and RgQ into sparse vector form:
       i_s=[i_indexes;i_indexes;i_indexes+Nmax*(Nmax+2); ...
           i_indexes+Nmax*(Nmax+2)];
       j_s=[j_indexes;j_indexes+Nmax*(Nmax+2);j_indexes; ...
           j_indexes+Nmax*(Nmax+2)];
+        
       Q=sparse(i_s,j_s,Qv,2*Nmax*(Nmax+2),2*Nmax*(Nmax+2));
-      RgQ=sparse(i_s,j_s,RgQv,2*Nmax*(Nmax+2),2*Nmax*(Nmax+2));
+      if ~all(isfinite(Q(:)))
+        error('Q is not finite');
+      end
+      
+      if ~pa.Results.internal
+        RgQ=sparse(i_s,j_s,RgQv,2*Nmax*(Nmax+2),2*Nmax*(Nmax+2));
+        if ~all(isfinite(RgQ(:)))
+          error('RgQ is not finite');
+        end
+      end
+      
+      % TODO: Internal field calculation
+      if pa.Results.internal
+        
+        tmatrix.data = inv(Q);
 
-      %solve the T-matrix:
-      tmatrix.data=-(RgQ/Q);
+        % Store the type of T-matrix
+        tmatrix.type = 'internal';
+        
+      else
 
-      % Store the type of T-matrix
-      tmatrix.type = 'scattered';
+        %solve the T-matrix:
+        switch invmethod
+          case 'forwardslash'
+            % If we trust matlab or may be good for conductive particles
+            tmatrix.data=-(RgQ/Q);
+          case 'backslash'
+            % If we trust matlab or may be good for conductive particles
+            tmatrix.data=-(Q'\RgQ')';
+          case 'inv'
+            % This method probably uses LU decomposition, works better for
+            % non-conductive and weakly conductive particles.
+            % Wielaard, et al., Appl. Opt. 36, 4305-4313 (1997)
+            tmatrix.data=-(RgQ * inv(Q));
+          case 'pinv'
+            tmatrix.data=-(RgQ * pinv(full(Q)));
+          otherwise
+            error('Unknown matrix inversion method');
+        end
+
+        % Store the type of T-matrix
+        tmatrix.type = 'scattered';
+      end
     end
   end
 end
