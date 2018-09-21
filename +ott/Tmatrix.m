@@ -529,5 +529,16 @@ classdef Tmatrix
       tmatrixs = tmatrix;
       tmatrixs.data = -tmatrixs.data;
     end
+    
+    function check = columncheck(tmatrix)
+      % Check the power in each column (non-absorbing T-matrix check)
+      
+      if strcmpi(tmatrix.type, 'scattered')
+        check = sum(abs(2.*tmatrix.data+eye(size(tmatrix.data))).^2, 1);
+      else
+        check = sum(abs(tmatrix.data).^2, 1);
+      end
+      
+    end
   end
 end
