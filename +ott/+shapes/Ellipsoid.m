@@ -48,6 +48,8 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
 
     function p = get_perimiter(shape)
       % Calculate the perimiter of the object
+      %
+      % Only works if the shape is rotationally symmetric about z.
 
       % Check that the particle is axisymmetric
       axisym = shape.axialSymmetry();
@@ -56,26 +58,23 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
         return;
       end
 
-      a = max(shape.a, shape.b);
-      b = min(shape.a, shape.b);
+      a = max(shape.a, shape.c);
+      b = min(shape.a, shape.c);
 
-      % Calculate the perimiter using recursion
-      e = sqrt(shape.a.^2 + shape.b.^2)/a;
+      % From mathsisfun.com/geometry/ellipse-perimiter.html
+      h = (a - b).^2 ./ (a + b).^2;
+      p = 1.0;
       nmax = 100;
-      p = 0.0;
-      pold = 0.0;
-      tol = 1.0e-6;
+      tol = 1.0e-3;
       for ii = 1:nmax
-        p = p + factorial(2*ii).^2 / (2^ii * factorial(ii)).^4 ...
-            * e^(2*ii) / (2*ii - 1);
-        if abs(p - pold)/abs(pold) < tol
+        newp = nchoosek(0.5, ii).^2.*h.^ii;
+        p = p + newp;
+        if abs(newp) < tol
           break;
         end
-        pold = p;
       end
+      p = p .* pi .* (a + b);
 
-      % Add the correction term
-      p = 2*a*pi*(1.0 - p);
     end
 
     function r = radii(shape, theta, phi)
