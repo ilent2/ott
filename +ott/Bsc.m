@@ -1081,8 +1081,10 @@ classdef Bsc
           tmatrix(ii) = tmatrix(ii).set_Nmax([maxNmax1, rbeam.Nmax], ...
               'powerloss', 'ignore');
         end
-        ott.warning('ott:Bsc:scatter', ...
-            'It may be more optimal to use a scattered T-matrix');
+        if ~strcmpi(tmatrix(1).type, 'internal')
+          ott.warning('ott:Bsc:scatter', ...
+              'It may be more optimal to use a scattered T-matrix');
+        end
       end
 
       % Calculate the resulting beams
@@ -1107,6 +1109,9 @@ classdef Bsc
         sbeam.type = 'regular';
       elseif strcmp(tmatrix(1).type, 'internal')
         sbeam.type = 'regular';
+        
+        % Wavelength has changed, update it
+        sbeam.k_medium = tmatrix(1).k_particle;
       else
         error('Unrecognized T-matrix type');
       end
