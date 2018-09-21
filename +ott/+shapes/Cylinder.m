@@ -85,6 +85,22 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
       n(ends,2) = - sin(theta(ends)) .* sign(cos(theta(ends)));
     end
 
+    function [rtp, n, ds] = boundarypoints(shape, varargin)
+      % BOUNDARYPOINTS calculates boundary points for surface integral
+      %
+      % [rtp, n, ds] = BOUDNARYPOINTS(npts) calculates the boundary points
+      % and surface normal vectors in spherical coordinates and the area
+      % elements of each ring.
+      %
+      % BOUNDARYPOINTS('Nmax', Nmax) takes a guess at a suitable npts
+      % for the given Nmax.
+
+      rho = [0.0; 1.0; 1.0; 0.0].*shape.radius;
+      z = [-0.5; -0.5; 0.5; 0.5].*shape.height;
+
+      [rtp, n, ds] = shape.boundarypoints_rhoz(shape, rho, z, varargin{:});
+    end
+
     function varargout = axialSymmetry(shape)
       % Return the axial symmetry for the particle
 
