@@ -347,7 +347,7 @@ classdef TmatrixEbcm < ott.Tmatrix
           % perform the cross product followed by dotting the
           % normal vector and summing over the area elements.
 
-          mfac=(-1).^(-p:p);      % ilent2: this causes problems?
+          mfac=1;
           if ~(mirrorsym&&(rem(jj,2)==rem(kk,2)))
             J11(jindx) = mfac.*(pi2*Nm(jj,kk)* ...
                 sum(dS(:,els).*rM(:,els).*jh_(:,els).*(YtYp-YpYt),1));
