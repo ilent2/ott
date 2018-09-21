@@ -126,6 +126,15 @@ classdef AxisymShape < ott.shapes.Shape
           ncum=ncum+Nused;
 
       end
+      
+      % Truncate points if not allocated
+      if ncum < ntheta
+        warning('OTT:SHAPES:AXISYMSHAPE:boundarypoints_length', ...
+          'Number of points generated does not match request');
+        zout = zout(1:ncum);
+        rhoout = zout(1:ncum);
+        nxyz = nxyz(1:ncum, :);
+      end
 
       %converts the cylindrical coordinates into spherical coordinates
       [n,rtp]=ott.utils.xyzv2rtpv(nxyz,[rhoout,zeros(size(rhoout)),zout]);
