@@ -210,13 +210,22 @@ classdef StarShape < ott.shapes.Shape
       % b = inside(shape, x, y, z) determine if the Cartesian point
       % [x, y, z] is inside the star shaped object.
       %
+      % b = insideXyz(shape, xyz) as above, but using a 3xN matrix of
+      % [x; y; z] positions.
+      %
       % See also INSIDE.
 
       % Ensure the sizes match
-      x = x(:);
-      y = y(:);
-      z = z(:);
-      [x, y, z] = ott.utils.matchsize(x, y, z);
+      if nargin == 4
+        x = x(:);
+        y = y(:);
+        z = z(:);
+        [x, y, z] = ott.utils.matchsize(x, y, z);
+      else
+        y = x(2, :);
+        z = x(3, :);
+        x = x(1, :);
+      end
 
       % Convert to spherical coordinates
       [r, t, p] = ott.utils.xyz2rtp(x, y, z);
