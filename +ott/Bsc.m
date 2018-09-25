@@ -320,7 +320,7 @@ classdef Bsc
       p.addParameter('data', []);
       p.parse(varargin{:});
       
-      kxyz = xyz * beam.k_medium;
+      kxyz = xyz * abs(beam.k_medium);
 
       [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
       nm = [ n; m ];
@@ -447,6 +447,7 @@ classdef Bsc
       %     'axis'    ax          Axis to visualise ('x', 'y', 'z')
       %     'offset'  offset      Plane offset along axis (default: 0.0)
       %     'range'   [ x, y ]    Range of points to visualise
+      %     'mask'    func(xyz)   Mask function for regions to keep in vis
 
       p = inputParser;
       p.addParameter('field', 'irradiance');
@@ -454,9 +455,10 @@ classdef Bsc
       p.addParameter('axis', 'z');
       p.addParameter('offset', 0.0);
       p.addParameter('range', ...
-          [1,1]*ott.utils.nmax2ka(beam.Nmax)/beam.k_medium);
+          [1,1]*ott.utils.nmax2ka(beam.Nmax)/abs(beam.k_medium));
       p.addParameter('saveData', nargout == 2);
       p.addParameter('data', []);
+      p.addParameter('mask', []);
       p.parse(varargin{:});
 
       xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
@@ -493,7 +495,13 @@ classdef Bsc
 
       % Display the visualisation
       if nargout == 0
-        imagesc(xrange, yrange, imout);
+        
+        % Apply the mask
+        if ~isempty(p.Results.mask)
+          imout(p.Results.mask(xyz.')) = NaN;
+        end
+        
+        imagesc(xrange, yrange, imout, 'AlphaData', ~isnan(imout));
         xlabel(alabels{1});
         ylabel(alabels{2});
         axis image;

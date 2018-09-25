@@ -88,15 +88,17 @@ classdef TmatrixEbcm < ott.Tmatrix
       p.addParameter('wavelength_particle', []);
       p.addParameter('index_particle', []);
       
+      p.addParameter('verbose', false);
+      
       p.parse(varargin{:});
 
       % Get or estimate Nmax from the inputs
       [k_medium, k_particle] = ott.Tmatrix.parser_wavenumber(p, 2*pi);
       if isempty(p.Results.Nmax)
         if p.Results.internal
-          Nmax = ott.utils.ka2nmax(shape.maxRadius * k_particle);
+          Nmax = ott.utils.ka2nmax(shape.maxRadius * abs(k_particle));
         else
-          Nmax = ott.utils.ka2nmax(shape.maxRadius * k_medium);
+          Nmax = ott.utils.ka2nmax(shape.maxRadius * abs(k_medium));
         end
       else
         Nmax = p.Results.Nmax;
@@ -119,7 +121,8 @@ classdef TmatrixEbcm < ott.Tmatrix
           'rotational_symmetry', z_rotational_symmetry, ...
           'z_mirror_symmetry', z_mirror_symmetry, ...
           'invmethod', p.Results.invmethod, ...
-          'internal', p.Results.internal);
+          'internal', p.Results.internal, ...
+          'verbose', p.Results.verbose);
     end
   end
   
@@ -180,6 +183,7 @@ classdef TmatrixEbcm < ott.Tmatrix
       pa.addParameter('z_mirror_symmetry', false);
       pa.addParameter('internal', false);
       pa.addParameter('invmethod', []);
+      pa.addParameter('verbose', false);
       pa.parse(varargin{:});
 
       % Store inputs k_medium and k_particle
@@ -190,9 +194,9 @@ classdef TmatrixEbcm < ott.Tmatrix
       if isempty(pa.Results.Nmax)
         maxRadius = max(rtp(:, 1));
         if p.Results.internal
-          Nmax = ott.utils.ka2nmax(maxRadius * tmatrix.k_particle);
+          Nmax = ott.utils.ka2nmax(maxRadius * abs(tmatrix.k_particle));
         else
-          Nmax = ott.utils.ka2nmax(maxRadius * tmatrix.k_medium);
+          Nmax = ott.utils.ka2nmax(maxRadius * abs(tmatrix.k_medium));
         end
       else
         Nmax = pa.Results.Nmax;
@@ -414,12 +418,18 @@ classdef TmatrixEbcm < ott.Tmatrix
           j_indexes+Nmax*(Nmax+2)];
         
       Q=sparse(i_s,j_s,Qv,2*Nmax*(Nmax+2),2*Nmax*(Nmax+2));
+      if pa.Results.verbose
+        disp(['Q cond: ' num2str(cond(Q))]);
+      end
       if ~all(isfinite(Q(:)))
         error('Q is not finite');
       end
       
       if ~pa.Results.internal
         RgQ=sparse(i_s,j_s,RgQv,2*Nmax*(Nmax+2),2*Nmax*(Nmax+2));
+        if pa.Results.verbose
+          disp(['RgQ cond: ' num2str(cond(RgQ))]);
+        end
         if ~all(isfinite(RgQ(:)))
           error('RgQ is not finite');
         end
