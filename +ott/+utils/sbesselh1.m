@@ -1,4 +1,4 @@
-function [hn,dhn] = sbesselh1(n,kr)
+function [hn,dhn] = sbesselh1(n,kr, varargin)
 % SBESSELH1 spherical hankel function hn(kr) of the first kind,
 % hn(kr) = sqrt(pi/2kr) Hn+0.5(kr).
 %
@@ -14,6 +14,20 @@ function [hn,dhn] = sbesselh1(n,kr)
 
 ott.warning('internal');
 
+p = inputParser;
+p.addParameter('method', []);
+p.parse(varargin{:});
+
+method = p.Results.method;
+if isempty(method)
+  if any(kr < n)
+    method = 'besselj+bessely';
+  else
+    method = 'besselh';
+  end
+end
+
+
 kr=kr(:);
 n=n(:);
 
@@ -23,7 +37,20 @@ end
 
 [n,kr]=meshgrid(n,kr);
 
-[hn] = besselh(n+1/2,1,kr);
+switch method
+
+  case 'besselj+bessely'
+    bj = besselj(n+1/2,kr);
+    by = bessely(n+1/2,kr);
+    hn = bj + 1i*by;
+
+  case 'besselh'
+    % This doesn't work too well for kr < n
+    [hn] = besselh(n+1/2,1,kr);
+
+  otherwise
+    error('Unknown method');
+end
 
 hn = sqrt(pi./(2*kr)) .* (hn);
 
