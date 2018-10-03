@@ -314,7 +314,9 @@ classdef Tmatrix
     %
     % TMATRIX() leaves the data uninitialised.
     %
-    % TMATRIX(data) initializes the data with the matrix data.
+    % TMATRIX(data, type) initializes the data with the matrix data.
+    % Type refers to the type of T-matrix, must be internal,
+    % scattered or total.
 
     if nargin >= 1
       tmatrix.data = data;
