@@ -15,6 +15,7 @@ classdef StarShape < ott.shapes.Shape
 
   properties (Dependent)
     maxRadius       % Maximum particle radius (useful for Nmax calculation)
+    volume          % Volume of the particle
   end
 
   methods (Abstract)
@@ -23,6 +24,7 @@ classdef StarShape < ott.shapes.Shape
     axialSymmetry(shape);
 
     get_maxRadius(shape, varargin);
+    get_volume(shape, varargin);
   end
 
   methods
@@ -51,6 +53,11 @@ classdef StarShape < ott.shapes.Shape
     function r = get.maxRadius(shape)
       % Get the particle max radius
       r = shape.get_maxRadius();
+    end
+
+    function r = get.volume(shape)
+      % Get the particle volume
+      r = shape.get_volume();
     end
 
     function varargout = locations(shape, theta, phi)
@@ -144,7 +151,7 @@ classdef StarShape < ott.shapes.Shape
       p.addParameter('plotoptions', {...
           'MarkerFaceColor', 'w', ...
           'MarkerEdgeColor', [.5 .5 .5], ...
-          'MarkerSize', 50*spacing});
+          'MarkerSize', 20*spacing/shape.maxRadius});
       p.addParameter('visualise', nargout == 0);
       p.parse(varargin{:});
 
@@ -163,7 +170,7 @@ classdef StarShape < ott.shapes.Shape
       if p.Results.visualise
         plot3(xyz(1,:), xyz(2,:), xyz(3,:), 'o', p.Results.plotoptions{:});
         axis equal
-        title(['spacing = ' num2str(spacing) ', N = ' int2str(numel(mask))])
+        title(['spacing = ' num2str(spacing) ', N = ' int2str(sum(mask))])
       end
 
       % Assign output
