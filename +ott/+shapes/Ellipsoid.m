@@ -41,6 +41,11 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
       r = max([shape.a, shape.b, shape.c]);
     end
 
+    function v = get_volume(shape)
+      % Calculate the particle volume
+      v = 4./3.*pi.*shape.a.*shape.b.*shape.c;
+    end
+
     function b = isSphere(shape)
       % ISSPHERE Returns true if the shape is a sphere
       b = shape.a == shape.b && shape.a == shape.c;

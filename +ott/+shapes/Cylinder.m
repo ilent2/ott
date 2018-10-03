@@ -36,6 +36,11 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
       r = sqrt(shape.radius.^2 + (shape.height/2).^2);
     end
 
+    function v = get_volume(shape)
+      % Calculate the volume
+      v = pi*shape.radius.^2*shape.height;
+    end
+
     function p = get_perimiter(shape)
       % Calculate the perimiter of the object
       p = 2.0 * (2.0*shape.radius + shape.height);

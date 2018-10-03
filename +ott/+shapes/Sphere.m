@@ -26,6 +26,11 @@ classdef Sphere < ott.shapes.StarShape & ott.shapes.AxisymShape
       r = shape.radius;
     end
 
+    function v = get_volume(shape)
+      % Calculate the volume
+      v = 4./3.*pi.*shape.radius.^3;
+    end
+
     function p = get_perimiter(shape)
       % Calculate the perimiter of the object
       p = 2.0 * pi * shape.radius;

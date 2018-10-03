@@ -26,6 +26,11 @@ classdef Cube < ott.shapes.StarShape
       r = sqrt(3*(shape.width/2).^2);
     end
 
+    function v = get_volume(shape)
+      % Calculate the volume of the cube
+      v = shape.width.^3;
+    end
+
     function [f, xyz] = faces(shape, theta, phi)
       % FACE determine which face a point is on
       % Edges and corners belong to multiple faces
