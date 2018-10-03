@@ -488,6 +488,13 @@ classdef Bsc
       if strcmpi(p.Results.field, 'irradiance')
 
         imout = reshape(sqrt(sum(abs(E).^2, 1)), p.Results.size);
+        
+      elseif strcmpi(p.Results.field, 'Re(Ex)')
+        imout = reshape(real(E(1, :)), p.Results.size);
+      elseif strcmpi(p.Results.field, 'Re(Ey)')
+        imout = reshape(real(E(2, :)), p.Results.size);
+      elseif strcmpi(p.Results.field, 'Re(Ez)')
+        imout = reshape(real(E(3, :)), p.Results.size);
 
       else
         error('Unknown field visualisation type value');
