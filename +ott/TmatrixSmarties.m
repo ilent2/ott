@@ -12,6 +12,11 @@ classdef TmatrixSmarties < ott.Tmatrix
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+  properties %(SetAccess=protected)
+    k_medium            % Wavenumber of medium
+    k_particle          % Wavenumber of particle
+  end
+
   methods (Static)
     function tmatrix = simple(shape, varargin)
       % Construct a T-matrix using SMARTIES/EBCM for spheroids
@@ -85,9 +90,9 @@ classdef TmatrixSmarties < ott.Tmatrix
       %         Default: 1.0
       %
       %     Nmax                 int     Maximum multiple order for
-      %         T-matrix calculation (default: sphEstimateNandNT)
+      %         (default: ott.utils.ka2nmax(max_radius*wavenumber))
       %     npts                 int     Number of points to use for
-      %         surface integral (default: sphEstimateNandNT)
+      %         surface integral (default: Nmax*Nmax)
       %     verbose              bool    Display additional output
 
       tmatrix = tmatrix@ott.Tmatrix();
@@ -115,13 +120,33 @@ classdef TmatrixSmarties < ott.Tmatrix
       p.parse(varargin{:});
 
       % Get the wavenumber of the particle and medium
-      [k_medium, k_particle] = tmatrix.parser_wavenumber(p, 2*pi);
+      [tmatrix.k_medium, tmatrix.k_particle] = ...
+          tmatrix.parser_wavenumber(p, 2*pi);
+
+      % Get or estimate Nmax from the inputs
+      Nmax = p.Results.Nmax;
+      if isempty(Nmax)
+        maxRadius = max(a, c);
+        if p.Results.internal
+          Nmax = ott.utils.ka2nmax(maxRadius * abs(tmatrix.k_particle));
+        else
+          Nmax = ott.utils.ka2nmax(maxRadius * abs(tmatrix.k_medium));
+        end
+      end
+
+      % Get or estimate npts from inputs
+      npts = p.Results.npts;
+      if isempty(npts)
+        npts = Nmax.^2;
+      end
 
       % Setup structure of simulation inputs
-      stParams.a = 2*pi*a ./ k_medium;
-      stParams.c = 2*pi*c ./ k_medium;
-      stParams.k1 = k_medium;
-      stParams.s = k_particle./k_medium;
+      stParams.a = a .* tmatrix.k_medium;
+      stParams.c = c .* tmatrix.k_medium;
+      stParams.k1 = 1.0;
+      stParams.s = tmatrix.k_particle./tmatrix.k_medium;
+      stParams.N = Nmax;
+      stParams.nNbTheta = npts;
 
       % Setup structure of optional parameters
       stOptions.bGetR = p.Results.internal;
@@ -129,13 +154,6 @@ classdef TmatrixSmarties < ott.Tmatrix
       stOptions.NB = 0;
       stOptions.bGetSymmetricT = false;
       stOptions.bOutput = p.Results.verbose;
-
-      % Handle default estimate for Nmax and nNbTheta
-      [N, nNbTheta] = sphEstimateNandNT(stParams, stOptions, 1e-8);
-      if ~isempty(p.Results.Nmax), N = p.Results.Nmax; end
-      if ~isempty(p.Results.npts), nNbTheta = p.Results.npts; end
-      stParams.N = N;
-      stParams.nNbTheta = nNbTheta;
 
       % Solve for the T-matrix
       [~, CstTRa] = slvForT(stParams, stOptions);
