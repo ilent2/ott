@@ -58,7 +58,8 @@ classdef BscPlane < ott.Bsc
 
       p.parse(varargin{:});
 
-      beam.type = 'incoming';
+      beam.type = 'incident';
+      beam.basis = 'regular';
       beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
 

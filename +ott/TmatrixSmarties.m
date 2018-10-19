@@ -161,7 +161,7 @@ classdef TmatrixSmarties < ott.Tmatrix
       % Store the result
       if p.Results.internal
         tmatrix.type = 'internal';
-        tmatrix.data = -ott.TmatrixSmarties.getTmatrixData(CstTRa, 'st4MR');
+        tmatrix.data = ott.TmatrixSmarties.getTmatrixData(CstTRa, 'st4MR');
       else
         tmatrix.type = 'scattered';
         tmatrix.data = ott.TmatrixSmarties.getTmatrixData(CstTRa, 'st4MT');

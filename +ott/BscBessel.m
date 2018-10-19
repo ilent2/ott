@@ -37,6 +37,8 @@ classdef BscBessel < ott.Bsc
 
       theta = theta(:);
 
+      beam.type = 'incident';
+      beam.basis = 'regular';
       beam.k_medium = p.Results.k_medium;
       beam.theta = theta.';
 

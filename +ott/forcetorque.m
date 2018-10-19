@@ -158,7 +158,7 @@ elseif ibeam.Nmax < sbeam.Nmax
 end
 
 % Ensure the beam is incoming-outgoing
-sbeam = sbeam.outgoing(ibeam);
+sbeam = sbeam.totalField(ibeam);
 
 % Get the relevent beam coefficients
 [a, b] = ibeam.getCoefficients();

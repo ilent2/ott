@@ -14,6 +14,10 @@ function setupOnce(testCase)
   testCase.TestData.T = ott.Tmatrix.simple('sphere', 1.0, ...
       'index_relative', 1.2);
 
+  % Non-contrasting particle
+  testCase.TestData.Tnocont = ott.Tmatrix.simple('sphere', 1.0, ...
+      'index_relative', 1.0);
+
 end
 
 function testSimple(testCase)
@@ -111,6 +115,51 @@ function testMultiParticle(testCase)
   testCase.verifyThat(f2, IsEqualTo(f(4:6), ...
       'Within', AbsoluteTolerance(tol)), ...
       'T2 force does not match');
+
+end
+
+function testPlaneWave(testCase)
+
+  Nmax = 12;
+
+  % Test the force on a non-contrasting particle
+  T = testCase.TestData.Tnocont;
+  beam = ott.BscPlane(0.0, 0.0, 'Nmax', Nmax, 'polarisation', [1, -1i]);
+  beam.power = 1.0;
+  
+  numpts = 10;
+  R = zeros(3, 3*numpts);
+  for ii = 1:numpts
+    R(:, (1:3) + 3*(ii-1)) = rotz(rand()*360)*roty(rand()*180);
+  end
+  
+  [f, ~] = ott.forcetorque(beam, T, 'rotation', R);
+  
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+  tol = 1.0e-3;
+
+  testCase.verifyThat(vecnorm(f), IsEqualTo(zeros(1, numpts), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Force does not vanish for non-contrasing particle');
+    
+  % Create an identity T-matrix in the total field type
+  T = ott.Tmatrix(-0.5*speye(2*ott.utils.combined_index(Nmax, Nmax)), ...
+      'scattered');
+  
+  [f, t, s] = ott.forcetorque(beam, T, 'rotation', R);
+
+  testCase.verifyThat(vecnorm(f), IsEqualTo(0.9231*ones(1, numpts), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Force should approach 0.9231 in this configuration');
+
+  testCase.verifyThat(vecnorm(t), IsEqualTo(ones(1, numpts), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Torque should approach 1 in this configuration');
+
+  testCase.verifyThat(vecnorm(s), IsEqualTo(0.9231*ones(1, numpts), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Spin should approach 0.9231 in this configuration');
 
 end
 

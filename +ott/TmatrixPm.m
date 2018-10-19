@@ -82,20 +82,34 @@ classdef TmatrixPm < ott.Tmatrix
       p = inputParser;
       p.KeepUnmatched = true;
       p.addParameter('Nmax', []);
+      p.addParameter('wavelength0', []);
+      p.addParameter('distribution', 'angulargrid');
+      
+      p.addParameter('index_relative', []);
+      
       p.addParameter('k_medium', []);
       p.addParameter('wavelength_medium', []);
       p.addParameter('index_medium', []);
-      p.addParameter('wavelength0', []);
-      p.addParameter('distribution', 'angulargrid');
+      
+      p.addParameter('k_particle', []);
+      p.addParameter('wavelength_particle', []);
+      p.addParameter('index_particle', []);
+      
+      p.addParameter('internal', false);
       p.parse(varargin{:});
 
       % Get or estimate Nmax from the inputs
+      [k_medium, k_particle] = ott.Tmatrix.parser_wavenumber(p, 2*pi);
       if isempty(p.Results.Nmax)
-        k_medium = ott.Tmatrix.parser_k_medium(p, 2*pi);
-        Nmax = ott.utils.ka2nmax(shape.maxRadius * k_medium);
+        maxRadius = shape.maxRadius;
+        if p.Results.internal
+          Nmax = ott.utils.ka2nmax(maxRadius * abs(k_particle));
+        else
+          Nmax = ott.utils.ka2nmax(maxRadius * abs(k_medium));
+        end
       else
         Nmax = p.Results.Nmax;
-
+        
         % We only support square matricies for now
         if numel(Nmax) ~= 1
           Nmax = max(Nmax(:));
@@ -253,13 +267,18 @@ classdef TmatrixPm < ott.Tmatrix
       % Store inputs k_medium and k_particle
       [tmatrix.k_medium, tmatrix.k_particle] = ...
           tmatrix.parser_wavenumber(p, 2*pi);
-
+      
       % Get or estimate Nmax from the inputs
       if isempty(p.Results.Nmax)
-        Nmax = ka2nmax(max(rtp(:, 1)) * tmatrix.k_medium);
+        maxRadius = max(rtp(:, 1));
+        if p.Results.internal
+          Nmax = ott.utils.ka2nmax(maxRadius * abs(tmatrix.k_particle));
+        else
+          Nmax = ott.utils.ka2nmax(maxRadius * abs(tmatrix.k_medium));
+        end
       else
         Nmax = p.Results.Nmax;
-
+        
         % We only support square matricies for now
         if numel(Nmax) ~= 1
           Nmax = max(Nmax(:));

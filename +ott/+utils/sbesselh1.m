@@ -20,7 +20,7 @@ p.parse(varargin{:});
 
 method = p.Results.method;
 if isempty(method)
-  if any(kr < n)
+  if any(abs(kr) < max(abs(n)))
     method = 'besselj+bessely';
   else
     method = 'besselh';

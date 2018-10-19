@@ -438,7 +438,7 @@ classdef TmatrixEbcm < ott.Tmatrix
       % TODO: Internal field calculation
       if pa.Results.internal
         
-        tmatrix.data = inv(Q);
+        tmatrix.data = -inv(Q);
 
         % Store the type of T-matrix
         tmatrix.type = 'internal';

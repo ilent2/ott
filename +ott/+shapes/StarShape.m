@@ -62,6 +62,13 @@ classdef StarShape < ott.shapes.Shape
 
     function varargout = locations(shape, theta, phi)
       % LOCATIONS calculates Cartessian coordinate locations for points
+      %
+      % [x, y, z] = locations(theta, phi) calculates the Cartesian coordinates
+      % for locations on the surface specified by polar angle theta [0, pi)
+      % and azimuthal angle phi [0, 2*pi).
+      %
+      % xyz = locations(theta, phi) as above, but returns the output
+      % into a Nx3 matrix [x, y, z].
 
       theta = theta(:);
       phi = phi(:);
@@ -181,6 +188,9 @@ classdef StarShape < ott.shapes.Shape
 
     function n = normalsXyz(shape, theta, phi)
       % NORMALSXYZ calculates Cartessian normals
+      %
+      % n = normalsXyz(theta, phi) calculates the normals to the
+      % surface in Cartesian coordinates and returns a Nx3 matrix.
 
       theta = theta(:);
       phi = phi(:);
@@ -324,9 +334,9 @@ classdef StarShape < ott.shapes.Shape
         if nargout == 1
           varargout{1} = [ r theta phi ];
         else
-          varargtou{1} = r;
-          varargtou{2} = theta;
-          varargtou{3} = phi;
+          varargout{1} = r;
+          varargout{2} = theta;
+          varargout{3} = phi;
         end
       end
     end

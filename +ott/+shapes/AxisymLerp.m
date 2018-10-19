@@ -62,6 +62,10 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
       % Calculate the maximum particle radius
       r = max(sqrt(shape.rho.^2 + shape.z.^2));
     end
+    
+    function v = get_volume(shape)
+      error('Not yet implemented');
+    end
 
     function p = get_perimiter(shape)
       % Calculate the perimiter of the object

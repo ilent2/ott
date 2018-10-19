@@ -41,7 +41,8 @@ classdef Bsc
   end
 
   properties
-    type        % Beam type (incoming, outgoing or regular)
+    basis       % VSWF beam basis (incoming, outgoing or regular)
+    type        % Beam type (incident, scattered, total)
   end
 
   properties (Dependent)
@@ -103,7 +104,7 @@ classdef Bsc
   end
 
   methods
-    function beam = Bsc(a, b, type, varargin)
+    function beam = Bsc(a, b, basis, type, varargin)
       %BSC construct a new beam object
       
       p = inputParser;
@@ -126,6 +127,7 @@ classdef Bsc
       if nargin ~= 0
         beam.a = a;
         beam.b = b;
+        beam.basis = basis;
         beam.type = type;
       end
     end
@@ -184,14 +186,14 @@ classdef Bsc
       Htheta=zeros(length(theta),1);
       Hphi=zeros(length(theta),1);
 
-      if strcmp(beam.type, 'incoming')
+      if strcmp(beam.basis, 'incoming')
 
         a = beam.a;
         b = beam.b;
         p = zeros(size(beam.a));
         q = zeros(size(beam.b));
 
-      elseif strcmp(beam.type, 'outgoing')
+      elseif strcmp(beam.basis, 'outgoing')
 
         a = zeros(size(beam.a));
         b = zeros(size(beam.a));
@@ -200,8 +202,7 @@ classdef Bsc
 
       else
 
-        % TODO: Can we convert from regular to incoming + outgoing?
-        error('Unsupported beam type');
+        error('Regular wavefunctions go to zero in far-field');
 
       end
 
@@ -294,58 +295,88 @@ classdef Bsc
       H = H * -1i;
     end
 
-    function [E, H, data] = emFieldXyz(beam, xyz, varargin)
-      %EMFIELDXYZ calculates the E and H field at specified locations
+    function [E, H, data] = emFieldRtp(beam, rtp, varargin)
+      % Calculates the E and H field at specified locations
       %
-      % [E, H] = beam.emFieldXyz(xyz) calculates the complex field
-      % at locations xyz.  xyz should be a 3xN matrix of locations.
+      % [E, H] = beam.emFieldRtp(rtp, ...) calculates the complex field
+      % at locations xyz (3xN matrix of spherical coordinates).
       % Returns 3xN matrices for the E and H field at these locations.
-      %
-      % [E, H, data] = beam.emFieldXyz(..., 'saveData', true) outputs
-      % a matrix of data the can be used for repeated calculation.
       %
       % Optional named arguments:
       %    'calcE'   bool   calculate E field (default: true)
       %    'calcH'   bool   calculate H field (default: nargout == 2)
       %    'saveData' bool  save data for repeated calculation (default: false)
       %    'data'    data   data saved for repeated calculation.
+      %    'coord'   str    coordinates to use for calculated field
+      %       'cartesian' (default) or 'spherical'
       %
       % If either calcH or calcE is false, the function still returns
-      % E and H as matricies of all zeros.
+      % E and H as matrices of all zeros for the corresponding field.
 
       p = inputParser;
       p.addParameter('calcE', true);
       p.addParameter('calcH', nargout >= 2);
       p.addParameter('saveData', false);
       p.addParameter('data', []);
+      p.addParameter('coord', 'cartesian');
       p.parse(varargin{:});
-      
-      kxyz = xyz * abs(beam.k_medium);
 
+      % Scale the locations by the wave number (unitless coordinates)
+      rtp(1, :) = rtp(1, :) * abs(beam.k_medium);
+
+      % Get the indices required for the calculation
       [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
       nm = [ n; m ];
 
-      if strcmp(beam.type, 'incoming')
-        [S, data] = ott.electromagnetic_field_xyz(kxyz.', nm, beam, [], [], ...
-          'saveData', p.Results.saveData, 'data', p.Results.data, ...
+      ci = ott.utils.combined_index(n, m);
+      [a, b] = beam.getCoefficients(ci);
+
+      % Calculate the fields
+      [E, H, data] = ott.utils.emField(rtp.', beam.basis, nm, [a; b], ...
+          'saveData', p.Results.saveData, ...
+          'data', p.Results.data, ...
           'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
-        E = S.Eincident.';
-        H = S.Hincident.';
-      elseif strcmp(beam.type, 'outgoing')
-        [S, data] = ott.electromagnetic_field_xyz(kxyz.', nm, [], beam, [], ...
-          'saveData', p.Results.saveData, 'data', p.Results.data, ...
-          'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
-        E = S.Escattered.';
-        H = S.Hscattered.';
-      elseif strcmp(beam.type, 'regular')
-        [S, data] = ott.electromagnetic_field_xyz(kxyz.', nm, [], [], beam, ...
-          'saveData', p.Results.saveData, 'data', p.Results.data, ...
-          'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
-        E = S.Einternal.';
-        H = S.Hinternal.';
-      else
-        error('Invalid beam type');
+
+      % Convert from spherical to Cartesian coordinates
+      switch p.Results.coord
+        case 'cartesian'
+          E = ott.utils.rtpv2xyzv(E,rtp.');
+          E(isnan(E)) = 0;
+          H = ott.utils.rtpv2xyzv(H,rtp.');
+          H(isnan(H)) = 0;
+
+        case 'spherical'
+          % Nothing to do
+
+        otherwise
+          error('Unknown coordinate system for output');
       end
+      
+      % Make the matrices 3xN
+      E = E.';
+      H = H.';
+    end
+
+    function [E, H, data] = emFieldXyz(beam, xyz, varargin)
+      %EMFIELDXYZ calculates the E and H field at specified locations
+      %
+      % [E, H] = beam.emFieldXyz(xyz, ...) calculates the complex field
+      % at locations xyz (3xN matrix of Cartesian coordinates).
+      % Returns 3xN matrices for the E and H field at these locations.
+      %
+      % Optional named arguments:
+      %    'calcE'   bool   calculate E field (default: true)
+      %    'calcH'   bool   calculate H field (default: nargout == 2)
+      %    'saveData' bool  save data for repeated calculation (default: false)
+      %    'data'    data   data saved for repeated calculation.
+      %    'coord'   str    coordinates to use for calculated field
+      %       'cartesian' (default) or 'spherical'
+      %
+      % If either calcH or calcE is false, the function still returns
+      % E and H as matrices of all zeros for the corresponding field.
+
+      rtp = ott.utils.xyz2rtp(xyz.');
+      [E, H, data] = beam.emFieldRtp(rtp.', varargin{:});
     end
 
     function [im, data] = visualiseFarfield(beam, varargin)
@@ -461,8 +492,15 @@ classdef Bsc
       p.addParameter('mask', []);
       p.parse(varargin{:});
 
-      xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
-      yrange = linspace(-1, 1, p.Results.size(2))*p.Results.range(2);
+      if iscell(p.Results.range)
+        xrange = p.Results.range{1};
+        yrange = p.Results.range{2};
+        sz = [length(yrange), length(xrange)];
+      else
+        xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
+        yrange = linspace(-1, 1, p.Results.size(2))*p.Results.range(2);
+        sz = p.Results.size;
+      end
       [xx, yy, zz] = meshgrid(xrange, yrange, p.Results.offset);
 
       % Generate the xyz grid for the used requested plane
@@ -487,14 +525,14 @@ classdef Bsc
 
       if strcmpi(p.Results.field, 'irradiance')
 
-        imout = reshape(sqrt(sum(abs(E).^2, 1)), p.Results.size);
+        imout = reshape(sqrt(sum(abs(E).^2, 1)), sz);
         
       elseif strcmpi(p.Results.field, 'Re(Ex)')
-        imout = reshape(real(E(1, :)), p.Results.size);
+        imout = reshape(real(E(1, :)), sz);
       elseif strcmpi(p.Results.field, 'Re(Ey)')
-        imout = reshape(real(E(2, :)), p.Results.size);
+        imout = reshape(real(E(2, :)), sz);
       elseif strcmpi(p.Results.field, 'Re(Ez)')
-        imout = reshape(real(E(3, :)), p.Results.size);
+        imout = reshape(real(E(3, :)), sz);
 
       else
         error('Unknown field visualisation type value');
@@ -544,9 +582,17 @@ classdef Bsc
       speed = beam.omega / beam.k_medium;
     end
 
+    function beam = set.basis(beam, basis)
+      % Set the beam type, checking it is a valid type first
+      if ~any(strcmpi(basis, {'incoming', 'outgoing', 'regular'}))
+        error('OTT:Bsc:set_basis:invalid_value', 'Invalid beam basis');
+      end
+      beam.basis = basis;
+    end
+
     function beam = set.type(beam, type)
       % Set the beam type, checking it is a valid type first
-      if ~any(strcmpi(type, {'incoming', 'outgoing', 'regular'}))
+      if ~any(strcmpi(type, {'incident', 'scattered', 'total', 'internal'}))
         error('OTT:Bsc:set_type:invalid_value', 'Invalid beam type');
       end
       beam.type = type;
@@ -953,32 +999,60 @@ classdef Bsc
     end
 
     function [beam, D] = rotateXyz(beam, anglex, angley, anglez, varargin)
-      %ROTATEX rotates the beam about the x, y then z axes
+      % Rotate the beam about the x, y then z axes
+      %
+      % [beam, D] = rorateXyz(anglex, angley, anglez, ...) additional
+      % arguments are passed to beam.rotate.  Angles in radians.
+
       [beam, D] = beam.rotate(rotz(anglez*180/pi)* ...
           roty(angley*180/pi)*rotx(anglex*180/pi), varargin{:});
     end
 
-    function beam = outgoing(beam, ibeam)
-      %TOOUTGOING calculate the outgoing beam
-      if strcmp(beam.type, 'outgoing')
-        % Nothing to do
-      elseif strcmp(beam.type, 'regular')
-        beam = 2*beam + ibeam;
-        beam.type = 'outgoing';
-      else
-        error('Unable to convert incoming beam to outgoing beam');
+    function beam = totalField(beam, ibeam)
+      % Calculate the total field representation of the beam
+      %
+      % total_beam = beam.totalField(incident_beam)
+      
+      switch beam.type
+        case 'total'
+          % Nothing to do
+          
+        case 'scattered'
+          beam = 2*beam + ibeam;
+          beam.type = 'total';
+          
+        case 'internal'
+          error('Cannot convert from internal to total field');
+          
+        case 'incident'
+          error('Cannot convert from incident to total field');
+          
+        otherwise
+          error('Unknown beam type');
       end
     end
 
-    function beam = regular(beam, ibeam)
-      %TOREGULAR calculate regular beam
-      if strcmp(beam.type, 'outgoing')
-        beam = 0.5*(beam - ibeam);
-        beam.type = 'regular';
-      elseif strcmp(beam.type, 'regular')
-        % Nothing to do
-      else
-        error('Unable to convert incoming beam to outgoing beam');
+    function beam = scatteredField(beam, ibeam)
+      % Calculate the scattered field representation of the beam
+      %
+      % scattered_beam = beam.totalField(incident_beam)
+      
+      switch beam.type
+        case 'total'
+          beam = 0.5*(beam - ibeam);
+          beam.type = 'scattered';
+          
+        case 'scattered'
+          % Nothing to do
+          
+        case 'internal'
+          error('Cannot convert from internal to scattered field');
+          
+        case 'incident'
+          error('Cannot convert from incident to total field');
+          
+        otherwise
+          error('Unknown beam type');
       end
     end
 
@@ -1118,17 +1192,24 @@ classdef Bsc
       end
 
       % Assign a type to the resulting beam
-      if strcmp(tmatrix(1).type, 'total')
-        sbeam.type = 'outgoing';
-      elseif strcmp(tmatrix(1).type, 'scattered')
-        sbeam.type = 'regular';
-      elseif strcmp(tmatrix(1).type, 'internal')
-        sbeam.type = 'regular';
+      switch tmatrix(1).type
+        case 'total'
+          sbeam.type = 'total';
+          sbeam.basis = 'outgoing';
+          
+        case 'scattered'
+          sbeam.type = 'scattered';
+          sbeam.basis = 'outgoing';
+          
+        case 'internal'
+          sbeam.type = 'internal';
+          sbeam.basis = 'regular';
         
-        % Wavelength has changed, update it
-        sbeam.k_medium = tmatrix(1).k_particle;
-      else
-        error('Unrecognized T-matrix type');
+          % Wavelength has changed, update it
+          sbeam.k_medium = tmatrix(1).k_particle;
+          
+        otherwise
+          error('Unrecognized T-matrix type');
       end
     end
 

@@ -244,3 +244,26 @@ function testCube(testCase)
       'T-matrix does not match (4)');
 
 end
+
+function testInternal(testCase)
+  % Test construction of internal T-matrix
+  
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+
+  Tpm = ott.TmatrixPm.simple('sphere', 1.0, ...
+      'index_relative', 1.2, 'internal', true);
+
+  Tmie = ott.TmatrixMie(1.0, 'index_relative', 1.2, 'internal', true);
+
+  testCase.verifyThat(Tpm.Nmax, IsEqualTo(Tmie.Nmax), ...
+      'Nmax does not match Mie T-matrix');
+
+  tol = 1.0e-2;
+  Tebcm_data = Tpm.data ./ max(abs(Tpm.data(:)));
+  Tmie_data = Tmie.data ./ max(abs(Tmie.data(:)));
+  testCase.verifyThat(Tebcm_data, IsEqualTo(Tmie_data, ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'T-matrix does not match Mie T-matrix within tolerance');
+    
+end

@@ -74,6 +74,10 @@ classdef Superellipsoid < ott.shapes.StarShape
       r = ( ast.^(2/shape.ns) .* cpsp.^(shape.ew/shape.ns) ...
           + (act/shape.c).^(2/shape.ns) ).^(-shape.ns/2);
     end
+    
+    function v = get_volume(shape)
+      error('Not yet implemented');
+    end
 
     function n = normals(shape, theta, phi)
       % NORMALS calcualtes the normals for each requested point

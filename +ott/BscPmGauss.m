@@ -63,7 +63,8 @@ classdef BscPmGauss < ott.BscPointmatch
       %   'offset'            Offset of the beam from origin
 
       beam = beam@ott.BscPointmatch(varargin{:});
-      beam.type = 'incoming';
+      beam.type = 'incident';
+      beam.basis = 'regular';
 
       % Parse inputs
       p = inputParser;
