@@ -115,7 +115,7 @@ and the respective Bibtex entry
 
 ```latex
 @misc{Nieminen2018,
-  author = {Nieminen, Timo A. and Loke, Vincent L. Y. and Stilgoe, Alexander B. and Lenton, Isaac C. D. and Kn{\ifmmode\ddot{o}\else\"{o}\fi}ner, Gregor and Bra{\ifmmode\acute{n}\else\'{n}\fi}czyk, Agata M. and Heckenberg, Norman R. and Rubinsztein-Dunlop, Halina}},
+  author = {Nieminen, Timo A. and Loke, Vincent L. Y. and Stilgoe, Alexander B. and Lenton, Isaac C. D. and Kn{\ifmmode\ddot{o}\else\"{o}\fi}ner, Gregor and Bra{\ifmmode\acute{n}\else\'{n}\fi}czyk, Agata M. and Heckenberg, Norman R. and Rubinsztein-Dunlop, Halina},
   title = {Optical Tweezers Toolbox},
   year = {2018},
   publisher = {GitHub},
