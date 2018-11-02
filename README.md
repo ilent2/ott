@@ -108,8 +108,22 @@ The package can be refereced by citing the paper describing version
 or by directly citing the toolbox
 
 > T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe, I. C. D. Lenton,
-> Y. Hu, G. Knoener, A. M. Branczyk,
+> Y. Hu, G. Knöner, A. M. Branczyk, N. R. Heckenberg, and H. Rubinsztein-Dunlop,
 > "Optical tweezers toolbox", https://github.com/ilent2/ott
+
+and the respective Bibtex entry
+
+```latex
+@misc{Nieminen2018,
+  author = {Nieminen, Timo A. and Loke, Vincent L. Y. and Stilgoe, Alexander B. and Lenton, Isaac C. D. and Kn{\ifmmode\ddot{o}\else\"{o}\fi}ner, Gregor and Bra{\ifmmode\acute{n}\else\'{n}\fi}czyk, Agata M. and Heckenberg, Norman R. and Rubinsztein-Dunlop, Halina}},
+  title = {Optical Tweezers Toolbox},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/ilent2/ott}},
+  commit = {Optional, a specific commit}
+}
+```
 
 Contact us
 ----------
