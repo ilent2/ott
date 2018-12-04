@@ -1,6 +1,7 @@
 
 *.swp
 *.m~
+*.asv
 
 octave-workspace
 
