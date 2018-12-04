@@ -254,7 +254,7 @@ classdef Bsc
           [~,Ytheta,Yphi] = ott.utils.spharm(nn,m(vv), ...
               theta_new,zeros(size(theta_new)));
 
-          [M,PHI]=meshgrid(m(vv),phi_new);
+          [PHI,M]=ndgrid(phi_new, m(vv));
 
           expimphi=exp(1i*M.*PHI);
 
