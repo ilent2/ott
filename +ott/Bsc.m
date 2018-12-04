@@ -1,22 +1,32 @@
 classdef Bsc
 %Bsc abstract class representing beam shape coefficients
 %
-% Bsc properties:
+% Any units can be used for the properties as long as they are
+% consistent in all specified properties.  Calculated quantities
+% will have these units.
+%
+% Properties
 %   a               Beam shape coefficients a vector
 %   b               Beam shape coefficients b vector
-%   type            Beam type (incoming, outgoing or scattered)
+%   type            Beam type (incident, scattered, total)
+%   basis           VSWF beam basis (incoming, outgoing or regular)
+%   Nmax            Truncation number for VSWF coefficients
+%   power           Power of the beam [M*L^2/S^2]
+%   Nbeams          Number of beams in this Bsc object
+%   wavelength      Wavelength of beam [L]
+%   speed           Speed of beam in medium [L/T]
+%   omega           Angular frequency of beam [2*pi/T]
+%   k_medium        Wavenumber in medium [2*pi/L]
+%   dz              Absolute cumulative distance the beam has moved
 %
-% Bsc methods:
+% Methods
 %   translateZ      Translates the beam along the z axis
 %   translateXyz    Translation to xyz using rotations and z translations
 %   translateRtp    Translation to rtp using rotations and z translations
 %   farfield        Calculate fields in farfield
 %   emFieldXyz      Calculate fields at specified locations
-%   set.Nmax        Resize the beam shape coefficient vectors
-%   get.Nmax        Get the current size of the beam shape coefficient vectors
 %   getCoefficients Get the beam coefficients [a, b]
 %   getModeIndices  Get the mode indices [n, m]
-%   power           Calculate the power of the beam
 %
 % Static methods:
 %   make_beam_vector    Convert output of bsc_* functions to beam coefficients
@@ -46,7 +56,7 @@ classdef Bsc
   end
 
   properties (Dependent)
-    Nmax        % Size of beam vectors
+    Nmax        % Truncation number for VSWF coefficients
     power       % Power of the beam
     Nbeams      % Number of beams in this Bsc object
 

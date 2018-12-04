@@ -1,15 +1,25 @@
 classdef BscPmGauss < ott.BscPointmatch
 %BscPmGauss provides HG, LG and IG beams using point matching method
 %
-% BscPmGauss properties:
-%   gtype               Type of beam ('gaussian', 'lg', 'hg', or 'ig')
-%   mode                Beam modes (2 or 4 element vector)
-%   polarisation        Beam polarisation
-%   truncation_angle    Truncation angle for beam
-%   offset              Offset for original beam calculation
-%   angle               Angle of incoming beam waist
-%
-% BscPmGauss methods:
+% Properties
+%   gtype              Type of beam ('gaussian', 'lg', 'hg', or 'ig')
+%   mode               Beam modes (2 or 4 element vector)
+%   polarisation       Beam polarisation
+%   truncation_angle   Truncation angle for beam [rad]
+%   offset             Offset for original beam calculation
+%   angle              Angle of incoming beam waist
+%   a            (Bsc) Beam shape coefficients a vector
+%   b            (Bsc) Beam shape coefficients b vector
+%   type         (Bsc) Beam type (incident, scattered, total)
+%   basis        (Bsc) VSWF beam basis (incoming, outgoing or regular)
+%   Nmax         (Bsc) Truncation number for VSWF coefficients
+%   power        (Bsc) Power of the beam [M*L^2/S^2]
+%   Nbeams       (Bsc) Number of beams in this Bsc object
+%   wavelength   (Bsc) Wavelength of beam [L]
+%   speed        (Bsc) Speed of beam in medium [L/T]
+%   omega        (Bsc) Angular frequency of beam [2*pi/T]
+%   k_medium     (Bsc) Wavenumber in medium [2*pi/L]
+%   dz           (Bsc) Absolute cumulative distance the beam has moved
 %
 % This class is based on bsc_pointmatch_farfield.m and
 % bsc_pointmatch_focalplane.m from ottv1.
@@ -21,7 +31,7 @@ classdef BscPmGauss < ott.BscPointmatch
     gtype              % Type of beam ('gaussian', 'lg', 'hg', or 'ig')
     mode               % Beam modes (2 or 4 element vector)
     polarisation       % Beam polarisation
-    truncation_angle   % Truncation angle for beam
+    truncation_angle   % Truncation angle for beam [rad]
     offset             % Offset for original beam calculation
     angle              % Angle of incoming beam waist
   end

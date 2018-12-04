@@ -2,9 +2,21 @@ classdef BscPointmatch < ott.Bsc
 %BscPointmatch base class for BSC generated using point matching
 % Provides support for both farfield and focal plane point matching.
 %
-% BscPointmatch properties:
+% Properties
+%   a            (Bsc) Beam shape coefficients a vector
+%   b            (Bsc) Beam shape coefficients b vector
+%   type         (Bsc) Beam type (incident, scattered, total)
+%   basis        (Bsc) VSWF beam basis (incoming, outgoing or regular)
+%   Nmax         (Bsc) Truncation number for VSWF coefficients
+%   power        (Bsc) Power of the beam [M*L^2/S^2]
+%   Nbeams       (Bsc) Number of beams in this Bsc object
+%   wavelength   (Bsc) Wavelength of beam [L]
+%   speed        (Bsc) Speed of beam in medium [L/T]
+%   omega        (Bsc) Angular frequency of beam [2*pi/T]
+%   k_medium     (Bsc) Wavenumber in medium [2*pi/L]
+%   dz           (Bsc) Absolute cumulative distance the beam has moved
 %
-% BscPointmatch static methods:
+% Static methods
 %   bsc_farfield          Does point matching in the farfield
 %   bsc_focalplane        Does point matching around the focal plane
 %
