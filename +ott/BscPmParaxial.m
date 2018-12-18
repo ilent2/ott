@@ -1,11 +1,26 @@
 classdef BscPmParaxial < ott.BscPointmatch
 %BscPmParaxial calculate representation from farfield/paraxial beam
 %
-% BscPmParaxial properties:
+% Properties:
+%   a               (Bsc) Beam shape coefficients a vector
+%   b               (Bsc) Beam shape coefficients b vector
+%   type            (Bsc) Beam type (incoming, outgoing or scattered)
 %
-% BscPmParaxial methods:
+% Methods:
+%   translateZ      (Bsc) Translates the beam along the z axis
+%   translateXyz    (Bsc) Translation to xyz using rotations and z translations
+%   translateRtp    (Bsc) Translation to rtp using rotations and z translations
+%   farfield        (Bsc) Calculate fields in farfield
+%   emFieldXyz      (Bsc) Calculate fields at specified locations
+%   set.Nmax        (Bsc) Resize the beam shape coefficient vectors
+%   get.Nmax        (Bsc) Get the current size of the beam shape vectors
+%   getCoefficients (Bsc) Get the beam coefficients [a, b]
+%   getModeIndices  (Bsc) Get the mode indices [n, m]
+%   power           (Bsc) Calculate the power of the beam
 %
 % Based on paraxial_to_bsc from ottv1.
+%
+% See also BscPmParaxial, ott.Bsc and examples/slm_to_focalplane
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -15,31 +30,29 @@ classdef BscPmParaxial < ott.BscPointmatch
 
   methods
     function beam = BscPmParaxial(NA, E_ff, varargin);
-      % PARAXIAL_TO_BSC Takes complex amplitudes in a plane (rho \propto \theta)
-      % and maps it onto an angular grid with extent dermined by NA, and solves 
-      % the BSCs.
-      % NOTE: Default behaviour is to have the BFP radius \propto sin(theta).
+      % BscPmParaxial generates BSC from far-field complex field amplitudes
       %
-      % TODO: Documentation
+      % beam = BscPmParaxial(NA, Eff, ...) generates beam with specified
+      % numerical aperture (NA) from the complex E-field in
+      % the paraxial/far-field (Eff).
       %
-      % inputs:
-      % NA : numerical aperture is the extent of the complex amplitudes.
-      % E_ff : complex amplitudes of the diffracted pattern. NOTE: rectangular 
-      %        grids use the SHORTEST dimension. The "pixels" are assumed square.
-      % polarisation : standard jones vector for polarisation.
+      % Optional named parameters:
+      %     verbose   bool   Display additional output (default: false)
+      %     Nmax      num    Truncation number for BSC (default: 30)
+      %     polarisation  [x,y]  Polarisation of far-field (default: [1, 0])
+      %     grid  [ntheta, nphi] Number of grid points for
+      %        to match far-field and BSC values at (default: [])
+      %     mapping   str    Determines how Eff is mapped to back plane of
+      %         objective.  Options are:
+      %             'sintheta' (default)  radius \propto \sin(\theta)
+      %             'tantheta'            radius \propto \tan(\theta)
+      %             'theta'               radius \propto \theta
       %
-      % (optional) includes:
-      % polarisation --- { 'azimuthal' | 'radial' }. default: off
-      % BFP mapping --- { {'sintheta'} | 'tantheta' | 'theta' }. 'sintheta' uses 
-      %  BFP \rho \prop sin(\theta). 'tantheta' has the back  aperture \rho \prop 
-      %  tan(\theta). 'theta' uses a r \prop theta convention.
-      % nmax --- {{ 'nmax',nmax }} if a cell is input with 'nmax' as the first
-      %  element, the second argument is nmax, by default: nmax=30.
-      % fitting grid --- {{'grid',ntheta,nphi}} cell input of number of theta
-      %  points, ntheta, and phi points, nphi. 
-      %  default : ntheta=2*(nmax+1),  nphi=2*(nmax+1).
-      % refractive index --- {{'ri',nMeidum}}, cell input of refractive index.
-      %  default : nMedium=1.0;
+      %     omega     num    Angular frequency of beam (default: 2*pi)
+      %     wavelength0 num  Wavelength of beam in vacuum (default: 1)
+      %     k_medium    num  Wave-number of beam in medium (default: [])
+      %     index_medium num Refractive index of medium (default: [])
+      %     wavelength_medium num Wavelength of beam in medium (default: [])
       %
       % NOTE: This current version will best work for "clean" beam modes, that
       % is, the desired field AFTER spatial filtering (If modelling an SLM/DMD).
@@ -49,13 +62,13 @@ classdef BscPmParaxial < ott.BscPointmatch
       p = inputParser;
       p.addParameter('verbose', false);
       p.addParameter('Nmax', 30);
-      
+
       p.addParameter('omega', 2*pi);
       p.addParameter('wavelength0', 1);
       p.addParameter('k_medium', []);
       p.addParameter('index_medium', []);
       p.addParameter('wavelength_medium', []);
-      
+
       p.addParameter('polarisation', [ 1 0 ]);
       p.addParameter('grid', []);
       p.addParameter('mapping', 'sintheta');
@@ -65,7 +78,7 @@ classdef BscPmParaxial < ott.BscPointmatch
       Nmax = p.Results.Nmax;
       beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
-      
+
       if isempty(p.Results.index_medium)
         nMedium = 1.0;
       else
