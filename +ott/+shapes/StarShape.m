@@ -81,21 +81,24 @@ classdef StarShape < ott.shapes.Shape
     function varargout = surf(shape, varargin)
       % SURF generate a visualisation of the shape
       %
-      % SURF() displays a visualisation of the shape in the current figure.
-      %
-      % SURF(..., 'points', { theta, phi }) specifies the points to use.
-      %
-      % SURF(..., 'surfoptions', {varargin}) specifies the options to
-      % pass to the surf function.
+      % SURF(...) displays a visualisation of the shape in the current figure.
       %
       % [X, Y, Z] = surf() calculates the coordinates and arranges them
-      % in a grid.
+      % in a grid suitable for use with matlab surf function.
+      %
+      % Optional named arguments:
+      %   offset   [x;y;z]   offset for location of surface
+      %   rotation   mat     rotation matrix to apply to surface
+      %   points   { theta, phi }  specify points to use for surface
+      %   surfoptions   {varargin} options to be passed to surf.
 
       p = inputParser;
       p.KeepUnmatched = true;
       p.addParameter('points', []);
       p.addParameter('npoints', [100, 100]);
       p.addParameter('surfoptions', {});
+      p.addParameter('position', []);
+      p.addParameter('rotation', []);
       p.parse(varargin{:});
 
       % Get the points to use for the surface
@@ -123,6 +126,22 @@ classdef StarShape < ott.shapes.Shape
 
       % Calculate Cartesian coordinates
       [X, Y, Z] = shape.locations(theta, phi);
+
+      % Apply a rotation to the surface
+      if ~isempty(p.Results.rotation)
+        XYZ = [X, Y, Z].';
+        XYZ = p.Results.rotation * XYZ;
+        X = XYZ(1, :);
+        Y = XYZ(2, :);
+        Z = XYZ(3, :);
+      end
+
+      % Apply a translation to the surface
+      if ~isempty(p.Results.position)
+        X = X + p.Results.position(1);
+        Y = Y + p.Results.position(2);
+        Z = Z + p.Results.position(3);
+      end
 
       % Reshape the output to match the size
       X = reshape(X, sz);
