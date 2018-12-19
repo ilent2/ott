@@ -24,6 +24,8 @@ classdef BscPmGauss < ott.BscPointmatch
 % This class is based on bsc_pointmatch_farfield.m and
 % bsc_pointmatch_focalplane.m from ottv1.
 %
+% See also BscPmGauss.
+%
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
@@ -64,7 +66,9 @@ classdef BscPmGauss < ott.BscPointmatch
       %
       %   'NA'                Numerical aperture of objective
       %   'polarisation'      Polarisation of the beam
+      %   'power'             Rescale the power of the beam (default: [])
       %
+      %   'omega'             Optical angular frequency (default: 2*pi)
       %   'k_medium'          Wave number in medium
       %   'index_medium'      Refractive index of medium
       %   'wavelength_medium' Wavelength in medium

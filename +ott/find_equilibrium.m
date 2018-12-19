@@ -1,7 +1,12 @@
 function eq = find_equilibrium(z, fz)
 %FIND_EQUILIBRIUM estimates equilibrium positions from position-force data
 %
+% zeq = find_equilibrium(z, fz) finds the axial equilibrium given two vectors
+% z and fz with the position and force values respectively.
+%
 % Based on the code in example_gaussian from the original toolbox.
+%
+% See also ott.axial_equilibrium
 %
 % TODO: Generalize the code to find multiple equilibriums.
 % TODO: z need not be a vector of scalars, we could have a array of
@@ -12,6 +17,10 @@ function eq = find_equilibrium(z, fz)
 ott.warning('ott:findEquilibrium:move', ...
     'This function will move in a future release');
 
+% Check the size of the inputs
+assert(isvector(z), 'z must be a vector not a matrix');
+assert(isvector(fz), 'fz must be a vector not a matrix');
+  
 % Make sure the vectors are both colum vectors
 fz = fz(:);
 z = z(:);
