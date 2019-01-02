@@ -54,6 +54,12 @@ classdef BscPmParaxial < ott.BscPointmatch
       %     index_medium num Refractive index of medium (default: [])
       %     wavelength_medium num Wavelength of beam in medium (default: [])
       %
+      %     keep_coefficient_matrix bool True to calculate and keep the
+      %       inverted coefficient matrix. (default: false)
+      %     invert_coefficient_matrix bool True to use the inverted
+      %       coefficient matrix even if mldivide is available.
+      %       (default: keep_coefficient_matrix).
+      %
       % NOTE: This current version will best work for "clean" beam modes, that
       % is, the desired field AFTER spatial filtering (If modelling an SLM/DMD).
       % In addition, a standard G&L algorithm will produce abberations in the 
@@ -61,6 +67,9 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       p = inputParser;
       p.addParameter('verbose', false);
+      p.addParameter('beamData', []);
+      p.addParameter('keep_coefficient_matrix', false);
+      p.addParameter('invert_coefficient_matrix', []);    % Default arg bellow
       p.addParameter('Nmax', 30);
 
       p.addParameter('omega', 2*pi);
@@ -78,6 +87,12 @@ classdef BscPmParaxial < ott.BscPointmatch
       Nmax = p.Results.Nmax;
       beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
+
+      % Handle default argument for invert_coefficient_matrix
+      invert_coefficient_matrix = p.Results.invert_coefficient_matrix;
+      if isempty(invert_coefficient_matrix)
+        invert_coefficient_matrix = p.Results.keep_coefficient_matrix;
+      end
 
       if isempty(p.Results.index_medium)
         nMedium = 1.0;
@@ -187,8 +202,41 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       [nn,mm]=ott.utils.combined_index(mode_indexes);
 
+      % Get a previous coefficient matrix
+      if ~isempty(p.Results.beamData)
+        if isa(p.Results.beamData, 'ott.BscPmParaxial')
+
+          % Check properties of beams match
+          % TODO: Check e_field/theta/phi locations
+          obeam = p.Results.beamData;
+          assert(Nmax == obeam.Nmax, 'Nmax of beams must match');
+
+          icm = p.Results.beamData.inv_coefficient_matrix;
+          if isempty(icm)
+            warning('ott:BscPmParaxial:BscPmParaxial:empty_icm', ...
+                'Not inverse coefficient matrix data associated with beam');
+          end
+        else
+          icm = p.Results.beamData;
+        end
+      else
+        icm = [];
+      end
+
       % Do the point matching and store the result
-      [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, theta, phi);
+      if p.Results.keep_coefficient_matrix
+        [beam.a, beam.b, icm] = beam.bsc_farfield(nn, mm, e_field, ...
+            theta, phi, ...
+            'invert_coefficient_matrix', invert_coefficient_matrix, ...
+            'inv_coefficient_matrix', icm);
+        beam.inv_coefficient_matrix = icm;
+      else
+        [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, ...
+            theta, phi, ...
+            'invert_coefficient_matrix', invert_coefficient_matrix, ...
+            'inv_coefficient_matrix', icm);
+        beam.inv_coefficient_matrix = [];
+      end
 
       beam.type = 'incident';
       beam.basis = 'regular';

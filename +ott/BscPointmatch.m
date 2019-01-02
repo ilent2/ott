@@ -3,6 +3,7 @@ classdef BscPointmatch < ott.Bsc
 % Provides support for both farfield and focal plane point matching.
 %
 % Properties
+%   inv_coefficient_matrix  Pseudo-inverse coefficient matrix for PM
 %   a            (Bsc) Beam shape coefficients a vector
 %   b            (Bsc) Beam shape coefficients b vector
 %   type         (Bsc) Beam type (incident, scattered, total)
@@ -16,6 +17,9 @@ classdef BscPointmatch < ott.Bsc
 %   k_medium     (Bsc) Wavenumber in medium [2*pi/L]
 %   dz           (Bsc) Absolute cumulative distance the beam has moved
 %
+% Methods
+%   cleanCoefficientMatrix  Removes coefficient matrix data from the beam.
+%
 % Static methods
 %   bsc_farfield          Does point matching in the farfield
 %   bsc_focalplane        Does point matching around the focal plane
@@ -28,9 +32,12 @@ classdef BscPointmatch < ott.Bsc
 
   methods (Static, Access=protected)
 
-    function [a, b] = bsc_farfield(nn, mm, e_field, theta, phi, ...
-        zero_rejection_level)
-      % FARFIELD point match beam coefficients in farfield
+    function [a, b, icm] = bsc_farfield(nn, mm, e_field, theta, phi, ...
+        varargin)
+      % point match beam coefficients in farfield
+      %
+      % [a, b, icm] = bsc_farfield(nn, mm, e_field, theta, phi, ...)
+      % a, b are the beam coefficients.  cm is the coefficient matrix.
       %
       % nn, mm are the mode indices to include in the coefficient matrix.
       %
@@ -38,46 +45,77 @@ classdef BscPointmatch < ott.Bsc
       %
       % theta, phi are the coordinates of the Efield values.
       %
-      % zero_rejection_level (optional) removes modes with less
-      % power than zero_rejection_level.  Default 1e-8.
+      % Optional named arguments:
+      %   zero_rejection_level   val   removes modes with less power than
+      %       zero_rejection_level.  Default 1e-8.  Use [] to disable.
+      %   inv_coefficient_matrix     mat   Coefficient matrix to use.
+      %       default [].
+      %   invert_coefficient_matrix  bool  True to invert coefficient
+      %       matrix for point matching.  Default nargout == 3.
 
-      if nargin < 6
-        zero_rejection_level = 1e-8;
-      end
+      p = inputParser;
+      p.addParameter('inv_coefficient_matrix', []);
+      p.addParameter('zero_rejection_level', 1e-8);
+      p.addParameter('invert_coefficient_matrix', nargout == 3);
+      p.parse(varargin{:});
 
       % Generate coefficient matrix
-      coefficient_matrix = zeros(length(e_field), 2*length(nn));
-      for n = 1:max(nn)
-        ci=find(nn==n);
+      icm = p.Results.inv_coefficient_matrix;
+      if isempty(icm)
+        coefficient_matrix = zeros(length(e_field), 2*length(nn));
+        for n = 1:max(nn)
+          ci=find(nn==n);
 
-        [~,dtY,dpY]= ott.utils.spharm(n,mm(ci),theta,phi);
+          [~,dtY,dpY]= ott.utils.spharm(n,mm(ci),theta,phi);
 
-        coefficient_matrix(:,ci) = [dpY;-dtY] * 1i^(n+1)/sqrt(n*(n+1));
-        coefficient_matrix(:,ci+length(nn)) = [dtY;dpY] * 1i^(n)/sqrt(n*(n+1));
+          coefficient_matrix(:,ci) = [dpY;-dtY] * 1i^(n+1)/sqrt(n*(n+1));
+          coefficient_matrix(:,ci+length(nn)) = [dtY;dpY]*1i^(n)/sqrt(n*(n+1));
+        end
+
+        % Invert coefficient matrix for icm
+        if nargout == 3 || p.Results.invert_coefficient_matrix
+          icm = pinv(coefficient_matrix);
+        end
+
+        % Do point matching
+        if p.Results.invert_coefficient_matrix
+          expansion_coefficients = icm * e_field;
+        else
+          expansion_coefficients = coefficient_matrix \ e_field;
+        end
+
+      else
+        assert(size(icm, 2) == length(e_field), ...
+            'Number of cols in coefficient matrix must match length(e_field)');
+
+        % Do point matching
+        expansion_coefficients = icm * e_field;
       end
-
-      % Do point matching
-      expansion_coefficients = coefficient_matrix \ e_field;
 
       % Unpack results into a and b vectors
       fa = expansion_coefficients(1:end/2,:);
       fb = expansion_coefficients(1+end/2:end,:);
 
       % Look for non-zero elements, only keep non-zeros
-      pwr = abs(fa).^2+abs(fb).^2;
-      non_zero = pwr>zero_rejection_level*max(pwr);
-      nn=nn(non_zero);
-      mm=mm(non_zero);
-      fa=fa(non_zero);
-      fb=fb(non_zero);
+      if ~isempty(p.Results.zero_rejection_level)
+        pwr = abs(fa).^2+abs(fb).^2;
+        non_zero = pwr>p.Results.zero_rejection_level*max(pwr);
+        nn=nn(non_zero);
+        mm=mm(non_zero);
+        fa=fa(non_zero);
+        fb=fb(non_zero);
+      end
 
       % Make the beam vector and store the coefficients
       [a, b] = ott.Bsc.make_beam_vector(fa, fb, nn, mm);
     end
 
-    function [a, b] = bsc_focalplane(nn, mm, e_field, kr, theta, phi, ...
-        zero_rejection_level)
-      % FOCALPLANE point match beam coefficients around focal plane
+    function [a, b, cm] = bsc_focalplane(nn, mm, e_field, kr, theta, phi, ...
+        varargin)
+      % point match beam coefficients around focal plane
+      %
+      % [a, b, cm] = bsc_focalplane(nn, mm, e_field, kr, theta, phi, ...)
+      % a, b are the beam coefficients.  cm is the coefficient matrix.
       %
       % nn, mm are the mode indices to include in the coefficient matrix.
       %
@@ -85,39 +123,64 @@ classdef BscPointmatch < ott.Bsc
       %
       % kr, theta, phi are the coordinates of the Efield values.
       %
-      % zero_rejection_level (optional) removes modes with less
-      % power than zero_rejection_level.  Default 1e-8.
+      % Optional named arguments:
+      %   zero_rejection_level   val   removes modes with less power than
+      %       zero_rejection_level.  Default 1e-8.  Use [] to disable.
+      %   coefficient_matrix     mat   Coefficient matrix to use.
+      %       default [].
 
-      if nargin < 7
-        zero_rejection_level = 1e-8;
-      end
+      p = inputParser;
+      p.addParameter('inv_coefficient_matrix', []);
+      p.addParameter('zero_rejection_level', 1e-8);
+      p.addParameter('invert_coefficient_matrix', nargout == 3);
+      p.parse(varargin{:});
 
       % Generate coefficient matrix
-      coefficient_matrix = zeros(length(e_field), length(nn));
-      for n = 1:length(nn)
+      icm = p.Results.inv_coefficient_matrix;
+      if isempty(icm)
+        coefficient_matrix = zeros(length(e_field), length(nn));
+        for n = 1:length(nn)
 
-         % Find RgM, RgN as appropriate for each mode
-         [M,N] = vswfcart(nn(n),mm(n),kr,theta,phi,3);
-         if rem(nn(n),2) == 0
-            % Even n
-            MN = [ M(:,1); M(:,2); M(:,3) ];
-         else
-            % Odd n
-            MN = [ N(:,1); N(:,2); N(:,3) ];
-         end
-         coefficient_matrix(:,n) = MN;
+           % Find RgM, RgN as appropriate for each mode
+           [M,N] = vswfcart(nn(n),mm(n),kr,theta,phi,3);
+           if rem(nn(n),2) == 0
+              % Even n
+              MN = [ M(:,1); M(:,2); M(:,3) ];
+           else
+              % Odd n
+              MN = [ N(:,1); N(:,2); N(:,3) ];
+           end
+           coefficient_matrix(:,n) = MN;
 
+        end
+
+        % Invert coefficient matrix for icm
+        if nargout == 3 || p.Results.invert_coefficient_matrix
+          icm = pinv(coefficient_matrix);
+        end
+
+        % Do point matching
+        if p.Results.invert_coefficient_matrix
+          expansion_coefficients = icm * e_field;
+        else
+          expansion_coefficients = coefficient_matrix \ e_field;
+        end
+      else
+        assert(size(icm, 2) == length(e_field), ...
+            'Number of rows in coefficient matrix must match length(e_field)');
+
+        % Do point matching
+        expansion_coefficients = icm * e_field;
       end
 
-      % Solve the linear system
-      expansion_coefficients = coefficient_matrix \ e_field;
-
       % Look for non-zero elements, only keep non-zeros
-      non_zero = abs(expansion_coefficients) ...
-          > max(abs(expansion_coefficients)) * zero_rejection_level;
-      expansion_coefficients = expansion_coefficients(non_zero);
-      nn = nn(non_zero);
-      mm = mm(non_zero);
+      if ~isempty(p.Results.zero_rejection_level)
+        non_zero = abs(expansion_coefficients) ...
+            > max(abs(expansion_coefficients)) * p.Results.zero_rejection_level;
+        expansion_coefficients = expansion_coefficients(non_zero);
+        nn = nn(non_zero);
+        mm = mm(non_zero);
+      end
 
       % Calculate beam vectors
       fa = zeros(size(nn));
@@ -139,9 +202,18 @@ classdef BscPointmatch < ott.Bsc
     end
   end
 
+  properties (SetAccess=protected)
+    inv_coefficient_matrix      % Coefficient matrix used in point matching
+  end
+
   methods
     function beam = BscPointmatch(varargin)
       beam = beam@ott.Bsc();
+    end
+
+    function cleanCoefficientMatrix(beam)
+      % Remove the coefficient matrix data
+      beam.inv_coefficient_matrix = [];
     end
   end
 end
