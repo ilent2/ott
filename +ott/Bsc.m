@@ -24,9 +24,14 @@ classdef Bsc
 %   translateXyz    Translation to xyz using rotations and z translations
 %   translateRtp    Translation to rtp using rotations and z translations
 %   farfield        Calculate fields in farfield
-%   emFieldXyz      Calculate fields at specified locations
+%   emFieldXyz      Calculate field values in cartesian coordinates
+%   emFieldRtp      Calculate field values in spherical coordinates
 %   getCoefficients Get the beam coefficients [a, b]
 %   getModeIndices  Get the mode indices [n, m]
+%   totalField      Calculate the total field reprsentation of the beam
+%   scatteredField  Calcualte the scattered field representation of the beam
+%   visualise       Generate a visualisation of the beam near-field
+%   visualiseFarfield Generate a visualisation of the beam far-field
 %
 % Static methods:
 %   make_beam_vector    Convert output of bsc_* functions to beam coefficients
@@ -443,6 +448,12 @@ classdef Bsc
       pinside = imag(theta) == 0;
       iphi = phi(pinside);
       itheta = theta(pinside);
+      
+      if strcmpi(p.Results.direction, 'pos')
+        itheta = pi - itheta;
+      elseif ~strcmpi(p.Results.direction, 'neg')
+        error('Direction must be ''pos'' or ''neg''');
+      end
 
       % Calculate the electric field in the farfield
       [ioutputE, ~, data] = beam.farfield(itheta(:), iphi(:), ...
@@ -465,6 +476,7 @@ classdef Bsc
       % Display the visualisation
       if nargout == 0
         imagesc(xrange, yrange, imout);
+        caxis([min(dataout), max(dataout)]);
         xlabel('X');
         ylabel('Y');
         axis image;
