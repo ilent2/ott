@@ -5,6 +5,8 @@ function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
 %
 % [vec_cart,pos_cart] = rtpv2xyzv(vec,pos)
 %
+% Inputs must be column vectors or Nx3 matrices.
+%
 % See also rtp2xyz and xyzv2rtpv.
 %
 % This file is part of the optical tweezers toolbox.
@@ -13,12 +15,25 @@ function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
 ott.warning('internal');
 
 if nargin < 6
+  
+  assert(size(thetav, 2) == 3, 'pos must be Nx3 matrix');
+  assert(size(rv, 2) == 3, 'vec must be Nx3 matrix');
+  assert(size(rv, 1) == size(thetav, 1), ...
+      'Number of points in vec and pos must match');
+  
    r = thetav(:,1);
    theta = thetav(:,2);
    phi = thetav(:,3);
    phiv = rv(:,3);
    thetav = rv(:,2);
    rv = rv(:,1);
+else
+  assert(size(rv, 2) == 1, 'rv must be column vector');
+  assert(size(thetav, 2) == 1, 'thetav must be column vector');
+  assert(size(phiv, 2) == 1, 'phiv must be column vector');
+  assert(size(r, 2) == 1, 'r must be column vector');
+  assert(size(theta, 2) == 1, 'theta must be column vector');
+  assert(size(phi, 2) == 1, 'phi must be column vector');
 end
 
 % Convert points to cartesian coordinates
