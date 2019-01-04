@@ -45,14 +45,9 @@ switch beam_type
   case 'hg'
 
     % Create a HG23 beam with circular polarisation
-    %
-    % The beam waist calculation doesn't yet handle HG beams so
-    % we estimate the beam waist using a magic formula
-    beam_angle = 10;
-    w0=1.0/pi/tan(abs(beam_angle/180*pi));
     beam = ott.BscPmGauss('hg', [ 2 3 ], ...
         'index_medium', 1, 'wavelength0', 1, ...
-        'polarisation', [ 0 1 ], 'w0', w0, 'Nmax', Nmax);
+        'NA', 0.8, 'polarisation', [ 0 1 ], 'Nmax', Nmax);
 
     sca = 2.0;
 
@@ -69,8 +64,8 @@ switch beam_type
     beam.Nmax = beam.Nmax + ott.utils.ka2nmax(dx);
 
     % Displace the beams by +/- dx/2
-    beam1 = beam.translateXyz([dx/2, 0, 0]);
-    beam2 = beam.translateXyz([-dx/2, 0, 0]);
+    beam1 = beam.translateXyz([dx/2; 0; 0]);
+    beam2 = beam.translateXyz([-dx/2; 0; 0]);
 
     % Join the beams to create our beam (adding a phase shift to the 2nd beam)
     beam = beam1 + beam2 * exp(2 * pi * 1i * 1/2);
@@ -80,7 +75,7 @@ switch beam_type
     % Create a simple Gaussian beam with circular polarisation
     ibeam = ott.BscPmGauss('NA', 0.8, 'polarisation', [ 1 1i ], ...
         'index_medium', 1, 'wavelength0', 1, 'Nmax', Nmax);
-    ibeam = ibeam.translateXyz(1, 0, 0);
+    ibeam = ibeam.translateXyz([1; 0; 0]);
 
     % Create a spherical particle to scatter the beam
     tmatrix = ott.Tmatrix.simple('sphere', 0.5, 'wavelength0', 1.0, ...
@@ -88,6 +83,9 @@ switch beam_type
 
     % Scatter the beam to create the final beam
     beam = tmatrix * ibeam;
+    
+    % We can visualise the scattered or change the field to total
+    beam = beam.totalField(ibeam);
 
   otherwise
     error('Unsupported beam type specified');
@@ -176,17 +174,17 @@ set(gcf, 'Name','cross-section','NumberTitle','off');
 
 %% Generate a figure showing the farfield
 
+% First change the beam to outgoing or incoming
+% Scattered fields are already outgoing
+% Incident fields are a mixture of incoming and outgoing
+beam.basis = 'outgoing';
+
 %build grid:
 nt=160;
 [x,y,z]=sphere(nt);
 
 %generate angular points for farfield:
 [~,theta,phi]=ott.utils.xyz2rtp(x,y,z);
-
-if strcmp(beam_type, 'scattered')
-  % Farfield visualisation requires incomming or outgoing
-  beam = beam.outgoing(ibeam);
-end
 
 %find far-field in theta, phi:
 [E,H]=beam.farfield(theta(:),phi(:));
@@ -208,17 +206,17 @@ subplot(1, 3, 1);
 surf(x,y,z,I,'facecolor','interp','edgecolor','none')
 title('radiance');
 xlabel('X [r]'); ylabel('Y [r]');
-view(0, -90);
+view(0, 90);
 subplot(1, 3, 2);
 surf(x,y,z,Ep,'facecolor','interp','edgecolor','none')
 title('phase');
 xlabel('X [r]'); ylabel('Y [r]');
-view(0, -90);
+view(0, 90);
 subplot(1, 3, 3);
 surf(x,y,z,Ep_slm,'facecolor','interp','edgecolor','none')
 title('phase + offset');
 xlabel('X [r]'); ylabel('Y [r]');
-view(0, -90);
+view(0, 90);
 set(gcf, 'Name','farfield','NumberTitle','off');
 
 % Make sure the user knows the beam is more interesting for scattered
