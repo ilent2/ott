@@ -32,6 +32,7 @@ classdef Bsc
 %   scatteredField  Calcualte the scattered field representation of the beam
 %   visualise       Generate a visualisation of the beam near-field
 %   visualiseFarfield Generate a visualisation of the beam far-field
+%   intensityMoment Calculate moment of beam intensity in the far-field
 %
 % Static methods:
 %   make_beam_vector    Convert output of bsc_* functions to beam coefficients
@@ -1115,6 +1116,65 @@ classdef Bsc
       %MRDIVIDE (op) divide the beam coefficients by a scalar
       beam.a = beam.a / o;
       beam.b = beam.b / o;
+    end
+
+    function [moment, int, data] = intensityMoment(beam, varargin)
+      % intensityMoment Calculate moment of beam intensity in the far-field
+      %
+      % [moment, int, data] = intensityMoment(...) integrates over the
+      % incoming/outgoing field in the far-field to calculate the
+      % moment of the intensity.  Also calculates the intensity.
+      %
+      % Can be used to calculate the force by comparing the outgoing component
+      % of the incident beam with the total scattered beam.
+      %
+      % Optional named arguments:
+      %   thetaRange   [min, max]  Range of angles from the pole to
+      %      integrate over.  Default is 0 to pi (exclusive).
+      %   saveData   bool  save data for repeated calculation (default: false)
+      %   data       data  data saved for repeated calculation.
+      %   ntheta     num   number of samples over 0 to pi theta range.
+      %   nphi       num   number of samples over 0 to 2*pi phi range.
+
+      % Parse inputs
+      p = inputParser;
+      p.addParameter('thetaRange', [0, pi]);
+      p.addParameter('saveData', false);
+      p.addParameter('ntheta', 100);
+      p.addParameter('nphi', 100);
+      p.addParameter('data', []);
+      p.parse(varargin{:});
+
+      % Regular beams have trivial solution
+      if strcmpi(beam.basis, 'regular')
+        moment = [0;0;0];
+        return;
+      end
+
+      % Setup the angular grid
+      [theta, phi] = ott.utils.angulargrid(p.Results.ntheta, p.Results.nphi);
+      dtheta = theta(2) - theta(1);
+      dphi = phi(p.Results.ntheta+1) - phi(1);
+
+      % Truncate the theta range
+      keep = theta > p.Results.thetaRange(1) & theta < p.Results.thetaRange(2);
+      theta = theta(keep);
+      phi = phi(keep);
+
+      uxyz = ott.utils.rtp2xyz([ones(size(theta)), theta, phi]).';
+
+      % Calculate E-field in far-field
+      [E, ~, data] = beam.farfield(theta, phi, ...
+          'saveData', p.Results.saveData, ...
+          'data', p.Results.data);
+
+      % Calculate the irradiance
+      Eirr = sum(abs(E).^2, 1);
+      int = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
+
+      % Calculate moment in Cartesian coordinates
+      Eirr_xyz = uxyz .* Eirr;
+      moment = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
     end
 
     function [sbeam, beam] = scatter(beam, tmatrix, varargin)
