@@ -450,9 +450,9 @@ classdef Bsc
       iphi = phi(pinside);
       itheta = theta(pinside);
       
-      if strcmpi(p.Results.direction, 'pos')
+      if strcmpi(p.Results.direction, 'neg')
         itheta = pi - itheta;
-      elseif ~strcmpi(p.Results.direction, 'neg')
+      elseif ~strcmpi(p.Results.direction, 'pos')
         error('Direction must be ''pos'' or ''neg''');
       end
 

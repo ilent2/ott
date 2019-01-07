@@ -48,7 +48,7 @@ T = ott.Tmatrix.simple('sphere', radius, 'wavelength0', wavelength0, ...
 
 disp(['T-matrix calculation took ' num2str(toc) ' seconds']);
 
-%% Setup the T-matrix for the beam
+%% Calculate the beam shape coefficients
 
 tic
 
@@ -87,7 +87,7 @@ disp(['Beam calculation took ' num2str(toc) ' seconds']);
 
 tic
 
-%calculate the force along z
+% Calculate the force along z
 z = [0;0;1]*linspace(-8,8,80)*wavelength_medium;
 fz = ott.forcetorque(beam, T, 'position', z);
 

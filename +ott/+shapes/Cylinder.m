@@ -103,7 +103,7 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
       rho = [0.0; 1.0; 1.0; 0.0].*shape.radius;
       z = [-0.5; -0.5; 0.5; 0.5].*shape.height;
 
-      [rtp, n, ds] = shape.boundarypoints_rhoz(shape, rho, z, varargin{:});
+      [rtp, n, ds] = shape.boundarypoints_rhoz(rho, z, varargin{:});
     end
 
     function varargout = axialSymmetry(shape)

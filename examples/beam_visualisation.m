@@ -101,7 +101,11 @@ yrange = linspace(-2, 2, ny)*sca;
 [xx, yy] = meshgrid(xrange, yrange);
 xyz = [xx(:) yy(:) zeros(size(xx(:)))].';
 
-% Calculate the E and H fields
+% Calculate the E and H near-fields
+% For this we need to use the regular VSWF basis (finite at origin)
+% For a scattering particle, we could also choose to visulise the
+% scattered field or the total field
+beam.basis = 'regular';
 [E, H] = beam.emFieldXyz(xyz);
 
 % Calculate the intensity of the E field
@@ -113,6 +117,9 @@ Ep = reshape(angle(E(3, :)),[nx,ny]);
 % Calculate the radiance
 I=reshape(sum(abs(E).^2,1),[nx,ny]);
 
+% The fields we calculate above are only valid outside the
+% particle.  We could do a second scattering calculation to determine
+% the fields inside the particle
 if strcmp(beam_type, 'scattered')
   idx = ((xx - 1).^2 + yy.^2) <  0.5.^2;
   I(idx) = NaN;
@@ -123,14 +130,17 @@ end
 figure(1);
 subplot(1, 3, 1);
 imagesc(xrange, yrange, Ei);
+axis image;
 title('E field intensity');
 xlabel('X [\lambda_0]'); ylabel('Y [\lambda_0]');
 subplot(1, 3, 2);
 imagesc(xrange, yrange, Ep);
+axis image;
 title('E field phase');
 xlabel('X [\lambda_0]'); ylabel('Y [\lambda_0]');
 subplot(1, 3, 3);
 imagesc(xrange, yrange, I);
+axis image;
 title('radiance');
 xlabel('X [\lambda_0]'); ylabel('Y [\lambda_0]');
 set(gcf, 'Name','Focal plane','NumberTitle','off');
@@ -141,11 +151,15 @@ set(gcf, 'Name','Focal plane','NumberTitle','off');
 nx = 40;
 ny = 40;
 xrange = linspace(-2, 2, nx)*sca;
-yrange = linspace(-10, 10, ny)*sca;
+yrange = linspace(-2, 2, ny)*sca;
 [xx, yy] = meshgrid(xrange, yrange);
 xyz = [xx(:) zeros(size(xx(:))) yy(:)].';
 
 % Calculate the E and H fields
+% For this we need to use the regular VSWF basis (finite at origin)
+% For a scattering particle, we could also choose to visulise the
+% scattered field or the total field
+beam.basis = 'regular';
 [E, H] = beam.emFieldXyz(xyz);
 
 % Calculate the intensity of the E field
@@ -154,6 +168,9 @@ Ei=reshape(sqrt(sum(real(E).^2,1)),[nx,ny]);
 % Calculate the radiance
 I=reshape(sum(abs(E).^2,1),[nx,ny]);
 
+% The fields we calculate above are only valid outside the
+% particle.  We could do a second scattering calculation to determine
+% the fields inside the particle
 if strcmp(beam_type, 'scattered')
   idx = ((xx - 1).^2 + yy.^2) <  0.5.^2;
   I(idx) = NaN;
@@ -164,10 +181,12 @@ end
 figure(2);
 subplot(1, 2, 1);
 imagesc(xrange, yrange, Ei);
+axis image;
 title('E field intensity');
 xlabel('X [\lambda_0]'); ylabel('Z [\lambda_0]');
 subplot(1, 2, 2);
 imagesc(xrange, yrange, I);
+axis image;
 title('radiance');
 xlabel('X [\lambda_0]'); ylabel('Z [\lambda_0]');
 set(gcf, 'Name','cross-section','NumberTitle','off');
