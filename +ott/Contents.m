@@ -14,11 +14,12 @@
 %   BscPmParaxial             - BscPmParaxial calculate representation from farfield/paraxial beam
 %   BscPointmatch             - BscPointmatch base class for BSC generated using point matching
 %
-% Functions operating on beams/particles
+% Functions operating on beams/particles and force data
 %   axial_equilibrium         - find equilibrium position and stiffness along beam axis
 %   find_equilibrium          - estimates equilibrium positions from position-force data
 %   forcetorque               - calculate force/torque/spin in a 3D orthogonal space
 %   trap_stiffness            - calculate the force and torque trap stiffness
+%   find_traps                - attempt to find and characterise traps from position-force data
 %
 % Other files
 %   change_warnings           - enables or disables move/depreciation warnings
