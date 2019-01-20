@@ -39,6 +39,8 @@ classdef Bsc
 %
 % Abstract methods:
 %
+% See also Bsc, ott.BscPmGauss, ott.BscPlane.
+%
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
@@ -122,6 +124,16 @@ classdef Bsc
   methods
     function beam = Bsc(a, b, basis, type, varargin)
       %BSC construct a new beam object
+      %
+      % beam = Bsc(a, b, basis, type, ...) constructs a new beam vector.
+      % Useful if you have a specific set of a/b coefficients that you
+      % want to wrap in a beam object.
+      %
+      % Optional named arguments:
+      %    k_medium  n  Wavenumber in medium (default: 2*pi)
+      %    omega     n  Angular frequency (default: 2*pi)
+      %    dz        n  Initial displacement of the beam (default: 0)
+      %    like    beam Construct this beam to be like another beam
       
       p = inputParser;
       p.addParameter('like', []);
@@ -417,6 +429,7 @@ classdef Bsc
       %     'range'   [ x, y ]    Range of points to visualise
       %    'saveData' bool  save data for repeated calculation (default: false)
       %    'data'    data   data saved for repeated calculation.
+      %    'thetaMax' num   maximum theta angle to include in image
 
       p = inputParser;
       p.addParameter('size', [80, 80]);
@@ -426,6 +439,7 @@ classdef Bsc
       p.addParameter('range', [1, 1]);
       p.addParameter('saveData', nargout == 2);
       p.addParameter('data', []);
+      p.addParameter('thetaMax', []);
       p.parse(varargin{:});
 
       % Calculate image locations
@@ -444,9 +458,15 @@ classdef Bsc
         otherwise
           error('Unknown mapping argument value, must be sin or tan');
       end
+      
+      % Only include points within NA range
+      thetaMax = Inf;
+      if ~isempty(p.Results.thetaMax)
+        thetaMax = p.Results.thetaMax;
+      end
 
       % Determine if the points need calculating
-      pinside = imag(theta) == 0;
+      pinside = imag(theta) == 0 & theta < thetaMax;
       iphi = phi(pinside);
       itheta = theta(pinside);
       
@@ -465,6 +485,40 @@ classdef Bsc
       if strcmpi(p.Results.field, 'irradiance')
 
         dataout = sqrt(sum(abs(ioutputE).^2, 1));
+        
+      elseif strcmpi(p.Results.field, 'Re(Et)')
+        dataout = real(ioutputE(2, :));
+      elseif strcmpi(p.Results.field, 'Re(Ep)')
+        dataout = real(ioutputE(3, :));
+      elseif strcmpi(p.Results.field, 'Re(Ex)')
+        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
+            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
+        dataout = real(ioutputE(1, :));
+      elseif strcmpi(p.Results.field, 'Re(Ey)')
+        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
+            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
+        dataout = real(ioutputE(2, :));
+      elseif strcmpi(p.Results.field, 'Re(Ez)')
+        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
+            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
+        dataout = real(ioutputE(3, :));
+        
+      elseif strcmpi(p.Results.field, 'Et')
+        dataout = ioutputE(2, :);
+      elseif strcmpi(p.Results.field, 'Ep')
+        dataout = ioutputE(3, :);
+      elseif strcmpi(p.Results.field, 'Ex')
+        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
+            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
+        dataout = ioutputE(1, :);
+      elseif strcmpi(p.Results.field, 'Ey')
+        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
+            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
+        dataout = ioutputE(2, :);
+      elseif strcmpi(p.Results.field, 'Ez')
+        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
+            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
+        dataout = ioutputE(3, :);
 
       else
         error('Unknown field visualisation type value');
@@ -476,6 +530,12 @@ classdef Bsc
 
       % Display the visualisation
       if nargout == 0
+        
+        % Check the field is real
+        if ~isreal(imout)
+          error(['Unsupported field type for visualisation: ' p.Results.field]);
+        end
+        
         imagesc(xrange, yrange, imout);
         caxis([min(dataout), max(dataout)]);
         xlabel('X');
@@ -1148,6 +1208,8 @@ classdef Bsc
       % Regular beams have trivial solution
       if strcmpi(beam.basis, 'regular')
         moment = [0;0;0];
+        int = 0;
+        data = p.Results.data;
         return;
       end
 
@@ -1162,6 +1224,9 @@ classdef Bsc
       phi = phi(keep);
 
       uxyz = ott.utils.rtp2xyz([ones(size(theta)), theta, phi]).';
+      
+      % So integrals match sign convention used in ott.forcetorque
+      uxyz(3, :) = -uxyz(3, :);
 
       % Calculate E-field in far-field
       [E, ~, data] = beam.farfield(theta, phi, ...
@@ -1346,6 +1411,13 @@ classdef Bsc
       beam = beam1;
       beam.a = beam.a - beam2.a;
       beam.b = beam.b - beam2.b;
+    end
+    
+    function beam = clearDz(beam)
+      % Clear dz
+      %
+      % Useful when generating beams using translations.
+      beam.dz = 0.0;
     end
   end
 end
