@@ -11,6 +11,8 @@ classdef BscPlane < ott.Bsc
 %
 % Based on bsc_plane.m from ottv1.
 %
+% See also BscPlane and ott.Bsc.
+%
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

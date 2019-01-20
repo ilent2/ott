@@ -5,6 +5,8 @@ classdef BscBessel < ott.Bsc
 %
 % Based on bsc_bessel.m from ottv1.
 %
+% See also BscBessel and ott.Bsc.
+%
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
