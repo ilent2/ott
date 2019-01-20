@@ -30,6 +30,12 @@ if numel(z) ~= numel(fz)
 end
 
 zeroindex=find(fz<0,1);
+if zeroindex == 1
+  % Skip to second zero crossing
+  warning('Ignoring fz<0 entries at start of vector');
+  zeroindex1 = find(fz>0, 1);
+  zeroindex = find(fz(zeroindex1:end), 1) + zeroindex1 - 1;
+end
 
 % Scale z
 zmin = min(z);
