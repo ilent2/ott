@@ -12,6 +12,9 @@ function eq = find_equilibrium(z, fz)
 % TODO: z need not be a vector of scalars, we could have a array of
 %   position vectors representing some path we want to find the
 %   equilibrium on.  We could do a similar thing for fz.
+%
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 % This function is not directly concerned with force/torque calculation
 ott.warning('ott:findEquilibrium:move', ...

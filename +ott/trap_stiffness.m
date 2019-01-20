@@ -25,6 +25,9 @@ function [kf, kt, K] = trap_stiffness(beam, T, varargin)
 % TRAP_STIFFNESS(..., 'step', [ dx dt ]) specifies the position and
 % torque calculation step sizes (in beam units and radians).
 % Default: 1e-3/beam.k_medium and 1e-3.
+%
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 p = inputParser;
 p.addParameter('direction', 'beam');
