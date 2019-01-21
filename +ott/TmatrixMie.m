@@ -15,6 +15,8 @@ classdef TmatrixMie < ott.Tmatrix
     radius            % Radius of particle
     k_medium          % Wavenumber of medium
     k_particle        % Wavenumber of particle
+    
+    mu_relative       % Relative permeability
   end
 
   methods (Access=protected)
@@ -24,6 +26,7 @@ classdef TmatrixMie < ott.Tmatrix
       n=[1:Nmax];
 
       m = tmatrix.k_particle/tmatrix.k_medium;
+      mu = tmatrix.mu_relative;
 
       r0 = tmatrix.k_medium * tmatrix.radius;
       r1 = tmatrix.k_particle * tmatrix.radius;
@@ -41,9 +44,10 @@ classdef TmatrixMie < ott.Tmatrix
       h0d = (sbesselh1(n-1,r0) - n.*sbesselh1(n,r0)/r0).';
 
       if internal == false
-        % Calculate external T-matrix
-        b = -( j1d.*j0 - m*j0d.*j1 ) ./ ( j1d.*h0 - m*h0d.*j1 );
-        a = -( j0d.*j1 - m*j1d.*j0 ) ./ ( h0d.*j1 - m*j1d.*h0 );
+        % These differ from some definitions of a,b (a = -b, b = -a)
+        b = -( mu*j1d.*j0 - m*j0d.*j1 ) ./ ( mu*j1d.*h0 - m*h0d.*j1 );
+        a = -( mu*j0d.*j1 - m*j1d.*j0 ) ./ ( mu*h0d.*j1 - m*j1d.*h0 );
+
         T=sparse([1:2*(Nmax^2+2*Nmax)],[1:2*(Nmax^2+2*Nmax)], ...
             [a(indexing);b(indexing)]);
       else
@@ -228,6 +232,9 @@ classdef TmatrixMie < ott.Tmatrix
       %  the relative refractive index if either the medium or particle
       %  wavenumber can already be determined.
       %
+      %  TMATRIXMIE(..., 'mu_relative', mu) specify the relative permeability.
+      %  Caution: may change in future, doesn't adjust the refractive index.
+      %
       %  TMATRIXMIE(..., 'wavelength0', wavelength) specifies the
       %  wavelength in the vecuum, required when index_particle or
       %  index_medium are specified.
@@ -251,6 +258,7 @@ classdef TmatrixMie < ott.Tmatrix
       p.addParameter('wavelength_particle', []);
       p.addParameter('index_particle', []);
       p.addParameter('index_relative', []);
+      p.addParameter('mu_relative', 1.0);
       p.addParameter('wavelength0', []);
       p.addParameter('internal', false);
       p.addParameter('shrink', true);
@@ -260,6 +268,7 @@ classdef TmatrixMie < ott.Tmatrix
       tmatrix.radius = radius;
       [tmatrix.k_medium, tmatrix.k_particle] = ...
           tmatrix.parser_wavenumber(p, 2.0*pi);
+      tmatrix.mu_relative = p.Results.mu_relative;
 
       % Check radius and k_particle are similar lengths
       if numel(tmatrix.radius) ~= numel(tmatrix.k_particle)
