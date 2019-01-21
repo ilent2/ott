@@ -10,6 +10,8 @@ function traps = find_traps(position, force, varargin)
 %
 % Optional named arguments:
 %   keep_unstable    bool   keep unstable equilibriums (default: false)
+%   depth_threshold_e num   percentage of max depth for trap acceptance
+%       Use [] for no threshold.  (default: 1e-2).
 %
 % See also ott.find_equilibrium ott.axial_equilibrium and ott.trap_stiffness.
 %
@@ -21,6 +23,7 @@ function traps = find_traps(position, force, varargin)
 % Parse optional inputs
 p = inputParser;
 p.addParameter('keep_unstable', false);
+p.addParameter('depth_threshold_e', 1e-2);
 p.parse(varargin{:});
 
 % This function is not directly concerned with force/torque calculation
@@ -144,5 +147,21 @@ for ii = 1:length(eqs)
   traps(idx).minmax_position = position(frange(1)+[fxidx, fnidx]-1).';
   traps(idx).depth = min(abs(traps(idx).minmax_force));
 
+end
+
+%% Discard traps that are too shallow
+
+if ~isempty(p.Results.depth_threshold_e)
+  max_depth = max(abs(force));
+  drop_list = false(size(traps));
+
+  for ii = 1:length(traps)
+
+    if traps(ii).depth < p.Results.depth_threshold_e*max_depth
+      drop_list(ii) = true;
+    end
+  end
+
+  traps(drop_list) = [];
 end
 
