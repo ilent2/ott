@@ -114,7 +114,7 @@ traps = struct('position', {}, 'stiffness', {}, 'depth', {}, ...
 for ii = 1:length(eqs)
 
   % Check if stable equilibrium
-  if pstiff(ii) >= 0
+  if ~p.Results.keep_unstable && pstiff(ii) >= 0
     continue;
   end
   
@@ -145,6 +145,10 @@ for ii = 1:length(eqs)
   [fx, fxidx] = max(force(frange(1):frange(2)));
   traps(idx).minmax_force = [fx, fn];
   traps(idx).minmax_position = position(frange(1)+[fxidx, fnidx]-1).';
+  if fnidx < fxidx
+    traps(idx).minmax_force = fliplr(traps(idx).minmax_force);
+    traps(idx).minmax_position = fliplr(traps(idx).minmax_position);
+  end
   traps(idx).depth = min(abs(traps(idx).minmax_force));
 
 end
