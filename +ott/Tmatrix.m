@@ -10,7 +10,7 @@ classdef Tmatrix
 % Static methods:
 %   simple        Construct a simple particle T-matrix
 %
-% Abstract methods:
+% See also Tmatrix, simple, ott.TmatrixMie
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

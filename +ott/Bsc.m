@@ -32,6 +32,8 @@ classdef Bsc
 %   scatteredField  Calcualte the scattered field representation of the beam
 %   visualise       Generate a visualisation of the beam near-field
 %   visualiseFarfield Generate a visualisation of the beam far-field
+%   visualiseFarfieldSlice   Generate scattering slice at specific angle
+%   visualiseFarfieldSphere  Generate spherical surface visualisation
 %   intensityMoment Calculate moment of beam intensity in the far-field
 %
 % Static methods:
@@ -255,6 +257,9 @@ classdef Bsc
       for nn = 1:max(n)
 
         vv=find(n==nn);
+        if isempty(vv)
+          continue;
+        end
 
         %this makes the vectors go down in m for n.
         % has no effect if old version code.
@@ -405,6 +410,62 @@ classdef Bsc
 
       rtp = ott.utils.xyz2rtp(xyz.');
       [E, H, data] = beam.emFieldRtp(rtp.', varargin{:});
+    end
+    
+    function visualiseFarfieldSlice(beam, phi, varargin)
+      % Generate a 2-D scattering plot of the far-field
+      %
+      % beam.visualiseFarfieldSlice(phi)
+      
+      p = inputParser;
+      p.addParameter('normalise', false);
+      p.addParameter('ntheta', 100);
+      p.parse(varargin{:});
+      
+      ptheta = linspace(0, 2*pi, p.Results.ntheta);
+
+      [E, ~] = beam.farfield(ptheta, phi);
+      I = sum(abs(E).^2, 1);
+      
+      if p.Results.normalise
+        I = I ./ max(abs(I(:)));
+      end
+
+      polarplot(ptheta, I);
+      
+    end
+    
+    function visualiseFarfieldSphere(beam, varargin)
+      % Generate a spherical surface visualisation of the far-field
+      %
+      % beam.visualiseFarfieldSphere(phi)
+      
+      p = inputParser;
+      p.addParameter('npts', 100);
+      p.addParameter('normalise', false);
+      p.parse(varargin{:});
+      
+      % build grid:
+      [x,y,z]=sphere(p.Results.npts);
+
+      % generate angular points for farfield:
+      [~,theta,phi]=ott.utils.xyz2rtp(x,y,z);
+
+      % find far-field in theta, phi:
+      [E,~]=beam.farfield(theta(:),phi(:));
+
+      % Calculate the radiance
+      I=reshape(sum(abs(E).^2,1),size(x));
+      
+      if p.Results.normalise
+        I = I ./ max(I(:));
+      end
+
+      surf(x,y,z,I,'facecolor','interp','edgecolor','none')
+      zlabel('Z');
+      xlabel('X');
+      ylabel('Y');
+      view(50, 20);
     end
 
     function [im, data] = visualiseFarfield(beam, varargin)
@@ -560,7 +621,9 @@ classdef Bsc
       %     'field'   type        Type of field to calculate
       %     'axis'    ax          Axis to visualise ('x', 'y', 'z')
       %     'offset'  offset      Plane offset along axis (default: 0.0)
-      %     'range'   [ x, y ]    Range of points to visualise
+      %     'range'   [ x, y ]    Range of points to visualise.
+      %         Can either be a cell array { x, y }, two scalars for
+      %         range [-x, x], [-y, y] or 4 scalars [ x0, x1, y0, y1 ].
       %     'mask'    func(xyz)   Mask function for regions to keep in vis
 
       p = inputParser;
@@ -579,10 +642,16 @@ classdef Bsc
         xrange = p.Results.range{1};
         yrange = p.Results.range{2};
         sz = [length(yrange), length(xrange)];
-      else
+      elseif length(p.Results.range) == 2
         xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
         yrange = linspace(-1, 1, p.Results.size(2))*p.Results.range(2);
         sz = p.Results.size;
+      elseif length(p.Results.range) == 4
+        xrange = linspace(-p.Results.range(1), p.Results.range(2), p.Results.size(1));
+        yrange = linspace(-p.Results.range(3), p.Results.range(4), p.Results.size(2));
+        sz = p.Results.size;
+      else
+        error('ott:Bsc:visualise:range_error', 'Incorrect number of range arguments');
       end
       [xx, yy, zz] = meshgrid(xrange, yrange, p.Results.offset);
 
@@ -608,7 +677,7 @@ classdef Bsc
 
       if strcmpi(p.Results.field, 'irradiance')
 
-        imout = reshape(sqrt(sum(abs(E).^2, 1)), sz);
+        imout = reshape(sum(abs(E).^2, 1), sz);
         
       elseif strcmpi(p.Results.field, 'Re(Ex)')
         imout = reshape(real(E(1, :)), sz);
@@ -1210,6 +1279,7 @@ classdef Bsc
         moment = [0;0;0];
         int = 0;
         data = p.Results.data;
+        warning('Regular wavefunctions go to zero in far-field');
         return;
       end
 
@@ -1247,7 +1317,7 @@ classdef Bsc
       %
       % [sbeam, beam] = SCATTER(beam, tmatrix) scatters the beam
       % returning the scattered beam, sbeam, and the unscattered
-      % but possibly translated beam.
+      % but possibly translated beam truncated to tmatrix.Nmax + 1.
       %
       % SCATTER(..., 'position', xyz) applies a translation to the beam
       % before the beam is scattered by the particle.
@@ -1298,7 +1368,8 @@ classdef Bsc
         end
 
         % Apply translation
-        beam = beam.translateXyz(p.Results.position, 'Nmax', maxNmax2);
+        % We need Nmax+1 terms for the force calculation
+        beam = beam.translateXyz(p.Results.position, 'Nmax', maxNmax2+1);
       end
 
       % Apply rotation to the beam
