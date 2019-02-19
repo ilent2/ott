@@ -53,6 +53,11 @@ classdef Superellipsoid < ott.shapes.StarShape
       r = max([shape.a, shape.b, shape.c]);
     end
 
+    function v = get_volume(shape)
+      % Calculate the volume of the particle
+      error('Not yet implemented');
+    end
+
     function b = isSphere(shape)
       % ISSPHERE Returns true if the shape is a sphere
       b = shape.a == shape.b && shape.a == shape.c ...
@@ -73,10 +78,6 @@ classdef Superellipsoid < ott.shapes.StarShape
       cpsp = (acp/shape.a).^(2/shape.ew) + (asp/shape.b).^(2/shape.ew);
       r = ( ast.^(2/shape.ns) .* cpsp.^(shape.ew/shape.ns) ...
           + (act/shape.c).^(2/shape.ns) ).^(-shape.ns/2);
-    end
-    
-    function v = get_volume(shape)
-      error('Not yet implemented');
     end
 
     function n = normals(shape, theta, phi)

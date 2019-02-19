@@ -1,4 +1,4 @@
-% ott.shapes objects describing basic shapes
+% ott.shapes Descriptions of geometric shapes
 %
 % Files
 %   AxisymLerp     - AxisymLerp a axisymmetric particle with lerping between points
@@ -10,3 +10,10 @@
 %   Sphere         - Sphere a simple sphere shape
 %   StarShape      - StarShape abstract class for star shaped particles
 %   Superellipsoid - Superellipsoid a simple superellipsoid shape
+%   StlLoader      - StlLoader load a shape from a STL file
+%   TriangularMesh - TriangularMesh base class for triangular mesh objects (such as file loaders)
+%   WavefrontObj   - WavefrontObj load a shape from a Wavefront OBJ file
+%
+% Copyright 2018 Isaac Lenton
+% This file is part of OTT, see LICENSE.md for information about
+% using/distributing this file.

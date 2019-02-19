@@ -1,0 +1,144 @@
+classdef TriangularMesh < ott.shapes.Shape
+% TriangularMesh base class for triangular mesh objects (such as file loaders)
+%
+% Properties (read-only):
+%   verts       3xN matrix of vertex locations
+%   faces       3xN matrix of vertex indices describing faces
+%
+% Faces vertices should be ordered so normals face outwards for
+% volume and inside functions to work correctly.
+%
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
+  properties (SetAccess=protected)
+    verts           % Matrix of vertices in the object
+    faces           % Matrix of faces in the object
+  end
+
+  methods
+    function shape = TriangularMesh(verts, faces)
+      % Construct a new triangular mesh representation
+      %
+      % TriangularMesh(verts, faces)
+      %   verts       3xN matrix of vertex locations
+      %   faces       3xN matrix of vertex indices describing faces
+      %
+      % Faces vertices should be ordered so normals face outwards for
+      % volume and inside functions to work correctly.
+
+      shape = shape@ott.shapes.Shape();
+
+      % Verify size of inputs
+      assert(size(verts, 1) == 3, 'Verts must be matrix of 3xN');
+      assert(size(faces, 1) == 3, 'Faces must be matrix of 3xN');
+
+      shape.verts = verts;
+      shape.faces = faces;
+
+      % Verify we have sufficient verts for faces
+      if max(shape.faces(:)) > numel(shape.verts)
+        error('faces matrix refers to non-existent vertices');
+      end
+
+    end
+
+    function r = get_maxRadius(shape)
+      % Calculate the maximum distance from the shape origin
+      r = max(sum(shape.verts.^2, 1).^0.5);
+    end
+
+    function totalVolume = get_volume(shape)
+      % Calculate the volume of the shape
+      %
+      % This function is based on a surface triangulation volume code
+      % version 1.0.0.0 (1.43 KB) by Krishnan Suresh
+      % matlabcentral/fileexchange/26982-volume-of-a-surface-triangulation
+      % See tplicenses/stl_KrishnanSuresh.txt for information about licensing.
+
+      p = shape.verts;
+      t = shape.faces;
+
+      % Compute the vectors d13 and d12
+      d13= [(p(1,t(2,:))-p(1,t(3,:))); (p(2,t(2,:))-p(2,t(3,:))); ...
+          (p(3,t(2,:))-p(3,t(3,:)))];
+      d12= [(p(1,t(1,:))-p(1,t(2,:))); (p(2,t(1,:))-p(2,t(2,:))); ...
+          (p(3,t(1,:))-p(3,t(2,:)))];
+
+      cr = cross(d13,d12,1);%cross-product (vectorized)
+
+      area = 0.5*sqrt(cr(1,:).^2+cr(2,:).^2+cr(3,:).^2);% Area of each triangle
+      totalArea = sum(area);
+
+      crNorm = sqrt(cr(1,:).^2+cr(2,:).^2+cr(3,:).^2);
+      zMean = (p(3,t(1,:))+p(3,t(2,:))+p(3,t(3,:)))/3;
+      nz = -cr(3,:)./crNorm;% z component of normal for each triangle
+
+      volume = area.*zMean.*nz; % contribution of each triangle
+      totalVolume = sum(volume);%divergence theorem
+
+    end
+
+    function b = inside(shape, radius, theta, phi)
+      % Determine if spherical point point is inside shape
+      %
+      % b = inside(shape, radius, theta, phi) determine if the
+      % point described by radius, theta (polar), phi (azimuthal)
+      % is inside the shape.
+
+      [x, y, z] = ott.utils.rtp2xyz(radius(:), theta(:), phi(:));
+      b = shape.insideXyz(x, y, z);
+    end
+
+    function b = insideXyz(shape, x, y, z)
+      % INSIDEXYZ determine if Cartesian point is inside the shape
+      %
+      % b = inside(shape, x, y, z) determine if the Cartesian point
+      % [x, y, z] is inside the star shaped object.
+      %
+      % b = insideXyz(shape, xyz) as above, but using a 3xN matrix of
+      % [x; y; z] positions.
+      %
+      % See also INSIDE.
+
+      % Ensure the sizes match
+      if nargin == 4
+        x = x(:);
+        y = y(:);
+        z = z(:);
+        [x, y, z] = ott.utils.matchsize(x, y, z);
+      else
+        y = x(2, :);
+        z = x(3, :);
+        x = x(1, :);
+      end
+
+      % Using a third-party function for insidexyz
+      b = ott.utils.inpolyhedron(shape.faces.', shape.verts.', ...
+          [x(:),y(:),z(:)]);
+    end
+
+    function surf(shape, varargin)
+      % SURF generate a visualisation of the shape
+      %
+      % SURF() displays a visualisation of the shape in the current figure.
+      %
+      % SURF(..., 'surfoptions', {varargin}) specifies the options to
+      % pass to the surf function.
+
+      p = inputParser;
+      p.addParameter('surfoptions', {});
+      p.parse(varargin{:});
+
+      trisurf(shape.faces.', shape.verts(1, :), ...
+          shape.verts(2, :), shape.verts(3, :), p.Results.surfoptions{:});
+    end
+
+    function writeWavefrontObj(shape, filename)
+      % Write internal representation of shape to Wavefront OBJ file
+      %
+      % writeWavefrontObj(filename) writes the shape to the given file.
+      shape.writeWavefrontObj_helper(filename, shape.verts, shape.faces);
+    end
+  end
+end

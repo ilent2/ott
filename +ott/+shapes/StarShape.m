@@ -10,21 +10,10 @@ classdef StarShape < ott.shapes.Shape
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties
-  end
-
-  properties (Dependent)
-    maxRadius       % Maximum particle radius (useful for Nmax calculation)
-    volume          % Volume of the particle
-  end
-
   methods (Abstract)
     radii(shape, theta, phi);
     normals(shape, theta, phi);
     axialSymmetry(shape);
-
-    get_maxRadius(shape, varargin);
-    get_volume(shape, varargin);
   end
 
   methods
@@ -48,16 +37,6 @@ classdef StarShape < ott.shapes.Shape
         varargout{2} = mirrorSym(2);
         varargout{3} = mirrorSym(3);
       end
-    end
-
-    function r = get.maxRadius(shape)
-      % Get the particle max radius
-      r = shape.get_maxRadius();
-    end
-
-    function r = get.volume(shape)
-      % Get the particle volume
-      r = shape.get_volume();
     end
 
     function varargout = locations(shape, theta, phi)

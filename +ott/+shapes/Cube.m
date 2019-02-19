@@ -166,5 +166,26 @@ classdef Cube < ott.shapes.StarShape
             shape, varargin{:});
       end
     end
+
+    function writeWavefrontObj(shape, filename)
+      % Write representation of shape to Wavefront OBJ file
+      %
+      % writeWavefrontObj(filename) writes the shape to the given file.
+
+      % Generate array of vertices
+      verts = [ 1, 1, 1; 1, 1, -1; ...
+                1, -1, 1; 1, -1, -1; ...
+                -1, 1, 1; -1, 1, -1; ...
+                -1, -1, 1; -1, -1, -1].' .* shape.width./2;
+
+      % Generate array of faces
+      % Order vertices so normals face outwards
+      faces = [ 1, 5, 7, 3; 2, 4, 8, 6; ...
+                1, 3, 4, 2; 3, 7, 8, 4; ...
+                7, 5, 6, 8; 5, 1, 2, 6 ].';
+
+      % Write the file
+      shape.writeWavefrontObj_helper(filename, verts, faces);
+    end
   end
 end

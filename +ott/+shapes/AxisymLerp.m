@@ -62,8 +62,9 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
       % Calculate the maximum particle radius
       r = max(sqrt(shape.rho.^2 + shape.z.^2));
     end
-    
+
     function v = get_volume(shape)
+      % Calculate the volume of the particle
       error('Not yet implemented');
     end
 
