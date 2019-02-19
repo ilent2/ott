@@ -439,10 +439,18 @@ classdef Bsc
       % Generate a spherical surface visualisation of the far-field
       %
       % beam.visualiseFarfieldSphere(phi)
+      %
+      % Optional named arguments:
+      %   npts      num   Number of points to use for sphere surface
+      %   normalise bool  If intensity values should be normalised to 1
+      %   type      str   Type of visualisation to produce.
+      %       sphere    (default) draw a sphere with intensity as color
+      %       3dpolar   scale the radius by the intensity
       
       p = inputParser;
       p.addParameter('npts', 100);
       p.addParameter('normalise', false);
+      p.addParameter('type', 'sphere');
       p.parse(varargin{:});
       
       % build grid:
@@ -460,12 +468,21 @@ classdef Bsc
       if p.Results.normalise
         I = I ./ max(I(:));
       end
+      
+      switch p.Results.type
+        case 'sphere'
+          surf(x,y,z,I,'facecolor','interp','edgecolor','none');
+        case '3dpolar'
+          surf(I.*x,I.*y,I.*z,I,'facecolor','interp','edgecolor','none');
+        otherwise
+          error('Unknown visualisation type');
+      end
 
-      surf(x,y,z,I,'facecolor','interp','edgecolor','none')
       zlabel('Z');
       xlabel('X');
       ylabel('Y');
       view(50, 20);
+      axis equal;
     end
 
     function [im, data] = visualiseFarfield(beam, varargin)
