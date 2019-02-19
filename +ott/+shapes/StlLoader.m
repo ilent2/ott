@@ -1,9 +1,23 @@
 classdef StlLoader < ott.shapes.TriangularMesh
 % StlLoader load a shape from a STL file
 %
+% Properties:
+%   filename   name of the file this object loaded
+%   verts      (TriangularMesh) 3xN matrix of vertex locations
+%   faces      (TriangularMesh) 3xN matrix of vertex indices describing faces
+%   maxRadius  (Shape) maximum distance from shape origin
+%   volume     (Shape) volume of shape
+%
+% Inherited methods:
+%   writeWavefrontObj(shape, ...) write shape to Wavefront OBJ file.
+%   insideXyz(shape, ...) determine if Cartesian point is inside shape.
+%   voxels(shape, ...) xyz coordinates for voxels inside the shape.
+%   surf(shape, ...) shape surface representation.
+%
+% See also StlLoader, ott.shapes.TriangularMesh, ott.shapes.WavefrontObj.
+%
 % This class uses a 3rd party STL file reader:
 %  https://au.mathworks.com/matlabcentral/fileexchange/22409-stl-file-reader
-%
 % See tplicenses/stl_EricJohnson.txt for information about licensing.
 %
 % This file is part of the optical tweezers toolbox.
@@ -99,7 +113,7 @@ classdef StlLoader < ott.shapes.TriangularMesh
 
       if ~exist(filename,'file')
         error(['File ''%s'' not found. If the file is not on MATLAB''s path' ...
-               ', be sure to specify the full path to the file.'], file);
+               ', be sure to specify the full path to the file.'], filename);
       end
 
       fid = fopen(filename,'r');
