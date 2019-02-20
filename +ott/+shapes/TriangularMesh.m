@@ -121,17 +121,40 @@ classdef TriangularMesh < ott.shapes.Shape
     function surf(shape, varargin)
       % SURF generate a visualisation of the shape
       %
-      % SURF() displays a visualisation of the shape in the current figure.
+      % SURF(...) displays a visualisation of the shape in the current figure.
       %
-      % SURF(..., 'surfoptions', {varargin}) specifies the options to
-      % pass to the surf function.
+      % Optional named arguments:
+      %   offset   [x;y;z]   offset for location of surface
+      %   rotation   mat     rotation matrix to apply to surface
+      %   surfoptions   {varargin} options to be passed to surf.
 
       p = inputParser;
       p.addParameter('surfoptions', {});
+      p.addParameter('position', []);
+      p.addParameter('rotation', []);
       p.parse(varargin{:});
+      
+      X = shape.verts(1, :);
+      Y = shape.verts(2, :);
+      Z = shape.verts(3, :);
+      
+      % Apply a rotation to the surface
+      if ~isempty(p.Results.rotation)
+        XYZ = [X; Y; Z];
+        XYZ = p.Results.rotation * XYZ;
+        X = XYZ(1, :);
+        Y = XYZ(2, :);
+        Z = XYZ(3, :);
+      end
 
-      trisurf(shape.faces.', shape.verts(1, :), ...
-          shape.verts(2, :), shape.verts(3, :), p.Results.surfoptions{:});
+      % Apply a translation to the surface
+      if ~isempty(p.Results.position)
+        X = X + p.Results.position(1);
+        Y = Y + p.Results.position(2);
+        Z = Z + p.Results.position(3);
+      end
+
+      trisurf(shape.faces.', X, Y, Z, p.Results.surfoptions{:});
     end
 
     function writeWavefrontObj(shape, filename)
