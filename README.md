@@ -6,7 +6,7 @@ and torques of particles using the T-matrix formalism in a vector
 spherical wave basis.
 The toolbox includes codes for calculating T-matrices, beams described
 by vector spherical wave functions, functions for calculating forces
-and torques, and examples.
+and torques, simple codes for simulating dynamics and examples.
 
 Installation
 ------------
@@ -14,6 +14,7 @@ Installation
 To use the toolbox, download or clone the GitHub repository.
 You will also need a modern version of MATLAB, we recommend
 updating to at least 2018a.
+You may also need some of the Matlab support packages.
 This version of the toolbox is released as a package, `+ott`, which
 contains a collection of functions for calculating T-matrices, beam
 coefficients, force and torques.
@@ -85,21 +86,21 @@ Upcoming release
 * Version 2 will introduces a focus on simulating particles in
   optical traps rather than just focussing on calculating optical
   forces and torques.  The plan is also to introduce geometric
-  optics, Rayleigh particles, and arbitrary T-matrix particles
-  calculated using DDA.  The toolbox will be more automated and
-  include a graphical user interface.
+  optics and other methods not requiring a T-matrix.  The toolbox
+  will be more automated and include a graphical user interface.
 
 Licence
 -------
 
-The package and its components may be used free-of-charge for research,
-teaching, or personal use. If results obtained using the package are
-published, the package should be appropriately referenced.
+Except where otherwise noted, this toolbox is made available under the
+Creative Commons Attribution-NonCommercial 4.0 License.
 For full details see LICENSE.md.
 For use outside the conditions of the license, please contact us.
+The toolbox includes some third-party components, information about
+these components can be found in the documentation and corresponding
+file in the thirdparty directory.
 
-The package can be refereced by citing the paper describing version
-1 of the toolbox
+This version of the toolbox can be referenced by citing the following paper
 
 > T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe, G. Knöner, A. M. Branczyk, N. R. Heckenberg, and H. Rubinsztein-Dunlop,
 > "Optical tweezers computational toolbox",
@@ -130,6 +131,25 @@ Contact us
 
 The best person to contact for inquiries about the toolbox or lincensing
 is [Timo Nieminen](mailto:timo@physics.uq.edu.au)
+
+File listing
+------------
+
+README.md     - Overview of the toolbox (this file)
+LICENSE.md    - License information for OTSLM original code
+AUTHORS.md    - List of contributors (pre-GitHub)
+CHANGES.md    - Overview of changes to the toolbox
+TODO.md       - Changes that may be made to the toolbox
+thirdparty/   - Third party licenses (multiple files)
+examples/     - Example files showing different toolbox features
+tests/        - Unit tests to verify toolbox features function correctly
++ott/         - The toolbox
+
+The +ott package, as well as tests/ and examples/ directories
+and sub-directories contain Contents.m files which list the files
+and packages in each directory.
+These files can be viewed in Matlab by typing `help ott`
+or `help ott.subpackage`.
 
 Further Reading
 ---------------
