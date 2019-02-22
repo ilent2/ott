@@ -78,6 +78,7 @@ classdef StarShape < ott.shapes.Shape
       p.addParameter('surfoptions', {});
       p.addParameter('position', []);
       p.addParameter('rotation', []);
+      p.addParameter('axes', []);
       p.parse(varargin{:});
 
       % Get the points to use for the surface
@@ -133,9 +134,19 @@ classdef StarShape < ott.shapes.Shape
       Z(:, end+1) = Z(:, 1);
 
       % Generate the surface
-      if nargout == 0
-        surf(X, Y, Z, p.Results.surfoptions{:});
-      else
+      if nargout == 0 || ~isempty(p.Results.axes)
+        
+        % Place the surface in the specified axes
+        our_axes = p.Results.axes;
+        if isempty(our_axes)
+          our_axes = axes();
+        end
+        
+        surf(our_axes, X, Y, Z, p.Results.surfoptions{:});
+      end
+      
+      % Set outputs if requested
+      if nargout ~= 0
         varargout = { X, Y, Z };
       end
     end

@@ -29,6 +29,84 @@ classdef Tmatrix
   end
 
   methods (Static)
+    function method = defaultMethod(shape, varargin)
+      % Determine the appropriate method for a particular shape
+      % Returns one of 'mie', smarties', 'dda', 'ebcm', or 'pm'.
+      %
+      % DEFAULTMETHOD(shape) determine the default method to use for
+      % a ott.shapes.Shape obejct.
+      %
+      % DEFAULTMETHOD(name, parameters) determine the default method
+      % for a shape described by its name and parameters.
+      %
+      % Supported shape names [parameters]:
+      %   'sphere'          Spherical (or layered sphere) [ radius ]
+      %   'cylinder'        z-axis aligned cylinder [ radius height ]
+      %   'ellipsoid'       Ellipsoid [ a b c]
+      %   'superellipsoid'  Superellipsoid [ a b c e n ]
+      %   'cone-tipped-cylinder'      [ radius height cone_height ]
+      %   'cube'            Cube [ width ]
+      %   'axisym'          Axis-symetric particle [ rho(:) z(:) ]
+      
+      p = inputParser;
+      p.addOptional('parameters', []);
+      p.addParameter('method_tol', []);
+      
+      % Things required for k_medium
+      p.addParameter('k_medium', []);
+      p.addParameter('wavelength_medium', []);
+      p.addParameter('index_medium', []);
+      p.addParameter('wavelength0', []);
+
+      p.parse(varargin{:});
+
+      % Parse k_medium
+      k_medium = ott.Tmatrix.parser_k_medium(p, 2.0*pi);
+      
+      % Get a shape object from the inputs
+      if ischar(shape) && ~isempty(p.Results.parameters)
+        shape = ott.shapes.Shape.simple(shape, p.Results.parameters);
+      elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
+        error('Must input either Shape object or string and parameters');
+      end
+      
+      if isa(shape, 'ott.shapes.Sphere') ...
+          || (isa(shape, 'ott.shapes.Ellipsoid') && shape.isSphere) ...
+          || (isa(shape, 'ott.shapes.Superellipsoid') && shape.isSphere)
+        method = 'mie';
+      elseif isa(shape, 'ott.shapes.Ellipsoid') ...
+          || (isa(shape, 'ott.shapes.Superellipsoid') && shape.isEllipsoid)
+        % TODO: Where does SMARTIES fail?
+        method = 'smarties';
+      elseif isa(shape, 'ott.shapes.Superellipsoid')
+        % TODO: Where does PM fail?
+        method = 'pm';
+      elseif isa(shape, 'ott.shapes.Cube') ...
+          || isa(shape, 'ott.shapes.RectangularPrism')
+        % TODO: Where does PM fail?
+        method = 'pm';
+      elseif isa(shape, 'ott.shapes.Cylinder') ...
+          || isa(shape, 'ott.shapes.AxisymLerp')
+
+        if isa(shape, 'ott.shapes.Cylinder')
+          parameters = [ shape.radius, shape.height ];
+        elseif isa(shape, 'ott.shapes.AxisymLerp')
+          parameters = [ max(shape.rho), max(shape.z) - min(shape.z) ];
+        end
+
+        method = ott.Tmatrix.cylinder_preferred_method(...
+            parameters, k_medium, []);
+
+        if strcmp(method, 'other')
+          method = 'dda';
+        end
+        
+      else
+        error('ott:Tmatrix:simple:no_shape', 'Unsupported particle shape');
+      end
+      
+    end
+    
     function tmatrix = simple(shape, varargin)
       %SIMPLE constructs a T-matrix for a bunch of simple particles
       % This method creates an instance of one of the other T-matrix
@@ -52,7 +130,7 @@ classdef Tmatrix
       % SIMPLE(..., 'method', method) allows you to choose the
       %   prefered method for T-matrix generation.  This is not
       %   supported for all particle types.  Supported methods are
-      %   'ebcm', 'mie' and 'pm'.
+      %   'mie', smarties', 'dda', 'ebcm', and 'pm'.
       %
       % SIMPLE(..., 'method_tol', tol) specifies the error tolerance
       %   (0, 1] to use for method selection.  Smaller values will
@@ -83,6 +161,9 @@ classdef Tmatrix
       elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
         error('Must input either Shape object or string and parameters');
       end
+
+      % TODO: Remove the duplication bellow.  We now have a method
+      % function.  Replaec the bellow with a switch.
 
       % Handle the different particle cases
       if isa(shape, 'ott.shapes.Sphere') ...
@@ -141,9 +222,7 @@ classdef Tmatrix
               parameters, k_medium, p.Results.method_tol);
 
           if strcmp(method, 'other')
-            warning('ott:Tmatrix:simple:no_cylinder_method', ...
-                'No good method found for cylinder, falling back to EBCM');
-            method = 'ebcm';
+            method = 'dda';
           end
         end
 

@@ -64,6 +64,11 @@ classdef Superellipsoid < ott.shapes.StarShape
           && shape.ew == 1 && shape.ns == 1;
     end
 
+    function b = isEllipsoid(shape)
+      % ISSPHERE Returns true if the shape is a sphere
+      b = shape.ew == 1 && shape.ns == 1;
+    end
+
     function r = radii(shape, theta, phi)
       % RADII returns the radius for each requested point
 
