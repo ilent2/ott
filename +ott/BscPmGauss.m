@@ -90,6 +90,7 @@ classdef BscPmGauss < ott.BscPointmatch
       p.addParameter('polarisation', [ 1 1i ]);
       p.addParameter('wavelength0', 1);
       p.addParameter('power', []);
+      p.addParameter('progress_callback', []);
 
       p.addParameter('omega', 2*pi);
       p.addParameter('k_medium', []);
@@ -148,7 +149,7 @@ classdef BscPmGauss < ott.BscPointmatch
       radial=0;
       azimuthal=0;
 
-      %% mode selection
+      % mode selection
       switch p.Results.type
         case 'hg'
           m = p.Results.mode(1);

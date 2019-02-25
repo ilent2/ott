@@ -121,6 +121,105 @@ classdef Bsc
         error('Unable to determine k_medium from inputs');
       end
     end
+    
+    function data = GetVisualisationData(field_type, xyz, rtp, vxyz, vrtp)
+      % Helper to generate the visualisation data output
+      %
+      % GetVisualisationData(field_type, xyz, rtp, vxyz, vrtp)
+      % Takes a field_type string, the coordinates (either xyz or rtp),
+      % and the data values (either vxyz or vrtp).
+      %
+      % vectors should all be Nx3 arrays to match inputs of
+      % ott.utils.xyz2rtp and similar functions.
+      %
+      % field_type can be one of: 'irradiance', 'Et', 'E*',
+      % 'Re(E*)', 'Abs(E*)' where the wildcard (*) must be one of
+      % 'r', 't', 'p', 'x', 'y', 'z'.
+      
+      assert(size(xyz, 2) == 3 || size(xyz, 2) == 0, ...
+        'xyz must be Nx3 matrix');
+      assert(size(vxyz, 2) == 3 || size(vxyz, 2) == 0, ...
+        'vxyz must be Nx3 matrix');
+      assert(size(rtp, 2) == 3 || size(rtp, 2) == 0, ...
+        'rtp must be Nx3 matrix');
+      assert(size(vrtp, 2) == 3 || size(vrtp, 2) == 0, ...
+        'vrtp must be Nx3 matrix');
+      
+      % Get the coordinates
+      if isempty(xyz) && ~isempty(rtp)
+        xyz = ott.utils.rtp2xyz(rtp);
+      elseif isempty(rtp) && ~isempty(xyz)
+        rtp = ott.utils.xyz2rtp(xyz);
+      elseif isempty(rpt) && isempty(xyz)
+        error('OTT:BSC:GetVisualisationData:no_coords', ...
+          'Must supply coordinates');
+      end
+      
+      % Get the data
+      if isempty(vxyz) && ~isempty(vrtp)
+        vxyz = ott.utils.rtpv2xyzv(vrtp, rtp);
+      elseif isempty(vrtp) && ~isempty(vxyz)
+        vrtp = ott.utils.xyzv2rtpv(vxyz, xyz);
+      elseif isempty(vrtp) && isempty(vxyz)
+        error('OTT:BSC:GetVisualisationData:no_data', ...
+          'Must supply data');
+      else
+        error('OTT:BSC:GetVisualisationData:too_much_data', ...
+          'Must supply only one data variable');
+      end
+      
+      % Generate the requested field
+      if strcmpi(field_type, 'irradiance')
+        data = sqrt(sum(abs(vxyz).^2, 2));
+        
+      elseif strcmpi(field_type, 'Re(Er)')
+        data = real(vrtp(:, 1));
+      elseif strcmpi(field_type, 'Re(Et)')
+        data = real(vrtp(:, 2));
+      elseif strcmpi(field_type, 'Re(Ep)')
+        data = real(vrtp(:, 3));
+        
+      elseif strcmpi(field_type, 'Re(Ex)')
+        data = real(vxyz(:, 1));
+      elseif strcmpi(field_type, 'Re(Ey)')
+        data = real(vxyz(:, 2));
+      elseif strcmpi(field_type, 'Re(Ez)')
+        data = real(vxyz(:, 3));
+        
+      elseif strcmpi(field_type, 'Abs(Er)')
+        data = abs(vrtp(:, 1));
+      elseif strcmpi(field_type, 'Abs(Et)')
+        data = abs(vrtp(:, 2));
+      elseif strcmpi(field_type, 'Abs(Ep)')
+        data = abs(vrtp(:, 3));
+        
+      elseif strcmpi(field_type, 'Abs(Ex)')
+        data = abs(vxyz(:, 1));
+      elseif strcmpi(field_type, 'Abs(Ey)')
+        data = abs(vxyz(:, 2));
+      elseif strcmpi(field_type, 'Abs(Ez)')
+        data = abs(vxyz(:, 3));
+        
+      elseif strcmpi(field_type, 'Er')
+        data = vrtp(:, 1);
+      elseif strcmpi(field_type, 'Et')
+        data = vrtp(:, 2);
+      elseif strcmpi(field_type, 'Ep')
+        data = vrtp(:, 3);
+        
+      elseif strcmpi(field_type, 'Ex')
+        data = vxyz(:, 1);
+      elseif strcmpi(field_type, 'Ey')
+        data = vxyz(:, 2);
+      elseif strcmpi(field_type, 'Ez')
+        data = vxyz(:, 3);
+
+      else
+        error('OTT:BSC:GetVisualisationData:unknown_field_type', ...
+          'Unknown field type value');
+      end
+      
+    end
   end
 
   methods
@@ -418,11 +517,14 @@ classdef Bsc
       % beam.visualiseFarfieldSlice(phi)
       
       p = inputParser;
+      p.addParameter('field', 'irradiance');
       p.addParameter('normalise', false);
       p.addParameter('ntheta', 100);
       p.parse(varargin{:});
       
       ptheta = linspace(0, 2*pi, p.Results.ntheta);
+      
+      % TODO: Other field types
 
       [E, ~] = beam.farfield(ptheta, phi);
       I = sum(abs(E).^2, 1);
@@ -448,6 +550,7 @@ classdef Bsc
       %       3dpolar   scale the radius by the intensity
       
       p = inputParser;
+      p.addParameter('field', 'irradiance');
       p.addParameter('npts', 100);
       p.addParameter('normalise', false);
       p.addParameter('type', 'sphere');
@@ -461,19 +564,24 @@ classdef Bsc
 
       % find far-field in theta, phi:
       [E,~]=beam.farfield(theta(:),phi(:));
+      
+      % Calculate the requested field
+      dataout = beam.GetVisualisationData(p.Results.field, [], ...
+        [theta(:), phi(:), ones(size(phi(:)))], [], E.');
 
-      % Calculate the radiance
-      I=reshape(sum(abs(E).^2,1),size(x));
+      % Reshape to match the input
+      I=reshape(dataout,size(x));
       
       if p.Results.normalise
-        I = I ./ max(I(:));
+        I = I ./ max(abs(I(:)));
       end
       
       switch p.Results.type
         case 'sphere'
           surf(x,y,z,I,'facecolor','interp','edgecolor','none');
         case '3dpolar'
-          surf(I.*x,I.*y,I.*z,I,'facecolor','interp','edgecolor','none');
+          surf(abs(I).*x,abs(I).*y,abs(I).*z,I,...
+              'facecolor','interp','edgecolor','none');
         otherwise
           error('Unknown visualisation type');
       end
@@ -485,7 +593,7 @@ classdef Bsc
       axis equal;
     end
 
-    function [im, data] = visualiseFarfield(beam, varargin)
+    function varargout = visualiseFarfield(beam, varargin)
       % Create a 2-D visualisation of the farfield of the beam
       %
       % visualiseFarfield(...) displays an image of the farfield in
@@ -501,13 +609,16 @@ classdef Bsc
       %
       % Optional named arguments:
       %     'size'    [ x, y ]    Size of the image
-      %     'direction'  dir      Hemisphere direction ('pos' or 'neg')
+      %     'direction'  dir      Hemisphere string ('pos' or 'neg'),
+      %        2-vector (theta, phi) or 3x3 rotation matrix.
       %     'field'   type        Type of field to calculate
       %     'mapping' map         Mapping from sphere to plane ('sin', 'tan')
       %     'range'   [ x, y ]    Range of points to visualise
       %    'saveData' bool  save data for repeated calculation (default: false)
       %    'data'    data   data saved for repeated calculation.
       %    'thetaMax' num   maximum theta angle to include in image
+      %    'showVisualisation'  bool   show the visualisation in the
+      %       current figure (default: nargout == 0).
 
       p = inputParser;
       p.addParameter('size', [80, 80]);
@@ -518,7 +629,29 @@ classdef Bsc
       p.addParameter('saveData', nargout == 2);
       p.addParameter('data', []);
       p.addParameter('thetaMax', []);
+      p.addParameter('showVisualisation', nargout == 0);
       p.parse(varargin{:});
+      
+      % If direction is a vector, rotate to that direction
+      if ~ischar(p.Results.direction)
+        dir = p.Results.direction;
+        if numel(dir) == 2
+          rbeam = beam.rotateYz(dir(1), dir(2));
+        elseif all(size(dir) == [3, 3])
+          rbeam = beam.rotate(dir);
+        else
+          error('OTT:BSC:visualiseFarfield:bad_direction', ...
+            'Direction must be char array or 2 element vector or 3x3 matrix');
+        end
+        
+        [varargout{1:nargout}] = rbeam.visualiseFarfield(...
+          'size', p.Results.size, 'direction', 'pos', ...
+          'field', p.Results.field, 'mapping', p.Results.mapping, ...
+          'range', p.Results.range, 'saveData', p.Results.saveData, ...
+          'data', p.Results.data, 'thetaMax', p.Results.thetaMax, ...
+          'showVisualisation', p.Results.showVisualisation);
+        return;  % All done
+      end
 
       % Calculate image locations
       xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
@@ -533,8 +666,10 @@ classdef Bsc
           theta = asin(rr);
         case 'tan'
           theta = atan(rr);
+        case 'theta'
+          theta = rr;
         otherwise
-          error('Unknown mapping argument value, must be sin or tan');
+          error('Unknown mapping argument value, must be sin, tan or theta');
       end
       
       % Only include points within NA range
@@ -558,56 +693,17 @@ classdef Bsc
       [ioutputE, ~, data] = beam.farfield(itheta(:), iphi(:), ...
         'saveData', p.Results.saveData, 'data', p.Results.data, ...
         'calcE', true, 'calcH', false);
-
+      
       % Generate the requested field
-      if strcmpi(p.Results.field, 'irradiance')
-
-        dataout = sqrt(sum(abs(ioutputE).^2, 1));
-        
-      elseif strcmpi(p.Results.field, 'Re(Et)')
-        dataout = real(ioutputE(2, :));
-      elseif strcmpi(p.Results.field, 'Re(Ep)')
-        dataout = real(ioutputE(3, :));
-      elseif strcmpi(p.Results.field, 'Re(Ex)')
-        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
-            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
-        dataout = real(ioutputE(1, :));
-      elseif strcmpi(p.Results.field, 'Re(Ey)')
-        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
-            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
-        dataout = real(ioutputE(2, :));
-      elseif strcmpi(p.Results.field, 'Re(Ez)')
-        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
-            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
-        dataout = real(ioutputE(3, :));
-        
-      elseif strcmpi(p.Results.field, 'Et')
-        dataout = ioutputE(2, :);
-      elseif strcmpi(p.Results.field, 'Ep')
-        dataout = ioutputE(3, :);
-      elseif strcmpi(p.Results.field, 'Ex')
-        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
-            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
-        dataout = ioutputE(1, :);
-      elseif strcmpi(p.Results.field, 'Ey')
-        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
-            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
-        dataout = ioutputE(2, :);
-      elseif strcmpi(p.Results.field, 'Ez')
-        ioutputE = ott.utils.rtpv2xyzv(ioutputE.', ...
-            [ones(size(itheta(:))), itheta(:), iphi(:)]).';
-        dataout = ioutputE(3, :);
-
-      else
-        error('Unknown field visualisation type value');
-      end
+      dataout = beam.GetVisualisationData(p.Results.field, [], ...
+        [itheta, iphi, ones(size(iphi))], [], ioutputE.');
 
       % Pack the result into the images
       imout = zeros(p.Results.size);
       imout(pinside) = dataout;
 
       % Display the visualisation
-      if nargout == 0
+      if p.Results.showVisualisation
         
         % Check the field is real
         if ~isreal(imout)
@@ -619,13 +715,18 @@ classdef Bsc
         xlabel('X');
         ylabel('Y');
         axis image;
-      else
-        % So we don't display the output if not requested
-        im = imout;
+      end
+      
+      % Handle outputs
+      if nargout == 1
+        varargout{1} = im;
+      elseif nargout == 2
+        varargout{1} = im;
+        varargout{2} = data;
       end
     end
 
-    function [im, data] = visualise(beam, varargin)
+    function varargout = visualise(beam, varargin)
       % Create a visualisation of the beam
       %
       % visualise(...) displays an image of the beam in the current
@@ -636,7 +737,8 @@ classdef Bsc
       % Optional named arguments:
       %     'size'    [ x, y ]    Width and height of image
       %     'field'   type        Type of field to calculate
-      %     'axis'    ax          Axis to visualise ('x', 'y', 'z')
+      %     'axis'    ax          Axis to visualise ('x', 'y', 'z') or
+      %       a cell array with 2 or 3 unit vectors for x, y, [z].
       %     'offset'  offset      Plane offset along axis (default: 0.0)
       %     'range'   [ x, y ]    Range of points to visualise.
       %         Can either be a cell array { x, y }, two scalars for
@@ -653,6 +755,7 @@ classdef Bsc
       p.addParameter('saveData', nargout == 2);
       p.addParameter('data', []);
       p.addParameter('mask', []);
+      p.addParameter('showVisualisation', nargout == 0);
       p.parse(varargin{:});
 
       if iscell(p.Results.range)
@@ -673,42 +776,51 @@ classdef Bsc
       [xx, yy, zz] = meshgrid(xrange, yrange, p.Results.offset);
 
       % Generate the xyz grid for the used requested plane
-      switch p.Results.axis
-        case 'x'
-          xyz = [zz(:), yy(:), xx(:)];
-          alabels = {'Z', 'Y'};
-        case 'y'
-          xyz = [yy(:), zz(:), xx(:)];
-          alabels = {'Z', 'X'};
-        case 'z'
-          xyz = [xx(:), yy(:), zz(:)];
-          alabels = {'X', 'Y'};
-        otherwise
-          error('Unknown axis name specified');
+      if ischar(p.Results.axis)
+        switch p.Results.axis
+          case 'x'
+            xyz = [zz(:), yy(:), xx(:)];
+            alabels = {'Z', 'Y'};
+          case 'y'
+            xyz = [yy(:), zz(:), xx(:)];
+            alabels = {'Z', 'X'};
+          case 'z'
+            xyz = [xx(:), yy(:), zz(:)];
+            alabels = {'X', 'Y'};
+          otherwise
+            error('Unknown axis name specified');
+        end
+      elseif iscell(p.Results.axis)
+        dir1 = p.Results.axis{1}(:);
+        dir2 = p.Results.axis{2}(:);
+        if numel(p.Results.axis) == 3
+          dir3 = p.Results.axis{3}(:);
+        else
+          dir3 = cross(dir1(:), dir2(:));
+        end
+        
+        alabels = {'Direction 1', 'Direction 2'};
+        
+        xyz = dir1.*xx(:).' + dir2.*yy(:).' + dir3.*zz(:).';
+        xyz = xyz.';
+      else
+        error('axis must be character or cell array');
       end
 
       % Calculate the electric field
       [E, ~, data] = beam.emFieldXyz(xyz.', ...
           'saveData', p.Results.saveData, 'data', p.Results.data, ...
           'calcE', true', 'calcH', false);
-
-      if strcmpi(p.Results.field, 'irradiance')
-
-        imout = reshape(sum(abs(E).^2, 1), sz);
         
-      elseif strcmpi(p.Results.field, 'Re(Ex)')
-        imout = reshape(real(E(1, :)), sz);
-      elseif strcmpi(p.Results.field, 'Re(Ey)')
-        imout = reshape(real(E(2, :)), sz);
-      elseif strcmpi(p.Results.field, 'Re(Ez)')
-        imout = reshape(real(E(3, :)), sz);
-
-      else
-        error('Unknown field visualisation type value');
-      end
+      % Generate the requested field
+      dataout = beam.GetVisualisationData(p.Results.field, ...
+        xyz, [], E.', []);
+      
+      % Reshape the output
+      imout = reshape(dataout, sz(2), sz(1));
 
       % Display the visualisation
-      if nargout == 0
+      if p.Results.showVisualisation
         
         % Apply the mask
         if ~isempty(p.Results.mask)
@@ -719,11 +831,15 @@ classdef Bsc
         xlabel(alabels{1});
         ylabel(alabels{2});
         axis image;
-      else
-        % So we don't display the output if not requested
-        im = imout;
       end
-
+      
+      % Handle outputs
+      if nargout == 1
+        varargout{1} = imout;
+      elseif nargout == 2
+        varargout{1} = imout;
+        varargout{2} = data;
+      end
     end
 
     function p = get.power(beam)
