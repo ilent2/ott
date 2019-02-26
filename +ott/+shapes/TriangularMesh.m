@@ -132,6 +132,7 @@ classdef TriangularMesh < ott.shapes.Shape
       p.addParameter('surfoptions', {});
       p.addParameter('position', []);
       p.addParameter('rotation', []);
+      p.addParameter('axes', []);
       p.parse(varargin{:});
       
       X = shape.verts(1, :);
@@ -153,8 +154,24 @@ classdef TriangularMesh < ott.shapes.Shape
         Y = Y + p.Results.position(2);
         Z = Z + p.Results.position(3);
       end
+      
+      if nargout == 0 || ~isempty(p.Results.axes)
+        
+        % Place the surface in the specified axes
+        our_axes = p.Results.axes;
+        if isempty(our_axes)
+          our_axes = axes();
+        end
+        
+        % Create the surface in the background, copy it to the axes
+        f = figure('visible','off');
+        h = trisurf(shape.faces.', X, Y, Z);
+        c = copyobj(h, our_axes);
+        set(c, p.Results.surfoptions{:});
+        c.Visible = 'on';
+        close(f);
+      end
 
-      trisurf(shape.faces.', X, Y, Z, p.Results.surfoptions{:});
     end
 
     function writeWavefrontObj(shape, filename)

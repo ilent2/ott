@@ -719,9 +719,9 @@ classdef Bsc
       
       % Handle outputs
       if nargout == 1
-        varargout{1} = im;
+        varargout{1} = imout;
       elseif nargout == 2
-        varargout{1} = im;
+        varargout{1} = imout;
         varargout{2} = data;
       end
     end

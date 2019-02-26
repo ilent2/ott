@@ -10,6 +10,8 @@ classdef TmatrixDda < ott.Tmatrix
 
       p = inputParser;
 
+      p.addParameter('progress_callback', ...
+        @ott.TmatrixDda.DefaultProgressCallback);
       p.addParameter('Nmax', []);
       p.addParameter('wavelength0', []);
       p.addParameter('spacing', []);
@@ -26,6 +28,11 @@ classdef TmatrixDda < ott.Tmatrix
       p.addParameter('polarizability', 'LDR');
 
       p.parse(varargin{:});
+    end
+    
+    function DefaultProgressCallback(data)
+      % Default progress callback function
+      disp(['Iteration ' num2str(data.m) ' / ' num2str(max(data.mrange))]);
     end
   end
 
@@ -192,7 +199,7 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Calculate the T-matrix
       tmatrix.data = tmatrix.calc_nearfield(Nmax, xyz.', rtp, ...
-          n_relative, spacing, mrange, alpha);
+          n_relative, spacing, mrange, alpha, pa.Results.progress_callback);
 
       % Store the type of T-matrix
       tmatrix.type = 'scattered';
@@ -229,7 +236,8 @@ classdef TmatrixDda < ott.Tmatrix
       end
     end
 
-    function data = calc_nearfield(Nmax, xyz, rtp, n_rel, d, mrange, alpha)
+    function data = calc_nearfield(Nmax, xyz, rtp, n_rel, d, mrange, alpha, ...
+        progress_callback)
       % Near-field implementation of T-matrix calculation
       %
       % This is based on DDA/T-matrix/near_field/DDA_T_NF.m
@@ -276,7 +284,7 @@ classdef TmatrixDda < ott.Tmatrix
 
 			for m = mrange
         
-        disp(['Iteration ' num2str(m) ' / ' num2str(max(mrange))]);
+        progress_callback(struct('m', m, 'mrange', mrange));
         
 				for n = max(1, abs(m)):Nmax % step through n incident
 

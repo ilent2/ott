@@ -163,6 +163,8 @@ classdef Shape
       p.addOptional('spacing', shape.maxRadius/10);
       p.addParameter('plotoptions', []);
       p.addParameter('visualise', nargout == 0);
+      p.addParameter('scale', 1.0);
+      p.addParameter('axes', []);
       p.parse(varargin{:});
 
       plotoptions = p.Results.plotoptions;
@@ -170,25 +172,32 @@ classdef Shape
         plotoptions = {...
           'MarkerFaceColor', 'w', ...
           'MarkerEdgeColor', [.5 .5 .5], ...
-          'MarkerSize', 20*p.Results.spacing/shape.maxRadius};
+          'MarkerSize', 20*p.Results.spacing/shape.maxRadius/p.Results.scale};
       end
 
       % Calculate range of dipoles
-      numr = ceil(shape.maxRadius / p.Results.spacing);
+      numr = ceil(shape.maxRadius * p.Results.scale / p.Results.spacing);
       rrange = (-numr:numr)*p.Results.spacing;
 
       % Generate the voxel grid
       [xx, yy, zz] = meshgrid(rrange, rrange, rrange);
 
       % Determine which points are inside
-      mask = shape.insideXyz(xx, yy, zz);
+      mask = shape.insideXyz(xx / p.Results.scale, yy / p.Results.scale, zz / p.Results.scale);
       xyz = [xx(mask).'; yy(mask).'; zz(mask).'];
 
       % Visualise the result
       if p.Results.visualise
-        plot3(xyz(1,:), xyz(2,:), xyz(3,:), 'o', plotoptions{:});
-        axis equal
-        title(['spacing = ' num2str(p.Results.spacing) ...
+        
+        % Get the axes to use
+        our_axes = p.Results.axes;
+        if isempty(our_axes)
+          our_axes = axes();
+        end
+        
+        plot3(our_axes, xyz(1,:), xyz(2,:), xyz(3,:), 'o', plotoptions{:});
+        axis(our_axes, 'equal');
+        title(our_axes, ['spacing = ' num2str(p.Results.spacing) ...
             ', N = ' int2str(sum(mask))])
       end
 

@@ -67,6 +67,7 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       p = inputParser;
       p.addParameter('verbose', false);
+      p.addParameter('progress_callback', []);
       p.addParameter('beamData', []);
       p.addParameter('keep_coefficient_matrix', false);
       p.addParameter('invert_coefficient_matrix', []);    % Default arg bellow

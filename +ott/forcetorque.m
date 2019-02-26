@@ -55,6 +55,7 @@ sz=0;
 p = inputParser;
 p.addParameter('position', []);
 p.addParameter('rotation', []);
+p.addParameter('progress_callback', []);
 p.parse(varargin{:});
 
 % Check sizes of inputs
@@ -92,6 +93,11 @@ if isa(sbeam, 'ott.Tmatrix')
   s = f;
 
   for ii = 1:nlocations
+    
+    % Output the progress
+    if ~isempty(p.Results.progress_callback)
+      p.Results.progress_callback((ii-1)/nlocations);
+    end
 
     position = [];
     if ~isempty(p.Results.position)
