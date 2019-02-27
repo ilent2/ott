@@ -49,8 +49,8 @@ slm_phase = zeros(size(incident_mode));
 % Set the entire pattern to checkerboard (zero amplitude)
 slm_phase(logical(mod(xx_idx + yy_idx, 2))) = pi;
 
-% Unmask the region we want out patern on
-xxyy = rotz(45) * [xx(:) yy(:) zeros(size(xx(:)))].';
+% Unmask the region we want our pattern on
+xxyy = ott.utils.rotz(45) * [xx(:) yy(:) zeros(size(xx(:)))].';
 slm_phase(sinc(sum([1 0 0] * xxyy, 1)*4) > 0) = pi/2;
 
 %% Show the incident mode and the SLM pattern

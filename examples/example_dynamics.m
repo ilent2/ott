@@ -126,8 +126,10 @@ rotation_drag_tensor=eye(3)/500;
 %save rotation matricies for drawing.
 Rtotal=zeros(numt*3,3);
 
-%set initial orientation.
-Rw = rotz(0)*roty(0);
+%set initial orientation [degrees].
+theta = 0;
+phi = 0;
+Rw = ott.utils.rotz(theta)*ott.utils.roty(phi);
 Rtotal(1:3,:) = Rw;
 
 for ii=2:numt

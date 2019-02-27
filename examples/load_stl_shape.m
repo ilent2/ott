@@ -44,10 +44,7 @@ Tmatrix = ott.TmatrixDda(scale*xyz, 'index_particle', 1.4, 'index_medium', 1.33,
 %% Calculate torque as a function of axial angle
 
 angles = linspace(0, 2*pi, 100);
-rotation = zeros(3, 3*length(angles));
-for ii = 1:length(angles)
-  rotation(:, (1:3) + (ii-1)*3) = roty(angles(ii)*180/pi);
-end
+rotation = ott.utils.roty(angles*180/pi);
 
 beam = ott.BscPmGauss('NA', 1.02, 'power', 1.0, 'index_medium', 1.33, ...
   'polarisation', [1, 1i], 'wavelength0', 1.0);

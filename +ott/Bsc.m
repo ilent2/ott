@@ -1252,33 +1252,39 @@ classdef Bsc
 
     function [beam, D] = rotateX(beam, angle, varargin)
       %ROTATEX rotates the beam about the x-axis an angle in radians
+      import ott.utils.*;
       [beam, D] = beam.rotate(rotx(angle*180/pi), varargin{:});
     end
 
     function [beam, D] = rotateY(beam, angle, varargin)
       %ROTATEX rotates the beam about the y-axis an angle in radians
+      import ott.utils.*;
       [beam, D] = beam.rotate(roty(angle*180/pi), varargin{:});
     end
 
     function [beam, D] = rotateZ(beam, angle, varargin)
       %ROTATEX rotates the beam about the z-axis an angle in radians
+      import ott.utils.*;
       [beam, D] = beam.rotate(rotz(angle*180/pi), varargin{:});
     end
 
     function [beam, D] = rotateXy(beam, anglex, angley, varargin)
       %ROTATEX rotates the beam about the x then y axes
+      import ott.utils.*;
       [beam, D] = beam.rotate(roty(angley*180/pi)*rotx(anglex*180/pi), ...
           varargin{:});
     end
 
     function [beam, D] = rotateXz(beam, anglex, anglez, varargin)
       %ROTATEX rotates the beam about the x then z axes
+      import ott.utils.*;
       [beam, D] = beam.rotate(rotz(anglez*180/pi)*rotx(anglex*180/pi), ...
           varargin{:});
     end
 
     function [beam, D] = rotateYz(beam, angley, anglez, varargin)
       %ROTATEX rotates the beam about the y then z axes
+      import ott.utils.*;
       [beam, D] = beam.rotate(rotz(anglez*180/pi)*roty(angley*180/pi), ...
           varargin{:});
     end
@@ -1289,6 +1295,7 @@ classdef Bsc
       % [beam, D] = rorateXyz(anglex, angley, anglez, ...) additional
       % arguments are passed to beam.rotate.  Angles in radians.
 
+      import ott.utils.*;
       [beam, D] = beam.rotate(rotz(anglez*180/pi)* ...
           roty(angley*180/pi)*rotx(anglex*180/pi), varargin{:});
     end

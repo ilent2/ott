@@ -16,6 +16,9 @@ function alpha = rotate_polarizability(ualpha, varargin)
 %
 % Copyright 2018 Isaac Lenton
 
+import ott.utils.rotz;
+import ott.utils.roty;
+
 p = inputParser;
 p.addOptional('rotation', []);
 p.addParameter('direction', []);
