@@ -13,7 +13,7 @@ classdef BscPmGauss < ott.BscPointmatch
 %   type         (Bsc) Beam type (incident, scattered, total)
 %   basis        (Bsc) VSWF beam basis (incoming, outgoing or regular)
 %   Nmax         (Bsc) Truncation number for VSWF coefficients
-%   power        (Bsc) Power of the beam [M*L^2/S^2]
+%   power        (Bsc) Power of the beam [M*L^2/S^3]
 %   Nbeams       (Bsc) Number of beams in this Bsc object
 %   wavelength   (Bsc) Wavelength of beam [L]
 %   speed        (Bsc) Speed of beam in medium [L/T]

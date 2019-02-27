@@ -11,7 +11,7 @@ classdef Bsc
 %   type            Beam type (incident, scattered, total)
 %   basis           VSWF beam basis (incoming, outgoing or regular)
 %   Nmax            Truncation number for VSWF coefficients
-%   power           Power of the beam [M*L^2/S^2]
+%   power           Power of the beam [M*L^2/S^3]
 %   Nbeams          Number of beams in this Bsc object
 %   wavelength      Wavelength of beam [L]
 %   speed           Speed of beam in medium [L/T]

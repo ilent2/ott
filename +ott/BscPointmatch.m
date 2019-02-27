@@ -1,6 +1,6 @@
 classdef BscPointmatch < ott.Bsc
 %BscPointmatch base class for BSC generated using point matching
-% Provides support for both farfield and focal plane point matching.
+% Provides support for both far-field and focal plane point matching.
 %
 % Properties
 %   inv_coefficient_matrix  Pseudo-inverse coefficient matrix for PM
@@ -9,7 +9,7 @@ classdef BscPointmatch < ott.Bsc
 %   type         (Bsc) Beam type (incident, scattered, total)
 %   basis        (Bsc) VSWF beam basis (incoming, outgoing or regular)
 %   Nmax         (Bsc) Truncation number for VSWF coefficients
-%   power        (Bsc) Power of the beam [M*L^2/S^2]
+%   power        (Bsc) Power of the beam [M*L^2/S^3]
 %   Nbeams       (Bsc) Number of beams in this Bsc object
 %   wavelength   (Bsc) Wavelength of beam [L]
 %   speed        (Bsc) Speed of beam in medium [L/T]
@@ -23,6 +23,8 @@ classdef BscPointmatch < ott.Bsc
 % Static methods
 %   bsc_farfield          Does point matching in the farfield
 %   bsc_focalplane        Does point matching around the focal plane
+%
+% See also bsc_farfield, bsc_focalplane and ott.BscPmGauss.
 %
 % Based on bsc_pointmatch_focalplane and bsc_pointmatch_farfield
 % from version 1 of the optical tweezers toolbox.
@@ -206,11 +208,16 @@ classdef BscPointmatch < ott.Bsc
     inv_coefficient_matrix      % Coefficient matrix used in point matching
   end
 
-  methods
+  methods (Access=protected)
     function beam = BscPointmatch(varargin)
+      % Protected constructor for BscPointmatch object
+      %
+      % See also ott.BscPmGauss and ott.BscPmParaxial
       beam = beam@ott.Bsc();
     end
+  end
 
+  methods
     function cleanCoefficientMatrix(beam)
       % Remove the coefficient matrix data
       beam.inv_coefficient_matrix = [];
