@@ -36,6 +36,7 @@ classdef BscPmGauss < ott.BscPointmatch
     truncation_angle   % Truncation angle for beam [rad]
     offset             % Offset for original beam calculation
     angle              % Angle of incoming beam waist
+    translation_method % Translation method to use
   end
 
   % TODO: Incorperate bsc_pointmatch_focalplane option for gaussian beams.
@@ -43,6 +44,11 @@ classdef BscPmGauss < ott.BscPointmatch
   methods (Static)
     function l = supported_beam_type(s)
       l = strcmp(s, 'lg') || strcmp(s, 'hg') || strcmp(s, 'ig');
+    end
+    
+    function validate_translation_method(method)
+      assert(any(strcmpi(method, {'Default', 'NewBeamOffset'})), ...
+        'Translation method must be Default or NewBeamOffset');
     end
   end
 
@@ -75,6 +81,10 @@ classdef BscPmGauss < ott.BscPointmatch
       %
       %   'wavelength0'       Wavelength in vacuum
       %   'offset'            Offset of the beam from origin
+      %
+      %   translation_method  Method to use when calculating translations.
+      %       Can either be 'Default' or 'NewBeamOffset', the latter calculates
+      %       new beam shape coefficients for every new position.
 
       beam = beam@ott.BscPointmatch(varargin{:});
       beam.type = 'incident';
@@ -91,6 +101,8 @@ classdef BscPmGauss < ott.BscPointmatch
       p.addParameter('wavelength0', 1);
       p.addParameter('power', []);
       p.addParameter('progress_callback', []);
+      p.addParameter('translation_method', 'Default', ...
+        @ott.BscPmGauss.validate_translation_method);
 
       p.addParameter('omega', 2*pi);
       p.addParameter('k_medium', []);
@@ -113,6 +125,11 @@ classdef BscPmGauss < ott.BscPointmatch
       beam.offset = p.Results.offset;
       beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
+      
+      % Ensure beam offset is not empty
+      if isempty(beam.offset)
+        beam.offset = [0;0;0];
+      end
 
       % Store truncation angle
       if isempty(p.Results.truncation_angle_deg) &&  ...
@@ -126,6 +143,8 @@ classdef BscPmGauss < ott.BscPointmatch
         ott.warning('external');
         error('Truncation angle given in degrees and radians');
       end
+      
+      beam.translation_method = p.Results.translation_method;
 
       % TODO: bsc_pointmatch_farfield.m had other arguments
       % optional parameters:
@@ -224,15 +243,21 @@ classdef BscPmGauss < ott.BscPointmatch
       offset = p.Results.offset;
 
       if numel(offset) == 3 && any(abs(offset(1:2))>0)
-        ott.warning('external');
-        ott.warning('ott:bsc_pointmatch_farfield:offsets', ...
-            ['Beam offsets with x and y components cannot be ' ...
-             'axi-symmetric, beam symmetry is now off, and the ' ...
-             'calculation will be much slower. It is highly recommended ' ...
-             'that a combination of rotations and translations are ' ...
-             'used on BSCs instead.']);
-          ott.warning('internal');
-          axisymmetry=0;
+        
+        % Only warn if using beams that support matrix translations
+        if strcmpi(p.Results.translation_method, 'Default')
+          ott.warning('external');
+          ott.warning('ott:bsc_pointmatch_farfield:offsets', ...
+              ['Beam offsets with x and y components cannot be ' ...
+               'axi-symmetric, beam symmetry is now off, and the ' ...
+               'calculation will be much slower. It is highly recommended ' ...
+               'that a combination of rotations and translations are ' ...
+               'used on BSCs instead.']);
+            ott.warning('internal');
+        end
+        
+        % Turn off axissymmetry
+        axisymmetry=0;
       end
 
       aperture_function=0;
@@ -256,6 +281,14 @@ classdef BscPmGauss < ott.BscPointmatch
           if ~strcmp(beam.gtype, 'lg')
               nphi = paraxial_order+3-rem(paraxial_order,2);
           end
+      end
+      
+      % If we have an offset, we need to have a high enough resolution
+      % to match the phase gradient across the far-field
+      if ~isempty(p.Results.offset)
+        offset_lambda = vecnorm(p.Results.offset)*beam.k_medium/(2*pi);
+        ntheta = max(ntheta, 3*ceil(offset_lambda));
+        nphi = max(nphi, 2*3*ceil(offset_lambda));
       end
 
       [theta,phi] = ott.utils.angulargrid(ntheta,nphi);
@@ -317,8 +350,8 @@ classdef BscPmGauss < ott.BscPointmatch
       if ~isempty(offset)
         rhat = rtpv2xyzv( ones(size(theta)), zeros(size(theta)), ...
             zeros(size(theta)), ones(size(theta)), theta, phi );
-        [offset,rhat] = matchsize(offset,rhat);
-        phase_shift = exp( -1i * beam.k_medium * dot(offset,rhat,2) );
+        [offset,rhat] = matchsize(offset.',rhat);
+        phase_shift = exp( 1i * beam.k_medium * dot(offset,rhat,2) );
         beam_envelope = beam_envelope .* phase_shift;
       end
       Ex = xcomponent * beam_envelope * central_amplitude;
@@ -358,6 +391,151 @@ classdef BscPmGauss < ott.BscPointmatch
       end
 
       ott.warning('external');
+    end
+    
+    function varargout = translateZ(beam, varargin)
+      %TRANSLATEZ translate a beam along the z-axis
+      %
+      % beam = TRANSLATEZ(z) translates by a distance z along the z axis.
+      % If the translation_method is NewBeamOffset, a new beam is generated.
+      %
+      % [beam, A, B] = TRANSLATEZ(z) returns the translation matrices
+      % and the translated beam.  See also Bsc.TRANSLATE.
+      %
+      % [beam, AB] = TRANSLATEZ(z) returns the A, B matricies packed
+      % so they can be directly applied to the beam: tbeam = AB * beam.
+      %
+      % TRANSLATEZ(..., 'Nmax', Nmax) specifies the output beam Nmax.
+      % Takes advantage of not needing to calculate a full translation matrix.
+      
+      if strcmpi(beam.translation_method, 'Default')
+        
+        % Use translation matrix method
+        [varargout{1:nargout}] = translateZ@ott.BscPointmatch(beam, varargin{:});
+        
+      elseif strcmpi(beam.translation_method, 'NewBeamOffset')
+        
+        p = inputParser;
+        p.addOptional('z', []);
+        p.addParameter('Nmax', beam.Nmax);
+        p.parse(varargin{:});
+        
+        % Generate the new beam
+        varargout{1} = ott.BscPmGauss(beam.gtype, beam.mode, ...
+          'offset', beam.offset + [0;0;p.Results.z], ...
+          'omega', beam.omega, 'power', beam.power, ...
+          'wavelength_medium', beam.wavelength, ...
+          'polarisation', beam.polarisation, ...
+          'truncation_angle', beam.truncation_angle, ...
+          'Nmax', p.Results.Nmax, 'angle', beam.angle);
+        varargout{1}.type = beam.type;
+        varargout{1}.basis = beam.basis;
+      end
+    end
+    
+    function varargout = translateXyz(beam, varargin)
+      %TRANSLATEXYZ translate the beam given Cartesian coordinates
+      %
+      % beam = TRANSLATEXYZ(xyz) translate the beam to locations given by
+      % the xyz coordinates, where xyz is a 3xN matrix of coordinates.
+      % If the translation_method is NewBeamOffset, a new beam is generated.
+      %
+      % TRANSLATEXYZ(Az, Bz, D) translate the beam using
+      % z-translation and rotation matricies.
+      %
+      % [beam, Az, Bz, D] = TRANSLATEXYZ(...) returns the z-translation
+      % matrices, the rotation matrix D, and the translated beam.
+      %
+      % [beam, A, B] = TRANSLATEXYZ(...) returns the translation matrices
+      % and the translated beam.
+      %
+      % [beam, AB] = TRANSLATEXYZ(...) returns the A, B matricies packed
+      % so they can be directly applied to the beam: tbeam = AB * beam.
+      %
+      % TRANSLATEXYZ(..., 'Nmax', Nmax) specifies the output beam Nmax.
+      % Takes advantage of not needing to calculate a full translation matrix.
+
+      if strcmpi(beam.translation_method, 'Default')
+        
+        % Use translation matrix method
+        [varargout{1:nargout}] = translateXyz@ott.BscPointmatch(beam, varargin{:});
+        
+      elseif strcmpi(beam.translation_method, 'NewBeamOffset')
+        
+        p = inputParser;
+        p.addOptional('opt1', []);    % xyz or Az
+        p.addOptional('opt2', []);    % [] or Bz
+        p.addOptional('opt3', []);    % [] or D
+        p.addParameter('Nmax', beam.Nmax);
+        p.parse(varargin{:});
+        
+        assert(isempty(p.Results.opt2) && isempty(p.Results.opt3), ...
+          'Rotation and translation matries not supported with this method');
+        
+        % Generate the new beam
+        varargout{1} = ott.BscPmGauss(beam.gtype, beam.mode, ...
+          'offset', beam.offset + p.Results.opt1, ...
+          'omega', beam.omega, 'power', beam.power, ...
+          'wavelength_medium', beam.wavelength, ...
+          'polarisation', beam.polarisation, ...
+          'truncation_angle', beam.truncation_angle, ...
+          'Nmax', p.Results.Nmax, 'angle', beam.angle);
+        varargout{1}.type = beam.type;
+        varargout{1}.basis = beam.basis;
+      end
+    end
+    
+    function varargout = translateRtp(beam, varargin)
+      %TRANSLATERTP translate the beam given spherical coordinates
+      %
+      % beam = TRANSLATERTP(rtp) translate the beam to locations given by
+      % the xyz coordinates, where rtp is a 3xN matrix of coordinates.
+      % If the translation_method is NewBeamOffset, a new beam is generated.
+      %
+      % TRANSLATERTP(Az, Bz, D) translate the beam using
+      % z-translation and rotation matricies.
+      %
+      % [beam, Az, Bz, D] = TRANSLATERTP(...) returns the z-translation
+      % matrices, the rotation matrix D, and the translated beam.
+      %
+      % [beam, A, B] = TRANSLATERTP(...) returns the translation matrices
+      % and the translated beam.
+      %
+      % [beam, AB] = TRANSLATERTP(...) returns the A, B matricies packed
+      % so they can be directly applied to the beam: tbeam = AB * beam.
+      %
+      % TRANSLATERTP(..., 'Nmax', Nmax) specifies the output beam Nmax.
+      % Takes advantage of not needing to calculate a full translation matrix.
+      
+      if strcmpi(beam.translation_method, 'Default')
+        
+        % Use translation matrix method
+        [varargout{1:nargout}] = translateRtp@ott.BscPointmatch(beam, varargin{:});
+        
+      elseif strcmpi(beam.translation_method, 'NewBeamOffset')
+        
+        p = inputParser;
+        p.addOptional('opt1', []);    % xyz or Az
+        p.addOptional('opt2', []);    % [] or Bz
+        p.addOptional('opt3', []);    % [] or D
+        p.addParameter('Nmax', beam.Nmax);
+        p.parse(varargin{:});
+        
+        assert(isempty(p.Results.opt2) && isempty(p.Results.opt3), ...
+          'Rotation and translation matries not supported with this method');
+        
+        % Generate the new beam
+        xyz = ott.utils.rtp2xyz(p.Results.opt1);
+        varargout{1} = ott.BscPmGauss(beam.gtype, beam.mode, ...
+          'offset', beam.offset + xyz(:), ...
+          'omega', beam.omega, 'power', beam.power, ...
+          'wavelength_medium', beam.wavelength, ...
+          'polarisation', beam.polarisation, ...
+          'truncation_angle', beam.truncation_angle, ...
+          'Nmax', p.Results.Nmax, 'angle', beam.angle);
+        varargout{1}.type = beam.type;
+        varargout{1}.basis = beam.basis;
+      end
     end
   end
 end
