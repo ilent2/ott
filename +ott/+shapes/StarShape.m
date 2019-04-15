@@ -66,13 +66,14 @@ classdef StarShape < ott.shapes.Shape
       % in a grid suitable for use with matlab surf function.
       %
       % Optional named arguments:
-      %   offset   [x;y;z]   offset for location of surface
+      %   position   [x;y;z]   offset for location of surface
       %   rotation   mat     rotation matrix to apply to surface
       %   points   { theta, phi }  specify points to use for surface
+      %   npoints  [ntheta, nphi]  specify number of points in each direction
+      %   axes       []        axis to place surface in (default: gca)
       %   surfoptions   {varargin} options to be passed to surf.
 
       p = inputParser;
-      p.KeepUnmatched = true;
       p.addParameter('points', []);
       p.addParameter('npoints', [100, 100]);
       p.addParameter('surfoptions', {});
@@ -139,7 +140,7 @@ classdef StarShape < ott.shapes.Shape
         % Place the surface in the specified axes
         our_axes = p.Results.axes;
         if isempty(our_axes)
-          our_axes = axes();
+          our_axes = gca();
         end
         
         surf(our_axes, X, Y, Z, p.Results.surfoptions{:});
