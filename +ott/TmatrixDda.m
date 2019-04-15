@@ -26,6 +26,9 @@ classdef TmatrixDda < ott.Tmatrix
       p.addParameter('wavelength_particle', []);
       p.addParameter('index_particle', []);
       p.addParameter('polarizability', 'LDR');
+      
+      % Fields to enable compatability with Tmatrix.simple
+      p.addParameter('method', []);
 
       p.parse(varargin{:});
     end

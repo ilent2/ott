@@ -19,6 +19,53 @@ classdef TmatrixPm < ott.Tmatrix
 
     idata               % Internal T-matrix
   end
+  
+  methods (Static, Hidden)
+    
+    function p = input_parser(varargin)
+      % Helper for input parsing
+      
+      p = inputParser;
+
+      p.addParameter('progress_callback', ...
+        @ott.TmatrixPm.DefaultProgressCallback);
+      p.addParameter('Nmax', []);
+      p.addParameter('wavelength0', []);
+      p.addParameter('internal', false);
+      p.addParameter('distribution', 'angulargrid');
+
+      p.addParameter('index_relative', []);
+
+      p.addParameter('k_medium', []);
+      p.addParameter('wavelength_medium', []);
+      p.addParameter('index_medium', []);
+
+      p.addParameter('k_particle', []);
+      p.addParameter('wavelength_particle', []);
+      p.addParameter('index_particle', []);
+      
+      p.addParameter('z_rotational_symmetry', false);
+      p.addParameter('z_mirror_symmetry', false);
+      
+      % Fields to enable compatability with Tmatrix.simple
+      p.addParameter('method', []);
+
+      p.parse(varargin{:});
+    end
+    
+    function DefaultProgressCallback(data)
+      % Default progress callback function
+      
+      stage = data{1};
+      num = data{2};
+      total = data{3};
+      
+      if strcmpi(stage, 'setup')
+        disp(['Setup: ' num2str(num) ' / ' num2str(total)]);
+      end
+    end
+    
+  end
 
   methods (Static)
     function tmatrix = simple(shape, varargin)
@@ -78,25 +125,8 @@ classdef TmatrixPm < ott.Tmatrix
         error('Only star shaped particles supported for now');
       end
 
-      % Parse optional parameters
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addParameter('Nmax', []);
-      p.addParameter('wavelength0', []);
-      p.addParameter('distribution', 'angulargrid');
-      
-      p.addParameter('index_relative', []);
-      
-      p.addParameter('k_medium', []);
-      p.addParameter('wavelength_medium', []);
-      p.addParameter('index_medium', []);
-      
-      p.addParameter('k_particle', []);
-      p.addParameter('wavelength_particle', []);
-      p.addParameter('index_particle', []);
-      
-      p.addParameter('internal', false);
-      p.parse(varargin{:});
+      % Parse parameters
+      p = ott.TmatrixPm.input_parser(varargin{:});
 
       % Get or estimate Nmax from the inputs
       [k_medium, k_particle] = ott.Tmatrix.parser_wavenumber(p, 2*pi);
@@ -136,7 +166,7 @@ classdef TmatrixPm < ott.Tmatrix
   methods (Access=protected)
 
     function [coeff_matrix, incident_wave_matrix] = setup(tmatrix, ...
-        Nmax, rtp, normals, progress)
+        Nmax, rtp, normals, progress_callback)
       % SETUP calculates the coefficient and incident wave matrices
 
       npoints = size(rtp, 1);
@@ -187,11 +217,7 @@ classdef TmatrixPm < ott.Tmatrix
           incident_wave_matrix(:,ci+total_orders) = [ N2; M2 ];
 
           % Output progress
-          if progress ~= 0 && mod(ci, progress) == 0
-            disp(['TmatrixPM:setup (' num2str(ci) '/' ...
-                num2str(total_orders) ') ' ...
-                num2str(floor(ci/total_orders*100.0)) '%']);
-          end
+          progress_callback({'setup', ci, total_orders});
         end
       end
 
@@ -248,21 +274,7 @@ classdef TmatrixPm < ott.Tmatrix
       % TODO: Different row/column Nmax
 
       % Parse inputs
-      p = inputParser;
-      p.addParameter('Nmax', []);
-      p.addParameter('k_medium', []);
-      p.addParameter('wavelength_medium', []);
-      p.addParameter('index_medium', []);
-      p.addParameter('k_particle', []);
-      p.addParameter('wavelength_particle', []);
-      p.addParameter('index_particle', []);
-      p.addParameter('index_relative', []);
-      p.addParameter('wavelength0', []);
-      p.addParameter('internal', false);
-      p.addParameter('z_rotational_symmetry', false);
-      p.addParameter('z_mirror_symmetry', false);
-      p.addParameter('progress', []);
-      p.parse(varargin{:});
+      p = ott.TmatrixPm.input_parser(varargin{:});
 
       % Store inputs k_medium and k_particle
       [tmatrix.k_medium, tmatrix.k_particle] = ...
@@ -285,21 +297,9 @@ classdef TmatrixPm < ott.Tmatrix
         end
       end
 
-      % Parse progress input
-      if ~isempty(p.Results.progress)
-        progress = p.Results.progress;
-        progress(progress < 1) = floor(...
-            progress(progress < 1) * ott.utils.combined_index(Nmax, Nmax));
-        if numel(progress) == 1
-          progress = [progress, progress];
-        end
-      else
-        progress = [0, 0];
-      end
-
       % Calculate coefficient and incident wave matrices
       [coeff_matrix, incident_wave_matrix] = tmatrix.setup(...
-          Nmax, rtp, normals, progress(1));
+          Nmax, rtp, normals, p.Results.progress_callback);
 
       total_orders = ott.utils.combined_index(Nmax, Nmax);
 

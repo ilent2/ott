@@ -95,7 +95,7 @@ classdef Tmatrix
         end
 
         method = ott.Tmatrix.cylinder_preferred_method(...
-            parameters, k_medium, []);
+            parameters, k_medium, p.Results.method_tol);
 
         if strcmp(method, 'other')
           method = 'dda';
@@ -162,79 +162,24 @@ classdef Tmatrix
         error('Must input either Shape object or string and parameters');
       end
 
-      % TODO: Remove the duplication bellow.  We now have a method
-      % function.  Replaec the bellow with a switch.
-
-      % Handle the different particle cases
-      if isa(shape, 'ott.shapes.Sphere') ...
-          || (isa(shape, 'ott.shapes.Ellipsoid') && shape.isSphere) ...
-          || (isa(shape, 'ott.shapes.Superellipsoid') && shape.isSphere)
-        if strcmpi(p.Results.method, 'ebcm')
-          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
-        elseif strcmpi(p.Results.method, 'pm')
-          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
-        elseif strcmpi(p.Results.method, '') ...
-            || strcmpi(p.Results.method, 'mie')
+      % Call the appropriate class to do the work
+      method = ott.Tmatrix.defaultMethod(shape, ...
+        'parameters', p.Results.parameters, ...
+        'method_tol', p.Results.method_tol, ...
+        'k_medium', k_medium);
+      switch method
+        case 'mie'
           tmatrix = ott.TmatrixMie.simple(shape, varargin{:});
-        else
-          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-        end
-      elseif isa(shape, 'ott.shapes.Ellipsoid')
-        if strcmp(p.Results.method, 'ebcm')
-          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
-        elseif strcmp(p.Results.method, '') ...
-            || strcmp(p.Results.method, 'pm')
+        case 'smarties'
+          tmatrix = ott.TmatrixSmarties.simple(shape, varargin{:});
+        case 'pm'
           tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
-        else
-          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-        end
-      elseif isa(shape, 'ott.shapes.Superellipsoid')
-        if strcmp(p.Results.method, 'ebcm')
+        case 'dda'
+          tmatrix = ott.TmatrixDda.simple(shape, varargin{:});
+        case 'ebcm'
           tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
-        elseif strcmp(p.Results.method, '') ...
-            || strcmp(p.Results.method, 'pm')
-          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
-        else
-          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-        end
-      elseif isa(shape, 'ott.shapes.Cube')
-        if strcmp(p.Results.method, 'ebcm')
-          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
-        elseif strcmp(p.Results.method, '') ...
-            || strcmp(p.Results.method, 'pm')
-          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
-        else
-          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-        end
-      elseif isa(shape, 'ott.shapes.Cylinder') ...
-          || isa(shape, 'ott.shapes.AxisymLerp')
-
-        method = p.Results.method;
-        if strcmp(method, '')
-
-          if isa(shape, 'ott.shapes.Cylinder')
-            parameters = [ shape.radius, shape.height ];
-          elseif isa(shape, 'ott.shapes.AxisymLerp')
-            parameters = [ max(shape.rho), max(shape.z) - min(shape.z) ];
-          end
-
-          method = ott.Tmatrix.cylinder_preferred_method(...
-              parameters, k_medium, p.Results.method_tol);
-
-          if strcmp(method, 'other')
-            method = 'dda';
-          end
-        end
-
-        if strcmp(method, 'ebcm')
-          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
-        elseif strcmp(method, 'pm')
-          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
-        else
-          error('ott:Tmatrix:simple:no_method', 'Unsupported method');
-        end
-      else
-        error('ott:Tmatrix:simple:no_shape', 'Unsupported particle shape');
+        otherwise
+          error('Internal error: unsupported method string');
       end
     end
 

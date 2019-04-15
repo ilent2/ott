@@ -166,6 +166,45 @@ classdef TmatrixMie < ott.Tmatrix
       end
     end
   end
+  
+  methods (Static, Hidden)
+    
+    function p = input_parser(varargin)
+      % Helper for input parsing
+      
+      p = inputParser;
+
+      p.addParameter('progress_callback', ...
+        @ott.TmatrixMie.DefaultProgressCallback);
+      p.addParameter('Nmax', []);
+      p.addParameter('wavelength0', []);
+      p.addParameter('internal', false);
+      p.addParameter('shrink', true);
+
+      p.addParameter('index_relative', []);
+      p.addParameter('mu_relative', 1.0);
+
+      p.addParameter('k_medium', []);
+      p.addParameter('wavelength_medium', []);
+      p.addParameter('index_medium', []);
+
+      p.addParameter('k_particle', []);
+      p.addParameter('wavelength_particle', []);
+      p.addParameter('index_particle', []);
+      
+      % Fields to enable compatability with Tmatrix.simple
+      p.addParameter('method', []);
+
+      p.parse(varargin{:});
+    end
+    
+    function DefaultProgressCallback()
+      % Default progress callback function
+      
+      % TODO: Progress callback for this method
+    end
+    
+  end
 
   methods (Static)
     function tmatrix = simple(shape, varargin)
@@ -183,17 +222,20 @@ classdef TmatrixMie < ott.Tmatrix
       p.KeepUnmatched = true;
       p.addOptional('parameters', []);
       p.parse(varargin{:});
-
+      
       % Handle different shapes
       if isa(shape, 'ott.shapes.Shape') && isempty(p.Results.parameters)
-        tmatrix = ott.TmatrixMie(shape.maxRadius, varargin{:});
+        radius = shape.maxRadius;
       elseif ischar(shape) && strcmpi(shape, 'sphere') ...
           && ~isempty(p.Results.parameters)
+        radius = p.Results.parameters;
         varargin = varargin(2:end);
-        tmatrix = ott.TmatrixMie(p.Results.parameters, varargin{:});
       else
         error('Must input either Shape object or string and parameters');
       end
+      
+      % Genreate an instance of this object
+      tmatrix = ott.TmatrixMie(radius, varargin{:});
     end
   end
 
@@ -249,20 +291,7 @@ classdef TmatrixMie < ott.Tmatrix
       tmatrix = tmatrix@ott.Tmatrix();
 
       % Parse inputs
-      p = inputParser;
-      p.addParameter('Nmax', []);
-      p.addParameter('k_medium', []);
-      p.addParameter('wavelength_medium', []);
-      p.addParameter('index_medium', []);
-      p.addParameter('k_particle', []);
-      p.addParameter('wavelength_particle', []);
-      p.addParameter('index_particle', []);
-      p.addParameter('index_relative', []);
-      p.addParameter('mu_relative', 1.0);
-      p.addParameter('wavelength0', []);
-      p.addParameter('internal', false);
-      p.addParameter('shrink', true);
-      p.parse(varargin{:});
+      p = ott.TmatrixMie.input_parser(varargin{:});
 
       % Store inputs: radius, k_medium, k_particle
       tmatrix.radius = radius;

@@ -118,6 +118,9 @@ classdef BscPmParaxial < ott.BscPointmatch
         otherwise
           error('ott:BscPmParaxial:mapping', 'Unrecognized mapping value');
       end
+      
+      % Update progress callback
+      p.Results.progress_callback(0.1);
 
       NAonm=NA/nMedium;
 
@@ -171,6 +174,9 @@ classdef BscPmParaxial < ott.BscPointmatch
       end
 
       Exy_toolbox=interp2(theta*(1+1e-8),phi,Exy,reshape(Theta,[2*(Nmax+1),2*(Nmax+1)]),reshape(Phi,[2*(Nmax+1),2*(Nmax+1)]));
+      
+      % Update progress callback
+      p.Results.progress_callback(0.2);
 
       theta=Theta;
       phi=Phi;
@@ -241,6 +247,9 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       beam.type = 'incident';
       beam.basis = 'regular';
+      
+      % Update progress callback
+      p.Results.progress_callback(1.0);
     end
   end
 end
