@@ -1,14 +1,9 @@
-function [D,D2] = wigner_rotation_matrix( nmax, R )
+function D = wigner_rotation_matrix( nmax, R )
 % WIGNER_ROTATION_MATRIX rotation matrix for rotation of spherical
 % harmonics or T-matrices.
 %
 % D = WIGNER_ROTATION_MATRIX(nmax,R) calculates the rotation matrix
-% for the VSH given a coordinate rotation matrix R.  Usage: a' = D a.
-%
-% [D,D2] = wigner_rotation_matrix(nmax,R) additionally, calculates
-% the double matrix D2 = [ D 0; 0 D], so [a';b'] = D [a;b].
-%
-% D (and D2) are sparse
+% for the VSH given a 3x3 coordinate rotation matrix R.  Usage: a' = D a.
 %
 % This method from Choi et al., J. Chem. Phys. 111: 8825-8831 (1999)
 % Note change in notation - here, use x' = Rx (x is row vector),
@@ -16,6 +11,12 @@ function [D,D2] = wigner_rotation_matrix( nmax, R )
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+% Check inputs
+assert(isnumeric(nmax) && isscalar(nmax), ...
+    'nmax must be a numeric scalar')
+assert(isnumeric(R) && isequal(size(R), [3,3]), ...
+    'R must be a 3x3 rotation matrix')
 
 ott.warning('internal');
 
@@ -53,51 +54,47 @@ D = invC * R * C;
 D1 = D.';
 DD = D1;
 
-maxci = ott.utils.combined_index(nmax,nmax);
-D = sparse(maxci,maxci);
+X = {};
+X{1} = sparse(D1);
 
-D(1:3,1:3) = D1;
-
-% Calculate for n = 2:nmax by recursion
 for n = 2:nmax
-    
-    DDD = zeros(2*n+1);
-    
+
+    DDD = complex(zeros(2*n+1));
+
     % Fill in whole block except for top and bottom row
 
     m0 = ones(2*n-1,1) * (-n:n);
     m1 = ((-n+1):(n-1)).' * ones(1,2*n+1);
     a = sqrt( (n+m0) .* (n-m0) ./ ( (n+m1) .* (n-m1) ) );
     b = sqrt( (n+m0) .* (n+m0-1) ./ ( 2*(n+m1) .* (n-m1) ) );
-    
+
     DDD(2:end-1,2:end-1) = D1(2,2) * a(:,2:end-1) .* DD;
     DDD(2:end-1,3:end) = DDD(2:end-1,3:end) + D1(2,3) * b(:,3:end) .* DD;
     DDD(2:end-1,1:end-2) = DDD(2:end-1,1:end-2) + D1(2,1) * fliplr(b(:,3:end)) .* DD;
-    
+
     % Top row
-    
+
     m0 = (-n:n);
     c = sqrt( (n+m0).*(n-m0)/(n*(2*n-1)) );
     d = sqrt( (n+m0).*(n+m0-1)/(2*n*(2*n-1)) );
-    
+
     DDD(1,2:end-1) = D1(1,2) * c(2:end-1) .* DD(1,:);
     DDD(1,3:end) = DDD(1,3:end) + D1(1,3) * d(3:end) .* DD(1,:);
     DDD(1,1:end-2) = DDD(1,1:end-2) + D1(1,1) * fliplr(d(3:end)) .* DD(1,:);
-    
+
     % Bottom row
-    
+
     DDD(end,2:end-1) = D1(3,2) * c(2:end-1) .* DD(end,:);
     DDD(end,3:end) = DDD(end,3:end) + D1(3,3) * d(3:end) .* DD(end,:);
     DDD(end,1:end-2) = DDD(end,1:end-2) + D1(3,1) * fliplr(d(3:end)) .* DD(end,:);
 
-    % Dump into final matrix
-    
-    minci = ott.utils.combined_index(n,-n);
-    maxci = ott.utils.combined_index(n,n);
-    
-    D(minci:maxci,minci:maxci) = DDD;
+    X{end+1} = DDD;
+
     DD = DDD;
-    
+
 end
 
+D = blkdiag(X{:});
+
 ott.warning('external');
+
