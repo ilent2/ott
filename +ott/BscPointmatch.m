@@ -32,7 +32,7 @@ classdef BscPointmatch < ott.Bsc
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  methods (Static, Access=protected)
+  methods (Static)
 
     function [a, b, icm] = bsc_farfield(nn, mm, e_field, theta, phi, ...
         varargin)
@@ -44,6 +44,7 @@ classdef BscPointmatch < ott.Bsc
       % nn, mm are the mode indices to include in the coefficient matrix.
       %
       % e_field is the E-field to point match.
+      % The format should be [ Etheta(:); Ephi(:) ]
       %
       % theta, phi are the coordinates of the Efield values.
       %
@@ -121,9 +122,11 @@ classdef BscPointmatch < ott.Bsc
       %
       % nn, mm are the mode indices to include in the coefficient matrix.
       %
-      % e_field is the E-field to point match.
+      % e_field is a vector of E-field to points to match.
+      % The format should be [ Ex(:); Ey(:); Ez(:) ]
       %
       % kr, theta, phi are the coordinates of the Efield values.
+      % These should be vectors of the same as length(e_field)/3.
       %
       % Optional named arguments:
       %   zero_rejection_level   val   removes modes with less power than
@@ -136,6 +139,12 @@ classdef BscPointmatch < ott.Bsc
       p.addParameter('zero_rejection_level', 1e-8);
       p.addParameter('invert_coefficient_matrix', nargout == 3);
       p.parse(varargin{:});
+      
+      assert(length(e_field) == numel(e_field), ...
+        'e_field must be N element vector');
+      assert(numel(e_field)/3 == numel(kr), 'kr must be same size as e_field/3');
+      assert(numel(e_field)/3 == numel(theta), 'theta must be same size as e_field/3');
+      assert(numel(e_field)/3 == numel(phi), 'phi must be same size as e_field/3');
 
       % Generate coefficient matrix
       icm = p.Results.inv_coefficient_matrix;
@@ -144,7 +153,7 @@ classdef BscPointmatch < ott.Bsc
         for n = 1:length(nn)
 
            % Find RgM, RgN as appropriate for each mode
-           [M,N] = vswfcart(nn(n),mm(n),kr,theta,phi,3);
+           [M,N] = ott.utils.vswfcart(nn(n),mm(n),kr,theta,phi,3);
            if rem(nn(n),2) == 0
               % Even n
               MN = [ M(:,1); M(:,2); M(:,3) ];

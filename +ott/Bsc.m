@@ -50,7 +50,6 @@ classdef Bsc
     a           % Beam shape coefficients a vector
     b           % Beam shape coefficients b vector
 
-    omega       % Angular frequency of beam
     k_medium    % Wavenumber in medium
 
     dz          % Absolute cumulative distance the beam has moved
@@ -63,6 +62,8 @@ classdef Bsc
   properties
     basis       % VSWF beam basis (incoming, outgoing or regular)
     type        % Beam type (incident, scattered, total)
+    
+    omega       % Angular frequency of beam
   end
 
   properties (Dependent)
