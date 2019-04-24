@@ -1,9 +1,9 @@
 function [rv,thetav,phiv,r,theta,phi] = xyzv2rtpv(xv,yv,zv,x,y,z)
 % XYZV2RTPV cartiesian to spherical vector field conversion
 %
-% [rv,thetav,phiv,r,theta,phi] = RTPV2XYZV(xv,yv,zv,x,y,z)
+% [rv,thetav,phiv,r,theta,phi] = XYZV2RTPV(xv,yv,zv,x,y,z)
 %
-% [vec_sph,pos_sph] = rtpv2xyzv(vec_cart,pos_cart)
+% [vec_sph,pos_sph] = XYZV2RTPV(vec_cart,pos_cart)
 %
 % See also rtpv2xyzv and xyz2rtp.
 %
