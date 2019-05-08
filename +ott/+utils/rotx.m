@@ -23,27 +23,26 @@ p.parse(varargin{:});
 
 assert(isnumeric(angle_deg), 'angle_deg must be numeric matrix');
 
-theta = angle_deg * pi/180;
-
-if numel(theta) > 1
+if numel(angle_deg) > 1
   if p.Results.usecell
 
     % Create cell array of rotation matrices
-    R = cell(size(theta));
-    for ii = 1:numel(theta)
-      R{ii} = rotx(theta(ii));
+    R = cell(size(angle_deg));
+    for ii = 1:numel(angle_deg)
+      R{ii} = ott.utils.rotx(angle_deg(ii));
     end
   else
 
     % Create 3xN matrix of rotation matrices
-    R = zeros([3, 3*numel(theta)]);
-    for ii = 1:numel(theta)
-      R(:, (1:3) + 3*(ii-1)) = rotx(theta(ii));
+    R = zeros([3, 3*numel(angle_deg)]);
+    for ii = 1:numel(angle_deg)
+      R(:, (1:3) + 3*(ii-1)) = ott.utils.rotx(angle_deg(ii));
     end
   end
 else
 
   % Calculate rotation matrix
+  theta = angle_deg * pi/180;
   R = [1, 0, 0;
        0, cos(theta), -sin(theta);
        0, sin(theta), cos(theta)];
