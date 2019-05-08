@@ -84,6 +84,27 @@ function testUnevenTranslation(testCase)
 
 end
 
+function testMakeBeamVectorEmpty(testCase)
+% Check that make_beam_vector works for empty beams
+
+  import matlab.unittest.constraints.IsEqualTo;
+
+  a = [];
+  b = [];
+  nn = [];
+  mm = [];
+  
+  [a1, b1] = ott.Bsc.make_beam_vector(a, b, nn, mm);
+  
+  testCase.verifyThat([size(a1), size(b1)], IsEqualTo([0, 0, 0, 0]), ...
+    'Size of beam vectors incorrect with implicit Nmax');
+  
+  [a2, b2] = ott.Bsc.make_beam_vector(a, b, nn, mm, 1);
+  
+  testCase.verifyThat([size(a2), size(b2)], IsEqualTo([3, 0, 3, 0]), ...
+    'Size of beam vectors incorrect with explicit Nmax');
+end
+
 function testMakeBeamVectorMulti(testCase)
 % Check to make sure make_beam_vector functions with multiple beams
 % with the same nn and mm indices.

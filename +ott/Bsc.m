@@ -82,12 +82,19 @@ classdef Bsc
     function [a, b, n, m] = make_beam_vector(a, b, n, m, Nmax)
       %MAKE_BEAM_VECTOR converts output of bsc_* functions to sparse vectors
 
+      % Check we have some modes
       if isempty(n)
-        error('OTT:BSC:make_beam_vector:no_modes', 'No modes');
+        warning('OTT:BSC:make_beam_vector:no_modes', ...
+            'No modes in beam or all zero modes.');
       end
 
+      % Handle default value for Nmax
       if nargin < 5
-        Nmax = max(n);
+        if isempty(n)
+          Nmax = 0;
+        else
+          Nmax = max(n);
+        end
       end
 
       total_orders = ott.utils.combined_index(Nmax, Nmax);
