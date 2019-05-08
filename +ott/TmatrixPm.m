@@ -27,8 +27,7 @@ classdef TmatrixPm < ott.Tmatrix
       
       p = inputParser;
 
-      p.addParameter('progress_callback', ...
-        @ott.TmatrixPm.DefaultProgressCallback);
+      p.addParameter('progress_callback', []);
       p.addParameter('Nmax', []);
       p.addParameter('wavelength0', []);
       p.addParameter('internal', false);
@@ -62,6 +61,8 @@ classdef TmatrixPm < ott.Tmatrix
       
       if strcmpi(stage, 'setup')
         disp(['Setup: ' num2str(num) ' / ' num2str(total)]);
+      elseif strcmpi(stage, 'inv')
+        disp(['Inversion: ' num2str(num) ' / ' num2str(total)]);
       end
     end
     
@@ -216,9 +217,10 @@ classdef TmatrixPm < ott.Tmatrix
           incident_wave_matrix(:,ci) = [ M2; N2 ];
           incident_wave_matrix(:,ci+total_orders) = [ N2; M2 ];
 
-          % Output progress
-          progress_callback({'setup', ci, total_orders});
         end
+
+        % Output progress
+        progress_callback({'setup', ci, total_orders});
       end
 
     end
@@ -297,9 +299,19 @@ classdef TmatrixPm < ott.Tmatrix
         end
       end
 
+      % Handle default argument for progress_callback
+      progress_callback = p.Results.progress_callback;
+      if isempty(progress_callback)
+        if Nmax > 20
+          progress_callback = @ott.TmatrixPm.DefaultProgressCallback;
+        else
+          progress_callback = @(x) [];
+        end
+      end
+
       % Calculate coefficient and incident wave matrices
       [coeff_matrix, incident_wave_matrix] = tmatrix.setup(...
-          Nmax, rtp, normals, p.Results.progress_callback);
+          Nmax, rtp, normals, progress_callback);
 
       total_orders = ott.utils.combined_index(Nmax, Nmax);
 
@@ -365,6 +377,9 @@ classdef TmatrixPm < ott.Tmatrix
 
           end
 
+          % Output progress
+          progress_callback({'inv', mi, Nmax});
+
         end
 
       elseif p.Results.z_rotational_symmetry ~= 1
@@ -426,6 +441,9 @@ classdef TmatrixPm < ott.Tmatrix
             T2(emodes, imodes) = Tcol((1+sum(omodes)):end, :);
 
           end
+
+          % Output progress
+          progress_callback({'inv', mi, Nmax});
 
         end
 
