@@ -201,6 +201,13 @@ classdef Bsc
       elseif strcmpi(field_type, 'Abs(Ez)')
         data = abs(vxyz(:, 3));
         
+      elseif strcmpi(field_type, 'Arg(Ex)')
+        data = angle(vxyz(:, 1));
+      elseif strcmpi(field_type, 'Arg(Ey)')
+        data = angle(vxyz(:, 2));
+      elseif strcmpi(field_type, 'Arg(Ez)')
+        data = angle(vxyz(:, 3));
+        
       elseif strcmpi(field_type, 'Er')
         data = vrtp(:, 1);
       elseif strcmpi(field_type, 'Et')
@@ -274,6 +281,13 @@ classdef Bsc
         beam.a = [beam.a, other.a];
         beam.b = [beam.b, other.b];
       end
+    end
+    
+    function beam = mergeBeams(beam)
+      % Merge the BSCs for the beams contained in this object
+      
+      beam.a = sum(beam.a, 2);
+      beam.b = sum(beam.b, 2);
     end
 
     function [E, H, data] = farfield(beam, theta, phi, varargin)
