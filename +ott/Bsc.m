@@ -94,7 +94,7 @@ classdef Bsc
       ci = ott.utils.combined_index(n, m);
       nbeams = size(a, 2);
 
-      [ci, cinbeams] = meshgrid(ci, 1:nbeams);
+      [ci, cinbeams] = ndgrid(ci, 1:nbeams);
 
       a = sparse(ci, cinbeams, a, total_orders, nbeams);
       b = sparse(ci, cinbeams, b, total_orders, nbeams);

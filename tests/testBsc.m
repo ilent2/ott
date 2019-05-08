@@ -84,3 +84,29 @@ function testUnevenTranslation(testCase)
 
 end
 
+function testMakeBeamVectorMulti(testCase)
+% Check to make sure make_beam_vector functions with multiple beams
+% with the same nn and mm indices.
+
+  a = [1; 2; 3];
+  b = [4; 5; 6];
+  
+  nn = [1; 2; 3];
+  mm = [0; 0; 0];
+  
+  [a1, b1] = ott.Bsc.make_beam_vector(a, b, nn, mm);
+  [a2, b2] = ott.Bsc.make_beam_vector(a+6, b+6, nn, mm);
+  
+  [ac, bc] = ott.Bsc.make_beam_vector([a, a+6], [b, b+6], nn, mm);
+  
+  import matlab.unittest.constraints.IsEqualTo;
+  
+  testCase.verifyThat([ac(:, 1); bc(:, 1)], IsEqualTo([a1; b1]), ...
+    'First beam doesn''t match');
+  
+  testCase.verifyThat([ac(:, 2); bc(:, 2)], IsEqualTo([a2; b2]), ...
+    'Second beam doesn''t match');
+
+end
+
+
