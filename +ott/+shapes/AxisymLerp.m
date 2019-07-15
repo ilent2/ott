@@ -201,6 +201,12 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
       %
       % [X, Y, Z] = surf() calculates the coordinates and arranges them
       % in a grid.
+      %
+      % Optional named arguments:
+      %   npoints   num   Number of azimuthal points to use (default: 20)
+      %   points    3xN   Array of points to calculate (default: [])
+      %
+      % See also ott.shapes.StarShape/surf
 
       p = inputParser;
       p.KeepUnmatched = true;
