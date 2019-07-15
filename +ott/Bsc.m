@@ -179,6 +179,8 @@ classdef Bsc
       % Generate the requested field
       if strcmpi(field_type, 'irradiance')
         data = sqrt(sum(abs(vxyz).^2, 2));
+      elseif strcmpi(field_type, 'E2')
+        data = sum(abs(vxyz).^2, 2);
         
       elseif strcmpi(field_type, 'Re(Er)')
         data = real(vrtp(:, 1));
