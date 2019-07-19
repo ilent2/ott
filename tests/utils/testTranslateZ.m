@@ -98,7 +98,7 @@ function testNegativeTranslations(testCase)
   Nmax = 1;
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
-  tol = 1e-6;
+  tol = 1e-5;
   
   % Test Gumerov
   
@@ -122,5 +122,40 @@ function testNegativeTranslations(testCase)
       'Within', AbsoluteTolerance(tol)), ...
       'Videen fails negative translation');
     
+end
+
+function testNegativeDifferentNmax(testCase)
+  % Test outputs with different row/column Nmax
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+  tol = 1.0e-3;
+  
+  dz = -pi/2;
+
+  [Afull, Bfull] = ott.utils.translate_z(7, dz);
+
+  sz1 = ott.utils.combined_index(5, 5);
+  sz2 = ott.utils.combined_index(7, 7);
+
+  [A, B] = ott.utils.translate_z([5, 7], dz);
+  testCase.verifyThat(size(A), IsEqualTo([sz1, sz2]), ...
+      'Incorrect matrix size [5 7]');
+  testCase.verifyThat(A, IsEqualTo(Afull(1:sz1, 1:sz2), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Incorrect A matrix values [5 7]');
+  testCase.verifyThat(B, IsEqualTo(Bfull(1:sz1, 1:sz2), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Incorrect B matrix values [5 7]');
+
+  [A, B] = ott.utils.translate_z([7, 5], dz);
+  testCase.verifyThat(size(A), IsEqualTo([sz2, sz1]), ...
+      'Incorrect matrix size [7 5]');
+  testCase.verifyThat(A, IsEqualTo(Afull(1:sz2, 1:sz1), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Incorrect A matrix values [7 5]');
+  testCase.verifyThat(B, IsEqualTo(Bfull(1:sz2, 1:sz1), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Incorrect B matrix values [7 5]');
 end
 

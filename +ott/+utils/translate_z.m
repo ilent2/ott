@@ -290,12 +290,14 @@ end
 B = 1i*2*pi*z*B;
 
 % This is faster than A = A + sparse(...) and A(sub2ind(...)) = [...]
-if z >= 0
+if z < 0
+  [n1, ~] = ott.utils.combined_index(toIndexy);
+  [n2, ~] = ott.utils.combined_index(toIndexx);
+  B=sparse(toIndexy,toIndexx,B.*(-1).^(n1-n2+1),nmax1*(nmax1+2),nmax2*(nmax2+2));
+  A=sparse(toIndexy,toIndexx,A.*(-1).^(n1-n2),nmax1*(nmax1+2),nmax2*(nmax2+2));
+else
   B=sparse(toIndexy,toIndexx,B,nmax1*(nmax1+2),nmax2*(nmax2+2));
   A=sparse(toIndexy,toIndexx,A,nmax1*(nmax1+2),nmax2*(nmax2+2));
-else
-  B=sparse(toIndexx,toIndexy,B,nmax1*(nmax1+2),nmax2*(nmax2+2));
-  A=sparse(toIndexx,toIndexy,A,nmax1*(nmax1+2),nmax2*(nmax2+2));
 end
 
 end % calculate_AB
