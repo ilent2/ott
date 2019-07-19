@@ -93,3 +93,34 @@ function testLargeTranslations(testCase)
 
 end
 
+function testNegativeTranslations(testCase)
+  
+  Nmax = 1;
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+  tol = 1e-6;
+  
+  % Test Gumerov
+  
+  [A1, B1] = ott.utils.translate_z(Nmax, 1e-6, 'method', 'gumerov');
+  [A2, B2] = ott.utils.translate_z(Nmax, -1e-6, 'method', 'gumerov');
+  C1 = [ A1 B1 ; B1 A1 ];
+  C2 = [ A2 B2 ; B2 A2 ];
+  
+  testCase.verifyThat(C1*C2, IsEqualTo(speye(size(C1*C2)), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Gumerov fails negative translation');
+  
+  % Test Videen
+  
+  [A1, B1] = ott.utils.translate_z(Nmax, 1e-6, 'method', 'videen');
+  [A2, B2] = ott.utils.translate_z(Nmax, -1e-6, 'method', 'videen');
+  C1 = [ A1 B1 ; B1 A1 ];
+  C2 = [ A2 B2 ; B2 A2 ];
+  
+  testCase.verifyThat(C1*C2, IsEqualTo(speye(size(C1*C2)), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Videen fails negative translation');
+    
+end
+

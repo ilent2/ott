@@ -89,9 +89,9 @@ end
 % Calculate the scalar coefficients
 switch p.Results.method
   case 'videen'
-    C = translate_z_videen(nmax1, nmax2, nmax, z, p);
+    C = translate_z_videen(nmax1, nmax2, nmax, abs(z), p);
   case 'gumerov'
-    C = translate_z_gumerov(nmax1, nmax2, nmax, z, p);
+    C = translate_z_gumerov(nmax1, nmax2, nmax, abs(z), p);
   otherwise
     error('OTT:UTILS:translate_z:unknown_method', 'Unknown method');
 end
@@ -248,9 +248,9 @@ C0 = C(2:(nmax2+1),2:(nmax1+1),mmm+1);
 Cp = C(3:(nmax2+2),2:(nmax1+1),mmm+1);
 Cm = C(1:nmax2,2:(nmax1+1),mmm+1);
 
-t = matrixm.*(C0 - 2*pi*z./(kk+1) .* ...
+t = matrixm.*(C0 - 2*pi*abs(z)./(kk+1) .* ...
     sqrt((kk-mmm+1).*(kk+mmm+1)./((2*kk+1).*(2*kk+3))) .* Cp - ...
-    2*pi*z./kk.*sqrt((kk-mmm).*(kk+mmm)./((2*kk+1).*(2*kk-1))).*Cm);
+    2*pi*abs(z)./kk.*sqrt((kk-mmm).*(kk+mmm)./((2*kk+1).*(2*kk-1))).*Cm);
 
 toIndexy=(ciy(:));
 toIndexx=(cix(:));
@@ -268,10 +268,10 @@ for mmm=1:min(nmax1, nmax2)
     Cp = C((2+mmm):(nmax2+2),(1+mmm):(nmax1+1),mmm+1);
     Cm = C((mmm):nmax2,(1+mmm):(nmax1+1),mmm+1);
 
-    tt = matrixm(sz1, sz2).*(C0 - 2*pi*z./(kk(sz1)+1) .* ...
+    tt = matrixm(sz1, sz2).*(C0 - 2*pi*abs(z)./(kk(sz1)+1) .* ...
         sqrt((kk(sz1)-mmm+1).*(kk(sz1)+mmm+1) ...
         ./((2*kk(sz1)+1).*(2*kk(sz1)+3))) .* Cp - ...
-        2*pi*z./kk(sz1).*sqrt((kk(sz1)-mmm) ...
+        2*pi*abs(z)./kk(sz1).*sqrt((kk(sz1)-mmm) ...
         .*(kk(sz1)+mmm)./((2*kk(sz1)+1).*(2*kk(sz1)-1))).*Cm);
 
     ciys=ciy(mmm:end,mmm:end);
@@ -290,8 +290,13 @@ end
 B = 1i*2*pi*z*B;
 
 % This is faster than A = A + sparse(...) and A(sub2ind(...)) = [...]
-B=sparse(toIndexy,toIndexx,B,nmax1*(nmax1+2),nmax2*(nmax2+2));
-A=sparse(toIndexy,toIndexx,A,nmax1*(nmax1+2),nmax2*(nmax2+2));
+if z >= 0
+  B=sparse(toIndexy,toIndexx,B,nmax1*(nmax1+2),nmax2*(nmax2+2));
+  A=sparse(toIndexy,toIndexx,A,nmax1*(nmax1+2),nmax2*(nmax2+2));
+else
+  B=sparse(toIndexx,toIndexy,B,nmax1*(nmax1+2),nmax2*(nmax2+2));
+  A=sparse(toIndexx,toIndexy,A,nmax1*(nmax1+2),nmax2*(nmax2+2));
+end
 
 end % calculate_AB
 
