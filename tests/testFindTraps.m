@@ -18,6 +18,7 @@ function testOneSinusoid(testCase)
   import matlab.unittest.constraints.AbsoluteTolerance;
 
   x = linspace(-1, 1);
+  x(1) = []; x(end) = [];  % Drop zeros at ends
   y = -2*sin(pi*x);
 
   traps = ott.find_traps(x, y);
@@ -54,6 +55,7 @@ function testTwoSinusoid(testCase)
   import matlab.unittest.constraints.AbsoluteTolerance;
 
   x = linspace(-2, 2, 200);
+  x(1) = []; x(end) = [];  % Drop zeros at ends
   y = 2*sin(pi*x);
 
   traps = ott.find_traps(x, y);
@@ -114,6 +116,7 @@ function testOneNegativeSinusoid(testCase)
   import matlab.unittest.constraints.AbsoluteTolerance;
 
   x = linspace(-1, 1);
+  x(1) = []; x(end) = [];  % Drop zeros at ends
   y = 2*sin(pi*x);
 
   traps = ott.find_traps(x, y, 'keep_unstable', true);
@@ -175,4 +178,69 @@ function testSawTooth(testCase)
   testCase.verifyThat([traps(2).position], IsEqualTo(eqs(2), ...
       'Within', AbsoluteTolerance(tol)), ...
       'Trap position incorrect');
+end
+
+function testFlatCentreTrap(testCase)
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+  tol = 1e-2;
+  
+  y = [0.1, 0.5, 0, 0, -0.5, -0.1];
+  x = [-3, -2, -1, 1, 2, 3];
+  
+  eqs = [0.0];
+  
+  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
+      'Wrong number of traps identified with keep_unstable=true');
+  
+  % Test stable equilibria
+
+  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
+      'Wrong number of traps identified with keep_unstable=false');
+  testCase.verifyThat([traps.position], IsEqualTo(eqs, ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Trap position incorrect');
+    
+% Do we want to have two definitions of stiffness?
+%   testCase.verifyThat([traps.stiffness], IsEqualTo(0, ...
+%       'Within', AbsoluteTolerance(tol)), ...
+%       'Trap stiffness incorrect');
+
+end
+
+function testFlatCentrePoly3Trap(testCase)
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+  tol = 1e-2;
+  
+  x = linspace(-1, 1, 100);
+  p = [-1, 0, 0, 0];
+  y = polyval(p, x);
+  
+  eqs = [0.0];
+  
+  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
+      'Wrong number of traps identified with keep_unstable=true');
+  
+  % Test stable equilibria
+
+  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
+      'Wrong number of traps identified with keep_unstable=false');
+  testCase.verifyThat([traps.position], IsEqualTo(eqs, ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Trap position incorrect');
+  testCase.verifyThat([traps.stiffness], IsEqualTo(0, ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Trap position incorrect');
+
 end
