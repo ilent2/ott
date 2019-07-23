@@ -142,3 +142,37 @@ function testOneNegativeSinusoid(testCase)
       'Within', AbsoluteTolerance(1e-6)), ...
       'Trap range incorrect');
 end
+
+function testSawTooth(testCase)
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+  tol = 1e-2;
+
+  x = [0, 1, 2, 3, 4];
+  y = [1, -1, 1, -1, 1];
+  
+  % Test all equilibrium 
+  
+  eqs = [0.5, 1.5, 2.5, 3.5];
+  
+  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
+      'Wrong number of stable+unstable traps identified');
+  testCase.verifyThat([traps(2:3).position], IsEqualTo(eqs(2:3), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Trap position incorrect (keep_unstable)');
+  
+  % Test stable equilibria
+  
+  eqs = [0.5, 2.5];
+
+  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
+      'Wrong number of stable traps identified');
+  testCase.verifyThat([traps(2).position], IsEqualTo(eqs(2), ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Trap position incorrect');
+end

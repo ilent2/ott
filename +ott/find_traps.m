@@ -12,6 +12,9 @@ function traps = find_traps(position, force, varargin)
 %   keep_unstable    bool   keep unstable equilibriums (default: false)
 %   depth_threshold_e num   percentage of max depth for trap acceptance
 %       Use [] for no threshold.  (default: 1e-2).
+%   group_stable     bool   group stable traps separated by smaller
+%       unstable traps together (useful for finding trap depth)
+%       (default: false)
 %
 % See also ott.find_equilibrium ott.axial_equilibrium and ott.trap_stiffness.
 %
@@ -24,6 +27,7 @@ function traps = find_traps(position, force, varargin)
 p = inputParser;
 p.addParameter('keep_unstable', false);
 p.addParameter('depth_threshold_e', 1e-2);
+p.addParameter('group_stable', false);
 p.parse(varargin{:});
 
 % This function is not directly concerned with force/torque calculation
@@ -66,20 +70,31 @@ peqs = zeros(1, length(eqs));
 pstiff = zeros(1, length(eqs));
 
 for ii = 1:length(eqs)
+  
+  % TODO: Need to fix this for rapidly fluctuating traps
+  
+  % Equilibrium is between eqs(ii)-1 and eqs(ii)
+  eqguess = (position(eqs(ii)) + position(eqs(ii)-1))/2;
 
   % Fit polynomial to points aroung equilibrium
-  eqrange = max([eqs(ii)-2,1]):min([eqs(ii)+2,length(position)]);
+  eqrange = max([eqs(ii)-2,1]):min([eqs(ii)+1,length(position)]);
   z = position(eqrange);
 
   % Scale position and force before polyfit
   zmin = min(z);
   zmax = max(z);
   z = 2 * (z - zmin) / (zmax - zmin) - 1;
-  zzero = 2 * (position(eqs(ii)) - zmin) / (zmax - zmin) - 1;
+  zzero = 2 * (eqguess - zmin) / (zmax - zmin) - 1;
 
   % Find equilibrium: fit local points to 3rd order polynomail
   % Requires small distance between positions
-  pz=polyfit(z, force(eqrange), 3);
+  if length(z) < 4
+    pz=polyfit(z, force(eqrange), 2);
+    dpz=[2*pz(1),1*pz(2)];
+  else
+    pz=polyfit(z, force(eqrange), 3);
+    dpz=[3*pz(1),2*pz(2),1*pz(3)];
+  end
   root_z=roots(pz);
 
   % Ignore non-real roots
@@ -97,7 +112,6 @@ for ii = 1:length(eqs)
   peqs(ii) = real_z;
 
   % Calculate stiffness (using derivative of 3rd order polynomial)
-  dpz=[3*pz(1),2*pz(2),1*pz(3)];
   pstiff(ii) = polyval(dpz, peqs(ii));
 
   % Inverse scaling of position and force after fitting
@@ -151,6 +165,64 @@ for ii = 1:length(eqs)
   end
   traps(idx).depth = min(abs(traps(idx).minmax_force));
 
+end
+
+%% Group traps by depth
+
+if p.Results.group_stable && length(traps) >= 1
+  
+  assert(~p.Results.keep_unstable, ...
+    'group_stable option incompatible with keep_unstable');
+  
+  % All traps data gets merged together into row vectors (or matrices)
+  % Add group_range property (from min range to max range)
+  % Add group_depth property (trap depth for group)
+  % Add group_minmax_position and group_minmax_force
+
+  % Identify trap groups
+  minmax_force = traps(1).minmax_force;
+  minmax_position = traps(1).minmax_position;
+  group_idx = ones(1, length(traps));
+  for ii = 2:length(traps)
+    if traps(ii).minmax_force(1) < minmax_force(1) ...
+        && traps(ii).minmax_force(2) < minmax_force(2)
+      minmax_force(2) = traps(ii).minmax_force(2);
+      minmax_position(2) = traps(ii).minmax_position(2);
+      group_idx(ii) = group_idx(ii-1);
+    else
+      minmax_force = traps(ii).minmax_force;
+      minmax_position = traps(ii).minmax_position;
+      group_idx(ii) = group_idx(ii-1) + 1;
+    end
+  end
+  
+  % Create structure for new traps/groups
+  old_traps = traps;
+  traps = struct('position', {}, 'stiffness', {}, 'depth', {}, ...
+    'range', {}, 'minmax_force', {}, 'minmax_position', {}, ...
+    'group_range', {}, 'group_depth', {}, ...
+    'group_minmax_position', {}, 'group_minmax_force', {});
+  
+  % Group traps together
+  for ii = 1:max(group_idx)
+    
+    idx = group_idx == ii;
+    
+    % Group properties from old_traps
+    traps(ii).position = [old_traps(idx).position].';
+    traps(ii).stiffness = [old_traps(idx).stiffness].';
+    traps(ii).depth = [old_traps(idx).depth].';
+    traps(ii).range = reshape([old_traps(idx).range], 2, []).';
+    traps(ii).minmax_force = reshape([old_traps(idx).minmax_force], 2, []).';
+    traps(ii).minmax_position = reshape([old_traps(idx).minmax_position], 2, []).';
+    
+    % Add group properties
+    traps(ii).group_range = [min(traps(ii).range), max(traps(ii).range)];
+    traps(ii).group_minmax_position = [traps(ii).minmax_position(1), traps(ii).minmax_position(end)];
+    traps(ii).group_minmax_force = [traps(ii).minmax_force(1), traps(ii).minmax_force(end)];
+    traps(ii).group_depth = min(abs(traps(ii).group_minmax_force));
+  end
+  
 end
 
 %% Discard traps that are too shallow
