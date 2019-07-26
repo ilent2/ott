@@ -30,6 +30,10 @@ if length(n)>1
 end
 
 if nargin<4
+  if nargin < 3
+    error('Not enough input arguments');
+  end
+  
     phi=theta;
     theta=m;
     m=[-n:n];
