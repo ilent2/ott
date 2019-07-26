@@ -287,7 +287,7 @@ for mmm=1:min(nmax1, nmax2)
 end
 
 % Keep B real until the end, makes things run faster
-B = 1i*2*pi*z*B;
+B = 1i*2*pi*abs(z)*B;
 
 % This is faster than A = A + sparse(...) and A(sub2ind(...)) = [...]
 if z < 0
