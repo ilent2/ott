@@ -1237,7 +1237,8 @@ classdef Bsc
       % describing the rotation.  Returns the rotated beam and D.
       %
       % beam = ROTATE('wigner', D) applies the precomputed rotation.
-      % This will only work if Nmax ~= 1.
+      % This will only work if Nmax ~= 1.  If D is a cell array of
+      % wigner matrices, generates a array of rotated beams.
       %
       % ROTATE(..., 'Nmax', nmax) specifies the Nmax for the
       % rotation matrix.  The beam Nmax is unchanged.  If nmax is smaller
@@ -1264,10 +1265,25 @@ classdef Bsc
         beam = beam.rotate('wigner', D);
 
       elseif ~isempty(p.Results.wigner) && isempty(p.Results.R)
+        
+        if iscell(p.Results.wigner)
+          
+          ibeam = beam;
+          beam = ott.Bsc();
 
-        sz = size(beam.a, 1);
-        D2 = p.Results.wigner(1:sz, 1:sz);
-        beam = D2 * beam;
+          for ii = 1:numel(p.Results.wigner)
+            sz = size(ibeam.a, 1);
+            D2 = p.Results.wigner{ii}(1:sz, 1:sz);
+            beam = beam.append(D2 * ibeam);
+          end
+        
+        else
+
+          sz = size(beam.a, 1);
+          D2 = p.Results.wigner(1:sz, 1:sz);
+          beam = D2 * beam;
+          
+        end
 
       else
         error('One of wigner or R must be specified');
