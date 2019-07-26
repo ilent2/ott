@@ -109,6 +109,14 @@ classdef BscPmAnnular < ott.BscPointmatch
 
       anglez=asin(NAonm);
       
+      % In order to deal with 0 we need same hemisphere
+      % Otherwise we need to change to theta instead of NA as input
+      assert(prod(sign(anglez)) >= 0, ...
+          'NA must be both in same hemisphere');
+      if any(anglez < 0)
+        anglez(anglez == 0) = pi;
+      end
+      
       % Negative NAonm refers to oposite hemisphere
       anglez(NAonm < 0) = pi - abs(anglez(NAonm < 0));
       assert(numel(anglez) == 2, 'NA must be 2 values');
