@@ -244,3 +244,53 @@ function testFlatCentrePoly3Trap(testCase)
       'Trap position incorrect');
 
 end
+
+function testSingleTrapGroup(testCase)
+
+  import matlab.unittest.constraints.IsEqualTo;
+
+  y = [0.1, 1, -1, -0.1];
+  x = 1:numel(y);
+  
+  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(1), ...
+      'Wrong number of traps identified with keep_unstable=true');
+  
+  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(1), ...
+      'Wrong number of traps identified with keep_unstable=false');
+  
+  traps = ott.find_traps(x, y, 'keep_unstable', false, 'group_stable', true);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(1), ...
+      'Wrong number of traps identified with group_stable=true');
+
+end
+
+function testDoubleTrapGroup(testCase)
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+  tol = 1e-2;
+
+  y = [0.1, 1, -1, 0.5, -0.5, 0.3, -2, -1];
+  x = 1:numel(y);
+  
+  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(5), ...
+      'Wrong number of traps identified with keep_unstable=true');
+  
+  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(3), ...
+      'Wrong number of traps identified with keep_unstable=false');
+  
+  traps = ott.find_traps(x, y, 'keep_unstable', false, 'group_stable', true);
+  
+  testCase.verifyThat(numel(traps), IsEqualTo(1), ...
+      'Wrong number of traps identified with group_stable=true');
+
+end

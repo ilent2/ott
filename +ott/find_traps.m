@@ -205,23 +205,54 @@ if p.Results.group_stable && length(traps) >= 1
   % Add group_range property (from min range to max range)
   % Add group_depth property (trap depth for group)
   % Add group_minmax_position and group_minmax_force
-
+  
+  
   % Identify trap groups
-  minmax_force = traps(1).minmax_force;
-  minmax_position = traps(1).minmax_position;
-  group_idx = ones(1, length(traps));
-  for ii = 2:length(traps)
-    if traps(ii).minmax_force(1) < minmax_force(1) ...
-        && traps(ii).minmax_force(2) < minmax_force(2)
-      minmax_force(2) = traps(ii).minmax_force(2);
-      minmax_position(2) = traps(ii).minmax_position(2);
-      group_idx(ii) = group_idx(ii-1);
-    else
-      minmax_force = traps(ii).minmax_force;
-      minmax_position = traps(ii).minmax_position;
-      group_idx(ii) = group_idx(ii-1) + 1;
+  %
+  % We do two passes to identify the maximum and minimum trapping
+  % forces, then we combine the indices to identify unique traps
+  
+  idxer = 0;
+  group_idx_max = zeros(1, length(traps));
+  maxforce = 0;
+  for ii = 1:length(traps)
+    if traps(ii).minmax_force(1) > maxforce
+      maxforce = traps(ii).minmax_force(1);
+      idxer = idxer + 1;
     end
+    group_idx_max(ii) = idxer;
   end
+  
+  idxer = 0;
+  minforce = 0;
+  group_idx_min = zeros(1, length(traps));
+  for ii = length(traps):-1:1
+    if traps(ii).minmax_force(2) < minforce
+      minforce = traps(ii).minmax_force(2);
+      idxer = idxer + 1;
+    end
+    group_idx_min(ii) = idxer;
+  end
+  
+  group_idx = group_idx_max + (max(group_idx_min) - group_idx_min);
+
+  % Old method, needs to be run recursively otherwise it splits
+  % traps as soon as it finds a decaying trap
+%   minmax_force = traps(1).minmax_force;
+%   minmax_position = traps(1).minmax_position;
+%   group_idx = ones(1, length(traps));
+%   for ii = 2:length(traps)
+%     if traps(ii).minmax_force(1) < minmax_force(1) ...
+%         && traps(ii).minmax_force(2) < minmax_force(2)
+%       minmax_force(2) = traps(ii).minmax_force(2);
+%       minmax_position(2) = traps(ii).minmax_position(2);
+%       group_idx(ii) = group_idx(ii-1);
+%     else
+%       minmax_force = traps(ii).minmax_force;
+%       minmax_position = traps(ii).minmax_position;
+%       group_idx(ii) = group_idx(ii-1) + 1;
+%     end
+%   end
   
   % Create structure for new traps/groups
   old_traps = traps;
@@ -231,9 +262,10 @@ if p.Results.group_stable && length(traps) >= 1
     'group_minmax_position', {}, 'group_minmax_force', {});
   
   % Group traps together
-  for ii = 1:max(group_idx)
+  unique_group_idx = unique(group_idx);
+  for ii = 1:length(unique_group_idx)
     
-    idx = group_idx == ii;
+    idx = group_idx == unique_group_idx(ii);
     
     % Group properties from old_traps
     traps(ii).position = [old_traps(idx).position].';
@@ -259,8 +291,15 @@ if ~isempty(p.Results.depth_threshold_e)
   drop_list = false(size(traps));
 
   for ii = 1:length(traps)
+    
+    % Keep grouped traps that are too shallow
+    if p.Results.group_stable && length(traps) >= 1
+      depth = traps(ii).group_depth;
+    else
+      depth = traps(ii).depth;
+    end
 
-    if traps(ii).depth < p.Results.depth_threshold_e*max_depth
+    if depth < p.Results.depth_threshold_e*max_depth
       drop_list(ii) = true;
     end
   end
