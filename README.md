@@ -1,6 +1,8 @@
 ott - Optical Tweezers Toolbox
 ==============================
 
+[![DOI](https://zenodo.org/badge/123386773.svg)](https://zenodo.org/badge/latestdoi/123386773)
+
 The optical tweezers toolbox can be used to calculate optical forces
 and torques of particles using the T-matrix formalism in a vector
 spherical wave basis.
