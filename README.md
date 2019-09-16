@@ -137,6 +137,7 @@ is [Timo Nieminen](mailto:timo@physics.uq.edu.au)
 File listing
 ------------
 
+```
 README.md     - Overview of the toolbox (this file)
 LICENSE.md    - License information for OTSLM original code
 AUTHORS.md    - List of contributors (pre-GitHub)
@@ -146,6 +147,7 @@ thirdparty/   - Third party licenses (multiple files)
 examples/     - Example files showing different toolbox features
 tests/        - Unit tests to verify toolbox features function correctly
 +ott/         - The toolbox
+```
 
 The +ott package, as well as tests/ and examples/ directories
 and sub-directories contain Contents.m files which list the files
