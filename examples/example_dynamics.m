@@ -68,6 +68,9 @@ switch particle_type
 
     % Set a limit on the max time step, needed for stability, empirically found
     dtlim=0.001;
+    
+    % Optional parameters for drawing shape
+    optargs = {};
 
   case 'cylinder'
 
@@ -79,6 +82,9 @@ switch particle_type
 
     % Set a limit on the max time step, needed for stability, empirically found
     dtlim=0.025;
+    
+    % Optional parameters for drawing shape
+    optargs = {'noendcap', true};
 
   case 'cube'
 
@@ -90,6 +96,9 @@ switch particle_type
 
     % Set a limit on the max time step, needed for stability, empirically found
     dtlim=0.025;
+    
+    % Optional parameters for drawing shape
+    optargs = {'noendcap', true};
 
   otherwise
     error('Unsupported particle type');
@@ -100,7 +109,7 @@ T = ott.Tmatrix.simple(shape, ...
     'index_particle', n_particle, ...
     'wavelength0', wavelength0);
 
-[X, Y, Z] = shape.surf('noendcap', true, 'npoints', 20);
+[X, Y, Z] = shape.surf('npoints', 20, optargs{:});
 
 disp(['Calculating T-matrix took ', num2str(toc), ' seconds']);
 
