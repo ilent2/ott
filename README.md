@@ -16,48 +16,47 @@ Installation
 To use the toolbox, download or clone the GitHub repository.
 You will also need a modern version of MATLAB, we recommend
 updating to at least 2018a.
-You may also need some of the Matlab support packages.
+You may also need some of the Matlab support packages (list comming soon).
 This version of the toolbox is released as a package, `+ott`, which
 contains a collection of functions for calculating T-matrices, beam
 coefficients, force and torques.
 To use the functions in your code, the easiest way is to add the
-directory containing the package to your path and importing the package,
+directory containing the package to your path,
 
 ```matlab
 addpath('<download-path>/ott');
-import ott.*
+help ott   % Test that ott was found, should display ott Contents page
 ```
 
 if you regularly use the toolbox you might want to add the command to
 your [startup.m](https://au.mathworks.com/help/matlab/ref/startup.html?searchHighlight=startup.m) file.
-You might also want to add the examples to your path
-
-```matlab
-addpath('<download-path>/ott/examples');
-```
 
 Getting started
 ---------------
 
 The toolbox has changed a lot since previous releases.
-To get started, it is probably easiest to take a look at the
-examples, run and modify them.
+To get started, take a look at the documentation, either in the
+[docs](docs) directory (comming soon) or on the [wiki](https://github.com/ilent2/ott/wiki).
+Alternatively, take a look at the [examples directory](examples).
 
-The examples calculate the force and torque efficiencies. These are
-  the force and torque per photon, in photon units. To convert to
-  SI units:
-              force_SI = force_Q * n * P/c
-             torque_SI = torque_Q * P/w
-  where n is the refractive index of the surrounding medium,
-        P is the beam power in watts,
-        c is the speed of light in free space,
-        w is the angular optical frequency, in radians/s.
+To calculate the force on a spherical particle, you need to setup a beam obejct,
+setup a particle and run the `ott.forcetorque` function.
+One of the shortest examples of this is:
+```matlab
+beam = ott.BscPmGauss();
+tmatrix = ott.TmatrixMie(0.5, 'k_medium', 2*pi, 'k_particle', 2*pi*1.3);
+fz = ott.forcetorque(beam, tmatrix, 'position', [0;0;1].*linspace(-8, 8));
+figure(), plot(fz.')
+```
+this assumes everything is in units of the wavelength, and creates a Gaussian
+beam with the default parameters.
 
-To understand how the toolbox calculates optical forces and torques,
-take a look at the guide to version 1.2 of the toolbox and the
-optical tweezers computational toolbox paper (pre-print).
-Both are available on our
-[website](https://people.smp.uq.edu.au/TimoNieminen/software.html).
+Recent changes
+--------------
+
+There have been many changes since the previous release, mainly the switch
+to object orientated programming.  Beams and T-matrices are now represented
+by obects, we have added shape objects and moved everything into packages.
 
 T-matrices are represented by `Tmatrix` objects.  For simple shapes,
 the `Tmatrix.simple` method can be used to construct T-matrices for
@@ -90,6 +89,8 @@ Upcoming release
   forces and torques.  The plan is also to introduce geometric
   optics and other methods not requiring a T-matrix.  The toolbox
   will be more automated and include a graphical user interface.
+* Version 1.6 we may move Beams and Tmatrices to a beams and tmatrix
+  sub-package.  We might also add drag calculation codes.
 
 Licence
 -------
@@ -154,70 +155,3 @@ and sub-directories contain Contents.m files which list the files
 and packages in each directory.
 These files can be viewed in Matlab by typing `help ott`
 or `help ott.subpackage`.
-
-Further Reading
----------------
-
-Papers describing the toolbox
-
-* T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe, G. Knoener,
-A. M. Branczyk, N. R. Heckenberg, H. Rubinsztein-Dunlop,
-"Optical tweezers computational toolbox",
-Journal of Optics A 9, S196-S203 (2007)
-
-* T. A. Nieminen, V. L. Y. Loke, G. Knoener, A. M. Branczyk,
-"Toolbox for calculation of optical forces and torques",
-PIERS Online 3(3), 338-342 (2007)
-
-
-More about computational modelling of optical tweezers:
-
-* T. A. Nieminen, N. R. Heckenberg, H. Rubinsztein-Dunlop,
-"Computational modelling of optical tweezers",
-Proc. SPIE 5514, 514-523 (2004)
-
-
-More about our beam multipole expansion algorithm:
-
-* T. A. Nieminen, H. Rubinsztein-Dunlop, N. R. Heckenberg,
-"Multipole expansion of strongly focussed laser beams",
-Journal of Quantitative Spectroscopy and Radiative Transfer 79-80,
-1005-1017 (2003)
-
-More about our T-matrix algorithm:
-
-* T. A. Nieminen, H. Rubinsztein-Dunlop, N. R. Heckenberg,
-"Calculation of the T-matrix: general considerations and
-application of the point-matching method",
-Journal of Quantitative Spectroscopy and Radiative Transfer 79-80,
-1019-1029 (2003)
-
-The multipole rotation matrix algorithm we used:
-
-* C. H. Choi, J. Ivanic, M. S. Gordon, K. Ruedenberg,
-"Rapid and stable determination of rotation matrices between
-spherical harmonics by direct recursion"
-Journal of Chemical Physics 111, 8825-8831 (1999)
-
-
-The multipole translation algorithm we used:
-
-* G. Videen,
-"Light scattering from a sphere near a plane interface",
-pp 81-96 in:
-F. Moreno and F. Gonzalez (eds),
-Light Scattering from Microstructures, LNP 534,
-Springer-Verlag, Berlin, 2000
-
-
-More on optical trapping landscapes:
-
-* A. B. Stilgoe, T. A. Nieminen, G. Knoener, N. R. Heckenberg, H. 
-Rubinsztein-Dunlop, "The effect of Mie resonances on trapping in 
-optical tweezers", Optics Express, 15039-15051 (2008)
-
-Multi-layer sphere algorithm:
-
-* W. Yang, "Improved recursive algorithm for light scattering by a
- multilayered sphere", Applied Optics 42(9), (2003)
-
