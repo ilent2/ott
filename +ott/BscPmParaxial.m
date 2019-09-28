@@ -125,11 +125,14 @@ classdef BscPmParaxial < ott.BscPointmatch
       NAonm=NA/nMedium;
 
       anglez=asin(NAonm);
+      
+      assert(ndims(E_ff) == 3 || ismatrix(E_ff) == 2, 'E_ff must be 2 or 3 dimensional array');
+      assert(size(E_ff, 3) == 1 || size(E_ff, 3) == 2, 'E_ff must be NxM or NxMx2 matrix');
 
       %overfit points because I can. This is the angle regridding step.
       %everything can be done in one go but it's this way due to legacy code.
-      nT=min(size(E_ff))*2;
-      nP=min(size(E_ff))*2;
+      nT=min([size(E_ff, 1), size(E_ff, 2)])*2;
+      nP=min([size(E_ff, 1), size(E_ff, 2)])*2;
 
       [theta,phi]=meshgrid(linspace(0,anglez,nT),linspace(0,2*pi,nP));
       if NAonm<0
@@ -142,7 +145,7 @@ classdef BscPmParaxial < ott.BscPointmatch
       Xt=tan(theta).*cos(phi);
       Yt=tan(theta).*sin(phi);
 
-      if function_theta==1
+      if function_theta==2
           % theta scaling:
           wscaling=1/(abs(anglez));
           
@@ -160,10 +163,13 @@ classdef BscPmParaxial < ott.BscPointmatch
       end
 
       %Cartesean coordinates for the paraxial plane. Normalise to BFP:
-      mXY=min(size(E_ff));
+      mXY=min([size(E_ff, 1), size(E_ff, 2)]);
       [X,Y]=meshgrid(linspace(-1,1,size(E_ff,2))*size(E_ff,2)/mXY/wscaling*(1+1e-12),linspace(-1,1,size(E_ff,1))*size(E_ff,1)/mXY/wscaling*(1+1e-12));
 
-      Exy=interp2(X,Y,E_ff,Xt,Yt);
+      Exy = zeros([size(Xt), size(E_ff, 3)]);
+      for ii = 1:size(E_ff, 3)
+        Exy(:, :, ii) = interp2(X,Y,E_ff(:, :, ii),Xt,Yt);
+      end
       Exy(isnan(Exy))=0;
 
       % for pointmatching we need the full 4*pi steradians, rescale again:
@@ -173,7 +179,11 @@ classdef BscPmParaxial < ott.BscPointmatch
           [Theta,Phi]=ott.utils.angulargrid(grid(1),grid(2));
       end
 
-      Exy_toolbox=interp2(theta*(1+1e-8),phi,Exy,reshape(Theta,[2*(Nmax+1),2*(Nmax+1)]),reshape(Phi,[2*(Nmax+1),2*(Nmax+1)]));
+      Exy_toolbox = zeros([2*(Nmax+1),2*(Nmax+1)]);
+      for ii = 1:size(E_ff, 3)
+        Exy_toolbox(:, :, ii)=interp2(theta*(1+1e-8),phi,Exy(:, :, ii),...
+          reshape(Theta,[2*(Nmax+1),2*(Nmax+1)]),reshape(Phi,[2*(Nmax+1),2*(Nmax+1)]));
+      end
       
       % Update progress callback
       p.Results.progress_callback(0.2);
@@ -183,12 +193,17 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       Exy_toolbox(isnan(Exy_toolbox))=0;
 
-      Ex_toolbox=polarisation(1)*Exy_toolbox(:);
-      Ey_toolbox=polarisation(2)*Exy_toolbox(:);
+      if size(E_ff, 3) == 2
+        Ex_toolbox = reshape(Exy_toolbox(:, :, 1), [], 1);
+        Ey_toolbox = reshape(Exy_toolbox(:, :, 2), [], 1);
+      else
+        Ex_toolbox=polarisation(1)*Exy_toolbox(:);
+        Ey_toolbox=polarisation(2)*Exy_toolbox(:);
+      end
 
       if verbose
           figure(1)
-          imagesc(abs(Exy_toolbox))
+          imagesc(abs(Exy_toolbox(:, :, 1)));
           figure(2)
           plot(theta(:),abs(Ex_toolbox(:)).'/max(abs(Ex_toolbox(:)).'),'o-');
           axis square
