@@ -272,19 +272,20 @@ classdef Bsc
         beam.k_medium = p.Results.like.k_medium;
         beam.dz = p.Results.like.dz;
       end
-      
-      % Check size of a and b
-      assert(all(size(a) == size(b)), 'size of a and b must match');
-      if isvector(a)
-        a = a(:);
-      end
-      if isvector(b)
-        b = b(:);
-      end
-      assert(size(a, 1) >= 3 && sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1)), ...
-        'number of multipole terms must be 3, 8, 15, 24, ...');
 
       if nargin ~= 0
+      
+        % Check size of a and b
+        assert(all(size(a) == size(b)), 'size of a and b must match');
+        if isvector(a)
+          a = a(:);
+        end
+        if isvector(b)
+          b = b(:);
+        end
+        assert(size(a, 1) >= 3 && sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1)), ...
+          'number of multipole terms must be 3, 8, 15, 24, ...');
+        
         beam.a = a;
         beam.b = b;
         beam.basis = basis;
