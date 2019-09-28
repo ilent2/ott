@@ -247,6 +247,9 @@ classdef Bsc
       % Useful if you have a specific set of a/b coefficients that you
       % want to wrap in a beam object.
       %
+      % Basis: incoming, outgoing or regular
+      % Type: incident, scattered, total, internal
+      %
       % Optional named arguments:
       %    k_medium  n  Wavenumber in medium (default: 2*pi)
       %    omega     n  Angular frequency (default: 2*pi)
@@ -269,6 +272,17 @@ classdef Bsc
         beam.k_medium = p.Results.like.k_medium;
         beam.dz = p.Results.like.dz;
       end
+      
+      % Check size of a and b
+      assert(all(size(a) == size(b)), 'size of a and b must match');
+      if isvector(a)
+        a = a(:);
+      end
+      if isvector(b)
+        b = b(:);
+      end
+      assert(size(a, 1) >= 3 && sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1)), ...
+        'number of multipole terms must be 3, 8, 15, 24, ...');
 
       if nargin ~= 0
         beam.a = a;
