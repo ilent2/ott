@@ -29,6 +29,11 @@ function [fx,fy,fz,tx,ty,tz,sx,sy,sz]=forcetorque(ibeam, sbeam, varargin)
 % If both position and rotation are arrays, they must have the same
 % number of locations (N) or a single location (N=1).
 %
+% ibeam can contain multiple beams.  If multiple beams are present,
+% the outputs are [3, nlocations, nbeams] arrays unless the
+% coherent argument is set to true, in which case the beams are added
+% after translation.
+%
 % [fx,fy,fz,tx,ty,tz,sx,sy,sz] = FORCETORQUE(...) unpacks the
 % force/torque/spin into separate output arguments.
 %
@@ -55,6 +60,7 @@ sz=0;
 p = inputParser;
 p.addParameter('position', []);
 p.addParameter('rotation', []);
+p.addParameter('coherent', false);
 p.addParameter('progress_callback', []);
 p.parse(varargin{:});
 
@@ -86,9 +92,14 @@ if isa(sbeam, 'ott.Tmatrix')
   for ii = 1:nparticles
     T(ii).type = 'scattered';
   end
+  
+  nbeams = ibeam.Nbeams;
+  if p.Results.coherent
+    nbeams = 1;
+  end
 
   % Preallocate output
-  f = zeros(3*numel(T), nlocations*ibeam.Nbeams);
+  f = zeros(3*numel(T), nlocations, nbeams);
   t = f;
   s = f;
 
@@ -120,15 +131,26 @@ if isa(sbeam, 'ott.Tmatrix')
     % Calculate the scattered beams and translated beam
     [sbeam, tbeam] = ibeam.scatter(T, ...
         'position', position, 'rotation', rotation);
+      
+    % If beams are coherent, combine them
+    if p.Results.coherent
+      sbeam = sbeam.mergeBeams();
+      tbeam = tbeam.mergeBeams();
+    end
 
+    % Calculate force
     [fl,tl,sl] = ott.forcetorque(tbeam, sbeam);
 
     % Unpack the calculated force
-    idx = (ii-1)*ibeam.Nbeams + 1;
-    f(:, idx:idx+ibeam.Nbeams - 1) = reshape(fl, 3*numel(T), ibeam.Nbeams);
-    t(:, idx:idx+ibeam.Nbeams - 1) = reshape(tl, 3*numel(T), ibeam.Nbeams);
-    s(:, idx:idx+ibeam.Nbeams - 1) = reshape(sl, 3*numel(T), ibeam.Nbeams);
+    f(:, ii, :) = reshape(fl, 3*numel(T), 1, nbeams);
+    t(:, ii, :) = reshape(tl, 3*numel(T), 1, nbeams);
+    s(:, ii, :) = reshape(sl, 3*numel(T), 1, nbeams);
   end
+  
+  % Squeeze to 2-D array if Nbeams is 1
+  f = squeeze(f);
+  t = squeeze(t);
+  s = squeeze(s);
 
   % Move output to appropriate locations
   if nargout > 3

@@ -228,7 +228,7 @@ function testMultiBeam(testCase)
   [f3, t1] = ott.forcetorque(beam3, T*beam3);
   [f4, t2] = ott.forcetorque(beam4, T*beam4);
 
-  testCase.verifyThat(size(f), IsEqualTo([3, 4]), ...
+  testCase.verifyThat(size(f), IsEqualTo([3, 2, 2]), ...
       'Beam1 force size incorrect (2)');
 
   testCase.verifyThat(f1(:), IsEqualTo(f(1:3).', ...
@@ -246,4 +246,29 @@ function testMultiBeam(testCase)
   testCase.verifyThat(f4(:), IsEqualTo(f(10:12).', ...
       'Within', AbsoluteTolerance(tol)), ...
       'Beam4 force does not match (3)');
+end
+
+function testCoherent(testCase)
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+  tol = 1.0e-6;
+
+  T = testCase.TestData.T;
+  beam = testCase.TestData.beam;
+
+  % Add a second beam
+  pbeam = beam.append(beam.translateZ(pi/2));
+
+  [f, t] = ott.forcetorque(pbeam, T, ...
+    'position', [0;0;1]*[0, pi/2], 'coherent', true);
+  
+  beam1 = pbeam.mergeBeams();
+  beam2 = pbeam.translateZ(pi/2).mergeBeams();
+  [f1, t1] = ott.forcetorque(beam1, T);
+  [f2, t2] = ott.forcetorque(beam2, T);
+  
+  testCase.verifyThat(f(:), IsEqualTo([f1(:); f2(:)], ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Forces do not match');
 end

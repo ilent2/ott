@@ -46,7 +46,7 @@ beam = ott.BscPmGauss('polarisation', [1 1i], 'angle_deg', 50, ...
 disp(['Generating base beam took ' num2str(toc) ' seconds']);
 
 % Displacement of beams [wavelength_medium]
-displacement = 1.0*wavelength;
+displacement = 0.2*wavelength;
 
 % Phase shift for 2nd beam
 phase = exp(2*pi*1i/0.1);
@@ -63,10 +63,8 @@ Nmax = ott.utils.ka2nmax(ott.utils.nmax2ka(beam.Nmax) ...
     + displacement*T.k_medium);
 
 % Change the Nmax and create the two beams
-beam1 = beam;
-beam1.Nmax = Nmax;
-beam2 = beam1.translateXyz([displacement; 0; 0]);
-beam1 = beam1.translateXyz([-displacement; 0; 0]);
+beam1 = beam.translateXyz([-displacement; 0; 0], 'Nmax', Nmax);
+beam2 = beam.translateXyz([displacement; 0; 0], 'Nmax', Nmax);
 
 % Add the beams
 nbeam = beam1 + beam2 * phase;
@@ -105,15 +103,35 @@ fx3 = ott.forcetorque(beam, T, ...
 fx3 = fx3 + ott.forcetorque(beam * phase, T, ...
     'position', [1;0;0] * x - [displacement; 0; 0]);
 
-disp(['Incoherent calculation took ' num2str(toc) ' seconds']);
+disp(['Incoherent calculation (same Nmax) took ' num2str(toc) ' seconds']);
+
+%% Incoherent with expanded Nmax
+
+tic
+
+% Calculate new Nmax
+Nmax = ott.utils.ka2nmax(ott.utils.nmax2ka(beam.Nmax) ...
+    + displacement*T.k_medium);
+  
+% Change the Nmax and create the two beams
+beam1 = beam.translateXyz([-displacement; 0; 0], 'Nmax', Nmax);
+beam2 = beam.translateXyz([displacement; 0; 0], 'Nmax', Nmax);
+
+beamc = beam1.append(beam2);
+
+fx4 = ott.forcetorque(beamc, T, 'position', [1;0;0] * x);
+fx4 = sum(fx4, 3);
+
+disp(['Incoherent calculation (expanded Nmax) took ' num2str(toc) ' seconds']);
+
 
 %% Generate a figure showing the force displacement graphs
 
-x = x/wavelength;
+sx = x/wavelength;
 
 figure(1);
-plot(x, fx1(1, :), 'b', x, fx2(1, :), 'r*', x, fx3(1, :));
-legend('Coherent (large Nmax)', 'Coherent (small Nmax)', 'Incoherent');
+plot(sx, fx1(1, :), 'b', sx, fx2(1, :), 'r*', sx, fx3(1, :), sx, fx4(1, :), 's');
+legend('Coherent (large Nmax)', 'Coherent (small Nmax)', 'Incoherent', 'Incoherent');
 xlabel('x [\lambda]')
 ylabel('Q_x')
 title('Force displacement curves for sphere in multiple beams')
