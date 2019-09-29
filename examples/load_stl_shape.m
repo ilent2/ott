@@ -9,6 +9,8 @@ figure();
 %% Load the STL object
 
 % STL reader only supports binary STL files for now
+% Change the filename to an STL file on your computer or download
+% an STL file from online.
 shape = ott.shapes.StlLoader('mesh.stl');
 
 % Visualise the shape
