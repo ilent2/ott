@@ -20,6 +20,8 @@ classdef Bsc
 %   dz              Absolute cumulative distance the beam has moved
 %
 % Methods
+%   append          Joins two beam objects together
+%   mergeBeams      Merge the BSCs for the beams contained in this object
 %   translateZ      Translates the beam along the z axis
 %   translateXyz    Translation to xyz using rotations and z translations
 %   translateRtp    Translation to rtp using rotations and z translations
