@@ -126,7 +126,7 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       anglez=asin(NAonm);
       
-      assert(ndims(E_ff) == 3 || ismatrix(E_ff) == 2, 'E_ff must be 2 or 3 dimensional array');
+      assert(ndims(E_ff) == 3 || ismatrix(E_ff), 'E_ff must be 2 or 3 dimensional array');
       assert(size(E_ff, 3) == 1 || size(E_ff, 3) == 2, 'E_ff must be NxM or NxMx2 matrix');
 
       %overfit points because I can. This is the angle regridding step.
