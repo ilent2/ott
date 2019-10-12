@@ -3,12 +3,13 @@
 Welcome to the OTT documentation!
 =================================
 
-This website provides documentation for the [Optical Tweezers Toolbox (OTT)](https://github.com/ilent2/ott).
+This website provides documentation for the
+`Optical Tweezers Toolbox (OTT) <https://github.com/ilent2/ott>`__.
 OTT is a toolbox for calculating optical forces and torques for particles
 in tightly focussed light beams.
 This documentation provides information on `Getting Started <Getting-Started>`__
-with the toolbox, `Examples <Examples>`__for using and extending the toolbox,
-and `Reference <Reference>`__describing the various functions and classes
+with the toolbox, `Examples <Examples>`__ for using and extending the toolbox,
+and `Reference <Reference>`__ describing the various functions and classes
 in the toolbox.
 
 If you publish work using the toolbox, please consider citing it.
