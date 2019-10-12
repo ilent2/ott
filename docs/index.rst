@@ -1,21 +1,31 @@
-.. OTT documentation master file, created by
-   sphinx-quickstart on Sat Oct 12 19:54:05 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. OTT documentation master file
 
 Welcome to the OTT documentation!
 =================================
 
-This documentation has information about using the optical tweezers
-toolbox for
-calculating optical forces and torques; as well as documentation on how
-you can extend the toolbox to include your own types of beams or
-particles. The documentation is split into 3 main parts: `Getting
-Started <Getting-Started>`__, `Examples <Examples>`__ and
-`Reference <Reference>`__. The Reference section contains information
-about the functions and classes included in the toolbox. For a list of
-papers describing the toolbox and further reading, see the `Further
-Reading <Further-Reading>`__ page.
+This website provides documentation for the [Optical Tweezers Toolbox (OTT)](https://github.com/ilent2/ott).
+OTT is a toolbox for calculating optical forces and torques for particles
+in tightly focussed light beams.
+This documentation provides information on `Getting Started <Getting-Started>`__
+with the toolbox, `Examples <Examples>`__for using and extending the toolbox,
+and `Reference <Reference>`__describing the various functions and classes
+in the toolbox.
+
+If you publish work using the toolbox, please consider citing it.
+This version of the toolbox can be referenced by citing the following
+paper
+
+    T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe, G. Knöner, A. M.
+    Branczyk, N. R. Heckenberg, and H. Rubinsztein-Dunlop, "Optical
+    tweezers computational toolbox", `Journal of Optics A 9, S196-S203
+    (2007) <http://iopscience.iop.org/1464-4258/9/8/S12/>`__
+
+or by directly citing the toolbox
+
+    T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe, I. C. D. Lenton, Y.
+    Hu, G. Knöner, A. M. Branczyk, N. R. Heckenberg, and H.
+    Rubinsztein-Dunlop, "Optical tweezers toolbox",
+    https://github.com/ilent2/ott
 
 .. toctree::
    :maxdepth: 2
