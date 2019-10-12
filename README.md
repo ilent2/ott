@@ -2,6 +2,7 @@ ott - Optical Tweezers Toolbox
 ==============================
 
 [![DOI](https://zenodo.org/badge/123386773.svg)](https://zenodo.org/badge/latestdoi/123386773)
+[![Documentation Status](https://readthedocs.org/projects/ott/badge/?version=latest)](https://ott.readthedocs.io/en/latest/?badge=latest)
 
 The optical tweezers toolbox can be used to calculate optical forces
 and torques of particles using the T-matrix formalism in a vector
@@ -134,7 +135,7 @@ Contact us
 ----------
 
 The best person to contact for inquiries about the toolbox or lincensing
-is [Timo Nieminen](mailto:timo@physics.uq.edu.au)
+is [Isaac Lenton](mailto:uqilento@uq.edu.au)
 
 File listing
 ------------
