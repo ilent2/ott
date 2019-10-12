@@ -35,8 +35,9 @@ Getting started
 ---------------
 
 The toolbox has changed a lot since previous releases.
-To get started, take a look at the documentation, either in the
-[docs](docs) directory (comming soon) or on the [wiki](https://github.com/ilent2/ott/wiki).
+To get started, take a look at the [documentation over on read the docs](https://ott.readthedocs.io).
+The documentation source can be found in the [docs](docs) directory or
+you can download a PDF copy of the documentation with the latest release.
 Alternatively, take a look at the [examples directory](examples).
 
 To calculate the force on a spherical particle, you need to setup a beam obejct,
@@ -147,6 +148,7 @@ TODO.md       - Changes that may be made to the toolbox
 thirdparty/   - Third party licenses (multiple files)
 examples/     - Example files showing different toolbox features
 tests/        - Unit tests to verify toolbox features function correctly
+docs/         - Sphinx documentation for the project
 +ott/         - The toolbox
 ```
 
