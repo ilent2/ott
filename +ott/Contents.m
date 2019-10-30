@@ -5,14 +5,18 @@
 %   TmatrixEbcm               - TmatrixEbcm constructs a T-matrix using extended boundary conditions method
 %   TmatrixMie                - TmatrixMie construct T-matrix from Mie scattering coefficients
 %   TmatrixPm                 - TmatrixPm constructs a T-matrix using the point matching method
+%   TmatrixDda                - TmatrixDda constructs a T-matrix using discrete dipole approximation
+%   TmatrixSmarties           - TmatrixSmarties constructs a T-matrix using SMARTIES
 %
 % Beam (Bsc) objects
 %   Bsc                       - Bsc abstract class representing beam shape coefficients
-%   BscBessel                 - BscBessel representation of a bessel beam and bessel-like beams with OAM
+%   BscBessel                 - BscBessel representation of a Bessel beam and Bessel-like beams with OAM
 %   BscPlane                  - BscPlane representation of a plane wave in VSWF coefficients
 %   BscPmGauss                - BscPmGauss provides HG, LG and IG beams using point matching method
 %   BscPmParaxial             - BscPmParaxial calculate representation from farfield/paraxial beam
+%   BscPmAnnular              - BscPmAnnular gennerate a beam with an annular far-field profile
 %   BscPointmatch             - BscPointmatch base class for BSC generated using point matching
+%   BscBesselAnnular          - BscBesselAnnular gennerate a beam with an annular far-field profile
 %
 % Functions operating on beams/particles and force data
 %   axial_equilibrium         - find equilibrium position and stiffness along beam axis
