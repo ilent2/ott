@@ -1,10 +1,13 @@
 classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
 %AxisymLerp a axisymmetric particle with lerping between points
+% Inherits from ott.shapes.StarShape and ott.shapes.AxisymShape.
 %
 % properties:
 %   rho        % Radial position of defining points (cylindrical coords)
 %   z          % z position of defining points (cylindrical coords)
 %
+% See also AxisymLerp
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
