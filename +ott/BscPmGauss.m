@@ -171,6 +171,10 @@ classdef BscPmGauss < ott.BscPointmatch
       % mode selection
       switch p.Results.type
         case 'hg'
+          assert(numel(p.Results.mode) == 2, ...
+            'ott:BscPmGauss:wrong_mode_length', ...
+            'mode must be 2 element vector');
+
           m = p.Results.mode(1);
           n = p.Results.mode(2);
           paraxial_order=n+m;
@@ -178,8 +182,20 @@ classdef BscPmGauss < ott.BscPointmatch
               paraxial_transformation_matrix(paraxial_order,0,1,0);
           [row]=find(final_mode(:,1)==m,1);
         case 'lg'
+
+          assert(numel(p.Results.mode) == 2, ...
+            'ott:BscPmGauss:wrong_mode_length', ...
+            'mode must be 2 element vector');
+
           radial_mode = p.Results.mode(1);
           azimuthal_mode = p.Results.mode(2);
+          assert(radial_mode - floor(radial_mode) == 0 && radial_mode >= 0, ...
+            'ott:BscPmGauss:invalid_radial_mode', ...
+            'Radial mode index must be positive integer');
+          assert(azimuthal_mode - floor(azimuthal_mode) == 0, ...
+            'ott:BscPmGauss:invalid_azimuthal_mode', ...
+            'Azimuthal mode index must be integer');
+
           paraxial_order=2*radial_mode+abs(azimuthal_mode);
           modeweights=eye(paraxial_order+1);
           row=(azimuthal_mode+paraxial_order)/2+1;
@@ -189,6 +205,10 @@ classdef BscPmGauss < ott.BscPointmatch
           
           initial_mode=[i1_out,i2_out];
         case 'ig'
+          assert(numel(p.Results.mode) == 4, ...
+            'ott:BscPmGauss:wrong_mode_length', ...
+            'mode must be 4 element vector');
+
           paraxial_order = p.Results.mode(1);
           azimuthal_mode = p.Results.mode(2);
           parity = p.Results.mode(3);
