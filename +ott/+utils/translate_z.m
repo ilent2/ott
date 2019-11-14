@@ -325,10 +325,10 @@ switch p.Results.type
     C_nd00=[sqrt(2*nd+1).*sbesselj(nd,kr)];
 
   case 'sbesselh1'      % outgoing to regular
-    C_nd00=[sqrt(2*nd+1).*sbesselh1(nd,kr)];
+    C_nd00=[sqrt(2*nd+1).*sbesselh1(nd,kr)]./2;
 
   case 'sbesselh2'      % incoming to regular
-    C_nd00=[sqrt(2*nd+1).*sbesselh2(nd,kr)];
+    C_nd00=[sqrt(2*nd+1).*sbesselh2(nd,kr)]./2;
 
   otherwise
     error('OTT:UTILS:translate_z:type_error', 'Unknown translation type');

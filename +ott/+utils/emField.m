@@ -97,9 +97,13 @@ for nn = 1:max(un)
         switch type
           case 'incoming'
             [hn,dhn]=sbesselh2(nn,r_new);
+            hn = hn ./ 2;
+            dhn = dhn ./ 2;
 
           case 'outgoing'
             [hn,dhn]=sbesselh1(nn,r_new);
+            hn = hn ./ 2;
+            dhn = dhn ./ 2;
 
           case 'regular'
             [hn,dhn]=sbesselj(nn,r_new);

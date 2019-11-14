@@ -240,6 +240,33 @@ classdef Bsc
       
     end
   end
+  
+  methods (Access=protected)
+    
+    function [A, B] = translateZ_type_helper(beam, z, Nmax)
+      % Determine the correct type to use in ott.utils.translate_z
+      %
+      % [A, B] = translateZ_type_helper(beam, z, Nmax) calculates the
+      % translation matrices for distance z with Nmax
+      %
+      % Use may change in future
+      
+      % Determine beam type
+      switch beam.basis
+        case 'incoming'
+          translation_type = 'sbesselh2';
+        case 'outgoing'
+          translation_type = 'sbesselh1';
+        case 'regular'
+          translation_type = 'sbesselj';
+      end
+      
+      % Calculate tranlsation matrices
+      [A, B] = ott.utils.translate_z(Nmax, z, 'type', translation_type);
+      
+    end
+    
+  end
 
   methods
     function beam = Bsc(a, b, basis, type, varargin)
@@ -552,29 +579,48 @@ classdef Bsc
       [E, H, data] = beam.emFieldRtp(rtp.', varargin{:});
     end
     
-    function visualiseFarfieldSlice(beam, phi, varargin)
+    function varargout = visualiseFarfieldSlice(beam, phi, varargin)
       % Generate a 2-D scattering plot of the far-field
       %
-      % beam.visualiseFarfieldSlice(phi)
+      % beam.visualiseFarfieldSlice(phi) display a visualisation
+      % of the farfield.
+      %
+      % [theta, I] = beam.visualiseFarfieldSlice(phi) calculate data
+      % for the visualisation.  Pass showVisualisation, true to show.
       
       p = inputParser;
       p.addParameter('field', 'irradiance');
       p.addParameter('normalise', false);
       p.addParameter('ntheta', 100);
+      p.addParameter('showVisualisation', nargout == 0);
       p.parse(varargin{:});
       
       ptheta = linspace(0, 2*pi, p.Results.ntheta);
       
       % TODO: Other field types
 
+      % Calculate electric field
       [E, ~] = beam.farfield(ptheta, phi);
-      I = sum(abs(E).^2, 1);
+      
+      % Calculate desired field
+      [rtp{1:3}] = ott.utils.matchsize(0, ptheta(:), phi);
+      I = beam.GetVisualisationData(p.Results.field, [], [rtp{1}, rtp{2}, rtp{3}], [], E.');
+%       I = sum(abs(E).^2, 1);
       
       if p.Results.normalise
         I = I ./ max(abs(I(:)));
       end
 
-      polarplot(ptheta, I);
+      % Setup outputs
+      if nargout == 2
+        varargout{1} = theta;
+        varargout{2} = I;
+      end
+      
+      % Display visualisation
+      if p.Results.showVisualisation
+        polarplot(ptheta, I);
+      end
       
     end
     
@@ -1083,8 +1129,9 @@ classdef Bsc
         beam = ott.Bsc();
 
         for ii = 1:numel(z)
-          [A, B] = ott.utils.translate_z([p.Results.Nmax, ibeam.Nmax], z(ii));
+          [A, B] = ibeam.translateZ_type_helper(z(ii), [p.Results.Nmax, ibeam.Nmax]);
           beam = beam.append(ibeam.translate(A, B));
+          beam.basis = 'regular';
         end
       else
         error('Wrong number of arguments');
@@ -1214,7 +1261,7 @@ classdef Bsc
         end
       else
         dnmax = max(oNmax, beam.Nmax);
-        D = eye(ott.utils.combined_index(dnmax, dnmax));
+        D = speye(ott.utils.combined_index(dnmax, dnmax));
 
         % Replace rotations by 180 with negative translations
         idx = abs(theta) == pi;

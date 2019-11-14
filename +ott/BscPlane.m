@@ -154,6 +154,9 @@ classdef BscPlane < ott.Bsc
       %
       % [beam, AB] = TRANSLATEZ(z) returns the A, B matricies packed
       % so they can be directly applied to the beam: tbeam = AB * beam
+      
+      % TODO: This could be implemented as a phase shift, or should
+      % it be implementedin translateXyz instead?
 
       p = inputParser;
       p.addOptional('z', []);
@@ -170,7 +173,10 @@ classdef BscPlane < ott.Bsc
               'Repeated translation of beam outside Nmax region');
         end
 
-        [A, B] = ott.utils.translate_z([p.Results.Nmax, beam.Nmax], z);
+        % Convert to beam units
+        z = z * beam.k_medium / 2 / pi;
+
+        [A, B] = beam.translateZ_type_helper(z, [p.Results.Nmax, beam.Nmax]);
 
       else
         error('Wrong number of arguments');
@@ -178,6 +184,7 @@ classdef BscPlane < ott.Bsc
 
       % Apply the translation
       beam = beam.translate(A, B);
+      beam.basis = 'regular';
 
       % Pack the rotated matricies into a single ABBA object
       if nargout == 2
