@@ -36,29 +36,36 @@ classdef BscPmParaxial < ott.BscPointmatch
       % numerical aperture (NA) from the complex E-field in
       % the paraxial/far-field (Eff).
       %
-      % Optional named parameters:
-      %     verbose   bool   Display additional output (default: false)
-      %     Nmax      num    Truncation number for BSC (default: 30)
-      %     polarisation  [x,y]  Polarisation of far-field (default: [1, 0])
-      %     grid  [ntheta, nphi] Number of grid points for
-      %        to match far-field and BSC values at (default: [])
-      %     mapping   str    Determines how Eff is mapped to back plane of
-      %         objective.  Options are:
-      %             'sintheta' (default)  radius \propto \sin(\theta)
-      %             'tantheta'            radius \propto \tan(\theta)
-      %             'theta'               radius \propto \theta
+      % Optional named parameters
+      %   - verbose   bool   Display additional output (default: false)
+      %   - Nmax      num    Truncation number for BSC (default: 30)
       %
-      %     omega     num    Angular frequency of beam (default: 2*pi)
+      %   - polarisation  [x,y]  Polarisation of far-field (default: [1, 0])
+      %     Ignored if Eff is a MxNx2 matrix.
+      %
+      %   - radius (numeric) -- Back aperture radius (pixels).
+      %     Default: ``min([size(E_ff, 1), size(E_ff, 2)])/2``.
+      %
+      %   - grid  [ntheta, nphi] Number of grid points for
+      %     to match far-field and BSC values at (default: [])
+      %
+      %   - mapping (enum) -- Determines how Eff is mapped to back plane of
+      %     objective.  Options are:
+      %    -  'sintheta' (default)  radius \propto \sin(\theta)
+      %    -  'tantheta'            radius \propto \tan(\theta)
+      %    -  'theta'               radius \propto \theta
+      %
+      %   - omega     num    Angular frequency of beam (default: 2*pi)
       %     wavelength0 num  Wavelength of beam in vacuum (default: 1)
       %     k_medium    num  Wave-number of beam in medium (default: [])
       %     index_medium num Refractive index of medium (default: [])
       %     wavelength_medium num Wavelength of beam in medium (default: [])
       %
-      %     keep_coefficient_matrix bool True to calculate and keep the
-      %       inverted coefficient matrix. (default: false)
-      %     invert_coefficient_matrix bool True to use the inverted
-      %       coefficient matrix even if mldivide is available.
-      %       (default: keep_coefficient_matrix).
+      %   - keep_coefficient_matrix bool True to calculate and keep the
+      %     inverted coefficient matrix. (default: false)
+      %   - invert_coefficient_matrix bool True to use the inverted
+      %     coefficient matrix even if mldivide is available.
+      %     (default: keep_coefficient_matrix).
       %
       % NOTE: This current version will best work for "clean" beam modes, that
       % is, the desired field AFTER spatial filtering (If modelling an SLM/DMD).
@@ -80,6 +87,7 @@ classdef BscPmParaxial < ott.BscPointmatch
       p.addParameter('wavelength_medium', []);
 
       p.addParameter('polarisation', [ 1 0 ]);
+      p.addParameter('radius', []);
       p.addParameter('grid', []);
       p.addParameter('mapping', 'sintheta');
       p.parse(varargin{:});
@@ -163,8 +171,13 @@ classdef BscPmParaxial < ott.BscPointmatch
       end
 
       %Cartesean coordinates for the paraxial plane. Normalise to BFP:
-      mXY=min([size(E_ff, 1), size(E_ff, 2)]);
-      [X,Y]=meshgrid(linspace(-1,1,size(E_ff,2))*size(E_ff,2)/mXY/wscaling*(1+1e-12),linspace(-1,1,size(E_ff,1))*size(E_ff,1)/mXY/wscaling*(1+1e-12));
+      if isempty(p.Results.radius)
+        mXY=min([size(E_ff, 1), size(E_ff, 2)]);
+      else
+        mXY = 2*p.Results.radius;
+      end
+      [X,Y]=meshgrid(linspace(-1,1,size(E_ff,2))*size(E_ff,2)/mXY/wscaling*(1+1e-12),...
+        linspace(-1,1,size(E_ff,1))*size(E_ff,1)/mXY/wscaling*(1+1e-12));
 
       Exy = zeros([size(Xt), size(E_ff, 3)]);
       for ii = 1:size(E_ff, 3)
