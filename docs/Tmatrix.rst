@@ -1,43 +1,53 @@
 
+.. _tmatrix-classes:
+
 #################
 `Tmatrix` classes
 #################
 
-This page contains information about the ``Tmatrix`` classes currently
+This section describes the ``Tmatrix`` classes currently
 implemented in the toolbox.
 
 .. contents::
-   :depth: 3
+   :depth: 1
+   :local:
 ..
 
 
 Tmatrix
 =======
 
-Base class representing T-matrix of a scattering particle or lens. This
-class is the base class for all other T-matrix object, you should
-inherit from this class when defining your own T-matrix creation
-methods. This class doesn't inherit from ``double`` or ``single``,
-instead the internal array type can be set at creation allowing the use
-of different data types such as ``sparse`` or ``gpuArray``.
+.. autoclass:: +ott.Tmatrix
 
 TmatrixEbcm
 ===========
 
 Constructs a T-matrix using extended boundary conditions method.
 
+.. autoclass:: +ott.TmatrixEbcm
+
 TmatrixMie
 ==========
 
 Construct T-matrix from Mie scattering coefficients.
+
+.. autoclass:: +ott.TmatrixMie
 
 TmatrixPm
 =========
 
 Constructs a T-matrix using the point matching method.
 
+.. autoclass:: +ott.TmatrixPm
+
 TmatrixSmarties
 ===============
 
+.. autoclass:: +ott.TmatrixSmarties
+
 TmatrixDda
 ==========
+
+.. autoclass:: +ott.TmatrixDda
+   :members: TmatrixDda, simple
+

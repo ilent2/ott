@@ -1,5 +1,6 @@
 classdef TmatrixEbcm < ott.Tmatrix
-%TmatrixEbcm constructs a T-matrix using extended boundary conditions method
+% Constructs a T-matrix using extended boundary conditions method.
+% Inherits from :class:`+ott.Tmatrix`.
 %
 % TmatrixEbcm properties:
 %   k_medium          Wavenumber in the surrounding medium
@@ -7,6 +8,8 @@ classdef TmatrixEbcm < ott.Tmatrix
 %
 % This class is based on tmatrix_ebcm_axisym.m from ottv1.
 %
+% See also TmatrixEbcm
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

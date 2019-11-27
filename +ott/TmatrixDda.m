@@ -1,6 +1,15 @@
 classdef TmatrixDda < ott.Tmatrix
-%TmatrixDda constructs a T-matrix using discrete dipole approximation
+% Constructs a T-matrix using discrete dipole approximation.
+% Inherits from :class:`+ott.Tmatrix`.
 %
+% To construct a T-matrix with DDA, either the simple interface or
+% the class constructor can be used.  Using the simple interface, the
+% following should produce something similar to ``TmatrixMie``::
+%
+%   Tmatrix = ott.TmatrixDda.simple('sphere', 0.1, 'index_relative', 1.2);
+%
+% See also TmatrixDda, simple.
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
@@ -41,38 +50,17 @@ classdef TmatrixDda < ott.Tmatrix
 
   methods (Static)
     function tmatrix = simple(shape, varargin)
-      %SIMPLE construct a T-matrix using DDA for simple shapes.
+      % Construct a T-matrix using DDA for simple shapes.
       %
-      % SIMPLE(shape, ...) constructs a new simple T-matrix for the given
-      % ott.shapes.Shape object.
+      % Usage
+      %   simple(shape, ...) constructs a new simple T-matrix for the given
+      %   :class:`+ott.+shapes.Shape` object.
       %
-      % SIMPLE(name, parameters, ...) constructs a new T-matrix for the
-      % shape described by the name and parameters.
-      % For supported shape names, see ott.shapes.Shape.simple.
+      %   simple(name, parameters, ...) constructs a new T-matrix for the
+      %   shape described by the name and parameters.
+      %   For supported shape names, see :class:`+ott.+shapes.Shape.simple`.
       %
-      % Optional named parameters:
-      %     Nmax      [r,c]   Size of the T-matrix to generate
-      %         Default: ott.utils.ka2nmax(max_radius*k_medium)
-      %
-      %     k_medium             num     Wavenumber in medium
-      %     wavelength_medium    num     Wavelength in medium
-      %     index_medium         num     Refractive index in medium
-      %         Default: k_medium = 2*pi
-      %
-      %     k_particle           num     Wavenumber in particle
-      %     wavelength_particle  num     Wavelength in particle
-      %     index_particle       num     Refractive index in particle
-      %         Default: k_particle = 2*pi*index_relative
-      %
-      %     index_relative       num     Relative refractive index
-      %         Default: 1.0
-      %     wavelength0          num     Wavelength in vacuum
-      %         Default: 1.0
-      %     spacing              num     Spacing between dipoles
-      %         Default: wavelength_particle/10
-      %     polarizability       str/mat Polarizability or method
-      %         name to use to calculate from relative refractive index.
-      %         Default: 'LDR'
+      % See :meth:`TmatrixDda` for optional named parameters.
 
       p = inputParser;
       p.KeepUnmatched = true;
@@ -112,35 +100,36 @@ classdef TmatrixDda < ott.Tmatrix
 
   methods
     function tmatrix = TmatrixDda(xyz, varargin)
-      %TMATRIXDDA calculates T-matrix using discrete dipole approximation
+      % Calculates T-matrix using discrete dipole approximation.
       %
-      % TMATRIXDDA(xyz, ...) calculates the T-matrix for the particle
-      % described by voxels xyz.  xyz is a 3xN matrix of coordinates
-      % for each voxel.
+      % Usage
+      %   TmatrixDda(xyz, ...) calculates the T-matrix for the particle
+      %   described by voxels xyz.  xyz is a 3xN matrix of coordinates
+      %   for each voxel.
       %
-      % Optional named parameters:
-      %     Nmax      [r,c]   Size of the T-matrix to generate
-      %         Default: ott.utils.ka2nmax(max_radius*k_medium)
+      % Optional named parameters
+      %   - Nmax      [r,c]   Size of the T-matrix to generate.
+      %     Default: ``ott.utils.ka2nmax(max_radius*k_medium)``
       %
-      %     k_medium             num     Wavenumber in medium
-      %     wavelength_medium    num     Wavelength in medium
-      %     index_medium         num     Refractive index in medium
-      %         Default: k_medium = 2*pi
+      %   - k_medium (numeric)          -- Wavenumber in medium
+      %   - wavelength_medium (numeric) -- Wavelength in medium
+      %   - index_medium (numeric)      -- Refractive index in medium.
+      %     Default: ``k_medium = 2*pi``
       %
-      %     k_particle           num     Wavenumber in particle
-      %     wavelength_particle  num     Wavelength in particle
-      %     index_particle       num     Refractive index in particle
-      %         Default: k_particle = 2*pi*index_relative
+      %   - k_particle (numeric)          -- Wavenumber in particle
+      %   - wavelength_particle (numeric) -- Wavelength in particle
+      %   - index_particle (numeric)      -- Refractive index in particle.
+      %     Default: ``k_particle = 2*pi*index_relative``
       %
-      %     index_relative       num     Relative refractive index
-      %         Default: 1.0
-      %     wavelength0          num     Wavelength in vacuum
-      %         Default: 1.0
-      %     spacing              num     Spacing between dipoles
-      %         Default: wavelength_particle/10
-      %     polarizability       str/mat Polarizability or method
-      %         name to use to calculate from relative refractive index.
-      %         Default: 'LDR'
+      %   - index_relative (numeric)  -- Relative refractive index.
+      %     Default: 1.0
+      %   - wavelength0 (numeric)     -- Wavelength in vacuum.
+      %     Default: 1.0
+      %   - spacing (numeric)         -- Spacing between dipoles.
+      %     Default: ``wavelength_particle/10``
+      %   - polarizability (enum|numeric) -- Polarizability or method
+      %     name to use to calculate from relative refractive index.
+      %     Default: 'LDR'.  Supported methods: 'LDR', 'FCD', 'CM'.
 
       import ott.TmatrixDda;
       import ott.Tmatrix;

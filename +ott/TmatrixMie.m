@@ -7,7 +7,7 @@ classdef TmatrixMie < ott.Tmatrix
 %   k_particle        Wavenumber of the particle
 %
 % This class is based on tmatrix_mie.m and tmatrix_mie_layered.m from ottv1.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

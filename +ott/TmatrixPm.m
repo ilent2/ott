@@ -9,7 +9,7 @@ classdef TmatrixPm < ott.Tmatrix
 %   getInternal       Get the internal T-matrix
 %
 % This class is based on tmatrix_pm.m from ottv1.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

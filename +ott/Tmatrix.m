@@ -1,17 +1,33 @@
 classdef Tmatrix
-%Tmatrix abstract class representing T-matrix of a scattering particle
+% Class representing the T-matrix of a scattering particle or lens.
+% This class can either be instantiated directly or used as a base
+% class for defining custom T-matrix types.
 %
-% Tmatrix properties:
-%   data          The T-matrix this class encapculates
-%   type          Type of T-matrix (total or scattered)
+% This class is the base class for all other T-matrix object, you
+% should inherit from this class when defining your own T-matrix
+% creation methods. This class doesn't inherit from ``double`` or ``single``,
+% instead the internal array type can be set at creation allowing the
+% use of different data types such as ``sparse`` or ``gpuArray``.
 %
-% Tmatrix methods:
+% This class is not a handle class, therefore, when using the class
+% methods you need to store the resulting T-matrix output, for example::
 %
-% Static methods:
-%   simple        Construct a simple particle T-matrix
+%   tmatrix = ott.Tmatrix();
+%   new_tmatrix = tmatrix.scattered();
 %
-% See also Tmatrix, simple, ott.TmatrixMie
+% Properties
+%   - data        -- The T-matrix this class encapsulates
+%   - type (enum) -- Type of T-matrix (total or scattered)
 %
+% Methods
+%   - total()     -- Convert to a total-field T-matrix
+%   - scattered() -- Convert to a scattered-field T-matrix
+%
+% Static methods
+%   - simple        Construct a simple particle T-matrix
+%
+% See also Tmatrix, simple, :class:`+ott.TmatrixMie`.
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

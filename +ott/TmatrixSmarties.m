@@ -1,5 +1,6 @@
 classdef TmatrixSmarties < ott.Tmatrix
-% TmatrixSmarties constructs a T-matrix using SMARTIES
+% Constructs a T-matrix using SMARTIES.
+% Inherits from :class:`+ott.Tmatrix`
 %
 % SMARTIES is a method for calculating T-matrices for spheroids.
 %
@@ -9,6 +10,8 @@ classdef TmatrixSmarties < ott.Tmatrix
 %   Somerville, Auguié, Le Ru.  JQSRT, Volume 174, May 2016, Pages 39-55.
 %   https://doi.org/10.1016/j.jqsrt.2016.01.005
 %
+% See also TmatrixSmarties
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
