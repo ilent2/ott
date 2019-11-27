@@ -3,7 +3,7 @@ function tests = testTmatrixDda
 end
 
 function setupOnce(testCase)
-  addpath('../../../');
+  addpath('../');
 end
 
 function testSphere(testCase)
