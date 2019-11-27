@@ -1,14 +1,14 @@
 classdef AxisymShape < ott.shapes.Shape
 %AxisymShape abstract class for axisymetric particles
 %
-% Methods:
-%   boundarypoints  calculate boudary points for surface integral
+% Methods
+%   - boundarypoints  calculate boudary points for surface integral
 %
-% Abstract methods:
-%   radii           Calculates the particle radii for angular coordinates
-%   normals         Calculates the particle normals for angular coorindates
-%   axialSymmetry   Returns x, y, z rotational symmetry (0 for infinite)
-%
+% Abstract methods
+%   - radii           Calculates the particle radii for angular coordinates
+%   - normals         Calculates the particle normals for angular coorindates
+%   - axialSymmetry   Returns x, y, z rotational symmetry (0 for infinite)
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

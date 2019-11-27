@@ -6,7 +6,7 @@ classdef StarShape < ott.shapes.Shape
 %   normals         Calculates the particle normals for angular coorindates
 %   axialSymmetry   Returns x, y, z rotational symmetry (0 for infinite)
 %   mirrorSymmetry  Returns x, y, z mirror symmetry
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

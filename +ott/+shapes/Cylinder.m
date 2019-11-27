@@ -4,7 +4,7 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
 % properties:
 %   radius        % Radius of the cylinder
 %   height        % Height of the cylinder
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

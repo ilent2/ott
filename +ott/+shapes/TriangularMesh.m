@@ -7,7 +7,7 @@ classdef TriangularMesh < ott.shapes.Shape
 %
 % Faces vertices should be ordered so normals face outwards for
 % volume and inside functions to work correctly.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

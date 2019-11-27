@@ -3,7 +3,7 @@ classdef Sphere < ott.shapes.StarShape & ott.shapes.AxisymShape
 %
 % properties:
 %   radius        % Radius of the sphere
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

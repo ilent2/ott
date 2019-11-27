@@ -19,7 +19,7 @@ classdef StlLoader < ott.shapes.TriangularMesh
 % This class uses a 3rd party STL file reader:
 %  https://au.mathworks.com/matlabcentral/fileexchange/22409-stl-file-reader
 % See tplicenses/stl_EricJohnson.txt for information about licensing.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

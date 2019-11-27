@@ -5,7 +5,7 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
 %   a         % x-axis scaling
 %   b         % y-axis scaling
 %   c         % z-axis scaling
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

@@ -3,7 +3,7 @@ classdef Cube < ott.shapes.StarShape
 %
 % properties:
 %   width        % Width of the cube
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

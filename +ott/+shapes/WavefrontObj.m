@@ -2,7 +2,7 @@ classdef WavefrontObj < ott.shapes.TriangularMesh
 % WavefrontObj load a shape from a Wavefront OBJ file
 %
 % The file format is described on the Wikipedia page.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

@@ -7,7 +7,7 @@ classdef RectangularPrism < ott.shapes.StarShape
 %   z        Size of prism in z direction
 %
 % See also RectangularPrism and ott.shapes.Cube.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

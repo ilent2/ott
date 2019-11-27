@@ -17,7 +17,7 @@ classdef Shape
 %   simple(...) simplified constructor for shape-like objects.
 %
 % See also simple, ott.shapes.Cube, ott.shapes.TriangularMesh.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

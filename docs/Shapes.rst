@@ -1,78 +1,64 @@
 
+.. automodule:: +ott.+shapes
+
+.. _shapes-package:
+
 ################
 `shapes` Package
 ################
 
-This page provides an overview of the shapes currently in the toolbox.
+This section provides an overview of the shapes currently in the toolbox.
 
 .. contents::
-   :depth: 3
+   :depth: 1
+   :local:
 ..
 
 
 Base classes
 ============
 
-Shape - Shape abstract class for optical tweezers toolbox shapes
-----------------------------------------------------------------
-
-AxisymShape - AxisymShape abstract class for axisymetric particles
-------------------------------------------------------------------
-
-StarShape - StarShape abstract class for star shaped particles
---------------------------------------------------------------
+.. autoclass:: Shape
+.. autoclass:: AxisymShape
+.. autoclass:: StarShape
 
 Geometric shapes
 ================
 
-Cube
-----
+.. autoclass:: Cube
+.. autoclass:: RectangularPrism
+.. autoclass:: Cylinder
+.. autoclass:: Ellipsoid
+.. autoclass:: Sphere
+.. autoclass:: Superellipsoid
 
-A simple cube shape
+Sets of shapes
+==============
 
-Cylinder
---------
+These classes can be used to create shapes by combining simple geometric
+shapes or other shape objects.
+For instance, the union class can be used to create a union of two
+spheres::
 
-A simple cylinder shape
+   shape1 = ott.shapes.Sphere(1.0, [0, 0, -2]);
+   shape2 = ott.shapes.Sphere(1.0, [0, 0,  2]);
+   union = ott.shapes.Union([shape1, shape2]);
 
-Ellipsoid
----------
+.. autoclass:: Union
+   :members: Union
 
-A simple ellipsoid shape
-
-Sphere
-------
-
-A simple sphere shape
-
-Superellipsoid
---------------
-
-A simple superellipsoid shape
+.. todo:: We will probably add other sets in future including
+   differences or exclusions.
 
 Procedural shapes
 =================
 
-AxisymLerp
-----------
-
-A axisymmetric particle with lerping between points.
-
-TriangularMesh
---------------
-
-Base class for triangular mesh objects (such as file loaders). Can also
-be called directly with a list of vertices and faces.
+.. autoclass:: AxisymLerp
+.. autoclass:: TriangularMesh
 
 File loaders
 ============
 
-StlLoader
----------
+.. autoclass:: StlLoader
+.. autoclass:: WavefrontObj
 
-Load a shape from a STL file.
-
-WavefrontObj
-------------
-
-Load a shape from a Wavefront OBJ file.

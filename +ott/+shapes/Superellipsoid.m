@@ -7,7 +7,7 @@ classdef Superellipsoid < ott.shapes.StarShape
 %   c         % z-axis scaling
 %   ew        % East-West smoothness (ew = 1 for ellipsoid)
 %   ns        % North-South smoothness (sw = 1 for ellipsoid)
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
