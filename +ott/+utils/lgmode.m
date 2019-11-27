@@ -9,7 +9,7 @@ function LG = lgmode(p,l,r,phi,z,theta)
 %
 % A = LGMODE(p,l,r,phi,z,theta) scales the beam waist according to the
 % beam convergence angle theta (in degrees): w0=1/tan(theta).
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

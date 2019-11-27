@@ -7,7 +7,7 @@ function pnm=legendrerow(n,theta)
 % This provides approximately no benefit over the MATLAB implimentation. It
 % *may* provide a benefit in Octave. Inspiration from
 % [Holmes and Featherstone, 2002] and [Jekeli et al., 2007].
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

@@ -13,7 +13,7 @@ function R = rotx(angle_deg, varargin)
 %
 % Replacement/extension to Matlab rotx function provided in the
 % Phased Array System Toolbox.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

@@ -1,41 +1,67 @@
 function [A,B,C] = translate_z(nmax,z, varargin)
-% TRANSLATE_Z calculates translation matricies for translation of
-% VSWFs along z axis.
+% Calculates translation matrices for translation of VSWFs along z axis.
 %
-% [A,B] = translate_z(nmax,z) calculates translation matricies.
-% The matricies are use as: M' = A M + B N; N' = B M + A N.
-% nmax can be a single integer or two integers for the row, column nmax.
-% If the row, column indices don't match, A and B will not be square.
+% Usage
+%   [A,B] = translate_z(nmax,z) calculates translation matrices.
+%   The matrices are use as:
 %
-% [A,B,C] = translate_z(nmax,z) additionally, calculates C,
-% the scalar SWF translation coefficients in 3d packed form.
+%   .. math::
+%      M' = A M + B N
+%
+%      N' = B M + A N
+%
+%   [A,B,C] = ott.utils.translate_z(nmax,z) additionally, calculates C,
+%   the scalar SWF translation coefficients in 3d packed form.
+%
+% Parameters
+%   - nmax (int) -- Determines the number of multipole terms to include
+%     in the translation matrices (multipole order).  Can be a single
+%     integer or two integers for the ``[row, column]`` nmax.
+%     If the row, column indices don't match, A and B will not be square.
+%   - z (numeric) -- Translation distance.
 %
 % A and B are sparse matrices, since only m' = m VSWFs couple
 %
 % If z is a vector/matrix only A's and B's will be outputted. A and B will
-% be cells of matricies the length of the number of elements in z. To save
+% be cells of matrices the length of the number of elements in z. To save
 % time only use unique values of z.
 %
 % Time *may* be saved by taking the conjugate transpose instead of
 % calculating translations in the positive or negative direction.
 %
-% Optional named parameters:
-%     'type'    str     Type of translation matrix to generate.
-%     'method'  str     Method to calculate translation matrix.
+% Optional named parameters
+%   - 'type' (enum)   --  Type of translation matrix to generate.
+%   - 'method' (enum) --  Method to calculate translation matrix.
 %
+% Translation matrix types
+%   - 'sbesselj'            regular to regular.  Default.  Used for
+%     most particle or beam translations.
+%   - 'sbesselh1'           outgoing to regular.  Can be useful for
+%     doing multiple scattering calculations.
+%   - 'sbesselh2'           incoming to regular
+%   - 'sbesselh1farfield'   outgoing to regular far-field limit
+%   - 'sbesselh2farfield'   incoming to regular far-field limit
 %
-% Translation matrix types:
-%     'sbesselj'            regular to regular
-%     'sbesselh1'           outgoing to regular
-%     'sbesselh2'           incoming to regular
-%     'sbesselh1farfield'   outgoing to regular far-field limit
-%     'sbesselh2farfield'   incoming to regular far-field limit
+% Methods
+%   - 'gumerov'     --  Use Gumerov method (default, recommended)
+%   - 'videen'      --  Use Videen method.  (not recommended for
+%     large translations of the beam, unstable)
 %
-% Methods are:
-%     'gumerov'         Use Gumerov method (recommended)
-%     'videen'          Use Videen method.  (not recommended for
-%           large translations of the beam, unstable)
+% Example usage
+%   The following example calculates the A and B translation matrices
+%   and applies them to a Gaussian beam.  A procedure similar to this
+%   is done when calling ``Bsc.translateZ`` with a distance::
 %
+%     beam = ott.BscPmGauss('NA', 0.9, 'index_medium', 1.0, ...
+%         'polarisation', [1, 0], 'wavelength0', 1064e-9);
+%
+%     z = 1.0e-6 ./ beam.wavelength;
+%     [A, B] = translate_z([beam.Nmax, beam.Nmax], z);
+%
+%     % Apply translation matrices
+%     new_beam = beam.translate(A, B);
+
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

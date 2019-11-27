@@ -13,7 +13,7 @@ function alpha = rotate_polarizability(ualpha, varargin)
 % Optional named parameters:
 %   'inverse'     bool     When true, returns the inverse polarisability.
 %       Default: false.
-%
+
 % Copyright 2018 Isaac Lenton
 
 import ott.utils.rotz;

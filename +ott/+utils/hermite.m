@@ -3,7 +3,7 @@ function [output]=hermite(n,X);
 %
 % H = HERMITE(n,X) calculates hermite polynomial of order n and argument X.
 % n must be integer scalars greater than zero
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

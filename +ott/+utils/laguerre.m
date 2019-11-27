@@ -3,7 +3,7 @@ function Lpl = laguerre(p,l,X)
 %
 % L = LAGUERRE(p,l,X) evaluate associated Laguerre function.
 % p and l must be integer scalars greater than zero
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

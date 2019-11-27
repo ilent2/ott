@@ -12,8 +12,8 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
+import os
+import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
 
@@ -42,7 +42,23 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.githubpages',
+    'sphinx.ext.autodoc',
+    'sphinxcontrib.matlab',
 ]
+
+# Could also look at    'sphinx.ext.napoleon',
+
+numfig = True;
+
+# Packages should be displayed as otslm.simple not +otslm.+simple
+matlab_keep_package_prefix = False
+
+# Things for todo extension
+todo_include_todos = True
+
+# Add things for matlabdomain
+matlab_src_dir = os.path.abspath('..')
+primary_domain = 'mat'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

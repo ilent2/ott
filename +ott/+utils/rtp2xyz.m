@@ -12,7 +12,7 @@ function [x,y,z] = rtp2xyz(r,theta,phi)
 %
 % x = RTP2XYZ(...) same as above with the result packed into
 % the vector/matrix x = [ x y z ].
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

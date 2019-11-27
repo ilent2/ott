@@ -8,7 +8,7 @@ function [hn,dhn] = sbesselh1(n,kr, varargin)
 % of the appropriate Ricatti-Bessel function divided by z.
 %
 % See also besselj and bessely.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

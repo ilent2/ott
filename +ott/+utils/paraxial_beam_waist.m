@@ -5,7 +5,7 @@ function w=paraxial_beam_waist(paraxial_order);
 %
 % w = paraxial_beam_waist(paraxial_order) computes the beam waist parameter
 % for input into a paraxial code.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

@@ -13,7 +13,7 @@ function [A_n,B_n,eigA,eigB]=incecoefficients(p,xi);
 % B_n is the eigen-matrix corresponding to the form:
 % \Sum_i B(n,i)*sin((2*(ii-1)+delta)*z) where delta=1 for p odd and 0 for
 % even. 1<=i<=p.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

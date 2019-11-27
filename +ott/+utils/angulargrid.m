@@ -23,7 +23,7 @@ function [theta,phi] = angulargrid(ntheta,nphi,behaviour)
 % 2 -> 0: theta = theta(:); phi = phi(:);
 % 0 -> 2: theta = reshape(theta,ntheta,nphi);
 %         phi = reshape(phi,ntheta,nphi);
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

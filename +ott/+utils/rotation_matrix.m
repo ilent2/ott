@@ -6,7 +6,7 @@ function R = rotation_matrix(rot_axis,rot_angle)
 %
 % R = rotation_matrix( axis_angle ) calculates the rotation about vector
 % axis_angle, the angle is specified as the length of the vector (in radians).
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

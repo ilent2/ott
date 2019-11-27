@@ -13,7 +13,7 @@ function [B,C,P] = vsh(n,m,theta,phi)
 % The three components of each vector are [r,theta,phi]
 %
 % "Out of range" n and m result in return of [0 0 0]
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

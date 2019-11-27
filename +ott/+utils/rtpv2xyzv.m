@@ -8,7 +8,7 @@ function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
 % Inputs must be column vectors or Nx3 matrices.
 %
 % See also rtp2xyz and xyzv2rtpv.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

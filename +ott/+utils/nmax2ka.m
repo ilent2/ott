@@ -5,7 +5,7 @@ function ka = nmax2ka(Nmax)
 % which spherical expansions are truncated.
 %
 % Truncation order is given by Nmax = ka + 3 (ka)^(1/3)
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

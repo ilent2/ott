@@ -10,7 +10,7 @@ function [hn,dhn] = sbesselh(n,htype,kr)
 % by z.
 %
 % See also besselj and bessely.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

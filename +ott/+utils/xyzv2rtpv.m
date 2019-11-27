@@ -6,7 +6,7 @@ function [rv,thetav,phiv,r,theta,phi] = xyzv2rtpv(xv,yv,zv,x,y,z)
 % [vec_sph,pos_sph] = XYZV2RTPV(vec_cart,pos_cart)
 %
 % See also rtpv2xyzv and xyz2rtp.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

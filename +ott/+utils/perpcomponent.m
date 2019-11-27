@@ -7,7 +7,7 @@ function [Aperp,Apar] = perpcomponent( A, n )
 %
 % [perp_component,parallel_component] = PERPCOMPONENT(A,n) calculates
 % perpendicular and parallel components.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

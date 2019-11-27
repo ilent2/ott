@@ -8,7 +8,7 @@ function [jn,djn] = sbesselj(n,kr)
 % of the appropriate Ricatti-Bessel function divided by z.
 %
 % See also besselj.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

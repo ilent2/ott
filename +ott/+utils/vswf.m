@@ -18,7 +18,7 @@ function [M,N,M2,N2,M3,N3] = vswf(n,m,kr,theta,phi,htype)
 % The three components of each vector are [r,theta,phi].
 %
 % "Out of range" n and m result in return of [0 0 0]
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

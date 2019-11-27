@@ -8,7 +8,7 @@ function D = wigner_rotation_matrix( nmax, R )
 % This method from Choi et al., J. Chem. Phys. 111: 8825-8831 (1999)
 % Note change in notation - here, use x' = Rx (x is row vector),
 % a' = Da (a is column vector) etc.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

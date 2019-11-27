@@ -9,7 +9,7 @@ function [out1,out2] = combined_index(in1,in2)
 % length = COMBINED_INDEX(Nmax, Nmax) calculates length of the beam vectors.
 %
 % Nmax = COMBINED_INDEX(length) calculates Nmax from length of beam vectors.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

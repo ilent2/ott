@@ -16,7 +16,7 @@ function [E, H, data] = emField(krtp, type, nm, ab, varargin)
 % If internal fields are calculated only the theta and phi components
 % of E are continuous at the boundary. Conversely, only the kr component of
 % D is continuous at the boundary.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

@@ -13,7 +13,7 @@ function R = roty(angle_deg, varargin)
 %
 % Replacement/extension to Matlab roty function provided in the
 % Phased Array System Toolbox.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

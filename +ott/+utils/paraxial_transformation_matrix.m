@@ -26,7 +26,7 @@ function [ modeweights col_modes row_modes ] = paraxial_transformation_matrix( p
 %               COLUMN of the matrix. [p,l], [m,n], [o,m,p].
 % row_modes :   outputs the LG, HG or IG indices corresponding to each ROW
 %               of the matrix. [p,l], [m,n], [o,m,p].
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

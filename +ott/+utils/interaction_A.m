@@ -14,7 +14,7 @@ function A = interaction_A(k,r,varargin)
 % If alpha or inv_alpha are not supplied, the diagonal is left empty.
 %
 % Based on OMG/Code/DDA/interaction_A
-%
+
 % Copyright 2018 Isaac Lenton
 
 p = inputParser;
