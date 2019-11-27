@@ -4,6 +4,7 @@ classdef Shape
 % Properties
 %   maxRadius     maximum distance from shape origin
 %   volume        volume of shape
+%   position      Location of shape ``[x, y, z]``
 %
 % Methods (abstract):
 %   inside(shape, ...) determine if spherical point is inside shape
@@ -21,6 +22,7 @@ classdef Shape
 % See LICENSE.md for information about using/distributing this file.
 
   properties
+    position = [0;0;0];       % Location of shape ``[x, y, z]``
   end
 
   methods (Static)
@@ -150,14 +152,17 @@ classdef Shape
     function varargout = voxels(shape, varargin)
       % Generate an array of xyz coordinates for voxels inside the shape
       %
-      % voxels(spacing) shows a visualisation of the shape with
-      % circles placed at locations on a Cartesian grid.
+      % Usage
+      %   voxels(spacing) shows a visualisation of the shape with
+      %   circles placed at locations on a Cartesian grid.
       %
-      % xyz = voxels(spacing) returns the voxel locations.
+      %   xyz = voxels(spacing) returns the voxel locations.
       %
-      % Optional named arguments:
-      %     'plotoptions'   Options to pass to the plot3 function
-      %     'visualise'     Show the visualisation (default: nargout == 0)
+      % Optional named arguments
+      %   - 'plotoptions'   Options to pass to the plot3 function
+      %   - 'visualise'     Show the visualisation (default: nargout == 0)
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
 
       p = inputParser;
       p.addOptional('spacing', shape.maxRadius/10);
@@ -165,6 +170,7 @@ classdef Shape
       p.addParameter('visualise', nargout == 0);
       p.addParameter('scale', 1.0);
       p.addParameter('axes', []);
+      p.addParameter('origin', 'shape');
       p.parse(varargin{:});
 
       plotoptions = p.Results.plotoptions;
@@ -183,8 +189,19 @@ classdef Shape
       [xx, yy, zz] = meshgrid(rrange, rrange, rrange);
 
       % Determine which points are inside
-      mask = shape.insideXyz(xx / p.Results.scale, yy / p.Results.scale, zz / p.Results.scale);
+      mask = shape.insideXyz(xx / p.Results.scale, ...
+          yy / p.Results.scale, zz / p.Results.scale, ...
+          'origin', 'shape');
       xyz = [xx(mask).'; yy(mask).'; zz(mask).'];
+
+      % Translate to world origin
+      if strcmpi(p.Results.origin, 'world')
+        xyz = xyz + shape.position;
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
+      end
 
       % Visualise the result
       if p.Results.visualise
@@ -207,7 +224,7 @@ classdef Shape
       end
     end
 
-    function b = insideXyz(shape, x, y, z)
+    function b = insideXyz(shape, x, y, z, varargin)
       % INSIDEXYZ determine if Cartesian point is inside the shape
       %
       % b = inside(shape, x, y, z) determine if the Cartesian point
@@ -216,7 +233,15 @@ classdef Shape
       % b = insideXyz(shape, xyz) as above, but using a 3xN matrix of
       % [x; y; z] positions.
       %
+      % Optional arguments
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
+      %
       % See also INSIDE.
+
+      p = inputParser;
+      p.addParameter('origin', 'world');
+      p.parse(varargin{:});
 
       % Ensure the sizes match
       if nargin == 4
@@ -230,11 +255,29 @@ classdef Shape
         x = x(1, :);
       end
 
+      % Translate to shape origin
+      if strcmpi(p.Results.origin, 'world')
+        x = x - shape.position(1);
+        y = y - shape.position(2);
+        z = z - shape.position(3);
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
+      end
+
       % Convert to spherical coordinates
       [r, t, p] = ott.utils.xyz2rtp(x, y, z);
 
       % Call the spherical coordinate version
-      b = shape.inside(r, t, p);
+      b = shape.inside(r, t, p, 'origin', 'shape');
+    end
+
+    function shape = set.position(shape, value)
+      % Check position values
+      assert(numel(value) == 3, 'Position must be 3 element vector');
+      assert(isnumeric(value), 'Position must be numeric');
+      shape.position = value(:);
     end
   end
 end

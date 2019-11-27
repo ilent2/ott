@@ -8,7 +8,8 @@ end
 
 function testValues(testCase)
 
-  import ott.shapes.Shape;
+  % Matlab bug? Test is excluded even though setupOnce adds the path
+  %import ott.shapes.Shape;
 
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
@@ -19,7 +20,7 @@ function testValues(testCase)
   sz = numel(theta);
 
   % Test a sphere with radius 1
-  shape = Shape.simple('sphere', 1.0);
+  shape = ott.shapes.Shape.simple('sphere', 1.0);
   r = shape.radii(theta, phi);
   n = shape.normals(theta, phi);
   [~, ~, rotsym] = shape.axialSymmetry();
@@ -33,7 +34,7 @@ function testValues(testCase)
       'Sphere rotational symmetry incorrect');
 
   % Test a ellipsoid
-  shape = Shape.simple('ellipsoid', [ 1, 2, 3 ]);
+  shape = ott.shapes.Shape.simple('ellipsoid', [ 1, 2, 3 ]);
   r = shape.radii(theta, phi);
   n = shape.normals(theta, phi);
   [~, ~, rotsym] = shape.axialSymmetry();
@@ -59,7 +60,7 @@ function testValues(testCase)
       'Ellipsoid rotational symmetry incorrect');
 
   % Test a cylinder
-  shape = Shape.simple('cylinder', [ 1, 1 ]);
+  shape = ott.shapes.Shape.simple('cylinder', [ 1, 1 ]);
   r = shape.radii(theta, phi);
   n = shape.normals(theta, phi);
   [~, ~, rotsym] = shape.axialSymmetry();
@@ -92,7 +93,7 @@ function testValues(testCase)
   %disp(rotsym);
 
   % Test a superellipsoid
-  shape = Shape.simple('superellipsoid', [ 0.2, 0.5, 1, 1, 1 ]);
+  shape = ott.shapes.Shape.simple('superellipsoid', [ 0.2, 0.5, 1, 1, 1 ]);
   r = shape.radii(theta, phi);
   n = shape.normals(theta, phi);
   [~, ~, rotsym] = shape.axialSymmetry();
@@ -118,7 +119,7 @@ function testValues(testCase)
       'Superellipsoid rotational symmetry incorrect');
 
   % Test a cone-tipped cylinder
-  shape = Shape.simple('cone-tipped-cylinder', [ 1, 1, 1 ]);
+  shape = ott.shapes.Shape.simple('cone-tipped-cylinder', [ 1, 1, 1 ]);
   r = shape.radii(theta, phi);
   n = shape.normals(theta, phi);
   [~, ~, rotsym] = shape.axialSymmetry();
@@ -144,7 +145,7 @@ function testValues(testCase)
       'Cone-tipped cylinder rotational symmetry incorrect');
 
   % Test a cube
-  shape = Shape.simple('cube', 1);
+  shape = ott.shapes.Shape.simple('cube', 1);
   r = shape.radii(theta, phi);
   n = shape.normals(theta, phi);
   [~, ~, rotsym] = shape.axialSymmetry();

@@ -161,8 +161,11 @@ classdef StarShape < ott.shapes.Shape
       % xyz = voxels(spacing) returns the voxel locations.
       %
       % Optional named arguments:
-      %     'plotoptions'   Options to pass to the plot3 function
-      %     'visualise'     Show the visualisation (default: nargout == 0)
+      %   - 'plotoptions'   Options to pass to the plot3 function
+      %   - 'visualise'     Show the visualisation (default: nargout == 0)
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
+      %     Default: 'shape'.
 
       p = inputParser;
       p.addParameter('plotoptions', {...
@@ -170,6 +173,7 @@ classdef StarShape < ott.shapes.Shape
           'MarkerEdgeColor', [.5 .5 .5], ...
           'MarkerSize', 20*spacing/shape.maxRadius});
       p.addParameter('visualise', nargout == 0);
+      p.addParameter('origin', 'shape');
       p.parse(varargin{:});
 
       % Calculate range of dipoles
@@ -180,8 +184,17 @@ classdef StarShape < ott.shapes.Shape
       [xx, yy, zz] = meshgrid(rrange, rrange, rrange);
 
       % Determine which points are inside
-      mask = shape.insideXyz(xx, yy, zz);
+      mask = shape.insideXyz(xx, yy, zz, 'origin', 'shape');
       xyz = [xx(mask).'; yy(mask).'; zz(mask).'];
+
+      % Translate to world origin
+      if strcmpi(p.Results.origin, 'world')
+        xyz = xyz + shape.position;
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
+      end
 
       % Visualise the result
       if p.Results.visualise
@@ -211,17 +224,42 @@ classdef StarShape < ott.shapes.Shape
           [ zeros(size(theta)), theta, phi ]);
     end
 
-    function b = inside(shape, radius, theta, phi)
+    function b = inside(shape, radius, theta, phi, varargin)
       % INSIDE determine if point is inside the shape
       %
       % b = inside(shape, radius, theta, phi) determine if the
       % point described by radius, theta (polar), phi (azimuthal)
       % is inside the shape.
+      %
+      % Optional arguments
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
+
+      p = inputParser;
+      p.addParameter('origin', 'world');
+      p.parse(varargin{:});
 
       theta = theta(:);
       phi = phi(:);
       radius = radius(:);
       [radius,theta,phi] = ott.utils.matchsize(radius,theta,phi);
+
+      % Translate to shape origin
+      if strcmpi(p.Results.origin, 'world')
+
+        % Only do work if we need to
+        if vecnorm(shape.position) ~= 0
+          [x,y,z] = ott.utils.rtp2xyz(radius, theta, phi);
+          x = x - shape.position(1);
+          y = y - shape.position(2);
+          z = z - shape.position(3);
+          [radius, theta, phi] = ott.utils.xyz2rtp(x, y, z);
+        end
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
+      end
 
       assert(all(radius >= 0), 'Radii must be positive');
 
@@ -231,34 +269,58 @@ classdef StarShape < ott.shapes.Shape
 
     end
 
-    function b = insideXyz(shape, x, y, z)
+    function b = insideXyz(shape, varargin)
       % INSIDEXYZ determine if Cartesian point is inside the shape
       %
-      % b = inside(shape, x, y, z) determine if the Cartesian point
-      % [x, y, z] is inside the star shaped object.
+      % Usage
+      %   b = inside(shape, x, y, z) determine if the Cartesian point
+      %   [x, y, z] is inside the star shaped object.
       %
-      % b = insideXyz(shape, xyz) as above, but using a 3xN matrix of
-      % [x; y; z] positions.
+      %   b = insideXyz(shape, xyz) as above, but using a 3xN matrix of
+      %   [x; y; z] positions.
+      %
+      % Optional arguments
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
       %
       % See also INSIDE.
 
-      % Ensure the sizes match
-      if nargin == 4
-        x = x(:);
-        y = y(:);
-        z = z(:);
-        [x, y, z] = ott.utils.matchsize(x, y, z);
+      p = inputParser;
+      p.addOptional('x', []);
+      p.addOptional('y', []);
+      p.addOptional('z', []);
+      p.addParameter('origin', 'world');
+      p.parse(varargin{:});
+      
+      % TODO: This should be a function and added to other shapes
+      if isempty(p.Results.y) && isempty(p.Results.z)
+        x = p.Results.x(1, :);
+        y = p.Results.x(2, :);
+        z = p.Results.x(3, :);
       else
-        y = x(2, :);
-        z = x(3, :);
-        x = x(1, :);
+        x = p.Results.x(:);
+        y = p.Results.y(:);
+        z = p.Results.z(:);
+        [x, y, z] = ott.utils.matchsize(x, y, z);
+      end
+
+      % Translate to shape origin
+      % TODO: This should be a function and added to other shapes
+      if strcmpi(p.Results.origin, 'world')
+        x = x - shape.position(1);
+        y = y - shape.position(2);
+        z = z - shape.position(3);
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
       end
 
       % Convert to spherical coordinates
       [r, t, p] = ott.utils.xyz2rtp(x, y, z);
 
       % Call the spherical coordinate version
-      b = shape.inside(r, t, p);
+      b = shape.inside(r, t, p, 'origin', 'shape');
     end
 
     function varargout = angulargrid(shape, varargin)

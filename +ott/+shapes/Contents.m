@@ -13,6 +13,7 @@
 %   StlLoader      - StlLoader load a shape from a STL file
 %   TriangularMesh - TriangularMesh base class for triangular mesh objects (such as file loaders)
 %   WavefrontObj   - WavefrontObj load a shape from a Wavefront OBJ file
+%   Union          - Represents union between two shapes
 %
 % Copyright 2018 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

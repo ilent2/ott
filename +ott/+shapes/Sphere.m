@@ -12,13 +12,20 @@ classdef Sphere < ott.shapes.StarShape & ott.shapes.AxisymShape
   end
 
   methods
-    function sphere = Sphere(radius)
+    function sphere = Sphere(radius, position)
       % SPHERE construct a new sphere
       %
       % SPHERE(radius) specifies the radius of the sphere
+      %
+      % SPHERE(radius, position) specifies the radius and position
+      % of the sphere.
 
       sphere = sphere@ott.shapes.StarShape();
       sphere.radius = radius;
+
+      if nargin == 2
+        sphere.position = position;
+      end
     end
 
     function r = get_maxRadius(shape)
