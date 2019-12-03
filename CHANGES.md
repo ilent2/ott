@@ -1,6 +1,14 @@
 Change history
 ==============
 
+Version 1.6
+-----------
+
+* Moved Tmatrix and Bsc classes to their own packages
+* Removed forcetorque (now part of Bsc and Tmatrix classes)
+* Removed warning and change warning functionality
+* Added dynamics, drag and tools packages
+
 Version 1.5
 -----------
 
