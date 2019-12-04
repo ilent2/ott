@@ -3,6 +3,7 @@ ott - Optical Tweezers Toolbox
 
 [![DOI](https://zenodo.org/badge/123386773.svg)](https://zenodo.org/badge/latestdoi/123386773)
 [![Documentation Status](https://readthedocs.org/projects/ott/badge/?version=latest)](https://ott.readthedocs.io/en/latest/?badge=latest)
+[![View Optical Tweezers Toolbox on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/73541-optical-tweezers-toolbox)
 
 The optical tweezers toolbox can be used to calculate optical forces
 and torques of particles using the T-matrix formalism in a vector
