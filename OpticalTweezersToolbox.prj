@@ -1,0 +1,123 @@
+<deployment-project plugin="plugin.toolbox" plugin-version="1.0">
+  <configuration build-checksum="3383339213" file="C:\Users\uqilento\Documents\Research2017\ott\OpticalTweezersToolbox.prj" location="C:\Users\uqilento\Documents\Research2017\ott" name="OpticalTweezersToolbox" target="target.toolbox" target-name="Package Toolbox">
+    <param.appname>Optical Tweezers Toolbox</param.appname>
+    <param.authnamewatermark>Isaac Lenton, et al.</param.authnamewatermark>
+    <param.email>uqilento@uq.edu.au</param.email>
+    <param.company>University of Queensland</param.company>
+    <param.summary>Toolbox for simulating optical tweezers</param.summary>
+    <param.description>The optical tweezers toolbox can be used to calculate optical forces and torques of particles using the T-matrix formalism in a vector spherical wave basis. The toolbox includes codes for calculating T-matrices, beams described by vector spherical wave functions, functions for calculating forces and torques, simple codes for simulating dynamics and examples.</param.description>
+    <param.screenshot>${PROJECT_ROOT}\docs\images\ott_icon_matlab.png</param.screenshot>
+    <param.version>1.5.1</param.version>
+    <param.output>${PROJECT_ROOT}\Optical Tweezers Toolbox.mltbx</param.output>
+    <param.products.name />
+    <param.products.id />
+    <param.products.version />
+    <param.platforms />
+    <param.guid>8f61369e-ec68-4531-8877-a6259d4743aa</param.guid>
+    <param.exclude.filters>% List files contained in your toolbox folder that you would like to exclude
+% from packaging.  Excludes should be listed relative to the toolbox folder.
+% Some examples of how to specify excludes are provided below:
+%
+% A single file in the toolbox folder:
+% .svn
+%
+% A single file in a subfolder of the toolbox folder:
+% example/.svn
+%
+% All files in a subfolder of the toolbox folder:
+% example/*
+%
+% All files of a certain name in all subfolders of the toolbox folder:
+% **/.svn
+%
+% All files matching a pattern in all subfolders of the toolbox folder:
+% **/*.bak
+%
+
+.git
+.git*
+**/.git
+docs
+tests
+.readthedocs.yml</param.exclude.filters>
+    <param.exclude.pcodedmfiles>true</param.exclude.pcodedmfiles>
+    <param.examples />
+    <param.demosxml />
+    <param.apps />
+    <param.registered.apps>
+      <file>${PROJECT_ROOT}\+ott\+ui\Launcher.mlapp</file>
+    </param.registered.apps>
+    <param.docs />
+    <param.getting.started.guide>${PROJECT_ROOT}\doc\GettingStarted.mlx</param.getting.started.guide>
+    <param.matlabpath.excludes />
+    <param.javaclasspath.excludes />
+    <param.exported.on.package>false</param.exported.on.package>
+    <param.release.start>R2016b</param.release.start>
+    <param.release.end>latest</param.release.end>
+    <param.release.current.only>false</param.release.current.only>
+    <param.compatiblity.windows>true</param.compatiblity.windows>
+    <param.compatiblity.macos>true</param.compatiblity.macos>
+    <param.compatiblity.linux>true</param.compatiblity.linux>
+    <param.compatiblity.matlabonline>true</param.compatiblity.matlabonline>
+    <unset>
+      <param.output />
+      <param.products.name />
+      <param.products.id />
+      <param.products.version />
+      <param.platforms />
+      <param.exclude.pcodedmfiles />
+      <param.examples />
+      <param.demosxml />
+      <param.apps />
+      <param.docs />
+      <param.matlabpath.excludes />
+      <param.javaclasspath.excludes />
+      <param.exported.on.package />
+      <param.release.current.only />
+      <param.compatiblity.windows />
+      <param.compatiblity.macos />
+      <param.compatiblity.linux />
+      <param.compatiblity.matlabonline />
+    </unset>
+    <fileset.rootdir>
+      <file>C:\Users\uqilento\Documents\Research2017\ott</file>
+    </fileset.rootdir>
+    <fileset.rootfiles>
+      <file>${PROJECT_ROOT}\+ott</file>
+      <file>${PROJECT_ROOT}\AUTHORS.md</file>
+      <file>${PROJECT_ROOT}\CHANGES.md</file>
+      <file>${PROJECT_ROOT}\DesktopToolset.xml</file>
+      <file>${PROJECT_ROOT}\examples</file>
+      <file>${PROJECT_ROOT}\LICENSE.md</file>
+      <file>${PROJECT_ROOT}\README.md</file>
+      <file>${PROJECT_ROOT}\thirdparty</file>
+      <file>${PROJECT_ROOT}\TODO.md</file>
+    </fileset.rootfiles>
+    <fileset.depfun.included />
+    <fileset.depfun.excluded />
+    <fileset.package />
+    <build-deliverables>
+      <file location="C:\Users\uqilento\Documents\Research2017\ott" name="Optical Tweezers Toolbox.mltbx" optional="false">C:\Users\uqilento\Documents\Research2017\ott\Optical Tweezers Toolbox.mltbx</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2018a</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
