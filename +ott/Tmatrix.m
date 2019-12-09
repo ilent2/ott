@@ -154,6 +154,15 @@ classdef Tmatrix
       %     a number between (0, 1] to use for method selection.
       %     Smaller values correspond to more accurate methods.
       %     Default: `[]`.
+      %
+      % Example
+      %   The following example creates a T-matrix for a cube with side
+      %   length of 1 micron using a guess at the best available method.
+      %   Illumination wavelength is 1064 nm, relative index 1.5/1.33::
+      %
+      %     tmatrix = ott.Tmatrix.simple('cube', 1.0e-6, ...
+      %       'wavelength0', 1064e-9, ...
+      %       'index_medium', 1.33, 'index_particle', 1.5);
 
       % Parse inputs
       p = inputParser;
@@ -364,6 +373,13 @@ classdef Tmatrix
     %     full matrix.
     %   - type (enum) -- Type of T-matrix.  Must be 'internal',
     %     'scattered' or 'total'.
+    %
+    % Example
+    %   The following example creates an identity T-matrix which
+    %   represents a particle which doesn't scatter light::
+    %
+    %     data = eye(16);
+    %     tmatrix = ott.Tmatrix(data, 'total');
 
     if nargin >= 1
       tmatrix.data = data;
