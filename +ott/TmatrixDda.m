@@ -8,6 +8,13 @@ classdef TmatrixDda < ott.Tmatrix
 %
 %   Tmatrix = ott.TmatrixDda.simple('sphere', 0.1, 'index_relative', 1.2);
 %
+% The DDA method requires a lot of memory to calculate the T-matrix.
+% Most small desktop computers will be unable to calculate T-matrices
+% for large particles (i.e., particles larger than a couple of wavelengths
+% in diameter using 20 dipoles per wavelength).
+% For these particles, consider using Geometric Optics
+% or Finite Difference Time Domain method.
+%
 % See also TmatrixDda, simple.
 
 % This file is part of the optical tweezers toolbox.
