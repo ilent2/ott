@@ -54,3 +54,27 @@ function testCube(testCase)
 
 end
 
+function testTooManyDipoles(testCase)
+
+  wavelength_0 = 1;
+
+  %Height of the cylinder in radius lengths - this is our data to compare
+
+  c_height = 10.*wavelength_0;
+  radius = 1*wavelength_0;
+
+  %Refractive index of water is 1.3
+  n_medium = 1.3;
+
+  %Refractive index of glass is 1.5
+  n_particle = 1.5;
+
+  shape = ott.shapes.Shape.simple('cylinder', [radius, c_height]);
+    
+  testCase.verifyError(@() ott.TmatrixDda.simple(shape, ...
+    'index_medium', n_medium,...
+    'index_particle', n_particle, 'wavelength0', wavelength_0), ...
+    'OTT:TmatrixDda:too_many_dipoles');
+
+end
+
