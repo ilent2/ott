@@ -816,21 +816,28 @@ classdef Bsc
     function varargout = visualise(beam, varargin)
       % Create a visualisation of the beam
       %
-      % visualise(...) displays an image of the beam in the current
-      % figure window.
+      % Usage
+      %   visualise(...) displays an image of the beam in the current
+      %   figure window.
       %
-      % im = visualise(...) returns a image of the beam.
+      %   im = visualise(...) returns a image of the beam.
+      %   If the beam object contains multiple beams, returns images
+      %   for each beam.
       %
-      % Optional named arguments:
-      %     'size'    [ x, y ]    Width and height of image
-      %     'field'   type        Type of field to calculate
-      %     'axis'    ax          Axis to visualise ('x', 'y', 'z') or
-      %       a cell array with 2 or 3 unit vectors for x, y, [z].
-      %     'offset'  offset      Plane offset along axis (default: 0.0)
-      %     'range'   [ x, y ]    Range of points to visualise.
-      %         Can either be a cell array { x, y }, two scalars for
-      %         range [-x, x], [-y, y] or 4 scalars [ x0, x1, y0, y1 ].
-      %     'mask'    func(xyz)   Mask function for regions to keep in vis
+      % Optional named arguments
+      %   - 'size'    [ x, y ]    Width and height of image
+      %   - 'field'   type        Type of field to calculate
+      %   - 'axis'    ax          Axis to visualise ('x', 'y', 'z') or
+      %     a cell array with 2 or 3 unit vectors for x, y, [z].
+      %   - 'offset'  offset      Plane offset along axis (default: 0.0)
+      %   - 'range'   [ x, y ]    Range of points to visualise.
+      %     Can either be a cell array { x, y }, two scalars for
+      %     range [-x, x], [-y, y] or 4 scalars [ x0, x1, y0, y1 ].
+      %   - 'mask'    func(xyz)   Mask function for regions to keep in vis
+      %   - 'combine' (enum)      If multiple beams should be treated as
+      %     'coherent' or 'incoherent' beams and their outputs added.
+      %     incoherent may only makes sense if the field is an intensity.
+      %     Default: [].
 
       p = inputParser;
       p.addParameter('field', 'irradiance');
@@ -843,6 +850,7 @@ classdef Bsc
       p.addParameter('data', []);
       p.addParameter('mask', []);
       p.addParameter('showVisualisation', nargout == 0);
+      p.addParameter('combine', []);
       p.parse(varargin{:});
 
       if iscell(p.Results.range)
@@ -854,8 +862,8 @@ classdef Bsc
         yrange = linspace(-1, 1, p.Results.size(2))*p.Results.range(2);
         sz = p.Results.size;
       elseif length(p.Results.range) == 4
-        xrange = linspace(-p.Results.range(1), p.Results.range(2), p.Results.size(1));
-        yrange = linspace(-p.Results.range(3), p.Results.range(4), p.Results.size(2));
+        xrange = linspace(p.Results.range(1), p.Results.range(2), p.Results.size(1));
+        yrange = linspace(p.Results.range(3), p.Results.range(4), p.Results.size(2));
         sz = p.Results.size;
       else
         error('ott:Bsc:visualise:range_error', 'Incorrect number of range arguments');
@@ -893,21 +901,39 @@ classdef Bsc
       else
         error('axis must be character or cell array');
       end
-
-      % Calculate the electric field
-      [E, ~, data] = beam.emFieldXyz(xyz.', ...
-          'saveData', p.Results.saveData, 'data', p.Results.data, ...
-          'calcE', true', 'calcH', false);
-        
-      % Generate the requested field
-      dataout = beam.GetVisualisationData(p.Results.field, ...
-        xyz, [], E.', []);
       
-      % Reshape the output
-      imout = reshape(dataout, sz(2), sz(1));
+      if strcmpi(p.Results.combine, 'coherent')
+        % Reduce the amount of work done in emFieldXyz
+        beam = sum(beam);
+      end
+      
+      imout = zeros(sz(2), sz(1), beam.Nbeams);
+      
+      % If save data is requested, this gets reused for multiple beams
+      data = p.Results.data;
+      
+      for ii = 1:beam.Nbeams
+
+        % Calculate the electric field
+        [E, ~, data] = beam.beam(ii).emFieldXyz(xyz.', ...
+            'saveData', p.Results.saveData, 'data', data, ...
+            'calcE', true', 'calcH', false);
+
+        % Generate the requested field
+        dataout = beam.GetVisualisationData(p.Results.field, ...
+          xyz, [], E.', []);
+
+        % Reshape the output
+        imout(:, :, ii) = reshape(dataout, sz(2), sz(1));
+        
+      end
+      
+      if strcmpi(p.Results.combine, 'incoherent')
+        imout = sum(imout, 3);
+      end
 
       % Display the visualisation
-      if p.Results.showVisualisation
+      if p.Results.showVisualisation && ismatrix(imout)
         
         % Apply the mask
         if ~isempty(p.Results.mask)
@@ -918,6 +944,10 @@ classdef Bsc
         xlabel(alabels{1});
         ylabel(alabels{2});
         axis image;
+      elseif p.Results.showVisualisation
+        warning('OTT:Bsc:visualise:too_many_beams', ...
+          ['Visualisation not shown for multiple beams\n', ...
+           '> Consider combining beams coherently or incoherently']);
       end
       
       % Handle outputs
@@ -1726,6 +1756,19 @@ classdef Bsc
       beam = beam1;
       beam.a = beam.a - beam2.a;
       beam.b = beam.b - beam2.b;
+    end
+    
+    function beam = sum(beam1)
+      % Sum beam coefficients
+      %
+      % Usage
+      %   beam = sum(beam)
+      %
+      %   beam = beam.sum()
+      
+      beam = beam1;
+      beam.a = sum(beam.a, 2);
+      beam.b = sum(beam.b, 2);
     end
     
     function beam = clearDz(beam)

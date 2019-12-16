@@ -18,6 +18,7 @@ Tmatrix
 =======
 
 .. autoclass:: +ott.Tmatrix
+   :members: Tmatrix, simple
 
 TmatrixEbcm
 ===========

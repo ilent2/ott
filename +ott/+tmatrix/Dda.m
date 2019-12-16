@@ -8,6 +8,13 @@ classdef TmatrixDda < ott.Tmatrix
 %
 %   Tmatrix = ott.TmatrixDda.simple('sphere', 0.1, 'index_relative', 1.2);
 %
+% The DDA method requires a lot of memory to calculate the T-matrix.
+% Most small desktop computers will be unable to calculate T-matrices
+% for large particles (i.e., particles larger than a couple of wavelengths
+% in diameter using 20 dipoles per wavelength).
+% For these particles, consider using Geometric Optics
+% or Finite Difference Time Domain method.
+%
 % See also TmatrixDda, simple.
 
 % This file is part of the optical tweezers toolbox.
@@ -35,6 +42,8 @@ classdef TmatrixDda < ott.Tmatrix
       p.addParameter('wavelength_particle', []);
       p.addParameter('index_particle', []);
       p.addParameter('polarizability', 'LDR');
+      
+      p.addParameter('verbose', true);
       
       % Fields to enable compatability with Tmatrix.simple
       p.addParameter('method', []);
@@ -130,6 +139,10 @@ classdef TmatrixDda < ott.Tmatrix
       %   - polarizability (enum|numeric) -- Polarizability or method
       %     name to use to calculate from relative refractive index.
       %     Default: 'LDR'.  Supported methods: 'LDR', 'FCD', 'CM'.
+      %
+      %   - verbose (logical) -- Display additional information.
+      %     Doesn't affect the display of the progress callback.
+      %     Default: false.
 
       import ott.TmatrixDda;
       import ott.Tmatrix;
@@ -138,6 +151,20 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Parse inputs
       pa = TmatrixDda.input_parser(varargin{:});
+      
+      % Tell the user some things
+      if pa.Results.verbose
+        disp('Starting TmatrixDda');
+        disp(['Running with ' num2str(size(xyz, 2)) ' voxels']);
+      end
+      
+      % Check we can allocate sufficient memory
+      uV = memory;
+      if uV.MaxPossibleArrayBytes < (size(xyz, 2)*3)^2*8
+        error('OTT:TmatrixDda:too_many_dipoles', ...
+          ['May have too many voxels for calculation, ', ...
+          'consider reducing particle size or voxel spacing']);
+      end
 
       % Store inputs k_medium and k_particle
       [k_medium, k_particle] = tmatrix.parser_wavenumber(pa, 2*pi);
@@ -249,6 +276,7 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Hmm, what if we have a larger sphere?
       r_near = 8; % near field radius
+      assert(r_near > max(rtp(1, :)), 'Particle radius too large');
 
       A = ott.utils.interaction_A(k, rtp, alpha);
 

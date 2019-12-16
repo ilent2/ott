@@ -24,7 +24,7 @@ classdef Tmatrix
 %   - scattered() -- Convert to a scattered-field T-matrix
 %
 % Static methods
-%   - simple        Construct a simple particle T-matrix
+%   - simple()    -- Construct a simple particle T-matrix
 %
 % See also Tmatrix, simple, :class:`+ott.TmatrixMie`.
 
@@ -124,33 +124,45 @@ classdef Tmatrix
     end
     
     function tmatrix = simple(shape, varargin)
-      %SIMPLE constructs a T-matrix for a bunch of simple particles
+      % Constructs a T-matrix for different simple particle shapes.
       % This method creates an instance of one of the other T-matrix
       % classes and is here only as a helper method.
       %
-      % SIMPLE(shape) constructs a new simple T-matrix for the given
-      % ott.shapes.Shape object.
+      % Usage
+      %   SIMPLE(shape) constructs a new simple T-matrix for the given
+      %   :class:`+ott.+shapes.Shape` object.
       %
-      % SIMPLE(name, parameters) constructs a new T-matrix for the
-      % shape described by the name and parameters.
+      %   SIMPLE(name, parameters) constructs a new T-matrix for the
+      %   shape described by the name and parameters.
       %
-      % Supported shape names [parameters]:
-      %   'sphere'          Spherical (or layered sphere) [ radius ]
-      %   'cylinder'        z-axis aligned cylinder [ radius height ]
-      %   'ellipsoid'       Ellipsoid [ a b c]
-      %   'superellipsoid'  Superellipsoid [ a b c e n ]
-      %   'cone-tipped-cylinder'      [ radius height cone_height ]
-      %   'cube'            Cube [ width ]
-      %   'axisym'          Axis-symetric particle [ rho(:) z(:) ]
+      % Supported shape names [parameters]
+      %   - 'sphere'       -- Spherical (or layered sphere) [ radius ]
+      %   - 'cylinder'     -- z-axis aligned cylinder [ radius height ]
+      %   - 'ellipsoid'    -- Ellipsoid [ a b c]
+      %   - 'superellipsoid' -- Superellipsoid [ a b c e n ]
+      %   - 'cone-tipped-cylinder'  --  [ radius height cone_height ]
+      %   - 'cube'         -- Cube [ width ]
+      %   - 'axisym'       -- Axis-symetric particle [ rho(:) z(:) ]
       %
-      % SIMPLE(..., 'method', method) allows you to choose the
-      %   prefered method for T-matrix generation.  This is not
-      %   supported for all particle types.  Supported methods are
-      %   'mie', smarties', 'dda', 'ebcm', and 'pm'.
+      % Optional named arguments
+      %   - method (enum) -- Allows you to choose the preferred method
+      %     to use for T-matrix calculation.  Supported methods are
+      %     'mie', smarties', 'dda', 'ebcm', and 'pm'.
+      %     Default: `''`.
       %
-      % SIMPLE(..., 'method_tol', tol) specifies the error tolerance
-      %   (0, 1] to use for method selection.  Smaller values will
-      %   result in a method being choosen that produces higher accuracy.
+      %   - method_tol (numeric) -- Specifies the error tolerances,
+      %     a number between (0, 1] to use for method selection.
+      %     Smaller values correspond to more accurate methods.
+      %     Default: `[]`.
+      %
+      % Example
+      %   The following example creates a T-matrix for a cube with side
+      %   length of 1 micron using a guess at the best available method.
+      %   Illumination wavelength is 1064 nm, relative index 1.5/1.33::
+      %
+      %     tmatrix = ott.Tmatrix.simple('cube', 1.0e-6, ...
+      %       'wavelength0', 1064e-9, ...
+      %       'index_medium', 1.33, 'index_particle', 1.5);
 
       % Parse inputs
       p = inputParser;
@@ -349,13 +361,25 @@ classdef Tmatrix
 
  methods
   function tmatrix = Tmatrix(data, type)
-    %TMATRIX construct a new T-matrix object
+    % Construct a new T-matrix object.
     %
-    % TMATRIX() leaves the data uninitialised.
+    % Usage
+    %   TMATRIX() leaves the data uninitialised.
     %
-    % TMATRIX(data, type) initializes the data with the matrix data.
-    % Type refers to the type of T-matrix, must be internal,
-    % scattered or total.
+    %   TMATRIX(data, type) initializes the data with the matrix data.
+    %
+    % Parameters
+    %   - data (numeric) -- The T-matrix data.  Typically a sparse or
+    %     full matrix.
+    %   - type (enum) -- Type of T-matrix.  Must be 'internal',
+    %     'scattered' or 'total'.
+    %
+    % Example
+    %   The following example creates an identity T-matrix which
+    %   represents a particle which doesn't scatter light::
+    %
+    %     data = eye(16);
+    %     tmatrix = ott.Tmatrix(data, 'total');
 
     if nargin >= 1
       tmatrix.data = data;
