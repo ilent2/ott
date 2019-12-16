@@ -130,4 +130,14 @@ function testMakeBeamVectorMulti(testCase)
 
 end
 
+function testSum(testCase)
 
+  beam1 = ott.BscPmGauss('polarisation', [0, 1i]);
+  beam2 = ott.BscPmGauss('polarisation', [1, 0]);
+  beam3 = beam1 + beam2;
+  
+  beamU = beam1.append(beam2);
+  testCase.verifyEqual(beamU.sum(), beam3);
+  testCase.verifyEqual(sum(beamU), beam3);
+  
+end
