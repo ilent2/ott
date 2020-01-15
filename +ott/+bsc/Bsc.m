@@ -21,7 +21,7 @@ classdef Bsc
 %
 % Methods
 %   append          Joins two beam objects together
-%   mergeBeams      Merge the BSCs for the beams contained in this object
+%   sum             Merge the BSCs for the beams contained in this object
 %   translateZ      Translates the beam along the z axis
 %   translateXyz    Translation to xyz using rotations and z translations
 %   translateRtp    Translation to rtp using rotations and z translations
@@ -37,6 +37,9 @@ classdef Bsc
 %   visualiseFarfieldSlice   Generate scattering slice at specific angle
 %   visualiseFarfieldSphere  Generate spherical surface visualisation
 %   intensityMoment Calculate moment of beam intensity in the far-field
+%   force           Calculate change in linear momentum between beams
+%   torque          Calculate change in angular momentum between beams
+%   spin            Calculate change in spin between beams
 %
 % Static methods:
 %   make_beam_vector    Convert output of bsc_* functions to beam coefficients
@@ -336,13 +339,6 @@ classdef Bsc
       end
     end
     
-    function beam = mergeBeams(beam)
-      % Merge the BSCs for the beams contained in this object
-      
-      beam.a = sum(beam.a, 2);
-      beam.b = sum(beam.b, 2);
-    end
-
     function [E, H, data] = farfield(beam, theta, phi, varargin)
       %FARFIELD finds far field at locations theta, phi.
       %
@@ -1584,6 +1580,380 @@ classdef Bsc
       % Calculate moment in Cartesian coordinates
       Eirr_xyz = uxyz .* Eirr;
       moment = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
+    end
+
+    function [a, b, p, q, ...
+      anp1, bnp1, pnp1, qnp1, ...
+      amp1, bmp1, pmp1, qmp1, ...
+      anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
+      anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
+    find_abpq_force_terms(ibeam, sbeam)
+      % Find the terms required for force/torque calculations
+
+      % TODO: There was some Nmax and Nbeams checks that we don't have here
+
+      % Ensure the beam is incoming-outgoing
+      sbeam = sbeam.totalField(ibeam);
+
+      % Get the relevent beam coefficients
+      [a, b] = ibeam.getCoefficients();
+      [p, q] = sbeam.getCoefficients();
+      [n, m] = ibeam.getModeIndices();
+
+      nmax=ibeam.Nmax;
+
+      b=1i*b;
+      q=1i*q;
+
+      addv=zeros(2*nmax+3,1);
+
+      at=[a;repmat(addv, 1, size(a, 2))];
+      bt=[b;repmat(addv, 1, size(b, 2))];
+      pt=[p;repmat(addv, 1, size(p, 2))];
+      qt=[q;repmat(addv, 1, size(q, 2))];
+
+      ci=ott.utils.combined_index(n,m);
+
+      %these preserve order and number of entries!
+      np1=2*n+2;
+      cinp1=ci+np1;
+      cinp1mp1=ci+np1+1;
+      cinp1mm1=ci+np1-1;
+      cimp1=ci+1;
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+      %this is for m+1... if m+1>n then we'll ignore!
+      kimp=(m>n-1);
+
+      anp1=at(cinp1, :);
+      bnp1=bt(cinp1, :);
+      pnp1=pt(cinp1, :);
+      qnp1=qt(cinp1, :);
+
+      anp1mp1=at(cinp1mp1, :);
+      bnp1mp1=bt(cinp1mp1, :);
+      pnp1mp1=pt(cinp1mp1, :);
+      qnp1mp1=qt(cinp1mp1, :);
+
+      anp1mm1=at(cinp1mm1, :);
+      bnp1mm1=bt(cinp1mm1, :);
+      pnp1mm1=pt(cinp1mm1, :);
+      qnp1mm1=qt(cinp1mm1, :);
+
+      amp1=at(cimp1, :);
+      bmp1=bt(cimp1, :);
+      pmp1=pt(cimp1, :);
+      qmp1=qt(cimp1, :);
+
+      amp1(kimp, :)=0;
+      bmp1(kimp, :)=0;
+      pmp1(kimp, :)=0;
+      qmp1(kimp, :)=0;
+
+      a=a(ci, :);
+      b=b(ci, :);
+      p=p(ci, :);
+      q=q(ci, :);
+
+    end
+
+    function varargout = mul
+
+    function varargout = forcetorque(beam, other, varargin)
+      % Calculate change in momentum between beams
+      %
+      % Usage
+      %   force = ibeam.force(sbeam, ...) calculates the force
+      %   between the incident beam ``ibeam`` and scattered beam ``sbeam``.
+      %   Force is a 3xN matrix depending on the number of beams and
+      %   other optional arguments, see bellow for more details.
+      %
+      %   force = beam.force(Tmatrix, ...) as above but first calculates
+      %   the scattered beam using the given T-matrix.
+      %
+      %   [fx, fy, fz] = beam.force(...) as above but returns the
+      %   x, y and z force components as separate vectors.
+      %
+      % Optional named arguments
+      %   - position (3xN numeric) -- Distance to translate beam before
+      %     calculating the scattered beam using the T-matrix.
+      %     Default: [].
+      %   - rotation (3x3N numeric) -- Angle to rotate beam before
+      %     calculating the scattered beam using the T-matrix.
+      %     Inverse rotation is applied to scattered beam, effectively
+      %     rotating the particle.
+      %     Default: [].
+      %
+      % If both position and rotation are present, the translation is
+      % applied first, followed by the rotation.
+      % If both position and rotation are arrays, they must have the same
+      % number of locations.
+      %
+      % This uses mathematical result of Farsund et al., 1996, in the form of
+      % Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
+      % E_{inc}=sum_{nm}(aM+bN);
+
+      ip = inputParser;
+      ip.addParameter('combine', []);
+      ip.parse(varargin{:});
+
+      % Combine the beams if coherent
+      if strcmpi(ip.Results.combine, 'coherent')
+        ibeam = sum(ibeam);
+        sbeam = sum(sbeam);
+      end
+
+      % TODO: There is a lot of duplication between this function
+      %       and other functions: spin, torque, forcetorque, force.
+      %       Can we fix this somehow?
+
+      % TODO: I think this function wants to do too much.  Perhaps
+      %       we need a transform function (no!) or a function for
+      %       doing the iteration over particles?
+
+      % Get the abpq terms for the calculation
+      [a, b, p, q, ...
+        anp1, bnp1, pnp1, qnp1, ...
+        amp1, bmp1, pmp1, qmp1, ...
+        anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
+        anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
+      ott.bsc.Bsc.find_abpq_force_terms(ibeam, sbeam);
+
+      % Calculate the Z force
+      Az=m./n./(n+1).*imag(-(a).*conj(b)+conj(q).*(p));
+      Bz=1./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ... %.*n
+          .*imag(anp1.*conj(a)+bnp1.*conj(b)-(pnp1).*conj(p) ...
+          -(qnp1).*conj(q));
+      fz=2*sum(Az+Bz);
+
+      % Calculate the XY force
+      Axy=1i./n./(n+1).*sqrt((n-m).*(n+m+1)) ...
+          .*(conj(pmp1).*q - conj(amp1).*b - conj(qmp1).*p + conj(bmp1).*a);
+      Bxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ... %sqrt(n.*)
+          ( sqrt((n+m+1).*(n+m+2)) .* ( p.*conj(pnp1mp1) + q.* ...
+          conj(qnp1mp1) -a.*conj(anp1mp1) -b.*conj(bnp1mp1)) + ...
+          sqrt((n-m+1).*(n-m+2)) .* (pnp1mm1.*conj(p) + qnp1mm1.* ...
+          conj(q) - anp1mm1.*conj(a) - bnp1mm1.*conj(b)) );
+
+      fxy=sum(Axy+Bxy);
+      fx=real(fxy);
+      fy=imag(fxy);
+
+      % Calculate Z torque
+      tz=sum(m.*(a.*conj(a)+b.*conj(b)-p.*conj(p)-q.*conj(q)));
+
+      % Calculate XY torque
+      txy=sum(sqrt((n-m).*(n+m+1)).*(a.*conj(amp1)+...
+        b.*conj(bmp1)-p.*conj(pmp1)-q.*conj(qmp1)));
+      tx=real(txy);
+      ty=imag(txy);
+
+      % Combine the results if incoherent
+      if strcmpi(ip.Results.combine, 'incoherent')
+        fx = sum(fx, 2);
+        fy = sum(fy, 2);
+        fz = sum(fz, 2);
+        tx = sum(tx, 2);
+        ty = sum(ty, 2);
+        tz = sum(tz, 2);
+      end
+
+      % Package output
+      if nargout == 6
+        varargout{1} = fx;
+        varargout{2} = fy;
+        varargout{3} = fz;
+        varargout{4} = tx;
+        varargout{5} = ty;
+        varargout{6} = tz;
+      elseif nargout == 2
+        varargout{1} = [fx; fy; fz];
+        varargout{2} = [tx; ty; tz];
+      elseif nargout == 1
+        varargout{1} = [fx; fy; fz; tx; ty; tz];
+      else
+        error('Only 1, 2 or 6 outputs should be requested');
+      end
+    end
+
+    function varargout = force(beam, other, varargin)
+      % Calculate change in linear momentum between beams
+      %
+      % For details on usage/arguments see :meth:`forcetorque`.
+
+      ip = inputParser;
+      %ip.addParameter('position', []);
+      %ip.addParameter('rotation', []);
+      ip.addParameter('combine', []);
+      ip.parse(varargin{:});
+
+      %positions = p.Results.position;
+      %rotations = p.Results.rotations;
+
+      %assert(isempty(p.Results.position) ...
+      %  || iscell(p.Results.position) ...
+      %  || (isnumeric(p.Results.position) && ismatrix(p.Results.position && size(p.Results.position, 1) == 3, ...
+      %  'position must be either empty, cell array or 3xN matrix');
+
+      % Combine the beams if coherent
+      if strcmpi(ip.Results.combine, 'coherent')
+        ibeam = sum(ibeam);
+        sbeam = sum(sbeam);
+      end
+
+      % Get the abpq terms for the calculation
+      [a, b, p, q, ...
+        anp1, bnp1, pnp1, qnp1, ...
+        amp1, bmp1, pmp1, qmp1, ...
+        anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
+        anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
+      ott.bsc.Bsc.find_abpq_force_terms(ibeam, sbeam);
+
+      % Calculate the Z force
+      Az=m./n./(n+1).*imag(-(a).*conj(b)+conj(q).*(p));
+      Bz=1./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ... %.*n
+          .*imag(anp1.*conj(a)+bnp1.*conj(b)-(pnp1).*conj(p) ...
+          -(qnp1).*conj(q));
+      fz=2*sum(Az+Bz);
+
+      % Calculate the XY force
+      Axy=1i./n./(n+1).*sqrt((n-m).*(n+m+1)) ...
+          .*(conj(pmp1).*q - conj(amp1).*b - conj(qmp1).*p + conj(bmp1).*a);
+      Bxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ... %sqrt(n.*)
+          ( sqrt((n+m+1).*(n+m+2)) .* ( p.*conj(pnp1mp1) + q.* ...
+          conj(qnp1mp1) -a.*conj(anp1mp1) -b.*conj(bnp1mp1)) + ...
+          sqrt((n-m+1).*(n-m+2)) .* (pnp1mm1.*conj(p) + qnp1mm1.* ...
+          conj(q) - anp1mm1.*conj(a) - bnp1mm1.*conj(b)) );
+
+      fxy=sum(Axy+Bxy);
+      fx=real(fxy);
+      fy=imag(fxy);
+
+      % Combine the results if incoherent
+      if strcmpi(ip.Results.combine, 'incoherent')
+        fx = sum(fx, 2);
+        fy = sum(fy, 2);
+        fz = sum(fz, 2);
+      end
+
+      % Package output
+      if nargout == 3
+        varargout{1} = fx;
+        varargout{2} = fy;
+        varargout{3} = fz;
+      else
+        varargout{1} = [fx; fy; fz];
+      end
+    end
+
+    function varargout = torque(beam, other, varargin)
+      % Calculate change in angular momentum between beams
+      %
+      % For details on usage/arguments see :meth:`forcetorque`.
+
+      ip = inputParser;
+      ip.addParameter('combine', []);
+      ip.parse(varargin{:});
+
+      % Combine the beams if coherent
+      if strcmpi(ip.Results.combine, 'coherent')
+        ibeam = sum(ibeam);
+        sbeam = sum(sbeam);
+      end
+
+      % Get the abpq terms for the calculation
+      [a, b, p, q, ...
+        anp1, bnp1, pnp1, qnp1, ...
+        amp1, bmp1, pmp1, qmp1, ...
+        anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
+        anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
+      ott.bsc.Bsc.find_abpq_force_terms(ibeam, sbeam);
+
+      tz=sum(m.*(a.*conj(a)+b.*conj(b)-p.*conj(p)-q.*conj(q)));
+
+      txy=sum(sqrt((n-m).*(n+m+1)).*(a.*conj(amp1)+...
+        b.*conj(bmp1)-p.*conj(pmp1)-q.*conj(qmp1)));
+      tx=real(txy);
+      ty=imag(txy);
+
+      % Combine the results if incoherent
+      if strcmpi(ip.Results.combine, 'incoherent')
+        tx = sum(tx, 2);
+        ty = sum(ty, 2);
+        tz = sum(tz, 2);
+      end
+
+      % Package output
+      if nargout == 3
+        varargout{1} = tx;
+        varargout{2} = ty;
+        varargout{3} = tz;
+      else
+        varargout{1} = [tx; ty; tz];
+      end
+    end
+
+    function varargout = spin(beam, other, varargin)
+      % Calculate change in spin between beams
+      %
+      % For details on usage/arguments see :meth:`forcetorque`.
+
+      % TODO: T-matrix support
+
+      ip = inputParser;
+      ip.addParameter('combine', []);
+      ip.parse(varargin{:});
+
+      % Combine the beams if coherent
+      if strcmpi(ip.Results.combine, 'coherent')
+        ibeam = sum(ibeam);
+        sbeam = sum(sbeam);
+      end
+
+      % Get the abpq terms for the calculation
+      [a, b, p, q, ...
+        anp1, bnp1, pnp1, qnp1, ...
+        amp1, bmp1, pmp1, qmp1, ...
+        anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
+        anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
+      ott.bsc.Bsc.find_abpq_force_terms(ibeam, sbeam);
+
+      Cz=m./n./(n+1).*(-(a).*conj(a)+conj(q).*(q)-(b).*conj(b)+conj(p).*(p));
+      Dz=-2./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ...
+            .*real(anp1.*conj(b)-bnp1.*conj(a)-(pnp1).*conj(q) ...
+            +(qnp1).*conj(p));
+
+      sz = sum(Cz+Dz);
+
+      Cxy=1i./n./(n+1).*sqrt((n-m).*(n+m+1)).* ...
+          (conj(pmp1).*p - conj(amp1).*a + conj(qmp1).*q - conj(bmp1).*b);
+      Dxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ...
+            ( (sqrt((n+m+1).*(n+m+2)) .* ...
+            ( p.*conj(qnp1mp1) - q.* conj(pnp1mp1) - ...
+            a.*conj(bnp1mp1) +b.*conj(anp1mp1))) + ...
+            (sqrt((n-m+1).*(n-m+2)) .* ...
+            (pnp1mm1.*conj(q) - qnp1mm1.*conj(p) ...
+            - anp1mm1.*conj(b) + bnp1mm1.*conj(a))) );
+
+      sxy=sum(Cxy+Dxy);
+      sy=real(sxy);
+      sx=imag(sxy);
+
+      % Combine the results if incoherent
+      if strcmpi(ip.Results.combine, 'incoherent')
+        sx = sum(sx, 2);
+        sy = sum(sy, 2);
+        sz = sum(sz, 2);
+      end
+
+      % Package output
+      if nargout == 3
+        varargout{1} = sx;
+        varargout{2} = sy;
+        varargout{3} = sz;
+      else
+        varargout{1} = [sx; sy; sz];
+      end
     end
 
     function [sbeam, beam] = scatter(beam, tmatrix, varargin)
