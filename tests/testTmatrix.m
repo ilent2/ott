@@ -118,3 +118,16 @@ function testShrinkPowerWarning(testCase)
   testCase.verifyWarningFree(@() T.set_Nmax(1, 'powerloss', 'ignore'), ...
       'Ignore argument had no effect');
 end
+
+function testRealImagFunctions(testCase)
+
+  T = testCase.TestData.T;
+
+  T2 = real(T);
+  T3 = imag(T);
+
+  T4 = T.real();
+  T5 = T.imag();
+
+end
+
