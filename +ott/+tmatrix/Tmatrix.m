@@ -22,6 +22,8 @@ classdef Tmatrix
 % Methods
 %   - total()     -- Convert to a total-field T-matrix
 %   - scattered() -- Convert to a scattered-field T-matrix
+%   - real        -- Extract real part of T-matrix
+%   - imag        -- Extract imaginary part of T-matrix
 %
 % Static methods
 %   - simple()    -- Construct a simple particle T-matrix
@@ -594,7 +596,19 @@ classdef Tmatrix
       tmatrixs = tmatrix;
       tmatrixs.data = -tmatrixs.data;
     end
-    
+
+    function tmatrixs = real(tmatrix)
+      % Extract real part of T-matrix
+      tmatrixs = tmatrix;
+      tmatrixs.data = real(tmatrixs.data);
+    end
+
+    function tmatrixs = imag(tmatrix)
+      % Extract imaginary part of T-matrix
+      tmatrixs = tmatrix;
+      tmatrixs.data = imag(tmatrixs.data);
+    end
+
     function check = columncheck(tmatrix)
       % Check the power in each column (non-absorbing T-matrix check)
       
