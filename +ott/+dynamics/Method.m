@@ -1,4 +1,4 @@
 classdef Method
-% Base class for optical tweezers dynamics simulation methods
+% Base class for optical tweezers dynamics methods.
 
 end
