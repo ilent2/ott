@@ -4,3 +4,5 @@
 * Add unit tests for everything (don't trust anything)
 * Should viscosity be a property of the Stokes class?
 
+* Merge Rank2Tensor with Stokes?
+
