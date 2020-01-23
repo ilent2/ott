@@ -1,20 +1,14 @@
 function [z,kz] = axial_equilibrium(tmatrix,beam,z)
-%AXIAL_EQUILIBRIUM find equilibrium position and stiffness along beam axis
+% Find equilibrium position and stiffness along specific axis.
 %
 % [z,kz] = AXIAL_EQUILIBRIUM(T,beam) attempts to locate the equilibrium
 % position for the T-matrix T in beam starting with an initial
 % guess at z = 0.
 %
 % [z,kz] = axial_equilibrium(..., initial_guess) specifies an initial guess.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
-
-% This function is not directly concerned with force/torque calculation
-ott.warning('ott:axialEquilibrium:move', ...
-    'This function will move in a future release');
-
-ott.warning('internal');
 
 if nargin < 4
     z = 0;
@@ -77,7 +71,6 @@ while ~chkflg
         end
     end
     if jj>5
-        ott.warning('external');
         error('No stable equilibrium near z!')
     end
 end
@@ -111,8 +104,6 @@ if ~isempty(rtsi)
     z=rts(rtsi(indz));
     kz=dzf(rtsi(indz));
 else
-    ott.warning('external');
     error('No stable equilibrium near z!')
 end
 
-ott.warning('external');

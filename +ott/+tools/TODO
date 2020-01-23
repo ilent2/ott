@@ -1,0 +1,6 @@
+
+* Remove either or both of find-equilibrium and find-traps
+  We probably want to keep one, since we might not have a tmatrix or beam.
+* Add a find-traps/equilibrium function which takes beam, tmatrix as arguments.
+* One of these functions should use simulation to find the equilibrium
+
