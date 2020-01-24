@@ -23,16 +23,31 @@ classdef FaxenSphere < ott.drag.StokesSphere
     separation     % Distance between the sphere surface and plane
   end
 
-  methods (Static)
-    function drag = simple()
-    end
-  end
-
   methods
-    function obj = FaxenSphere(radius, viscosity, separation)
+    function obj = FaxenSphere(radius, separation, varargin)
+      % Construct a new Faxen's corrected sphere drag tensor.
+      %
+      % Usage:
+      %   drag = FaxenSphere(radius, separation, viscosity, ...)
+      %   radius and separation should be specified in the same units.
+      %
+      % Parameters:
+      %   - radius     -- Radius of sphere
+      %   - separation -- Separation between sphere and surface
+      %   - viscosity -- Viscosity of medium (optional, default: 1.0)
+      %
+      % Optional named arguments:
+      %   - finalize (logical) -- calculate inverse drag tensor.
+      %     Default: `true`.
+      
+      p = inputParser;
+      p.addOptional('viscosity', 1.0, @(x)isnumeric(x)&&isscalar(x));
+      p.addParameter('finalize', true);
+      p.parse(varargin{:});
 
       % Construct regular sphere instance
-      obj = obj@StokesSphere(radius, viscosity);
+      obj = obj@ott.drag.StokesSphere(radius, p.Results.viscosity);
+      obj.separation = separation;
 
       as = radius ./ separation;
 
@@ -51,7 +66,9 @@ classdef FaxenSphere < ott.drag.StokesSphere
       obj.forward(6, 6) = obj.forward(6, 6)*betaP;
 
       % Compute inverse
-      obj.inverse = inv(obj.forward);
+      if p.Results.finalize
+        obj.inverse = inv(obj.forward);
+      end
 
     end
   end

@@ -1,4 +1,4 @@
-classdef Sphere < Stokes6
+classdef StokesSphere < ott.drag.Stokes
 % Drag tensor for a sphere with Stokes Drag
 %
 % Properties
@@ -7,7 +7,6 @@ classdef Sphere < Stokes6
 
   properties (SetAccess=private)
     radius        % Radius of sphere
-    viscosity     % Viscosity of medium
   end
 
   methods (Static)
@@ -50,22 +49,31 @@ classdef Sphere < Stokes6
   end
 
   methods
-    function obj = Sphere(radius, eta)
+    function obj = StokesSphere(radius, varargin)
       % Calculate drag tensors for spherical particle in Stokes drag.
       %
       % Usage:
-      %   tensor = Sphere(radius, eta)
+      %   tensor = Sphere(radius, eta, ...)
       %
       % Parameters
       %   - radius    -- Radius of particle
-      %   - eta       -- Viscosity of medium
+      %   - viscosity -- Viscosity of medium (optional, default: 1.0)
+      %
+      % Optional named arguments:
+      %   - finalize (logical) -- calculate inverse drag tensor.
+      %     Default: `true`.
+      
+      p = inputParser;
+      p.addOptional('viscosity', 1.0, @(x)isnumeric(x)&&isscalar(x));
+      p.addParameter('finalize', true);
+      p.parse(varargin{:});
 
-      obj = obj@Stokes6('translation', 6*pi*eta*radius*eye(3), ...
-        'rotation', 8*pi*eta*radius.^3*eye(3), ...
-        'finalize', true);
+      obj = obj@ott.drag.Stokes(...
+        'translation', 6*pi*p.Results.viscosity*radius*eye(3), ...
+        'rotation', 8*pi*p.Results.viscosity*radius.^3*eye(3), ...
+        'finalize', p.Results.finalize, 'viscosity', p.Results.viscosity);
 
       obj.radius = radius;
-      obj.eta = eta;
     end
   end
 end
