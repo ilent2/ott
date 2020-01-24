@@ -46,7 +46,8 @@ classdef FaxenSphere < ott.drag.StokesSphere
       p.parse(varargin{:});
 
       % Construct regular sphere instance
-      obj = obj@ott.drag.StokesSphere(radius, p.Results.viscosity);
+      obj = obj@ott.drag.StokesSphere(radius, p.Results.viscosity, ...
+          'finalize', false);
       obj.separation = separation;
 
       as = radius ./ separation;
@@ -65,11 +66,10 @@ classdef FaxenSphere < ott.drag.StokesSphere
       obj.forward(5, 5) = obj.forward(5, 5)*betaS;
       obj.forward(6, 6) = obj.forward(6, 6)*betaP;
 
-      % Compute inverse
+      % If no inverse/forward, calculate them
       if p.Results.finalize
-        obj.inverse = inv(obj.forward);
+        obj = obj.finalize();
       end
-
     end
   end
 end

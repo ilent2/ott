@@ -5,7 +5,7 @@ classdef StokesSphere < ott.drag.Stokes
 %   - radius    -- Radius of sphere
 %   - viscosity -- Viscosity of medium
 
-  properties (SetAccess=private)
+  properties (SetAccess=protected)
     radius        % Radius of sphere
   end
 

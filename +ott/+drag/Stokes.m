@@ -345,6 +345,16 @@ classdef Stokes
       end
     end
 
+    function obj = subsasgn(obj, s, val)
+      % Subsasgn for obj(i, j) to obj.forward(i, j)
+      if length(s) == 1 && strcmpi(s(1).type, '()')
+        snew = substruct('.','forward','()',s(1).subs(:));
+        obj = subsasgn(obj,snew,val);
+      else
+        obj = builtin('subsasgn',obj,s,val);
+      end
+    end
+
   end % methods
 
 end
