@@ -1,9 +1,0 @@
-
-* Implement rotations
-* Add an orientation matrix to the Stokes class
-* Add unit tests for everything (don't trust anything)
-
-* Changing a value in the tensor should demote the class, this
-  could be done in the subsasgn function.  This should also be
-  done for Bsc and Tmatrix classes.
-

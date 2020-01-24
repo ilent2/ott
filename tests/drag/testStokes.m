@@ -41,3 +41,28 @@ function testMtimes(testCase)
 
 end
 
+function testRotation(testCase)
+
+  import ott.utils.*;
+
+  a = ott.drag.Stokes('forward', diag([1, 2, 3, 4, 5, 6]));
+  a = a.rotateZ(pi/2);
+  testCase.verifyEqual(double(a), diag([2, 1, 3, 5, 4, 6]), ...
+    'AbsTol', 1.0e-6, 'Forward rotation not correct');
+  testCase.verifyEqual(inv(a), diag(1./[2, 1, 3, 5, 4, 6]), ...
+    'AbsTol', 1.0e-6, 'Inverse rotation not correct');
+  testCase.verifyEqual(a.orientation, rotz(90)*eye(3), ...
+    'Rotation not set');
+
+  % Change the rotation back
+  a = a.clearRotation();
+  testCase.verifyEqual(double(a), diag([1, 2, 3, 4, 5, 6]), ...
+    'AbsTol', 1.0e-6, 'Rotation not cleared with clear');
+
+  % Apply rotation and set orientation
+  a = a.rotateZ(pi/2);
+  a = a.setOrientation(eye(3));
+  testCase.verifyEqual(double(a), diag([1, 2, 3, 4, 5, 6]), ...
+    'AbsTol', 1.0e-6, 'Rotation not cleared with orientation');
+
+end

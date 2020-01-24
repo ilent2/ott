@@ -11,6 +11,7 @@ classdef Stokes
 %  - inverse      -- Rank 2 inverse tensor
 %  - allowchanges -- If false, prevents further changes to dependent proeprties
 %  - viscosity    -- Viscosity of surrounding medium (default: 1.0)
+%  - orientation  -- Current orientation matrix for tensor (default: eye)
 %
 % Dependent properties:
 %  - translation      -- Translational component of tensor
@@ -23,6 +24,9 @@ classdef Stokes
 % Methods:
 %  - inv         -- Return the inverse or calculate the inverse
 %  - mtimes      -- Multiply the tensor or calculate the forward and mul
+%  - rotate      -- Rotate the tensor specifying a rotation matrix
+%  - rotate*     -- Rotate the tensor around the X,Y,Z axis
+%  - setOrientation -- Clear the current orientation and apply a new one
 %
 % Static methods:
 %  - defaultMethod -- Determine the appropriate methods for a particular shape.
@@ -44,10 +48,14 @@ classdef Stokes
   end
 
   properties
-    viscosity         % Viscosity of surrounding medium (default: 1.0)
     allowchanges      % Prevent further changes after finalize
     forward           % Rank 2 tensor for the drag
     inverse           % Rank 2 inverse tensor for the drag
+  end
+
+  properties (SetAccess=protected)
+    viscosity         % Viscosity of surrounding medium (default: 1.0)
+    orientation       % Current orientation of the tensor
   end
 
   methods (Static)
@@ -92,6 +100,29 @@ classdef Stokes
     end
   end
 
+  methods (Access=protected)
+    function obj = rotate_data(obj, rot)
+      % Apply a rotation to the tensor data
+
+      old_allowchanges = obj.allowchanges;
+      obj.allowchanges = true;
+
+      if ~isempty(obj.forward)
+        obj.translation = rot.' * obj.translation * rot;
+        obj.rotation = rot.' * obj.rotation * rot;
+        obj.crossterms = rot.' * obj.crossterms * rot;
+      end
+
+      if ~isempty(obj.inverse)
+        obj.itranslation = rot.' * obj.itranslation * rot;
+        obj.irotation = rot.' * obj.irotation * rot;
+        obj.icrossterms = rot.' * obj.icrossterms * rot;
+      end
+
+      obj.allowchanges = old_allowchanges;
+    end
+  end
+
   methods
     function obj = Stokes(varargin)
       % Construct a new drag tensor instance.
@@ -124,6 +155,7 @@ classdef Stokes
       p.addParameter('icrossterms', []);
       p.addParameter('finalize', true);
       p.addParameter('viscosity', 1.0);
+      p.addParameter('orientation', eye(3));
       p.parse(varargin{:});
 
       assert(~(~isempty(p.Results.forward) & (...
@@ -137,12 +169,13 @@ classdef Stokes
           | ~isempty(p.Results.icrossterms))), ...
         ['Only inverse or any of (iforward|irotation|icrossterms) ', ...
           'must be set, not both']);
-        
+
       % Allow changes to properties (default value)
       obj.allowchanges = true;
-      
-      % Store viscosity
+
+      % Store properties
       obj.viscosity = p.Results.viscosity;
+      obj.orientation = p.Results.orientation;
 
       % Set forward matrix if possible
       if ~isempty(p.Results.forward)
@@ -325,37 +358,98 @@ classdef Stokes
         obj.inverse = inv(obj.forward);
         obj.allowchanges = false;
       end
-      
+
     end
-    
+
     function mat = diag(obj)
       % Return the diagonal of the forward drag tensor
       mat = diag(obj.forward);
     end
-    
-    function sref = subsref(obj,s)
-      % Subsref for obj(i, j) to obj.forward(i, j)
-      switch s(1).type
-        case '()'
-           if length(s) < 2
-              sref = builtin('subsref',obj.forward,s);
-              return
-           else
-              sref = builtin('subsref',obj,s);
-           end
-        otherwise
-           sref = builtin('subsref',obj,s);
-      end
+
+    function obj = set.orientation(obj, val)
+      % Update the orientation
+      assert(ismatrix(val) && all(size(val) == [3, 3]), ...
+        'Orientation must be 3x3 matrix');
+      obj.orientation = val;
     end
 
-    function obj = subsasgn(obj, s, val)
-      % Subsasgn for obj(i, j) to obj.forward(i, j)
-      if length(s) == 1 && strcmpi(s(1).type, '()')
-        snew = substruct('.','forward','()',s(1).subs(:));
-        obj = subsasgn(obj,snew,val);
-      else
-        obj = builtin('subsasgn',obj,s,val);
+    function obj = setOrientation(obj, val)
+      % Clear the current orientation and set a new orientation
+
+      rot = eye(3);
+
+      % Clear the current orientation
+      if any(any(obj.orientation ~= eye(3)))
+        rot = obj.orientation.' * rot;
       end
+
+      % Apply the new rotation
+      if any(any(val ~= eye(3)))
+        rot = val * rot;
+      end
+
+      % Apply all at once and store results
+      obj = obj.rotate_data(rot);
+      obj.orientation = val;
+    end
+
+    function obj = rotateX(obj, angle_rad)
+      % Rotate the particle about the x-axis an angle in radians
+      import ott.utils.*;
+      obj = obj.rotate(rotx(180*angle_rad/pi));
+    end
+
+    function obj = rotateY(obj, angle_rad)
+      % Rotate the particle about the y-axis an angle in radians
+      import ott.utils.*;
+      obj = obj.rotate(roty(180*angle_rad/pi));
+    end
+
+    function obj = rotateZ(obj, angle_rad)
+      % Rotate the particle about the z-axis an angle in radians
+      import ott.utils.*;
+      obj = obj.rotate(rotz(180*angle_rad/pi));
+    end
+
+    function obj = rotateXy(obj, anglex, angley)
+      % Rotate the particle about the x then y axis (units radians)
+      import ott.utils.*;
+      obj = obj.rotate(roty(180*angley/pi) * rotx(180*anglex/pi));
+    end
+
+    function obj = rotateXz(obj, anglex, anglez)
+      % Rotate the particle about the x then z axis (units radians)
+      import ott.utils.*;
+      obj = obj.rotate(rotz(180*anglez/pi) * rotx(180*anglex/pi));
+    end
+
+    function obj = rotateYz(obj, angley, anglez)
+      % Rotate the particle about the y then z axis (units radians)
+      import ott.utils.*;
+      obj = obj.rotate(rotz(180*anglez/pi) * roty(180*angley/pi));
+    end
+
+    function obj = rotateXyz(obj, anglex, angley, anglez)
+      % Rotate the particle about the x, y then z axis (units radians)
+      import ott.utils.*;
+      obj = obj.rotate(rotz(180*anglez/pi) * ...
+          roty(180*angley/pi) * rotx(180*anglex/pi));
+    end
+
+    function obj = rotate(obj, rot)
+      % Applies a 3x3 rotation matrix to the current orientation
+      obj = obj.rotate_data(rot);
+      obj.orientation = rot * obj.orientation;
+    end
+
+    function obj = clearRotation(obj)
+      % Clear the current rotation orientation
+      obj = obj.rotate(obj.orientation.');
+      obj.orientation = eye(3);
+    end
+
+    function mat = double(obj)
+      mat = obj.forward;
     end
 
   end % methods

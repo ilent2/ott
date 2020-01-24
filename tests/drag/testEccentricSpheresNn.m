@@ -10,7 +10,7 @@ function testConstruction(testCase)
 
   innerRadius = 1.0;
   outerRadius = 1.2;
-  separation = 1.4;
+  separation = 0.1;
   viscosity = 1.6;
   a = ott.drag.EccentricSpheresNn(innerRadius, outerRadius, ...
     separation, viscosity);
@@ -47,7 +47,7 @@ function testFarLimit(testCase)
   radius = 1.0;
   outerRadius = 100000.0;
   viscosity = 1.0;
-  separation = 100000.0;
+  separation = 10000.0;
 
   a = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, viscosity);
   b = ott.drag.StokesSphere(radius, viscosity);

@@ -17,9 +17,13 @@ function testConstruction(testCase)
 
   testCase.verifyTrue(isdiag(a.forward), 'Drag tensor should be diagonal');
 
-  testCase.verifyEqual(a(1, 1), a(2, 2), 'A(1, 1) should equal A(2, 2)');
-  testCase.verifyEqual(a(1, 1), a(3, 3), 'A(1, 1) should equal A(3, 3)');
-  testCase.verifyEqual(a(4, 4), a(5, 5), 'A(4, 4) should equal A(5, 5)');
-  testCase.verifyEqual(a(4, 4), a(6, 6), 'A(4, 4) should equal A(6, 6)');
+  testCase.verifyEqual(a.forward(1, 1), a.forward(2, 2), ...
+    'A(1, 1) should equal A(2, 2)');
+  testCase.verifyEqual(a.forward(1, 1), a.forward(3, 3), ...
+    'A(1, 1) should equal A(3, 3)');
+  testCase.verifyEqual(a.forward(4, 4), a.forward(5, 5), ...
+    'A(4, 4) should equal A(5, 5)');
+  testCase.verifyEqual(a.forward(4, 4), a.forward(6, 6), ...
+    'A(4, 4) should equal A(6, 6)');
 end
 
