@@ -1,4 +1,4 @@
-function tests = testFaxen
+function tests = testStokes
   tests = functiontests(localfunctions);
 end
 
@@ -20,6 +20,10 @@ function testConstruct(testCase)
   testCase.verifyEqual(b.rotation, data(4:6, 4:6), ...
     'Rotation part not correct');
 
+end
+
+function testSimple(testCase)
+  error('not yet implemented');
 end
 
 function testInverse(testCase)
