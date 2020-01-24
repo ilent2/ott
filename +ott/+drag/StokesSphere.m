@@ -5,6 +5,9 @@ classdef StokesSphere < ott.drag.Stokes
 %   - radius    -- Radius of sphere
 %   - viscosity -- Viscosity of medium
 
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
   properties (SetAccess=protected)
     radius        % Radius of sphere
   end

@@ -19,6 +19,9 @@ classdef FaxenSphere < ott.drag.StokesSphere
 %   - viscosity   -- Viscosity of the medium
 %   - separation  -- Distance between the sphere surface and plane
 
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
   properties (SetAccess=protected)
     separation     % Distance between the sphere surface and plane
   end

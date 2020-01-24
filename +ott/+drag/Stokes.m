@@ -28,7 +28,10 @@ classdef Stokes
 %  - defaultMethod -- Determine the appropriate methods for a particular shape.
 %  - simple        -- Calculate the Stokes drag for a simple shape.
 %
-% See also Sphere
+% See also StokesSphere and StokesLambNn
+
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
   properties (Dependent)
     translation       % Translational component of tensor

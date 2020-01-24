@@ -3,6 +3,9 @@ classdef PmStokesLamb < Stokes
 %
 % Based on code by Lachlan Gibson
 
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
