@@ -2,7 +2,8 @@
 * Implement rotations
 * Add an orientation matrix to the Stokes class
 * Add unit tests for everything (don't trust anything)
-* Should viscosity be a property of the Stokes class?
 
-* Merge Rank2Tensor with Stokes?
+* Changing a value in the tensor should demote the class, this
+  could be done in the subsasgn function.  This should also be
+  done for Bsc and Tmatrix classes.
 
