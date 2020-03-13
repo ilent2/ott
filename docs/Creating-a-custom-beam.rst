@@ -1,4 +1,6 @@
 
+.. _creating-a-custom-beam:
+
 ######################
 Creating a custom beam
 ######################
