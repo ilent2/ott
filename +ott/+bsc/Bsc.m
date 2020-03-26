@@ -20,6 +20,7 @@ classdef Bsc
 %   - dz          --  Absolute cumulative distance the beam has moved
 %
 % Methods
+%   - append      --  Joins two beam objects together
 %   - sum         --  Merge the BSCs for the beams contained in this object
 %   - translateZ  --  Translates the beam along the z axis
 %   - translateXyz -- Translation to xyz using rotations and z translations
@@ -354,7 +355,7 @@ classdef Bsc
         beam.b = [beam.b, other.b];
       end
     end
-    
+
     function [E, H, data] = farfield(beam, theta, phi, varargin)
       %FARFIELD finds far field at locations theta, phi.
       %
@@ -2144,17 +2145,52 @@ classdef Bsc
       beam.b = beam.b - beam2.b;
     end
     
-    function beam = sum(beam1)
+    function beam = sum(beamin, dim)
       % Sum beam coefficients
       %
       % Usage
       %   beam = sum(beam)
       %
       %   beam = beam.sum()
+      %
+      %   beam = sum([beam1, beam2, ...], dim) sums the given beams,
+      %   similar to Matlab's ``sum`` builtin.  ``dim`` is the dimension
+      %   to sum over (optional).
       
-      beam = beam1;
-      beam.a = sum(beam.a, 2);
-      beam.b = sum(beam.b, 2);
+      if numel(beamin) > 1
+        % beam is an array
+        
+        % Handle default value for dimension
+        if nargin < 2
+          if isvector(beamin)
+            dim = find(size(beamin) > 1, 1);
+          elseif ismatrix(beamin) == 2
+            dim = 2;
+          else
+            dim = find(size(beamin) > 1, 1);
+          end
+        end
+        
+        % Select the first row in our dimension
+        subs = [repmat({':'},1,dim-1), 1, ...
+          repmat({':'},1,ndims(beamin)-dim)];
+        S = struct('type', '()', 'subs', {subs});
+        beam = subsref(beamin, S);
+        
+        % Add each beam
+        for ii = 2:size(beamin, dim)
+        subs = [repmat({':'},1,dim-1), ii, ...
+          repmat({':'},1,ndims(beamin)-dim)];
+          S = struct('type', '()', 'subs', {subs});
+          beam = beam + subsref(beamin, S);
+        end
+        
+      else
+        % Beam union
+        beam = beamin;
+        beam.a = sum(beam.a, 2);
+        beam.b = sum(beam.b, 2);
+      end
     end
     
     function beam = clearDz(beam)
