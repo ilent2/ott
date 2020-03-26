@@ -137,7 +137,15 @@ function testSum(testCase)
   beam3 = beam1 + beam2;
   
   beamU = beam1.append(beam2);
-  testCase.verifyEqual(beamU.sum(), beam3);
-  testCase.verifyEqual(sum(beamU), beam3);
+  testCase.verifyEqual(beamU.sum(), beam3, ...
+    'beamU.sum() incorrect');
+  testCase.verifyEqual(sum(beamU), beam3, ...
+    'sum(beamU) incorrect');
+  
+  % Test array sum
+  beamarr = [beam1, beam2];
+  testCase.verifyEqual(sum(beamarr), beam3, ...
+    'sum([beam1, beam2]) incorrect');
   
 end
+
