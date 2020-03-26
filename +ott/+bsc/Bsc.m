@@ -6,48 +6,45 @@ classdef Bsc
 % will have these units.
 %
 % Properties
-%   a               Beam shape coefficients a vector
-%   b               Beam shape coefficients b vector
-%   type            Beam type (incident, scattered, total)
-%   basis           VSWF beam basis (incoming, outgoing or regular)
-%   Nmax            Truncation number for VSWF coefficients
-%   power           Power of the beam [M*L^2/S^3]
-%   Nbeams          Number of beams in this Bsc object
-%   wavelength      Wavelength of beam [L]
-%   speed           Speed of beam in medium [L/T]
-%   omega           Angular frequency of beam [2*pi/T]
-%   k_medium        Wavenumber in medium [2*pi/L]
-%   dz              Absolute cumulative distance the beam has moved
+%   - a           --  Beam shape coefficients a vector
+%   - b           --  Beam shape coefficients b vector
+%   - type        --  Beam type (incident, scattered, total)
+%   - basis       --  VSWF beam basis (incoming, outgoing or regular)
+%   - Nmax        --  Truncation number for VSWF coefficients
+%   - power       --  Power of the beam [M*L^2/S^3]
+%   - Nbeams      --  Number of beams in this Bsc object
+%   - wavelength  --  Wavelength of beam [L]
+%   - speed       --  Speed of beam in medium [L/T]
+%   - omega       --  Angular frequency of beam [2*pi/T]
+%   - k_medium    --  Wavenumber in medium [2*pi/L]
+%   - dz          --  Absolute cumulative distance the beam has moved
 %
 % Methods
-%   append          Joins two beam objects together
-%   sum             Merge the BSCs for the beams contained in this object
-%   translateZ      Translates the beam along the z axis
-%   translateXyz    Translation to xyz using rotations and z translations
-%   translateRtp    Translation to rtp using rotations and z translations
-%   farfield        Calculate fields in farfield
-%   emFieldXyz      Calculate field values in cartesian coordinates
-%   emFieldRtp      Calculate field values in spherical coordinates
-%   getCoefficients Get the beam coefficients [a, b]
-%   getModeIndices  Get the mode indices [n, m]
-%   totalField      Calculate the total field reprsentation of the beam
-%   scatteredField  Calcualte the scattered field representation of the beam
-%   visualise       Generate a visualisation of the beam near-field
-%   visualiseFarfield Generate a visualisation of the beam far-field
-%   visualiseFarfieldSlice   Generate scattering slice at specific angle
-%   visualiseFarfieldSphere  Generate spherical surface visualisation
-%   intensityMoment Calculate moment of beam intensity in the far-field
-%   force           Calculate change in linear momentum between beams
-%   torque          Calculate change in angular momentum between beams
-%   spin            Calculate change in spin between beams
+%   - sum         --  Merge the BSCs for the beams contained in this object
+%   - translateZ  --  Translates the beam along the z axis
+%   - translateXyz -- Translation to xyz using rotations and z translations
+%   - translateRtp -- Translation to rtp using rotations and z translations
+%   - farfield     -- Calculate fields in farfield
+%   - emFieldXyz   -- Calculate field values in cartesian coordinates
+%   - emFieldRtp   -- Calculate field values in spherical coordinates
+%   - getCoefficients -- Get the beam coefficients [a, b]
+%   - getModeIndices -- Get the mode indices [n, m]
+%   - totalField   -- Calculate the total field reprsentation of the beam
+%   - scatteredField -- Calcualte the scattered field representation of the beam
+%   - visualise      -- Generate a visualisation of the beam near-field
+%   - visualiseFarfield -- Generate a visualisation of the beam far-field
+%   - visualiseFarfieldSlice  -- Generate scattering slice at specific angle
+%   - visualiseFarfieldSphere -- Generate spherical surface visualisation
+%   - intensityMoment -- Calculate moment of beam intensity in the far-field
+%   - force       --  Calculate change in linear momentum between beams
+%   - torque      --  Calculate change in angular momentum between beams
+%   - spin        --  Calculate change in spin between beams
 %
 % Static methods:
-%   make_beam_vector    Convert output of bsc_* functions to beam coefficients
-%
-% Abstract methods:
+%   - make_beam_vector -- Convert output of bsc_* functions to beam coefficients
 %
 % See also Bsc, ott.BscPmGauss, ott.BscPlane.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
@@ -136,18 +133,28 @@ classdef Bsc
     end
     
     function data = GetVisualisationData(field_type, xyz, rtp, vxyz, vrtp)
-      % Helper to generate the visualisation data output
+      % Helper to generate the visualisation data output.
+      % This function is not intended to be called directly, instead
+      % see :mthd:`visualise` or :mthd:`visualiseFarfield`.
       %
-      % GetVisualisationData(field_type, xyz, rtp, vxyz, vrtp)
-      % Takes a field_type string, the coordinates (either xyz or rtp),
-      % and the data values (either vxyz or vrtp).
+      % Usage
+      %   GetVisualisationData(field_type, xyz, rtp, vxyz, vrtp)
+      %   Takes a field_type string, the coordinates (either xyz or rtp),
+      %   and the data values (either vxyz or vrtp).
       %
-      % vectors should all be Nx3 arrays to match inputs of
-      % ott.utils.xyz2rtp and similar functions.
+      % Parameters
+      %   - xyz, rtp, vxyz, vrtp -- (Nx3 numeric) Coordinates in a
+      %     suitable form to be passed to `ott.utils.xyz2rtp` and similar
+      %     functions.  Pass empty arrays for unused values.
+      %   - field_type -- (enum) Type of field to calculate.
+      %     Supported types include:
+      %       - 'irradiance'  -- :math:`\sqrt{Ex^2 + Ey^2 + Ez^2}`
+      %       - 'E2' -- :math:`Ex^2 + Ey^2 + Ez^2`
+      %       - 'Sum(Abs(E))' -- :math:`|Ex| + |Ey| + |Ez|`
       %
-      % field_type can be one of: 'irradiance', 'Et', 'E*',
-      % 'Re(E*)', 'Abs(E*)' where the wildcard (*) must be one of
-      % 'r', 't', 'p', 'x', 'y', 'z'.
+      %       - Re(Er), Re(Et), Re(Ep), Re(Ex), Re(Ey), Re(Ez)
+      %       - Abs(Er), Abs(Et), Abs(Ep), Abs(Ex), Abs(Ey), Abs(Ez)
+      %       - Arg(Er), Arg(Et), Arg(Ep), Arg(Ex), Arg(Ey), Arg(Ez)
       
       assert(size(xyz, 2) == 3 || size(xyz, 2) == 0, ...
         'xyz must be Nx3 matrix');
@@ -186,6 +193,8 @@ classdef Bsc
         data = sqrt(sum(abs(vxyz).^2, 2));
       elseif strcmpi(field_type, 'E2')
         data = sum(abs(vxyz).^2, 2);
+      elseif strcmpi(field_type, 'Sum(Abs(E))')
+        data = sum(abs(vxyz), 2);
         
       elseif strcmpi(field_type, 'Re(Er)')
         data = real(vrtp(:, 1));
@@ -214,6 +223,13 @@ classdef Bsc
         data = abs(vxyz(:, 2));
       elseif strcmpi(field_type, 'Abs(Ez)')
         data = abs(vxyz(:, 3));
+        
+      elseif strcmpi(field_type, 'Arg(Er)')
+        data = angle(vrtp(:, 1));
+      elseif strcmpi(field_type, 'Arg(Et)')
+        data = angle(vrtp(:, 2));
+      elseif strcmpi(field_type, 'Arg(Ep)')
+        data = angle(vrtp(:, 3));
         
       elseif strcmpi(field_type, 'Arg(Ex)')
         data = angle(vxyz(:, 1));
