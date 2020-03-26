@@ -12,55 +12,91 @@ The toolbox includes codes for calculating T-matrices, beams described
 by vector spherical wave functions, functions for calculating forces
 and torques, simple codes for simulating dynamics and examples.
 
-Installation
-------------
+We are currently working on [documentation](https://ott.readthedocs.io/)
+and we welcome feedback/suggestions/comments.  Additional documentation
+can be found via the Matlab `help` command or in the source code.
 
-To use the toolbox, download or clone the GitHub repository.
-You will also need a modern version of MATLAB, at least R2016b.
-To modify any of the GUI applications you will need at least R2018a.
-We have tested the toolbox on R2018a and it should work on newer versions.
-You may also need some of the Matlab support packages (list coming soon).
-This version of the toolbox is released as a package, `+ott`, which
-contains a collection of functions for calculating T-matrices, beam
-coefficients, force and torques.
-To use the functions in your code, the easiest way is to add the
-directory containing the package to your path,
+Installation and usage
+----------------------
+
+There are several methods for installing the toolbox.
+If using Matlab, the easiest method is to launch Matlab and
+navigate to Home -> Addons -> Get-Addons and search for
+"Optical Tweezers Toolbox".  Then, simply click the
+"Add from GitHub" button to automatially download the package and
+add it to the path.
+Alternatively, you can download the toolbox directly from the
+[GitHub repository](https://github.com/ilent2/ott) or select a
+specific release; if using this method you will need to add the
+toolbox directory to Matlab's path using
 
 ```matlab
 addpath('<download-path>/ott');
 help ott   % Test that ott was found, should display ott Contents page
 ```
 
-if you regularly use the toolbox you might want to add the command to
-your [startup.m](https://au.mathworks.com/help/matlab/ref/startup.html?searchHighlight=startup.m) file.
+Regardless of the method you acquired OTT with, once installed you
+should be able to access the toolbox functions and classes contained
+in the `ott.*` package, for example
+
+```matlab
+beam = ott.BscPmGauss();
+```
+
+or for the graphical user interface
+
+```matlab
+ott.ui.Launcher
+```
+
+Dependencies
+------------
+
+The toolbox runs on recent versions of Matlab, most functionality
+should work on at least R2016b but the graphical user interface might
+need R2018a or newer.
+Most functionality should work with
+[GNU Octave](https://www.gnu.org/software/octave/), however this
+has not been tested recently and performance is optimised for Matlab.
+
+Some functionality may require additional dependences including
+additional Matlab products.
+We are currently working on a full list; however, if you encounter any
+difficulties with missing dependencies, please let us know and we may
+be able to find a workaround.
 
 Getting started
 ---------------
 
-The toolbox has changed a lot since previous releases.
-To get started, take a look at the [documentation over on read the docs](https://ott.readthedocs.io).
+The toolbox has changed a lot since previous releases, the most notable
+change is addition of a graphical user interface (still a work-in-progress)
+and moving from a folder structure to a Matlab package structure.
+To get started, take a look at
+the [documentation over on read the docs](https://ott.readthedocs.io).
 The documentation source can be found in the [docs](docs) directory or
 you can download a PDF copy of the documentation with the latest release.
 Alternatively, take a look at the [examples directory](examples).
 
-To calculate the force on a spherical particle, you need to setup a beam obejct,
-setup a particle and run the `ott.forcetorque` function.
-One of the shortest examples of this is:
+To calculate the force on a spherical particle, you need to setup a beam
+object, setup a particle and run the `ott.forcetorque` function.
+For example:
+
 ```matlab
 beam = ott.BscPmGauss();
 tmatrix = ott.TmatrixMie(0.5, 'k_medium', 2*pi, 'k_particle', 2*pi*1.3);
 fz = ott.forcetorque(beam, tmatrix, 'position', [0;0;1].*linspace(-8, 8));
 figure(), plot(fz.')
 ```
-this assumes everything is in units of the wavelength, and creates a Gaussian
-beam with the default parameters.
+
+This example assumes everything is in units of the wavelength,
+and creates a Gaussian beam with the default parameters.
 
 Recent changes
 --------------
 
 There have been many changes since the previous release, mainly the switch
 to object orientated programming.  Beams and T-matrices are now represented
-by obects, we have added shape objects and moved everything into packages.
+by objects, we have added shape objects and moved everything into packages.
 
 T-matrices are represented by `Tmatrix` objects.  For simple shapes,
 the `Tmatrix.simple` method can be used to construct T-matrices for
@@ -115,7 +151,7 @@ This version of the toolbox can be referenced by citing the following paper
 
 or by directly citing the toolbox
 
-> T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe, I. C. D. Lenton,
+> I. C. D. Lenton, T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe,
 > Y. Hu, G. Knöner, A. M. Branczyk, N. R. Heckenberg, and H. Rubinsztein-Dunlop,
 > "Optical tweezers toolbox", https://github.com/ilent2/ott
 
@@ -123,13 +159,12 @@ and the respective Bibtex entry
 
 ```latex
 @misc{Nieminen2018,
-  author = {Nieminen, Timo A. and Loke, Vincent L. Y. and Stilgoe, Alexander B. and Lenton, Isaac C. D. and Kn{\ifmmode\ddot{o}\else\"{o}\fi}ner, Gregor and Bra{\ifmmode\acute{n}\else\'{n}\fi}czyk, Agata M. and Heckenberg, Norman R. and Rubinsztein-Dunlop, Halina},
+  author = {Lenton, Isaac C. D. and Nieminen, Timo A. and Loke, Vincent L. Y. and Stilgoe, Alexander B. and Kn{\ifmmode\ddot{o}\else\"{o}\fi}ner, Gregor and Bra{\ifmmode\acute{n}\else\'{n}\fi}czyk, Agata M. and Heckenberg, Norman R. and Rubinsztein-Dunlop, Halina},
   title = {Optical Tweezers Toolbox},
-  year = {2018},
+  year = {2020},
   publisher = {GitHub},
-  journal = {GitHub repository},
   howpublished = {\url{https://github.com/ilent2/ott}},
-  commit = {Optional, a specific commit}
+  commit = {A specific commit or version (optional)}
 }
 ```
 
@@ -160,3 +195,4 @@ and sub-directories contain Contents.m files which list the files
 and packages in each directory.
 These files can be viewed in Matlab by typing `help ott`
 or `help ott.subpackage`.
+
