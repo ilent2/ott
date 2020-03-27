@@ -287,7 +287,7 @@ the instructions above or using the ``what`` command:
 .. code:: matlab
 
    what_result = what('ott');
-   ott_path = fileparts(what_result.path);
+   ott_path = fileparts(what_result(end).path);
    cd([a, '/examples']);
 
 
