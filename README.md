@@ -23,7 +23,7 @@ There are several methods for installing the toolbox.
 If using Matlab, the easiest method is to launch Matlab and
 navigate to Home -> Addons -> Get-Addons and search for
 "Optical Tweezers Toolbox".  Then, simply click the
-"Add from GitHub" button to automatially download the package and
+"Add from GitHub" button to automatically download the package and
 add it to the path.
 Alternatively, you can download the toolbox directly from the
 [GitHub repository](https://github.com/ilent2/ott) or select a
@@ -49,6 +49,9 @@ or for the graphical user interface
 ott.ui.Launcher
 ```
 
+More detailed instructions can be found in the Getting Started
+section of the [documentation](https://ott.readthedocs.io/).
+
 Dependencies
 ------------
 
@@ -65,8 +68,8 @@ We are currently working on a full list; however, if you encounter any
 difficulties with missing dependencies, please let us know and we may
 be able to find a workaround.
 
-Getting started
----------------
+Quick-start guide
+-----------------
 
 The toolbox has changed a lot since previous releases, the most notable
 change is addition of a graphical user interface (still a work-in-progress)
@@ -158,8 +161,8 @@ or by directly citing the toolbox
 and the respective Bibtex entry
 
 ```latex
-@misc{Nieminen2018,
-  author = {Lenton, Isaac C. D. and Nieminen, Timo A. and Loke, Vincent L. Y. and Stilgoe, Alexander B. and Kn{\ifmmode\ddot{o}\else\"{o}\fi}ner, Gregor and Bra{\ifmmode\acute{n}\else\'{n}\fi}czyk, Agata M. and Heckenberg, Norman R. and Rubinsztein-Dunlop, Halina},
+@misc{Lenton2020,
+  author = {Lenton, Isaac C. D. and Nieminen, Timo A. and Loke, Vincent L. Y. and Stilgoe, Alexander B. and Y. Hu and Kn{\ifmmode\ddot{o}\else\"{o}\fi}ner, Gregor and Bra{\ifmmode\acute{n}\else\'{n}\fi}czyk, Agata M. and Heckenberg, Norman R. and Rubinsztein-Dunlop, Halina},
   title = {Optical Tweezers Toolbox},
   year = {2020},
   publisher = {GitHub},
