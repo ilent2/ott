@@ -1,4 +1,6 @@
 
+.. _further-reading:
+
 ###############
 Further Reading
 ###############

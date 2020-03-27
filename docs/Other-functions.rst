@@ -1,4 +1,6 @@
 
+.. _other-functions:
+
 ###############
 Other functions
 ###############

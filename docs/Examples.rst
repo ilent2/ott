@@ -1,11 +1,13 @@
 
+.. _examples:
 
 ########
 Examples
 ########
 
-This section provides detailed examples to help you get started using the toolbox.
-Further examples scripts and LiveScripts can be found in the ``examples`` directory.
+This section provides detailed examples to help you get started using
+the toolbox.  Further examples scripts and LiveScripts can be found
+in the ``examples`` directory.
 
 .. toctree::
    :maxdepth: 2
@@ -14,5 +16,5 @@ Further examples scripts and LiveScripts can be found in the ``examples`` direct
    Combining-beams
    Creating-a-custom-beam
    Creating-a-custom-Tmatrix
-   Exploring-the-toolbox-with-the-UI.rst
+   Calculating-forces-with-the-gui.rst
 
