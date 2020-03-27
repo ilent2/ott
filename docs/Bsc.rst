@@ -16,8 +16,9 @@ Most of the core functionality is provided in the base class
 Classes inheriting from this class typically only need to define
 the beam creation code specific to that type of beam.
 
-.. contents::
+.. contents:: Contents
    :depth: 3
+   :local:
 ..
 
 
@@ -53,17 +54,26 @@ BscPlane
 
 Representation of a plane wave in VSWF coefficients
 
+.. autoclass:: +ott.BscPlane
+
 BscPmGauss
 ==========
 
 Provides HG, LG and IG beams using point matching method
+
+.. autoclass:: +ott.BscPmGauss
 
 BscPmParaxial
 =============
 
 Calculate representation from farfield/paraxial beam
 
+.. autoclass:: +ott.BscPmParaxial
+
 BscPointmatch
 =============
 
 Base class for BSC generated using point matching
+
+.. autoclass:: +ott.BscPointMatch
+
