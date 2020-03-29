@@ -55,3 +55,14 @@ function testIgModeErrors(testCase)
 
 end
 
+function testAngularScaling(testCase)
+
+  beam = ott.BscPmGauss('angular_scaling', 'sintheta');
+  testCase.verifyEqual(beam.angular_scaling, 'sintheta', ...
+    'sintheta Angular scaling not set correctly');
+
+  beam = ott.BscPmGauss('angular_scaling', 'tantheta');
+  testCase.verifyEqual(beam.angular_scaling, 'tantheta', ...
+    'tantheta Angular scaling not set correctly');
+  
+end
