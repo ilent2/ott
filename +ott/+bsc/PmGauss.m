@@ -2,30 +2,20 @@ classdef BscPmGauss < ott.BscPointmatch
 %BscPmGauss provides HG, LG and IG beams using point matching method
 %
 % Properties
-%   gtype              Type of beam ('gaussian', 'lg', 'hg', or 'ig')
-%   mode               Beam modes (2 or 4 element vector)
-%   polarisation       Beam polarisation
-%   truncation_angle   Truncation angle for beam [rad]
-%   offset             Offset for original beam calculation
-%   angle              Angle of incoming beam waist
-%   a            (Bsc) Beam shape coefficients a vector
-%   b            (Bsc) Beam shape coefficients b vector
-%   type         (Bsc) Beam type (incident, scattered, total)
-%   basis        (Bsc) VSWF beam basis (incoming, outgoing or regular)
-%   Nmax         (Bsc) Truncation number for VSWF coefficients
-%   power        (Bsc) Power of the beam [M*L^2/S^3]
-%   Nbeams       (Bsc) Number of beams in this Bsc object
-%   wavelength   (Bsc) Wavelength of beam [L]
-%   speed        (Bsc) Speed of beam in medium [L/T]
-%   omega        (Bsc) Angular frequency of beam [2*pi/T]
-%   k_medium     (Bsc) Wavenumber in medium [2*pi/L]
-%   dz           (Bsc) Absolute cumulative distance the beam has moved
+%  - gtype          --  Type of beam ('gaussian', 'lg', 'hg', or 'ig')
+%  - mode           --  Beam modes (2 or 4 element vector)
+%  - polarisation   --  Beam polarisation
+%  - truncation_angle -- Truncation angle for beam [rad]
+%  - offset         --  Offset for original beam calculation
+%  - angle          --  Angle of incoming beam waist
+%  - angular_scaling -- Angular scaling function (tantheta | sintheta)
+%  See :class:`+ott.Bsc` for inherited properties.
 %
-% This class is based on bsc_pointmatch_farfield.m and
-% bsc_pointmatch_focalplane.m from ottv1.
+% This class is based on ``bsc_pointmatch_farfield.m`` and
+% ``bsc_pointmatch_focalplane.m`` from OTT (version 1).
 %
 % See also BscPmGauss.
-%
+
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
@@ -37,6 +27,7 @@ classdef BscPmGauss < ott.BscPointmatch
     offset             % Offset for original beam calculation
     angle              % Angle of incoming beam waist
     translation_method % Translation method to use
+    angular_scaling    % Angular scaling function (tantheta | sintheta)
   end
 
   % TODO: Incorperate bsc_pointmatch_focalplane option for gaussian beams.
@@ -54,37 +45,49 @@ classdef BscPmGauss < ott.BscPointmatch
 
   methods
     function beam = BscPmGauss(varargin)
-      %BSCPMGAUSS construct a new IG, HG or LG gaussian beam.
+      % Construct a new IG, HG, LG or Gaussian beam.
       %
-      % BSCPMGAUSS(...) constructs a new Gassian beam (LG00).
+      % Usage
+      %   BscPmGauss(...) constructs a new Gassian beam (LG00).
       %
-      % BSCPMGAUSS(type, mode, ...) constructs a new beam with the given type.
-      % Supported types [mode]:
-      %     'lg'    Laguarre-Gauss  [ radial azimuthal ]
-      %     'hg'    Hermite-Gauss   [ m n ]
-      %     'ig'    Ince-Gauss      [ paraxial azimuthal parity elipticity ]
+      %   BscPmGauss(type, mode, ...) constructs a new beam with the given type.
+      %   Supported types [mode]:
+      %    - 'lg' -- Laguarre-Gauss  [ radial azimuthal ]
+      %    - 'hg' -- Hermite-Gauss   [ m n ]
+      %    - 'ig' -- Ince-Gauss      [ paraxial azimuthal parity elipticity ]
       %
-      % Optional named parameters:
-      %   'Nmax'              Truncation number for beam shape coefficients.
-      %       If omitted, Nmax is initially set to 100, the beam is
-      %       calculated and Nmax is reduced so that the power does
-      %       not drop significantly.
+      % Optional named parameters
+      %   - 'Nmax'  --          Truncation number for beam shape coefficients.
+      %     If omitted, Nmax is initially set to 100, the beam is
+      %     calculated and Nmax is reduced so that the power does
+      %     not drop significantly.
       %
-      %   'NA'                Numerical aperture of objective
-      %   'polarisation'      Polarisation of the beam
-      %   'power'             Rescale the power of the beam (default: [])
+      %   - 'NA'     --         Numerical aperture of objective
+      %   - 'polarisation'  --  Polarisation of the beam
+      %   - 'power'         --  Rescale the power of the beam (default: [])
       %
-      %   'omega'             Optical angular frequency (default: 2*pi)
-      %   'k_medium'          Wave number in medium
-      %   'index_medium'      Refractive index of medium
-      %   'wavelength_medium' Wavelength in medium
+      %   - 'omega'         --  Optical angular frequency (default: 2*pi)
+      %   - 'k_medium'      --  Wave number in medium
+      %   - 'index_medium'  --  Refractive index of medium
+      %   - 'wavelength_medium' -- Wavelength in medium
       %
-      %   'wavelength0'       Wavelength in vacuum
-      %   'offset'            Offset of the beam from origin
+      %   - 'wavelength0'   --  Wavelength in vacuum
+      %   - 'offset'        --  Offset of the beam from origin
       %
-      %   translation_method  Method to use when calculating translations.
-      %       Can either be 'Default' or 'NewBeamOffset', the latter calculates
-      %       new beam shape coefficients for every new position.
+      %   - translation_method -- Method to use when calculating translations.
+      %     Can either be 'Default' or 'NewBeamOffset', the latter calculates
+      %     new beam shape coefficients for every new position.
+      %
+      %   - angular_scaling (enum) -- Angular scaling function.
+      %     For a discussion of this parameter, see Documentation
+      %     (:ref:`conception-angular-scaling`).
+      %      - 'sintheta' -- angular scaling function is the same as the
+      %        one present in standard microscope objectives.
+      %        Preserves high order mode shape!
+      %      - 'tantheta' -- default angular scaling function,
+      %        "small angle approximation" which is valid for thin
+      %        lenses ONLY. Does not preserve high order mode shape
+      %        at large angles.
 
       beam = beam@ott.BscPointmatch(varargin{:});
       beam.type = 'incident';
@@ -115,6 +118,7 @@ classdef BscPmGauss < ott.BscPointmatch
 
       p.addParameter('truncation_angle_deg', []);
       p.addParameter('truncation_angle', []);
+      p.addParameter('angular_scaling', 'tantheta');
 
       p.parse(varargin{:});
 
@@ -152,11 +156,6 @@ classdef BscPmGauss < ott.BscPointmatch
       % 'radial' - makes radial component with weighting xcomponent.
       % 'azimuthal' - makes azimuthal component with weighting ycomponent.
       % (note: azimuthal and radial components are not mutually exclusive.)
-      % 'sintheta' - angular scaling function is the same as the one present in
-      %   standard microscope objectives. Preserves high order mode shape!
-      % 'tantheta' - default angular scaling function, "small angle
-      %   approximation" which is valid for thin lenses ONLY. Does not preserve
-      %   high order mode shape at large angles.
 
       import ott.utils.*
 
@@ -279,9 +278,7 @@ classdef BscPmGauss < ott.BscPointmatch
         % Turn off axissymmetry
         axisymmetry=0;
       end
-
-      aperture_function=0;
-
+      
       w0 = ott.utils.paraxial_beam_waist(paraxial_order);
       wscaling=1/tan(abs(beam_angle_deg/180*pi));
 
@@ -329,14 +326,21 @@ classdef BscPmGauss < ott.BscPointmatch
       central_amplitude = 1;
       rw = 2*(wscaling * w0)^2 * tan(theta).^2 ;
       dr = (wscaling * w0) * (sec(theta)).^2 ;
+      
+      if strcmpi(p.Results.angular_scaling, 'tantheta')
+        % Nothing to do
+      elseif strcmpi(p.Results.angular_scaling, 'sintheta')
 
-      if aperture_function==2
-
-        wscaling=1/sin(abs(beam_angle/180*pi));
+        wscaling=1/sin(abs(beam_angle_deg/180*pi));
 
         rw = 2*(wscaling * w0)^2 * sin(theta).^2 ;
         dr = (wscaling * w0) * abs(cos(theta)) ;
+        
+      else
+        error('Unknown angular_scaling parameter value');
       end
+      
+      beam.angular_scaling = p.Results.angular_scaling;
 
       % degree and order of all modes
       total_modes = nmax^2 + 2*nmax;

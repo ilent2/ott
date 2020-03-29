@@ -37,6 +37,7 @@ or by directly citing the toolbox
    Getting-Started.rst
    Examples.rst
    Reference.rst
+   Conceptual-Notes.rst
    Further-Reading.rst
    Documentation-terms-of-use.rst
 
