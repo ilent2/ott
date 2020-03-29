@@ -12,7 +12,7 @@ in the ``examples`` directory.
 .. toctree::
    :maxdepth: 2
 
-   Calculating-Forces-And-Torques
+   Calculating-Forces-On-A-Spherical-Particle.rst
    Combining-beams
    Creating-a-custom-beam
    Creating-a-custom-Tmatrix

@@ -47,7 +47,7 @@ the :ref:`creating-a-custom-beam` example.
 .. autoclass:: +ott.Bsc
    :members: Bsc, GetVisualisationData, visualise,
       visualiseFarfield, visualiseFarfieldSlice,
-      visualiseFarfieldSphere
+      visualiseFarfieldSphere, translateXyz, translateZ
 
 BscPlane
 ========
