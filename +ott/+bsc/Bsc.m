@@ -136,7 +136,7 @@ classdef Bsc
     function data = GetVisualisationData(field_type, xyz, rtp, vxyz, vrtp)
       % Helper to generate the visualisation data output.
       % This function is not intended to be called directly, instead
-      % see :mthd:`visualise` or :mthd:`visualiseFarfield`.
+      % see :meth:`visualise` or :meth:`visualiseFarfield`.
       %
       % Usage
       %   GetVisualisationData(field_type, xyz, rtp, vxyz, vrtp)
@@ -266,11 +266,17 @@ classdef Bsc
     function [A, B] = translateZ_type_helper(beam, z, Nmax)
       % Determine the correct type to use in ott.utils.translate_z
       %
-      % [A, B] = translateZ_type_helper(beam, z, Nmax) calculates the
-      % translation matrices for distance z with Nmax
+      % Units for the coordinates should be consistent with the
+      % beam wave number (i.e., if the beam was created by specifying
+      % wavelength in units of meters, distances here should also be
+      % in units of meters).
       %
-      % Use may change in future
-      
+      % Usage
+      %   [A, B] = translateZ_type_helper(beam, z, Nmax) calculates the
+      %   translation matrices for distance z with Nmax
+      %
+      % Usage may change in future releases.
+
       % Determine beam type
       switch beam.basis
         case 'incoming'
@@ -1131,18 +1137,27 @@ classdef Bsc
     end
 
     function [beam, A, B] = translateZ(beam, varargin)
-      %TRANSLATEZ translate a beam along the z-axis
+      % Translate a beam along the z-axis.
       %
-      % TRANSLATEZ(z) translates by a distance z along the z axis.
+      % Units for the coordinates should be consistent with the
+      % beam wave number (i.e., if the beam was created by specifying
+      % wavelength in units of meters, distances here should also be
+      % in units of meters).
       %
-      % [beam, A, B] = TRANSLATEZ(z) returns the translation matrices
-      % and the translated beam.  See also Bsc.TRANSLATE.
+      % Usage
+      %   tbeam = beam.translateZ(z) translates by a distance ``z``
+      %   along the z axis.
       %
-      % [beam, AB] = TRANSLATEZ(z) returns the A, B matricies packed
-      % so they can be directly applied to the beam: tbeam = AB * beam.
+      %   [tbeam, A, B] = beam.translateZ(z) returns the translation matrices
+      %   and the translated beam.  See also :meth:`+ott.Bsc.translate`.
       %
-      % TRANSLATEZ(..., 'Nmax', Nmax) specifies the output beam Nmax.
-      % Takes advantage of not needing to calculate a full translation matrix.
+      %   [tbeam, AB] = beam.translateZ(z) returns the ``A, B`` matrices
+      %   packed so they can be directly applied to a
+      %   beam: ``tbeam = AB * beam``.
+      %
+      %   [...] = beam.translateZ(..., 'Nmax', Nmax) specifies the output
+      %   beam ``Nmax``.  Takes advantage of not needing to calculate
+      %   a full translation matrix.
 
       p = inputParser;
       p.addOptional('z', []);
@@ -1187,25 +1202,35 @@ classdef Bsc
     end
 
     function varargout = translateXyz(beam, varargin)
-      %TRANSLATEXYZ translate the beam given Cartesian coordinates
+      % Translate the beam given Cartesian coordinates.
       %
-      % TRANSLATEXYZ(xyz) translate the beam to locations given by
-      % the xyz coordinates, where xyz is a 3xN matrix of coordinates.
+      % Units for the coordinates should be consistent with the
+      % beam wave number (i.e., if the beam was created by specifying
+      % wavelength in units of meters, distances here should also be
+      % in units of meters).
       %
-      % TRANSLATEXYZ(Az, Bz, D) translate the beam using
-      % z-translation and rotation matricies.
+      % Usage
+      %   tbeam = beam.translateXyz(xyz) translate the beam to locations
+      %   given by the ``xyz`` coordinates, where ``xyz`` is a 3xN matrix
+      %   of coordinates.
       %
-      % [beam, Az, Bz, D] = TRANSLATEXYZ(...) returns the z-translation
-      % matrices, the rotation matrix D, and the translated beam.
+      %   tbeam = beam.translateXyz(Az, Bz, D)
+      %   Translate the beam using z-translation and rotation matrices.
       %
-      % [beam, A, B] = TRANSLATEXYZ(...) returns the translation matrices
-      % and the translated beam.
+      %   [tbeam, Az, Bz, D] = beam.translateXyz(...) returns the
+      %   z-translation matrices ``Az, Bz``, the rotation matrix ``D``,
+      %   and the translated beam ``tbeam``.
       %
-      % [beam, AB] = TRANSLATEXYZ(...) returns the A, B matricies packed
-      % so they can be directly applied to the beam: tbeam = AB * beam.
+      %   [tbeam, A, B] = beam.translateXyz(...) returns the translation
+      %   matrices ``A, B`` and the translated beam.
       %
-      % TRANSLATEXYZ(..., 'Nmax', Nmax) specifies the output beam Nmax.
-      % Takes advantage of not needing to calculate a full translation matrix.
+      %   [tbeam, AB] = beam.translateXyz(...) returns the translation
+      %   matrices ``A, B`` packaged so they can be directly applied
+      %   to a beam using ``tbeam = AB * beam``.
+      %
+      %   tbeam = beam.translateXyz(..., 'Nmax', Nmax) specifies the
+      %   output beam ``Nmax``.  Takes advantage of not needing to
+      %   calculate a full translation matrix.
 
       p = inputParser;
       p.addOptional('opt1', []);    % xyz or Az
