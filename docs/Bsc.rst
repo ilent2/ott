@@ -62,6 +62,7 @@ BscPmGauss
 Provides HG, LG and IG beams using point matching method
 
 .. autoclass:: +ott.BscPmGauss
+   :members: BscPmGauss
 
 BscPmParaxial
 =============
