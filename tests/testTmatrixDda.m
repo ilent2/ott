@@ -7,28 +7,79 @@ function setupOnce(testCase)
 end
 
 function testSphere(testCase)
-
-  import matlab.unittest.constraints.IsEqualTo;
-  import matlab.unittest.constraints.AbsoluteTolerance;
   
   % Large error, unless we want a smoother sphere/slower runtime
-  tol = 0.5e-2;
+  abs_tol = 2e-3;
+  rel_tol = 22e-2;
 
   shape = ott.shapes.Sphere(0.1);
 
   nrel = 1.2;
   
   Tdda = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
-    'spacing', 1/50);
+    'spacing', 1/35);
   Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel);
 
-  testCase.verifyThat(Tdda.Nmax, IsEqualTo(Tmie.Nmax), ...
+  testCase.verifyEqual(Tdda.Nmax, Tmie.Nmax, ...
       'Nmax does not match Mie T-matrix');
 
-  testCase.verifyThat(full(Tdda.data), IsEqualTo(full(Tmie.data), ...
-      'Within', AbsoluteTolerance(tol)), ...
-      'T-matrix does not match Mie T-matrix within tolerance');
+  diag_dda = diag(Tdda.data);
+  ndiag_dda = Tdda.data - diag(diag_dda);
+  diag_mie = diag(Tmie.data);
+  ndiag_mie = Tmie.data - diag(diag_mie);
 
+  testCase.verifyEqual(full(ndiag_dda), full(ndiag_mie), ...
+      'AbsTol', abs_tol, ...
+      'T-matrix abstol failed');
+
+  testCase.verifyEqual(full(diag_dda), full(diag_mie), ...
+      'RelTol', rel_tol, ...
+      'T-matrix retol failed');
+
+end
+
+function testDipoleSphere(testCase)
+
+  xyz = [0;0;0];
+  nrel = 1.2;
+  
+  radius = 0.01;
+  d = (4*pi/3).^(1/3) .* radius;
+  
+  Tdda = ott.TmatrixDda(xyz, 'index_relative', nrel, ...
+    'spacing', d, 'Nmax', 1, 'polarizability', 'CM');
+  
+  shape = ott.shapes.Sphere(radius);
+  Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel, ...
+    'Nmax', 1);
+  
+  Tdda_diag = diag(Tdda.data);
+  Tmie_diag = full(diag(Tmie.data));
+  testCase.verifyEqual(Tdda_diag(4:end), Tmie_diag(4:end), ...
+    'RelTol', 0.001, 'Upper Mie coefficeints not equal');
+  testCase.verifyEqual(Tdda.data, full(Tmie.data), ...
+    'AbsTol', 1e-6, 'Upper Mie coefficeints not equal');
+
+end
+
+function testSingleDipole(testCase)
+
+  Nmax = 2;
+
+  xyz = [0;0;0];
+  nrel = 1.2;
+  Tdda1 = ott.TmatrixDda(xyz, 'index_relative', nrel, ...
+    'spacing', 1, 'Nmax', Nmax);
+  
+  nrel = [1.2; 1.2; 1.2];
+  Tdda2 = ott.TmatrixDda(xyz, 'index_relative', nrel, ...
+    'spacing', 1, 'Nmax', Nmax);
+  testCase.verifyEqual(Tdda1.data, Tdda2.data);
+  
+  % Relative refractive index in Cartesian coordinates
+  nrel = [1.2; 1.4; 1.5];
+  Tdda3 = ott.TmatrixDda(xyz, 'index_relative', nrel, ...
+    'spacing', 1, 'Nmax', Nmax);
 end
 
 function testCube(testCase)
@@ -78,3 +129,27 @@ function testTooManyDipoles(testCase)
 
 end
 
+function testHomogeneousMaterialSizes(testCase)
+  % Test for the following part of the documentation
+  %
+  % The method supports homogenous and inhomogenous particles.
+  % For homogeneous particles, specify the material as a scalar,
+  % 3x1 vector or 3x3 polarizability matrix.
+
+  shape = ott.shapes.Sphere(0.1);
+
+  % Test homogeneous scalar
+  nrel = 1.2;
+  Tdda = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
+    'spacing', 1/20);
+  
+  nrel = [1.2; 1.3; 1.4];
+  Tdda = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
+    'spacing', 1/20);
+  
+  nrel = [1; 1; 1];
+  pol = [1.2, 0, 0; 0, 1.3, 0; 0, 0, 1.4];
+  Tdda = ott.TmatrixDda.simple(shape, 'polarizability', pol, ...
+    'spacing', 1/20, 'index_relative', nrel);
+  
+end

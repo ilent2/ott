@@ -69,7 +69,11 @@ classdef TmatrixDda < ott.Tmatrix
       %   shape described by the name and parameters.
       %   For supported shape names, see :class:`+ott.+shapes.Shape.simple`.
       %
-      % See :meth:`TmatrixDda` for optional named parameters.
+      % Optional named arguments:
+      %   - spacing (numeric)         -- Spacing between dipoles.
+      %     Default: ``wavelength_particle/20``
+      %
+      % For other named parameters, see :meth:`TmatrixDda`.
 
       p = inputParser;
       p.KeepUnmatched = true;
@@ -103,7 +107,8 @@ classdef TmatrixDda < ott.Tmatrix
       voxels = shape.voxels(spacing);
 
       % Calculate the T-matrix using DDA
-      tmatrix = TmatrixDda(voxels, varargin{:});
+      tmatrix = TmatrixDda(voxels, varargin{:}, ...
+        'spacing', spacing);
     end
   end
 
@@ -115,6 +120,11 @@ classdef TmatrixDda < ott.Tmatrix
       %   TmatrixDda(xyz, ...) calculates the T-matrix for the particle
       %   described by voxels xyz.  xyz is a 3xN matrix of coordinates
       %   for each voxel.
+      %
+      % The method supports homogenous and inhomogenous particles.
+      % For homogeneous particles, specify the material as a scalar,
+      % 3x1 vector or 3x3 polarizability matrix.  For inhomogeneous
+      % particles use a N, 3xN or 3x3N vector/matrix.
       %
       % Optional named parameters
       %   - Nmax      [r,c]   Size of the T-matrix to generate.
@@ -129,16 +139,19 @@ classdef TmatrixDda < ott.Tmatrix
       %   - wavelength_particle (numeric) -- Wavelength in particle
       %   - index_particle (numeric)      -- Refractive index in particle.
       %     Default: ``k_particle = 2*pi*index_relative``
-      %
-      %   - index_relative (numeric)  -- Relative refractive index.
-      %     Default: 1.0
-      %   - wavelength0 (numeric)     -- Wavelength in vacuum.
-      %     Default: 1.0
-      %   - spacing (numeric)         -- Spacing between dipoles.
-      %     Default: ``wavelength_particle/10``
       %   - polarizability (enum|numeric) -- Polarizability or method
       %     name to use to calculate from relative refractive index.
       %     Default: 'LDR'.  Supported methods: 'LDR', 'FCD', 'CM'.
+      %   - index_relative (numeric)  -- Relative refractive index.
+      %     Default: 1.0
+      %
+      %   - wavelength0 (numeric)     -- Wavelength in vacuum.
+      %     Default: 1.0
+      %
+      %   - spacing (numeric) -- spacing for estimating Nmax and
+      %     calculating the polarizability.  Only required when
+      %     polarizability is non-numeric.
+      %     Default: ``[]``
       %
       %   - verbose (logical) -- Display additional information.
       %     Doesn't affect the display of the progress callback.
@@ -171,19 +184,19 @@ classdef TmatrixDda < ott.Tmatrix
 
       rtp = ott.utils.xyz2rtp(xyz.');
 
-      % Get spacing
-      spacing = pa.Results.spacing;
-      if isempty(spacing)
-        spacing = 2*pi./max(abs(k_particle))./20;
-      end
-
-      import ott.utils.ka2nmax;
-
       % Get or estimate Nmax from the inputs
       Nmax = pa.Results.Nmax;
       if isempty(Nmax)
+        
+        % Get or estimate spacing
+        spacing = pa.Results.spacing;
+        if isempty(spacing)
+          warning('Estimating spacing for Nmax calculation from k_particle');
+          spacing = 2*pi./max(abs(k_particle))./20;
+        end
+        
         maxRadius = max(rtp(:, 1)) + spacing/2;
-        Nmax = ka2nmax(maxRadius * abs(k_medium));
+        Nmax = ott.utils.ka2nmax(maxRadius * abs(k_medium));
       end
 
       % Calculate range of m-orders
@@ -191,7 +204,6 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Put everything in units of wavelengths
       wavelength_medium = 2*pi./k_medium;
-      spacing = spacing / wavelength_medium;
       xyz = xyz ./ wavelength_medium;
       rtp(:, 1) = rtp(:, 1) ./ wavelength_medium;
 
@@ -201,13 +213,21 @@ classdef TmatrixDda < ott.Tmatrix
       if isnumeric(pa.Results.polarizability)
         alpha = pa.Results.polarizability;
       else
+        if isempty(pa.Results.spacing)
+          error('Spacing is needed for polarizability calculation');
+        end
+        
+        % Get spacing in units of medium wavelength
+        spacing = pa.Results.spacing;
+        spacing = spacing / wavelength_medium;
+        
         switch pa.Results.polarizability
           case 'LDR'
             alpha = ott.utils.polarizability_LDR(...
-                spacing, n_relative, 2*pi);
+                spacing, n_relative);
           case 'FCD'
             alpha = ott.utils.polarizability_FCD(...
-                spacing, n_relative, 2*pi);
+                spacing, n_relative);
           case 'CM'
             alpha = ott.utils.polarizability_CM(...
                 spacing, n_relative);
@@ -218,7 +238,7 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Calculate the T-matrix
       tmatrix.data = tmatrix.calc_nearfield(Nmax, xyz.', rtp, ...
-          n_relative, spacing, mrange, alpha, pa.Results.progress_callback);
+          n_relative, mrange, alpha, pa.Results.progress_callback);
 
       % Store the type of T-matrix
       tmatrix.type = 'scattered';
@@ -255,7 +275,7 @@ classdef TmatrixDda < ott.Tmatrix
       end
     end
 
-    function data = calc_nearfield(Nmax, xyz, rtp, n_rel, d, mrange, alpha, ...
+    function data = calc_nearfield(Nmax, xyz, rtp, n_rel, mrange, alpha, ...
         progress_callback)
       % Near-field implementation of T-matrix calculation
       %
@@ -279,6 +299,8 @@ classdef TmatrixDda < ott.Tmatrix
       assert(r_near > max(rtp(1, :)), 'Particle radius too large');
 
       A = ott.utils.interaction_A(k, rtp, alpha);
+      
+      assert(all(isfinite(A(:))), 'singular polarizability not yet supported');
 
       F = ott.TmatrixDda.nearfield_matrix(...
           theta,phi,r_near, k, xyz, rtp);
@@ -294,7 +316,7 @@ classdef TmatrixDda < ott.Tmatrix
           M1nm = ott.utils.col3to1(M1);
           N1nm = ott.utils.col3to1(N1);
 
-          MN(:,ci) = -M1nm ./ n_rel;
+          MN(:,ci) = -M1nm;
           MN(:,ci+total_orders) = -N1nm;
         end
       end
@@ -307,9 +329,7 @@ classdef TmatrixDda < ott.Tmatrix
         progress_callback(struct('m', m, 'mrange', mrange));
         
 				for n = max(1, abs(m)):Nmax % step through n incident
-
-% 					Nn = 1/sqrt(n*(n+1));
-
+          
           [Ei_TE, Ei_TM] = ott.utils.E_inc_vswf(n,-m,rtp,k);
 
 					if iterative
@@ -318,7 +338,20 @@ classdef TmatrixDda < ott.Tmatrix
 					else
 						P_TE = A\Ei_TE;
 						P_TM = A\Ei_TM;
-					end
+          end
+          
+          % Add n_rel correction
+          if numel(n_rel) == 1
+            P_TE = P_TE * n_rel;
+          elseif numel(n_rel) == 3
+            P_TE = repmat(n_rel(:), [numel(P_TE)/3, 1]) .* P_TE;
+          elseif numel(n_rel) == numel(P_TE)/3
+            P_TE = repelem(n_rel(:), 3) .* P_TE;
+          elseif numel(n_rel) == numel(P_TE)
+            P_TE = n_rel(:) .* P_TE;
+          else
+            error('Bad number of n_rel values');
+          end
 
 					E_TE = ott.utils.col1to3(F*P_TE);
 					E_TM = ott.utils.col1to3(F*P_TM);
@@ -332,11 +365,11 @@ classdef TmatrixDda < ott.Tmatrix
 							cos(theta(j))*cos(phi(j)) cos(theta(j))*sin(phi(j)) -sin(theta(j));
 							-sin(phi(j)) cos(phi(j)) 0];
 
-						E = M*E_TE(j,:)';
-						Es_TE2(j,:) = E';
+						E = M*E_TE(j,:).';
+						Es_TE2(j,:) = E.';
 
-						E = M*E_TM(j,:)';
-						Es_TM2(j,:) = E';
+						E = M*E_TM(j,:).';
+						Es_TM2(j,:) = E.';
 					end
 
 					% format them to 1 column

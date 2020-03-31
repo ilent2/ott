@@ -1,31 +1,28 @@
-function alph = polarizability_FCD(d,m,kvec,E0)
+function alpha_FCD = polarizability_FCD(spacing, index, varargin)
 % Filtered coupled dipole polarizability
 %
-% alpha = polarizability_FCD(d, m, kvec, E0) calculates the polarizability
-% using the filtered coupled dipole approach.
+% Usage
+%   alpha = polarizability_FCD(spacing, index)
+%   Calculates a Nx1 element vector containing the isotropic
+%   polarisabilities for N dipoles.
 %
-% m : N length vector containing relative refractive indices
-%                                (isotropic version)   
-% d : lattice spacing
-% kvec : wave vector [kx ky kz]     e.g. [0 0 1] z-direction
-% E0 : E-field polarization [Ex Ey Ez]   [1 0 0] x-polarized
-%                                        [1 i 0] left-handed circ pol.  
+% Parameters
+%   - spacing (numeric scalar) -- lattice spacing parameter
+%   - index (Nx1 numeric) -- Relative refractive indices for N dipoles.
 %
-% Author: Vincent Loke
-% Affiliation: Physics Dept, School of Physical Sciences
-%              The University of Queensland
-% Version: Pre-release (2007)
+% Optional named arguments
+%   - k0 (numeric) -- Wavenumber to scale spacing by.  Default: ``2*pi``.
 
-k = 2*pi;
-N = length(m); % number of dipoles
+% Based on the script by Vincent Loke.
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
-alpha_CM = 3*d^3/(4*pi)*(m.^2 - 1)./(m.^2 + 2); % Clausius-Mossotti
-alpha_FCD = alpha_CM./(1 + (alpha_CM/d^3).*(4/3*(k*d)^2 + 2/3*(i + log((pi-k*d)/(pi+k*d))/pi)*k^3*d^3));
+p = inputParser;
+p.addParameter('k0', 2*pi);
+p.parse(varargin{:});
 
-alph = zeros(3*N,1);
-% assuming same polarizability in x, y & z directions
-for j = 1:N
-  alph(3*(j-1) + 1) = alpha_FCD(j);
-  alph(3*(j-1) + 2) = alpha_FCD(j);
-  alph(3*(j-1) + 3) = alpha_FCD(j);
-end
+k = p.Results.k0;
+msqr = index(:).^2;
+
+alpha_CM = 3*spacing^3/(4*pi)*(msqr - 1)./(msqr + 2); % Clausius-Mossotti
+alpha_FCD = alpha_CM./(1 + (alpha_CM/spacing^3).*(4/3*(k*spacing)^2 + 2/3*(1i + log((pi-k*spacing)/(pi+k*spacing))/pi)*k^3*spacing^3));

@@ -1,26 +1,26 @@
+function alpha_CM = polarizability_CM(d, index)
 % Clausius-Mossoti Polarizability 
+%
+% Usage
+%   alpha = polarizability_LDR(spacing, index)
+%   Calculates a Nx1 element vector containing the isotropic
+%   polarisabilities for N dipoles.
+%
+%   alpha = polarizability_LDR(spacing, index, kvec, E0)
+%   As above but specifies the polarisability information for use
+%   with plane wave illumination.
+%
+% Parameters
+%   - spacing (numeric scalar) -- lattice spacing parameter
+%   - index (Nx1 numeric) -- Relative refractive indices for N dipoles.
+%   - kvec (1x3 numeric) -- Wave vector [kx, ky, kz]
+%   - E0 (1x3 numeric) -- E-field polarisation [Ex, Ey, Ez]
 
-% Author: Vincent Loke
-% Affiliation: Physics Dept, School of Physical Sciences
-%              The University of Queensland
-% Version: Pre-release (2007)
+% Based on the script by Vincent Loke.
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
-function alph = polarizability_CM(d, m)
-
-% m : N length vector containing relative refractive indices
-% d : lattice spacing
-
-N = length(m); % number of dipoles
-msqr = m.^2;
+msqr = index(:).^2;
 dcube = d^3;
 
 alpha_CM = 3*dcube/(4*pi)*(msqr - 1)./(msqr + 2); % Clausius-Mossotti
-
-alph = zeros(3*N,1);
-
-% assuming same polarizability in x, y & z directions
-for j = 1:N
-  alph(3*(j-1) + 1) = alpha_CM(j);
-  alph(3*(j-1) + 2) = alpha_CM(j);
-  alph(3*(j-1) + 3) = alpha_CM(j);
-end

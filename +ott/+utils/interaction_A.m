@@ -26,7 +26,9 @@ if ~isempty(p.Results.alpha) && ~isempty(p.Results.inv_alpha)
   error('Either alpha or inv_alpha must be supplied or none, not both');
 end
 
-[N,~] = size(r);
+assert(ismatrix(r) && size(r, 2) == 3, 'voxels must be a Nx3 matrix');
+
+N = size(r, 1);
 
 % Generate the matrix of off-diagonal elements
 A = zeros(3*N,3*N);
@@ -39,23 +41,23 @@ inv_alpha = [];
 if ~isempty(p.Results.alpha)
   val = p.Results.alpha;
   sz = size(val);
-  if sz == [1, 1]
+  if all(sz == [1, 1])
     inv_alpha = repmat([1./val, 0, 0; 0, 1./val, 0; 0, 0, 1./val], 1, N);
-  elseif sz == [3, 3]
+  elseif all(sz == [3, 3])
     inv_alpha = repmat(inv(val), 1, N);
-  elseif sz == [3, 1]
-    inv_alpha = repmat(inv(diag(val)), 1, N);
-  elseif length(val) == N
+  elseif all(sz == [3, 1])
+    inv_alpha = repmat(diag(1.0./val), 1, N);
+  elseif numel(val) == N
     inv_alpha = zeros(3, 3*N);
     inv_alpha(1, 1:3:end) = 1.0./val;
     inv_alpha(2, 2:3:end) = 1.0./val;
     inv_alpha(3, 3:3:end) = 1.0./val;
-  elseif length(val) == 3*N || sz == [3, N]
+  elseif length(val) == 3*N || all(sz == [3, N])
     inv_alpha = zeros(3, 3*N);
     inv_alpha(1, 1:3:end) = 1.0./val(1:3:end);
     inv_alpha(2, 2:3:end) = 1.0./val(2:3:end);
     inv_alpha(3, 3:3:end) = 1.0./val(3:3:end);
-  elseif sz == [3, 3*N]
+  elseif all(sz == [3, 3*N])
     inv_alpha = zeros(3, 3*N);
     for ii = 1:N
       inv_alpha(:, (1:3) + 3*(ii-1)) = inv(val(:, (1:3) + 3*(ii-1)));
@@ -66,23 +68,23 @@ if ~isempty(p.Results.alpha)
 elseif ~isempty(p.Results.inv_alpha)
   val = p.Results.inv_alpha;
   sz = size(val);
-  if sz == [1, 1]
+  if all(sz == [1, 1])
     inv_alpha = repmat([val, 0, 0; 0, val, 0; 0, 0, val], 1, N);
-  elseif sz == [3, 3]
+  elseif all(sz == [3, 3])
     inv_alpha = repmat(val, 1, N);
-  elseif sz == [3, 1]
+  elseif all(sz == [3, 1])
     inv_alpha = repmat(diag(val), 1, N);
-  elseif prod(sz) == N
+  elseif numel(val) == N
     inv_alpha = zeros(3, 3*N);
     inv_alpha(1, 1:3:end) = val;
     inv_alpha(2, 2:3:end) = val;
     inv_alpha(3, 3:3:end) = val;
-  elseif length(val) == 3*N || sz == [3, N]
+  elseif length(val) == 3*N || all(sz == [3, N])
     inv_alpha = zeros(3, 3*N);
     inv_alpha(1, 1:3:end) = val(1:3:end);
     inv_alpha(2, 2:3:end) = val(2:3:end);
     inv_alpha(3, 3:3:end) = val(3:3:end);
-  elseif sz == [3, 3*N]
+  elseif all(sz == [3, 3*N])
     inv_alpha = val;
   else
     error('Unsupported size of inv_alpha');
