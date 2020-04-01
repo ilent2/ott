@@ -349,6 +349,11 @@ classdef TmatrixDda < ott.Tmatrix
             P_TE = repelem(n_rel(:), 3) .* P_TE;
           elseif numel(n_rel) == numel(P_TE)
             P_TE = n_rel(:) .* P_TE;
+          elseif numel(n_rel) == 3*numel(P_TE) && size(n_rel, 1) == 3
+            for ii = 1:(length(P_TE)/3)
+              P_TE((1:3) + (ii-1)*3) = ...
+                n_rel(:, (1:3) + (ii-1)*3) * P_TE((1:3) + (ii-1)*3);
+            end
           else
             error('Bad number of n_rel values');
           end

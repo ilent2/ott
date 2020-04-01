@@ -144,12 +144,47 @@ function testHomogeneousMaterialSizes(testCase)
     'spacing', 1/20);
   
   nrel = [1.2; 1.3; 1.4];
-  Tdda = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
-    'spacing', 1/20);
+  spacing = 1/20;
+  Tdda1 = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
+    'spacing', spacing);
   
-  nrel = [1; 1; 1];
-  pol = [1.2, 0, 0; 0, 1.3, 0; 0, 0, 1.4];
-  Tdda = ott.TmatrixDda.simple(shape, 'polarizability', pol, ...
-    'spacing', 1/20, 'index_relative', nrel);
+  nrel = [1.2; 1.3; 1.4];
+  pol = ott.utils.polarizability_LDR(spacing, nrel);
+  pol = diag(pol);
+  Tdda2 = ott.TmatrixDda.simple(shape, 'polarizability', pol, ...
+    'spacing', spacing, 'index_relative', nrel);
   
+  testCase.verifyEqual(Tdda2.data, Tdda1.data, ...
+    'AbsTol', 1e-16, ...
+    'Polarizability and index_relative not equivilant');
+  
+end
+
+function testInhomogeneousPolarisability(testCase)
+
+  shape = ott.shapes.Sphere(0.1);
+  
+  n_medium = 1.1;
+  
+  nrel = [1.2; 1.3; 1.4];
+  spacing = 1/20;
+  Tdda1 = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
+    'spacing', spacing, 'index_medium', n_medium, ...
+    'wavelength0', 1.0);
+  
+  Ndipoles = 27;
+  
+  nrel = [1.2; 1.3; 1.4];
+  pol = ott.utils.polarizability_LDR(spacing.*n_medium, nrel);
+  pol = repmat(diag(pol), [1, Ndipoles]);
+  nrel = repmat(diag(nrel), [1, Ndipoles]);
+  Tdda2 = ott.TmatrixDda.simple(shape, 'polarizability', pol, ...
+    'spacing', spacing, 'index_relative', nrel, ...
+    'index_medium', n_medium, ...
+    'wavelength0', 1.0);
+  
+  testCase.verifyEqual(Tdda2.data, Tdda1.data, ...
+    'AbsTol', 1e-16, ...
+    'Polarizability and index_relative not equivilant');
+
 end

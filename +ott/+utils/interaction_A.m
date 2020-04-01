@@ -52,7 +52,7 @@ if ~isempty(p.Results.alpha)
     inv_alpha(1, 1:3:end) = 1.0./val;
     inv_alpha(2, 2:3:end) = 1.0./val;
     inv_alpha(3, 3:3:end) = 1.0./val;
-  elseif length(val) == 3*N || all(sz == [3, N])
+  elseif all(sz == [3, N])
     inv_alpha = zeros(3, 3*N);
     inv_alpha(1, 1:3:end) = 1.0./val(1:3:end);
     inv_alpha(2, 2:3:end) = 1.0./val(2:3:end);
@@ -79,7 +79,7 @@ elseif ~isempty(p.Results.inv_alpha)
     inv_alpha(1, 1:3:end) = val;
     inv_alpha(2, 2:3:end) = val;
     inv_alpha(3, 3:3:end) = val;
-  elseif length(val) == 3*N || all(sz == [3, N])
+  elseif all(sz == [3, N])
     inv_alpha = zeros(3, 3*N);
     inv_alpha(1, 1:3:end) = val(1:3:end);
     inv_alpha(2, 2:3:end) = val(2:3:end);

@@ -37,9 +37,9 @@ if ~isempty(p.Results.direction)
   assert(size(direction, 1) == 3, 'Direction must be 3xN matrix');
 
   % Calculate rotations off z-axis
-  theta = atan2(direction(2, :), direction(1, :));
+  theta = atan2(direction(2, :), direction(1, :)) * 180/pi;
   phi = atan2(sqrt(direction(2, :).^2 + direction(1, :).^2), ...
-      direction(3, :));
+      direction(3, :)) * 180/pi;
 
   % Calculate rotation matrices
   rotation = zeros(3, 3*size(phi, 2));
@@ -68,14 +68,14 @@ end
 
 % Calculate polarizabilities
 alpha = zeros(size(rotation));
-for ii = 1:size(alpha, 2)/2
+for ii = 1:size(alpha, 2)/3
   R = rotation(:, (1:3) + 3*(ii-1));
   alpha(:, (1:3) + 3*(ii-1)) = R*ualpha*inv(R);
 end
 
 % Calculate inverse if requested
 if p.Results.inverse
-  for ii = 1:size(alpha, 2)/2
+  for ii = 1:size(alpha, 2)/3
     alpha(:, (1:3) + 3*(ii-1)) = inv(alpha(:, (1:3) + 3*(ii-1)));
   end
 end
