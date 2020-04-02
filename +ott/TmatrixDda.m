@@ -106,30 +106,26 @@ classdef TmatrixDda < ott.Tmatrix
         spacing = 2*pi./k_particle./20;
       end
 
+      % Get the symmetry of the shape
+      [~,~, z_rotational_symmetry] = shape.axialSymmetry();
+      [~,~, z_mirror_symmetry] = shape.mirrorSymmetry();
+      
+      if z_rotational_symmetry == 0
+        warning('Using z_rotational_symmetry = 4 instead of 0 for now');
+        z_rotational_symmetry = 4;
+      end
+      
+      % Should we avoid 0 for voxels?
+      use_even = mod(z_rotational_symmetry, 2) == 0 || z_mirror_symmetry;
+
       % Calculate voxel locations
-      voxels = shape.voxels(spacing);
+      voxels = shape.voxels(spacing, 'even', use_even);
 
       % Calculate the T-matrix using DDA
       tmatrix = TmatrixDda(voxels, varargin{:}, ...
-        'spacing', spacing);
-    end
-    
-    function k_particle = filter_k_particle(k_particle, mask)
-      
-      if isscalar(k_particle)
-        % Nothing to do
-      elseif numel(k_particle) == 3
-        % Nothing to do
-      elseif numel(k_particle) == numel(mask)
-        k_particle(mask) = [];
-      elseif numel(k_particle) == 3*numel(mask)
-        k_particle(:, mask) = [];
-      elseif numel(k_particle) == 9*numel(mask)
-        mask = repelem(mask, [3, 3]);
-        k_particle(mask) = [];
-      else
-        error('Unknown filter option');
-      end
+        'spacing', spacing, ...
+        'z_rotational_symmetry', z_rotational_symmetry, ...
+        'z_mirror_symmetry', z_mirror_symmetry & false);
     end
   end
 
@@ -199,6 +195,39 @@ classdef TmatrixDda < ott.Tmatrix
         disp('Starting TmatrixDda');
         disp(['Running with ' num2str(size(xyz, 2)) ' voxels']);
       end
+
+      % Store inputs k_medium and k_particle
+      [k_medium, k_particle] = tmatrix.parser_wavenumber(pa, 2*pi);
+      
+      alpha = [];
+      if isnumeric(pa.Results.polarizability)
+        alpha = pa.Results.polarizability;
+      end
+      
+      % Filter xyz and k_particle for symmetries
+      if pa.Results.z_mirror_symmetry
+        error('Not yet implemented');
+        k_particle = tmatrix.remove_by_mask(k_particle, xyz(3, :) < 0);
+        alpha = tmatrix.remove_by_mask(alpha, xyz(3, :) < 0);
+        xyz(:, xyz(3, :) < 0) = [];
+      end
+      if pa.Results.z_rotational_symmetry == 0
+        error('z_rotational_symmetry == 0 not yet supported');
+      elseif pa.Results.z_rotational_symmetry == 1
+        % Nothing to do
+      elseif pa.Results.z_rotational_symmetry == 2
+        k_particle = tmatrix.remove_by_mask(k_particle, xyz(2, :) < 0);
+        alpha = tmatrix.remove_by_mask(alpha, xyz(2, :) < 0);
+        xyz(:, xyz(2, :) < 0) = [];
+      elseif pa.Results.z_rotational_symmetry == 4
+        k_particle = tmatrix.remove_by_mask(...
+            k_particle, xyz(2, :) < 0 | xyz(1, :) < 0);
+        alpha = tmatrix.remove_by_mask(...
+            alpha, xyz(2, :) < 0 | xyz(1, :) < 0);
+        xyz(:, xyz(2, :) < 0 | xyz(1, :) < 0) = [];
+      else
+        error('Only z_rotational_symmetry == 2|4 supported for now');
+      end
       
       % Check we can allocate sufficient memory
       uV = memory;
@@ -208,30 +237,12 @@ classdef TmatrixDda < ott.Tmatrix
           'consider reducing particle size or voxel spacing']);
       end
 
-      % Store inputs k_medium and k_particle
-      [k_medium, k_particle] = tmatrix.parser_wavenumber(pa, 2*pi);
-      
-      % Filter xyz and k_particle for symmetries
-      if pa.Results.z_mirror_symmetry
-        k_particle = tmatrix.filter_k_particle(k_particle, xyz(3, :) < 0);
-        xyz(:, xyz(3, :) < 0) = [];
-      end
-      if pa.Results.z_rotational_symmetry == 0
-        error('z_rotational_symmetry == 0 not yet supported');
-      elseif pa.Results.z_rotational_symmetry == 1
-        % Nothing to do
-      elseif pa.Results.z_rotational_symmetry == 2
-        k_particle = tmatrix.filter_k_particle(k_particle, xyz(2, :) < 0);
-        xyz(:, xyz(2, :) < 0) = [];
-      elseif pa.Results.z_rotational_symmetry == 4
-        k_particle = tmatrix.filter_k_particle(...
-            k_particle, xyz(2, :) < 0 | xyz(1, :) < 0);
-        xyz(:, xyz(2, :) < 0 | xyz(1, :) < 0) = [];
-      else
-        error('Only z_rotational_symmetry == 2|4 supported for now');
-      end
-
       rtp = ott.utils.xyz2rtp(xyz.');
+      
+      % Tell the user some things
+      if pa.Results.verbose && pa.Results.z_rotational_symmetry ~= 1
+        disp(['Voxels with rotationa symmetry: ' num2str(size(xyz, 2))]);
+      end
 
       % Get or estimate Nmax from the inputs
       Nmax = pa.Results.Nmax;
@@ -261,8 +272,10 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Compute or get polarizability from inputs
       if isnumeric(pa.Results.polarizability)
-        alpha = pa.Results.polarizability;
+        % Nothing more to do, already have alpha
       else
+        % Calculate alpha for remaining positions
+        
         if isempty(pa.Results.spacing)
           error('Spacing is needed for polarizability calculation');
         end
@@ -298,6 +311,31 @@ classdef TmatrixDda < ott.Tmatrix
   end
 
   methods (Hidden, Static)
+    
+    function k_particle = remove_by_mask(k_particle, mask)
+      
+      % Check that we have something to filter
+      if isempty(k_particle)
+        return;
+      end
+      
+      if isscalar(k_particle)
+        % Nothing to do
+      elseif numel(k_particle) == 3
+        % Nothing to do
+      elseif numel(k_particle) == 9
+        % Nothing to do
+      elseif numel(k_particle) == numel(mask)
+        k_particle(mask) = [];
+      elseif numel(k_particle) == 3*numel(mask)
+        k_particle(:, mask) = [];
+      elseif numel(k_particle) == 9*numel(mask)
+        mask = repelem(mask, 3);
+        k_particle(:, mask) = [];
+      else
+        error('Unknown filter option');
+      end
+    end
 
     function M = cart2sph_mat(theta, phi)
 
@@ -314,6 +352,16 @@ classdef TmatrixDda < ott.Tmatrix
            -sin(phi) cos(phi) 0]';
     end
     
+    function E = apply_cart2sph(E, cart2sph)
+      % Apply coordinate transformation to E-field vector
+      % Warning: Function usage/definition may change without notice
+      
+      for ii = 1:size(cart2sph, 2)/3
+        M = cart2sph(:, (1:3) + 3*(ii-1));
+        E((1:3) + 3*(ii-1)) = M * E((1:3) + 3*(ii-1));
+      end
+    end
+    
     function F = nearfield_matrix_combined(F_total, ...
           m, z_mirror, z_rotation)
       % Combine layers of nearfield_matrix
@@ -323,7 +371,7 @@ classdef TmatrixDda < ott.Tmatrix
       F = F_total(:, :, 1);
       
       for ii = 2:z_rotation
-        F = F_total(:, :, ii) .* exp(1i*m*2*pi*(ii-1)/z_rotation);
+        F = F + F_total(:, :, ii) .* exp(1i*m*2*pi*(ii-1)/z_rotation);
       end
     end
 
@@ -364,7 +412,7 @@ classdef TmatrixDda < ott.Tmatrix
           
           % Calculate coordinate rotation
           if m == 1
-            M = eye(3);
+            M = 1;
           else
             M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
                 rtp(n, 2), rtp(n, 3));
@@ -417,7 +465,6 @@ classdef TmatrixDda < ott.Tmatrix
 
       iterative = true;
       k = 2*pi;
-      nrot = 0;
 
       import ott.utils.combined_index;
 
@@ -450,15 +497,23 @@ classdef TmatrixDda < ott.Tmatrix
       r_near = 8; % near field radius
       assert(r_near > max(rtp(1, :)), 'Particle radius too large');
 
-      A = ott.utils.interaction_A(k, rtp, alpha);
+      A_total = ott.utils.interaction_A(k, rtp, alpha, ...
+        'z_rotational_symmetry', z_rotation);
       
-      assert(all(isfinite(A(:))), 'singular polarizability not yet supported');
+      assert(all(isfinite(A_total(:))), 'singular polarizability not yet supported');
 
       F_total = ott.TmatrixDda.nearfield_matrix(...
           theta,phi,r_near, k, xyz, rtp, z_mirror, z_rotation);
 
       MN = ott.TmatrixDda.calculate_nearfield_modes(...
         k*r_near, theta, phi, Nmax);
+      
+      % Pre-compute near-field Cartesian to Spherical transform
+      cart2sph = zeros(3, 3*length(theta));
+      for ii = 1:length(theta)
+        cart2sph(:, (1:3) + (ii-1)*3) = ott.TmatrixDda.cart2sph_mat(...
+            theta(ii), phi(ii));
+      end
 
       % Allocate memory for T-matrix
       data = zeros(2*total_orders, 2*total_orders);
@@ -470,7 +525,8 @@ classdef TmatrixDda < ott.Tmatrix
         F = ott.TmatrixDda.nearfield_matrix_combined(F_total, ...
             m, z_mirror, z_rotation);
         
-        %% TODO: rotsym_interaction_A
+        A = ott.TmatrixDda.nearfield_matrix_combined(A_total, ...
+            m, z_mirror, z_rotation);
         
 				for n = max(1, abs(m)):Nmax % step through n incident
           
@@ -502,40 +558,25 @@ classdef TmatrixDda < ott.Tmatrix
             error('Bad number of n_rel values');
           end
           
-          %% TODO: Quad to full
-
-					E_TE = ott.utils.col1to3(F*P_TE);
-					E_TM = ott.utils.col1to3(F*P_TM);
-
-					Es_TE2 = zeros(size(E_TE));
-					Es_TM2 = zeros(size(E_TM));
-
-					% convert to spherical coordinate vectors
-					for j = 1:length(E_TE)
-						M = [sin(theta(j))*cos(phi(j)) sin(theta(j))*sin(phi(j)) cos(theta(j));
-							cos(theta(j))*cos(phi(j)) cos(theta(j))*sin(phi(j)) -sin(theta(j));
-							-sin(phi(j)) cos(phi(j)) 0];
-
-						E = M*E_TE(j,:).';
-						Es_TE2(j,:) = E.';
-
-						E = M*E_TM(j,:).';
-						Es_TM2(j,:) = E.';
-          end
+          % Calculate fields in Cartesian coordinates
+          E_TE = F * P_TE;
+          E_TM = F * P_TM;
           
-          %% TODO: Quad to full again
-
-					% format them to 1 column
-					Es_TE = ott.utils.col3to1(Es_TE2);
-					Es_TM = ott.utils.col3to1(Es_TM2);
+          % Apply cartesian to spherical transformation
+          % This could also be pre-computed and applied to F
+          % but this would be O(Ndipoles) compared to O(2*Nmax),
+          % assuming no rotational or mirror symmetry.
+          Es_TE = ott.TmatrixDda.apply_cart2sph(E_TE, cart2sph);
+          Es_TM = ott.TmatrixDda.apply_cart2sph(E_TM, cart2sph);
 
 					ci = combined_index(n,m);
-          
-          % TODO: Check the discrete rotational symettry stuff (nrot)
 
-					if nrot < 2
+					if z_rotation == 1
+            % No rotational symmetry
+            
 						pq1 = MN\Es_TE;
 						pq2 = MN\Es_TM;
+            
 						if ott.utils.isodd(m)
 							% shouldn't have to do this but this is to correct a sign error
 							data(:,ci) = -pq1;
@@ -544,19 +585,29 @@ classdef TmatrixDda < ott.Tmatrix
 							data(:,ci) = pq1;
 							data(:,ci+total_orders) = pq2;
 						end
-					else
-						[~, ~, ci1] = nm_rot(n,m,Nmax,nrot);
-						[~, ~, ci2] = nm_rot(n+1,m,Nmax,nrot);
-						pq1 = [MN(:,ci1) MN(:,ci2+total_orders)]\Es_TE;
-						pq2 = [MN(:,ci2) MN(:,ci1+total_orders)]\Es_TM;
+          elseif z_rotation > 1
+            % Discrete rotational symmetry
+            
+            % Calculate which modes preseve symmetry, m = +/- ip
+            [~, allm] = ott.utils.combined_index((1:total_orders).');
+            axial_modes = mod(allm - m, z_rotation) == 0;
+            modes = [axial_modes; axial_modes];
+            
+            pq1 = MN(:, modes) \ Es_TE;
+            pq2 = MN(:, modes) \ Es_TM;
 						if ott.utils.isodd(m)
 							% shouldn't have to do this but this is to correct a sign error
-							data(:,ci) = -pq_col(pq1,ci1,ci2,total_orders);
-							data(:,ci+total_orders) = -pq_col(pq2,ci2,ci1,total_orders);
+							data(modes,ci) = -pq1;
+							data(modes,ci+total_orders) = -pq2;
 						else
-							data(:,ci) = pq_col(pq1,ci1,ci2,total_orders);
-							data(:,ci+total_orders) = pq_col(pq2,ci2,ci1,total_orders);
-						end
+							data(modes,ci) = pq1;
+							data(modes,ci+total_orders) = pq2;
+            end
+          elseif z_rotation == 0
+            % Infinite rotational symmetry
+            error('Not yet implemented');
+          else
+            error('Invalid z_rotation value');
 					end
 
 				end		% for n = 1:m

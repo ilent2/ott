@@ -10,15 +10,20 @@ function testSphere(testCase)
   
   % Large error, unless we want a smoother sphere/slower runtime
   abs_tol = 2e-3;
-  rel_tol = 22e-2;
+  rel_tol = 22.2e-2;
 
   shape = ott.shapes.Sphere(0.1);
 
   nrel = 1.2;
   
+  % Small changes to spacing spacing seems to have a very large
+  % effect on error, even/odd spacing for voxels also change things
+%   spacing = 1/35;
+  spacing = 1/40;
+  
   Tdda = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
-    'spacing', 1/35);
-  Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel);
+    'spacing', spacing, 'index_medium', 1.0, 'wavelength0', 1.0);
+  Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel, 'index_medium', 1.0, 'wavelength0', 1.0);
 
   testCase.verifyEqual(Tdda.Nmax, Tmie.Nmax, ...
       'Nmax does not match Mie T-matrix');
@@ -172,7 +177,7 @@ function testInhomogeneousPolarisability(testCase)
     'spacing', spacing, 'index_medium', n_medium, ...
     'wavelength0', 1.0);
   
-  Ndipoles = 27;
+  Ndipoles = 32;
   
   nrel = [1.2; 1.3; 1.4];
   pol = ott.utils.polarizability_LDR(spacing.*n_medium, nrel);
@@ -184,7 +189,47 @@ function testInhomogeneousPolarisability(testCase)
     'wavelength0', 1.0);
   
   testCase.verifyEqual(Tdda2.data, Tdda1.data, ...
-    'AbsTol', 1e-16, ...
+    'AbsTol', 1e-15, ...
     'Polarizability and index_relative not equivilant');
 
+end
+
+function testSphereRotSym(testCase)
+  % Create a sphere T-matrix with z-axis rotational symmetry
+  
+  % Large error, unless we want a smoother sphere/slower runtime
+  abs_tol = 2e-3;
+  rel_tol = 22.2e-2;
+
+  nrel = 1.2;
+  shape = ott.shapes.Sphere(0.1);
+
+  Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel);
+  Nmax = Tmie.Nmax(1);
+  
+  z_rotational_symmetry = 4;
+  z_mirror_symmetry = false;
+  
+  spacing = 1/40;
+  voxels = shape.voxels(spacing, 'even_range', true);
+
+  Tdda = ott.TmatrixDda(voxels, ...
+      'index_relative', nrel, ...
+      'Nmax', Nmax, ...
+      'spacing', spacing, ...
+      'z_mirror_symmetry', z_mirror_symmetry, ...
+      'z_rotational_symmetry', z_rotational_symmetry);
+
+  diag_dda = diag(Tdda.data);
+  ndiag_dda = Tdda.data - diag(diag_dda);
+  diag_mie = diag(Tmie.data);
+  ndiag_mie = Tmie.data - diag(diag_mie);
+
+  testCase.verifyEqual(full(ndiag_dda), full(ndiag_mie), ...
+      'AbsTol', abs_tol, ...
+      'T-matrix abstol failed');
+
+  testCase.verifyEqual(full(diag_dda), full(diag_mie), ...
+      'RelTol', rel_tol, ...
+      'T-matrix retol failed');
 end
