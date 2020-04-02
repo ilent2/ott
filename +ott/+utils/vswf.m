@@ -50,6 +50,24 @@ if nargin==5
     
 end
 
+% Convert char htype to scalar for backwards compatability
+% TODO: Consider replacing with enums in future?
+if ischar(htype)
+%     1 -> outgoing solution - h(1)
+%     2 -> incoming solution - h(2)
+%     3 -> regular solution - j (ie RgM, RgN)
+  switch htype
+    case 'incoming'
+      htype = 2;
+    case 'outgoing'
+      htype = 1;
+    case 'regular'
+      htype = 3;
+    otherwise
+      error('Unknown htype string');
+  end
+end
+
 % Convert all to column vectors
 kr = kr(:);
 theta = theta(:);
