@@ -19,6 +19,8 @@ function [M,N,M2,N2,M3,N3] = vswfcart(n,m,kr,theta,phi,htype)
 % The three components of each output vector are [x,y,z]
 %
 % "Out of range" n and m result in return of [0 0 0]
+%
+% At the coordinate origin (kr == 0) we use only theta/phi.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -40,9 +42,26 @@ theta_hat_z = -sin(theta);
 phi_hat_x = -sin(phi);
 phi_hat_y = cos(phi);
 phi_hat_z = 0;
-r_hat_x = x./kr;
-r_hat_y = y./kr;
-r_hat_z = z./kr;
+
+% This avoids NaNs and makes debugging a little easier
+% May also provide performance improvements (untested speculation)
+kr_safe = kr;
+kr_safe(kr == 0) = 1.0;
+
+% TODO: Discuss if we actually need or even should use this
+r_hat_x = x./kr_safe;
+r_hat_y = y./kr_safe;
+r_hat_z = z./kr_safe;
+
+% The following should be equivilant to
+%   M = [sin(theta)*cos(phi) sin(theta)*sin(phi) cos(theta);
+%     cos(theta)*cos(phi) cos(theta)*sin(phi) -sin(theta);
+%     -sin(phi) cos(phi) 0].';
+%
+% This requires modifying at least r_hat_z when kr == 0.0
+r_hat_x(kr == 0) = sin(theta(kr == 0)).*cos(phi(kr == 0));
+r_hat_y(kr == 0) = sin(theta(kr == 0)).*sin(phi(kr == 0));
+r_hat_z(kr == 0) = cos(theta(kr == 0));
 
 if length(M) > 1
 Mr = M(:,1);

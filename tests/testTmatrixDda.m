@@ -52,7 +52,8 @@ function testDipoleSphere(testCase)
   d = (4*pi/3).^(1/3) .* radius;
   
   Tdda = ott.TmatrixDda(xyz, 'index_relative', nrel, ...
-    'spacing', d, 'Nmax', 1, 'polarizability', 'CM');
+    'spacing', d, 'Nmax', 1, 'polarizability', 'CM', ...
+    'z_rotational_symmetry', 1, 'z_mirror_symmetry', false);
   
   shape = ott.shapes.Sphere(radius);
   Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel, ...

@@ -349,7 +349,7 @@ classdef TmatrixDda < ott.Tmatrix
 
       M = [sin(theta)*cos(phi) sin(theta)*sin(phi) cos(theta);
            cos(theta)*cos(phi) cos(theta)*sin(phi) -sin(theta);
-           -sin(phi) cos(phi) 0]';
+           -sin(phi) cos(phi) 0].';
     end
     
     function E = apply_cart2sph(E, cart2sph)
@@ -530,16 +530,19 @@ classdef TmatrixDda < ott.Tmatrix
         
 				for n = max(1, abs(m)):Nmax % step through n incident
           
-          [Ei_TE, Ei_TM] = ott.utils.E_inc_vswf(n,-m,rtp,k);
+          [Ei_TE, Ei_TM] = ott.utils.vswfcart(n, m, ...
+              rtp(:, 1)*k, rtp(:, 2), rtp(:, 3), 'regular');
+          Ei_TE = Ei_TE.';
+          Ei_TM = Ei_TM.';
 
-					if iterative
-						[P_TE, ~] = gmres(A,Ei_TE,1,1e-6,30);
-						[P_TM, ~] = gmres(A,Ei_TM,1,1e-6,30);
-					else
-						P_TE = A\Ei_TE;
-						P_TM = A\Ei_TM;
+          if iterative
+            [P_TE, ~] = gmres(A,Ei_TE(:),1,1e-6,30);
+            [P_TM, ~] = gmres(A,Ei_TM(:),1,1e-6,30);
+          else
+            P_TE = A\Ei_TE(:);
+            P_TM = A\Ei_TM(:);
           end
-          
+
           % Add n_rel correction
           if numel(n_rel) == 1
             P_TE = P_TE * n_rel;
@@ -577,14 +580,9 @@ classdef TmatrixDda < ott.Tmatrix
 						pq1 = MN\Es_TE;
 						pq2 = MN\Es_TM;
             
-						if ott.utils.isodd(m)
-							% shouldn't have to do this but this is to correct a sign error
-							data(:,ci) = -pq1;
-							data(:,ci+total_orders) = -pq2;
-						else
-							data(:,ci) = pq1;
-							data(:,ci+total_orders) = pq2;
-						end
+            data(:,ci) = pq1;
+            data(:,ci+total_orders) = pq2;
+            
           elseif z_rotation > 1
             % Discrete rotational symmetry
             
@@ -595,14 +593,10 @@ classdef TmatrixDda < ott.Tmatrix
             
             pq1 = MN(:, modes) \ Es_TE;
             pq2 = MN(:, modes) \ Es_TM;
-						if ott.utils.isodd(m)
-							% shouldn't have to do this but this is to correct a sign error
-							data(modes,ci) = -pq1;
-							data(modes,ci+total_orders) = -pq2;
-						else
-							data(modes,ci) = pq1;
-							data(modes,ci+total_orders) = pq2;
-            end
+            
+            data(modes,ci) = pq1;
+            data(modes,ci+total_orders) = pq2;
+            
           elseif z_rotation == 0
             % Infinite rotational symmetry
             error('Not yet implemented');

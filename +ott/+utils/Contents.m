@@ -35,8 +35,6 @@
 %   xyzv2rtpv                      - cartiesian to spherical vector field conversion
 %
 % Files for DDA
-%   E_inc_vswf            - Calculate the incident field for a single vswf mode
-%   calc_Aj               - calculates a 3 X 3N block comprising N number of 3 X 3 Green's tensors  
 %   interaction_A         - Calculate the interaction matrix
 %   polarizability_CM     - Clausius-Mossoti Polarizability 
 %   polarizability_FCD    - Filtered coupled dipole polarizability
