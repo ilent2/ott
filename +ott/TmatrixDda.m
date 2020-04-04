@@ -191,6 +191,11 @@ classdef TmatrixDda < ott.Tmatrix
       % Parse inputs
       pa = TmatrixDda.input_parser(varargin{:});
       
+      % Check for work
+      if isempty(xyz)
+        error('No voxels provided, no work to do');
+      end
+      
       % Tell the user some things
       if pa.Results.verbose
         disp('Starting TmatrixDda');
@@ -244,25 +249,6 @@ classdef TmatrixDda < ott.Tmatrix
         disp(['Voxels with rotationa symmetry: ' num2str(size(xyz, 2))]);
       end
 
-      % Get or estimate Nmax from the inputs
-      Nmax = pa.Results.Nmax;
-      if isempty(Nmax)
-        
-        % Get or estimate spacing
-        spacing = pa.Results.spacing;
-        if isempty(spacing)
-          warning('Estimating spacing for Nmax calculation from k_particle');
-          spacing = 2*pi./max(abs(k_particle))./20;
-        end
-        
-        maxRadius = max(rtp(:, 1)) + spacing/2;
-        Nmax = ott.utils.ka2nmax(maxRadius * abs(k_medium));
-      end
-      assert(isscalar(Nmax), 'Only scalar Nmax supported for now');
-
-      % Calculate range of m-orders
-      mrange = -Nmax:Nmax;
-
       % Put everything in units of wavelengths
       wavelength_medium = 2*pi./k_medium;
       xyz = xyz ./ wavelength_medium;
@@ -298,6 +284,27 @@ classdef TmatrixDda < ott.Tmatrix
             error('Unknown polarizability method name');
         end
       end
+      
+      % Get or estimate Nmax from the inputs
+      Nmax = pa.Results.Nmax;
+      if isempty(Nmax)
+        
+        % Get or estimate spacing (in units of wavelength)
+        spacing = pa.Results.spacing;
+        spacing = spacing ./ wavelength_medium;
+        
+        if isempty(spacing)
+          warning('Estimating spacing for Nmax calculation from k_particle');
+          spacing = 1./20;
+        end
+        
+        maxRadius = max(rtp(:, 1)) + spacing/2;
+        Nmax = ott.utils.ka2nmax(maxRadius * 2 * pi);
+      end
+      assert(isscalar(Nmax), 'Only scalar Nmax supported for now');
+
+      % Calculate range of m-orders
+      mrange = -Nmax:Nmax;
 
       % Calculate the T-matrix
       tmatrix.data = tmatrix.calc_nearfield(Nmax, xyz.', rtp, ...
