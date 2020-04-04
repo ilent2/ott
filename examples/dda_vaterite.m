@@ -86,6 +86,7 @@ ylabel('Z Position [m]');
 low_memory = false;
 
 radius = logspace(-8, -6.2147, 20);
+% radius = 1.0e-6;   % Try with low_memory
 % radius = logspace(-8, -6, 20);
 times = zeros(size(radius));
 
@@ -125,7 +126,8 @@ for ii = 1:length(times)
         'spacing', spacing, ...
         'z_rotational_symmetry', 4, ...
         'z_mirror_symmetry', true, ...
-        'wavelength0', wavelength0);
+        'wavelength0', wavelength0, ...
+        'low_memory', low_memory);
 
     times(ii) = toc();
     
