@@ -47,6 +47,7 @@ classdef TmatrixDda < ott.Tmatrix
       p.addParameter('z_rotational_symmetry', 1);
       
       p.addParameter('verbose', true);
+      p.addParameter('low_memory', false);
       
       % Fields to enable compatability with Tmatrix.simple
       p.addParameter('method', []);
@@ -230,7 +231,7 @@ classdef TmatrixDda < ott.Tmatrix
       
       % Check we can allocate sufficient memory
       uV = memory;
-      if uV.MaxPossibleArrayBytes < (size(xyz, 2)*3)^2*8
+      if ~pa.Results.low_memory && uV.MaxPossibleArrayBytes < (size(xyz, 2)*3)^2*8
         error('OTT:TmatrixDda:too_many_dipoles', ...
           ['May have too many voxels for calculation, ', ...
           'consider reducing particle size or voxel spacing']);
@@ -301,7 +302,8 @@ classdef TmatrixDda < ott.Tmatrix
       % Calculate the T-matrix
       tmatrix.data = tmatrix.calc_nearfield(Nmax, xyz.', rtp, ...
           n_relative, mrange, alpha, pa.Results.progress_callback, ...
-          pa.Results.z_mirror_symmetry, pa.Results.z_rotational_symmetry);
+          pa.Results.z_mirror_symmetry, pa.Results.z_rotational_symmetry, ...
+          pa.Results.low_memory);
 
       % Store the type of T-matrix
       tmatrix.type = 'scattered';
@@ -404,6 +406,68 @@ classdef TmatrixDda < ott.Tmatrix
       D = reshape(D, [3*n_targets, 3]);
     end
     
+    function F = nearfield_matrix_lowmem(theta, phi, r_near, k_medium, ...
+        xyz, rtp, z_mirror, z_rotation, m)
+      
+      % Determine if we need extra memory for mirror symmetry
+      if z_mirror
+        z_mirror = 2;   % Yes
+      else
+        z_mirror = 1;   % No
+      end
+      
+      % Calculate phase factor for rotational symmetry
+      midx = 1:z_rotation;
+      phase_factor = exp(1i*m*2*pi*(midx-1)/z_rotation);
+      
+      n_dipoles = size(rtp, 1);
+      n_nfpts = length(theta);
+      
+      % Get coordinates for near-field points
+      targets_xyz = ott.utils.rtp2xyz(r_near, theta, phi).';
+      
+      % Allocate space for results
+      F = zeros(3*n_nfpts, 3, z_mirror, n_dipoles);
+      
+      for ii = 1:n_dipoles        % Loop over each dipole
+        
+        % Calculate cartesian to spherical conversion for each dipole
+        M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
+            rtp(ii, 2), rtp(ii, 3));
+            
+        for jj = 1:z_rotation     % duplicates for z mirror symmetry
+          
+          % Calculate spherical to cartesian for each mirror version
+          M_sph2cart = ott.TmatrixDda.sph2cart_mat(...
+              rtp(ii, 2), rtp(ii, 3) + 2*pi*(jj-1)/z_rotation);
+            
+          dipole_xyz = ott.utils.rtp2xyz(rtp(ii, 1), ...
+            rtp(ii, 2), rtp(ii, 3) + 2*pi*(jj-1)/z_rotation).';
+          
+          for kk = 1:z_mirror     % duplicates for z rotational symmetry
+          
+            % Apply mirror symmetry rotation
+            if kk == 1
+              M_dipole = M_sph2cart * M_cart2sph;
+            else
+              M_dipole = diag([1, 1, -1]) * M_sph2cart * M_cart2sph;
+              dipole_xyz(3) = -dipole_xyz(3);
+            end
+            
+            % Calculate columns of F
+            F(:, :, kk, ii) = F(:, :, kk, ii) + ...
+                ott.TmatrixDda.dipole_contribution(...
+                dipole_xyz, targets_xyz, M_dipole, k_medium) .* phase_factor(jj);
+          end
+        end
+      end
+      
+      % Convert from 3xN*3*M*L*O to 3xN*3xM*L*O
+      F = permute(F, [1, 2, 4, 3]);
+      F = reshape(F, [3*n_nfpts, 3*n_dipoles, 1, z_mirror]);
+      
+    end
+    
     function F = nearfield_matrix_total(theta, phi, r_near, k_medium, ...
         xyz, rtp, z_mirror, z_rotation)
       
@@ -459,6 +523,74 @@ classdef TmatrixDda < ott.Tmatrix
       F = permute(F, [1, 2, 5, 4, 3]);
       F = reshape(F, [3*n_nfpts, 3*n_dipoles, z_rotation, z_mirror]);
       
+    end
+    
+    function A = interaction_A_lowmem(k_medium, xyz, inv_alpha, z_mirror, z_rotation, m)
+            
+      % Determine if we need extra memory for mirror symmetry
+      if z_mirror
+        z_mirror = 2;   % Yes
+      else
+        z_mirror = 1;   % No
+      end
+      
+      % Calculate phase factor for rotational symmetry
+      midx = 1:z_rotation;
+      phase_factor = exp(1i*m*2*pi*(midx-1)/z_rotation);
+      
+      n_dipoles = size(xyz, 1);
+      
+      rtp = ott.utils.xyz2rtp(xyz);
+      
+      % Allocate space for results
+      A = zeros(3*n_dipoles, 3, z_mirror, n_dipoles);
+      
+      for ii = 1:n_dipoles        % Loop over each dipole
+        
+        % Calculate cartesian to spherical conversion for each dipole
+        M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
+            rtp(ii, 2), rtp(ii, 3));
+            
+        for jj = 1:z_rotation     % duplicates for z mirror symmetry
+          
+          % Calculate spherical to cartesian for each mirror version
+          M_sph2cart = ott.TmatrixDda.sph2cart_mat(...
+              rtp(ii, 2), rtp(ii, 3) + 2*pi*(jj-1)/z_rotation);
+            
+          dipole_xyz = ott.utils.rtp2xyz(rtp(ii, 1), ...
+            rtp(ii, 2), rtp(ii, 3) + 2*pi*(jj-1)/z_rotation).';
+          
+          for kk = 1:z_mirror     % duplicates for z rotational symmetry
+          
+            % Apply mirror symmetry rotation
+            if kk == 1
+              M_dipole = M_sph2cart * M_cart2sph;
+            else
+              M_dipole = diag([1, 1, -1]) * M_sph2cart * M_cart2sph;
+              dipole_xyz(3) = -dipole_xyz(3);
+            end
+            
+            % Calculate columns of A
+            A(:, :, kk, ii) = A(:, :, kk, ii) + ...
+                ott.TmatrixDda.dipole_contribution(...
+                dipole_xyz, xyz.', M_dipole, k_medium) .* phase_factor(jj);
+              
+            % Remove self-interaction terms
+            if kk == 1 && jj == 1
+              A((1:3) + 3*(ii-1), :, kk, ii) = inv_alpha(:, (1:3) + 3*(ii-1));
+            end
+          end
+        end
+      end
+
+      % Convert from 3xN*3*M*L*O to 3xN*3xM*L*O
+      A = permute(A, [1, 2, 4, 3]);
+      A = reshape(A, [3*n_dipoles, 3*n_dipoles, 1, z_mirror]);
+      
+      % Put the inverse polarisability on the diagonal
+      % Moved to main loop: R2018a this allocated twice as much memory
+      %Ac = mat2cell(inv_alpha, 3, repmat(3, 1, n_dipoles));
+      %A(:, :, 1, 1) = A(:, :, 1, 1) + blkdiag(Ac{:});
     end
     
     function A = interaction_A_total(k_medium, xyz, inv_alpha, z_mirror, z_rotation)
@@ -527,9 +659,11 @@ classdef TmatrixDda < ott.Tmatrix
       % Warning: Function usage/definition may change without notice
         
       % Combine z rotational symmetry slices
-      midx = 1:z_rotation;
-      phase_factor = exp(1i*m*2*pi*(midx-1)/z_rotation);
-      F = sum(F .* reshape(phase_factor, [1, 1, z_rotation, 1]), 3);
+      if size(F, 3) ~= 1
+        midx = 1:z_rotation;
+        phase_factor = exp(1i*m*2*pi*(midx-1)/z_rotation);
+        F = sum(F .* reshape(phase_factor, [1, 1, z_rotation, 1]), 3);
+      end
 
       % Calculate even and odd parity reflections
       even = sum(F, 4);
@@ -675,7 +809,7 @@ classdef TmatrixDda < ott.Tmatrix
     end
 
     function data = calc_nearfield(Nmax, xyz, rtp, n_rel, mrange, alpha, ...
-        progress_callback, z_mirror, z_rotation)
+        progress_callback, z_mirror, z_rotation, low_memory)
       % Near-field implementation of T-matrix calculation
       %
       % This is based on DDA/T-matrix/near_field/DDA_T_NF.m
@@ -714,23 +848,24 @@ classdef TmatrixDda < ott.Tmatrix
       % Hmm, what if we have a larger sphere?
       r_near = 8; % near field radius
       assert(r_near > max(rtp(1, :)), 'Particle radius too large');
-
-      % Pre-calculate A
-      % When using mirror/rotational symmetry, A is still full size
-      % This maybe produces a speed optimisation but uses lots of memory
-      % TODO: Implement a memory efficient version
-      inv_alpha = ott.TmatrixDda.alpha_to_full_inv_alpha(alpha, size(rtp, 1));
-      A_total = ott.TmatrixDda.interaction_A_total(k, rtp, inv_alpha, ...
-          z_mirror, z_rotation);
       
-      % TODO: Can we check this another way?
-      assert(all(isfinite(A_total(:))), 'singular polarizability not yet supported');
+      % Pre-calculate inv-alpha
+      inv_alpha = ott.TmatrixDda.alpha_to_full_inv_alpha(alpha, size(rtp, 1));
+      assert(all(isfinite(inv_alpha(:))), 'singular polarizability not yet supported');
+      
+      if ~low_memory
+        % When using mirror/rotational symmetry, A is still full size
+        % This maybe produces a speed optimisation but uses lots of memory
 
-      % Pre-calculate F
-      % When using mirror/rotational symmetry, A is still full size
-      % This maybe produces a speed optimisation but uses lots of memory
-      F_total = ott.TmatrixDda.nearfield_matrix_total(...
-          theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation);
+        % Pre-calculate A
+        A_total = ott.TmatrixDda.interaction_A_total(k, rtp, inv_alpha, ...
+            z_mirror, z_rotation);
+
+        % Pre-calculate F
+        F_total = ott.TmatrixDda.nearfield_matrix_total(...
+            theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation);
+          
+      end
 
       MN = ott.TmatrixDda.calculate_nearfield_modes(...
         k*r_near, theta, phi, Nmax);
@@ -749,13 +884,25 @@ classdef TmatrixDda < ott.Tmatrix
 
         progress_callback(struct('m', m, 'mrange', mrange));
 
+        if low_memory
+
+          % Pre-calculate A
+          A_total = ott.TmatrixDda.interaction_A_lowmem(k, rtp, inv_alpha, ...
+              z_mirror, z_rotation, m);
+
+          % Pre-calculate F
+          F_total = ott.TmatrixDda.nearfield_matrix_lowmem(...
+              theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation, m);
+
+        end
+
         [Feven, Fodd] = ott.TmatrixDda.combine_rotsym_matrix(F_total, ...
             m, z_rotation);
         [Aeven, Aodd] = ott.TmatrixDda.combine_rotsym_matrix(A_total, ...
             m, z_rotation);
 
         for n = max(1, abs(m)):Nmax % step through n incident
-
+          
           % Calculate fields in Cartesian coordinates
           if z_mirror
             if mod(m + n, 2) == 0
