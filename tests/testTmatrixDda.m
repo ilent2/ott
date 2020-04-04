@@ -11,19 +11,22 @@ function testSphere(testCase)
   % Large error, unless we want a smoother sphere/slower runtime
   abs_tol = 2e-3;
   rel_tol = 22.2e-2;
+  
+  wavelength0 = 1.0e-6;
 
-  shape = ott.shapes.Sphere(0.1);
+  shape = ott.shapes.Sphere(0.1*wavelength0);
 
   nrel = 1.2;
   
   % Small changes to spacing spacing seems to have a very large
   % effect on error, even/odd spacing for voxels also change things
 %   spacing = 1/35;
-  spacing = 1/40;
+  spacing = 1/40 .* wavelength0;
   
   Tdda = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
-    'spacing', spacing, 'index_medium', 1.0, 'wavelength0', 1.0);
-  Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel, 'index_medium', 1.0, 'wavelength0', 1.0);
+    'spacing', spacing, 'index_medium', 1.0, 'wavelength0', wavelength0);
+  Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel, ...
+    'index_medium', 1.0, 'wavelength0', wavelength0);
 
   testCase.verifyEqual(Tdda.Nmax, Tmie.Nmax, ...
       'Nmax does not match Mie T-matrix');
