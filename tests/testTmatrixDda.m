@@ -234,3 +234,83 @@ function testSphereRotSym(testCase)
       'RelTol', rel_tol, ...
       'T-matrix retol failed');
 end
+
+function testSphereMirSym(testCase)
+  % Create a sphere T-matrix with z-axis rotational symmetry
+  
+  % Large error, unless we want a smoother sphere/slower runtime
+  abs_tol = 2e-3;
+  rel_tol = 22.2e-2;
+
+  nrel = 1.2;
+  shape = ott.shapes.Sphere(0.1);
+
+  Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel);
+  Nmax = Tmie.Nmax(1);
+  
+  z_rotational_symmetry = 1;
+  z_mirror_symmetry = true;
+  
+  spacing = 1/40;
+  voxels = shape.voxels(spacing, 'even_range', true);
+
+  Tdda = ott.TmatrixDda(voxels, ...
+      'index_relative', nrel, ...
+      'Nmax', Nmax, ...
+      'spacing', spacing, ...
+      'z_mirror_symmetry', z_mirror_symmetry, ...
+      'z_rotational_symmetry', z_rotational_symmetry);
+
+  diag_dda = diag(Tdda.data);
+  ndiag_dda = Tdda.data - diag(diag_dda);
+  diag_mie = diag(Tmie.data);
+  ndiag_mie = Tmie.data - diag(diag_mie);
+
+  testCase.verifyEqual(full(ndiag_dda), full(ndiag_mie), ...
+      'AbsTol', abs_tol, ...
+      'T-matrix abstol failed');
+
+  testCase.verifyEqual(full(diag_dda), full(diag_mie), ...
+      'RelTol', rel_tol, ...
+      'T-matrix retol failed');
+end
+
+function testSphereRotMirSym(testCase)
+  % Create a sphere T-matrix with z-axis rotational symmetry
+  
+  % Large error, unless we want a smoother sphere/slower runtime
+  abs_tol = 2e-3;
+  rel_tol = 22.2e-2;
+
+  nrel = 1.2;
+  shape = ott.shapes.Sphere(0.1);
+
+  Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel);
+  Nmax = Tmie.Nmax(1);
+  
+  z_rotational_symmetry = 4;
+  z_mirror_symmetry = true;
+  
+  spacing = 1/40;
+  voxels = shape.voxels(spacing, 'even_range', true);
+
+  Tdda = ott.TmatrixDda(voxels, ...
+      'index_relative', nrel, ...
+      'Nmax', Nmax, ...
+      'spacing', spacing, ...
+      'z_mirror_symmetry', z_mirror_symmetry, ...
+      'z_rotational_symmetry', z_rotational_symmetry);
+
+  diag_dda = diag(Tdda.data);
+  ndiag_dda = Tdda.data - diag(diag_dda);
+  diag_mie = diag(Tmie.data);
+  ndiag_mie = Tmie.data - diag(diag_mie);
+
+  testCase.verifyEqual(full(ndiag_dda), full(ndiag_mie), ...
+      'AbsTol', abs_tol, ...
+      'T-matrix abstol failed');
+
+  testCase.verifyEqual(full(diag_dda), full(diag_mie), ...
+      'RelTol', rel_tol, ...
+      'T-matrix retol failed');
+end

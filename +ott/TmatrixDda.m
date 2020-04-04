@@ -20,6 +20,10 @@ classdef TmatrixDda < ott.Tmatrix
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% TODO: There is a lot of optimisation that could be done to the A and F
+% functions.  We should probably write a single optimised function to
+% replace both of them (there is a lot of code duplication).
+
   methods (Static, Hidden)
     function p = input_parser(varargin)
       % Helper for input parsing
@@ -125,7 +129,7 @@ classdef TmatrixDda < ott.Tmatrix
       tmatrix = TmatrixDda(voxels, varargin{:}, ...
         'spacing', spacing, ...
         'z_rotational_symmetry', z_rotational_symmetry, ...
-        'z_mirror_symmetry', z_mirror_symmetry & false);
+        'z_mirror_symmetry', z_mirror_symmetry);
     end
   end
 
@@ -206,7 +210,6 @@ classdef TmatrixDda < ott.Tmatrix
       
       % Filter xyz and k_particle for symmetries
       if pa.Results.z_mirror_symmetry
-        error('Not yet implemented');
         k_particle = tmatrix.remove_by_mask(k_particle, xyz(3, :) < 0);
         alpha = tmatrix.remove_by_mask(alpha, xyz(3, :) < 0);
         xyz(:, xyz(3, :) < 0) = [];
@@ -375,7 +378,7 @@ classdef TmatrixDda < ott.Tmatrix
       end
     end
 
-    function F = nearfield_matrix(theta, phi, r_near, k, xyz, rtp, ...
+    function [F, Fodd] = nearfield_matrix(theta, phi, r_near, k, xyz, rtp, ...
           z_mirror, z_rotation)
       % Based on DDA/T-matrix/near_field/nearfield_matrix
       %
@@ -390,6 +393,7 @@ classdef TmatrixDda < ott.Tmatrix
       xyz_E = ott.utils.rtp2xyz(r_near,theta,phi);
 
       F = zeros(3*n_nfpts,3*n_dipoles, z_rotation);
+      Fodd = F;
       
       I = eye(3);
       
@@ -410,10 +414,18 @@ classdef TmatrixDda < ott.Tmatrix
           r_jk = vecnorm(r_vec, 2, 2);
           r_hat = r_vec./r_jk;
           
+          % Calculate location of mirror point
+          if z_mirror
+            rM_vec = xyz_E - [our_xyz(n, 1:2), -our_xyz(n, 3)];
+            rM_jk = vecnorm(rM_vec, 2, 2);
+            rM_hat = rM_vec./rM_jk;
+          end
+          
           % Calculate coordinate rotation
           if m == 1
             M = 1;
           else
+            % Calculate z rotation coordinate transformation matrix
             M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
                 rtp(n, 2), rtp(n, 3));
             M_sph2cart = ott.TmatrixDda.sph2cart_mat(...
@@ -428,6 +440,19 @@ classdef TmatrixDda < ott.Tmatrix
             
             F(p_i:p_i+2, n_i:n_i+2, m) = exp(1i*k*r_jk(p, :))/r_jk(p, :)*...
               (k^2*(rr - I) + (1i*k*r_jk(p, :)-1)/r_jk(p, :)^2*(3*rr - I)) * M;
+            
+            % Add z-mirror-symmetry point
+            if z_mirror
+              Mm = diag([1, 1, -1]);
+              rr = rM_hat(p, :).'*rM_hat(p, :);
+              
+              term = exp(1i*k*rM_jk(p, :))/rM_jk(p, :)*...
+                (k^2*(rr - I) + (1i*k*rM_jk(p, :)-1)/rM_jk(p, :)^2*(3*rr - I)) * Mm * M;
+              
+              Fodd(p_i:p_i+2, n_i:n_i+2, m) = F(p_i:p_i+2, n_i:n_i+2, m) - term;
+              F(p_i:p_i+2, n_i:n_i+2, m) = F(p_i:p_i+2, n_i:n_i+2, m) + term;
+                
+            end
           end
         end
       end
@@ -455,7 +480,7 @@ classdef TmatrixDda < ott.Tmatrix
       end
     end
     
-    function A = interaction_A(k,r,varargin)
+    function [A, Aodd] = interaction_A(k,r,varargin)
       % Calculate the interaction matrix
       %
       % TODO: Should this be part of TmatrixDda?
@@ -480,6 +505,7 @@ classdef TmatrixDda < ott.Tmatrix
       p.addOptional('alpha', []);
       p.addParameter('inv_alpha', []);
       p.addParameter('z_rotational_symmetry', 1);
+      p.addParameter('z_mirror_symmetry', false);
       p.parse(varargin{:});
 
       if ~isempty(p.Results.alpha) && ~isempty(p.Results.inv_alpha)
@@ -513,6 +539,7 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Generate the matrix of off-diagonal elements
       A = zeros(3*N,3*N, p.Results.z_rotational_symmetry);
+      Aodd = A;
       for m = 1:p.Results.z_rotational_symmetry
 
         % Pre-compute sph2cart transformations for each dipole
@@ -525,9 +552,10 @@ classdef TmatrixDda < ott.Tmatrix
           end
         end
 
-        for j=1:N
-          A((1:3) + 3*(j-1),:, m) = ott.TmatrixDda.calc_Aj(k,r,j, p.Results.z_rotational_symmetry, m, ...
-            cart2sph, sph2cart);
+        for ii=1:N
+          [A((1:3) + 3*(ii-1),:, m), Aodd((1:3) + 3*(ii-1),:, m)] = ...
+            ott.TmatrixDda.calc_Aj(k,r,ii, p.Results.z_rotational_symmetry, m, ...
+            cart2sph, sph2cart, p.Results.z_mirror_symmetry);
         end
       end
 
@@ -590,11 +618,12 @@ classdef TmatrixDda < ott.Tmatrix
       if ~isempty(inv_alpha)
         Ac = mat2cell(inv_alpha, 3, repmat(3,1,N));
         A(:, :, 1) = A(:, :, 1) + blkdiag(Ac{:});
+        Aodd(:, :, 1) = Aodd(:, :, 1) + blkdiag(Ac{:});
       end
 
     end
 
-    function Aj = calc_Aj(k_medium, r, j, z_rotation, m, cart2sph, sph2cart)
+    function [Aj, Ajodd] = calc_Aj(k_medium, r, j, z_rotation, m, cart2sph, sph2cart, z_mirror)
       % calculates a 3 X 3N block comprising N number of 3 X 3 Green's tensors
 
       % The following method is about twice as slow as the previous
@@ -623,15 +652,18 @@ classdef TmatrixDda < ott.Tmatrix
       end
 
       r_hat = r_vec./r_jk;
+      
+      % Pre-compute rM vectors for mirror point
+      if z_mirror
+        rM_vec = [our_xyz(:, 1:2), -our_xyz(:, 3)] - r(j, :);
+        rM_jk = vecnorm(rM_vec, 2, 2);
+        rM_hat = rM_vec./rM_jk;
+      end
 
       Aj = zeros(3, 3*n_dipoles);
+      Ajodd = Aj;
 
       for ii = 1:n_dipoles
-
-        % Skip self-interaction term
-        if ii == j && m ~= 1
-          continue;
-        end
 
         % Calculate coordinate rotation
         if m == 1
@@ -642,8 +674,29 @@ classdef TmatrixDda < ott.Tmatrix
 
         rr = r_hat(ii, :).'*r_hat(ii, :);
 
-        Aj(:, (1:3) + 3*(ii-1)) = exp(1i*k_medium*r_jk(ii, :))/r_jk(ii, :)*...
-          (k_medium^2*(rr - eye(3)) + (1i*k_medium*r_jk(ii, :)-1)/r_jk(ii, :)^2*(3*rr - eye(3))) * M;
+        % Add off-diagonal terms and z-rotation-symmetry terms
+        if ii ~= j || m ~= 1
+          
+          Aj(:, (1:3) + 3*(ii-1)) = exp(1i*k_medium*r_jk(ii, :))/r_jk(ii, :)*...
+            (k_medium^2*(rr - eye(3)) + (1i*k_medium*r_jk(ii, :)-1)/r_jk(ii, :)^2*(3*rr - eye(3))) * M;
+          
+        end
+        
+        % Add z-mirror-symmetry term
+        if z_mirror
+          
+          rr = rM_hat(ii, :).'*rM_hat(ii, :);
+          
+          % Calculate mirror symmetry rotation matrix
+          Mm = diag([1, 1, -1]) * M;
+          
+          term = exp(1i*k_medium*rM_jk(ii, :))/rM_jk(ii, :) * ...
+            (k_medium^2*(rr - eye(3)) + (1i*k_medium*rM_jk(ii, :)-1)/rM_jk(ii, :)^2*(3*rr - eye(3))) * Mm;
+          
+          Ajodd(:, (1:3) + 3*(ii-1)) = Aj(:, (1:3) + 3*(ii-1)) - term;
+          Aj(:, (1:3) + 3*(ii-1)) = Aj(:, (1:3) + 3*(ii-1)) + term;
+            
+        end
 
       end
     end
@@ -689,12 +742,19 @@ classdef TmatrixDda < ott.Tmatrix
       r_near = 8; % near field radius
       assert(r_near > max(rtp(1, :)), 'Particle radius too large');
 
-      A_total = ott.TmatrixDda.interaction_A(k, rtp, alpha, ...
-        'z_rotational_symmetry', z_rotation);
+      % Pre-calculate A
+      % When using mirror/rotational symmetry, A is still full size
+      % This maybe produces a speed optimisation but uses lots of memory
+      [A_total, A_todd] = ott.TmatrixDda.interaction_A(k, rtp, alpha, ...
+        'z_rotational_symmetry', z_rotation, ...
+        'z_mirror_symmetry', z_mirror);
       
       assert(all(isfinite(A_total(:))), 'singular polarizability not yet supported');
 
-      F_total = ott.TmatrixDda.nearfield_matrix(...
+      % Pre-calculate F
+      % When using mirror/rotational symmetry, A is still full size
+      % This maybe produces a speed optimisation but uses lots of memory
+      [F_total, F_todd] = ott.TmatrixDda.nearfield_matrix(...
           theta,phi,r_near, k, xyz, rtp, z_mirror, z_rotation);
 
       MN = ott.TmatrixDda.calculate_nearfield_modes(...
@@ -714,13 +774,40 @@ classdef TmatrixDda < ott.Tmatrix
         
         progress_callback(struct('m', m, 'mrange', mrange));
         
-        F = ott.TmatrixDda.nearfield_matrix_combined(F_total, ...
+        Feven = ott.TmatrixDda.nearfield_matrix_combined(F_total, ...
             m, z_mirror, z_rotation);
         
-        A = ott.TmatrixDda.nearfield_matrix_combined(A_total, ...
+        Aeven = ott.TmatrixDda.nearfield_matrix_combined(A_total, ...
             m, z_mirror, z_rotation);
+
+        if z_mirror
+          Aodd = ott.TmatrixDda.nearfield_matrix_combined(A_todd, ...
+            m, z_mirror, z_rotation);
+          Fodd = ott.TmatrixDda.nearfield_matrix_combined(F_todd, ...
+            m, z_mirror, z_rotation);
+        end
         
 				for n = max(1, abs(m)):Nmax % step through n incident
+          
+          % Calculate fields in Cartesian coordinates
+          if z_mirror
+            if mod(m + n, 2) == 0
+              A_TM = Aeven;
+              A_TE = Aodd;
+              F_TM = Feven;
+              F_TE = Fodd;
+            else
+              A_TE = Aeven;
+              A_TM = Aodd;
+              F_TE = Feven;
+              F_TM = Fodd;
+            end
+          else
+            A_TM = Aeven;
+            A_TE = Aeven;
+            F_TM = Feven;
+            F_TE = Feven;
+          end
           
           [Ei_TE, Ei_TM] = ott.utils.vswfcart(n, m, ...
               rtp(:, 1)*k, rtp(:, 2), rtp(:, 3), 'regular');
@@ -728,11 +815,11 @@ classdef TmatrixDda < ott.Tmatrix
           Ei_TM = Ei_TM.';
 
           if iterative
-            [P_TE, ~] = gmres(A,Ei_TE(:),1,1e-6,30);
-            [P_TM, ~] = gmres(A,Ei_TM(:),1,1e-6,30);
+            [P_TE, ~] = gmres(A_TE,Ei_TE(:),1,1e-6,30);
+            [P_TM, ~] = gmres(A_TM,Ei_TM(:),1,1e-6,30);
           else
-            P_TE = A\Ei_TE(:);
-            P_TM = A\Ei_TM(:);
+            P_TE = A_TE\Ei_TE(:);
+            P_TM = A_TM\Ei_TM(:);
           end
 
           % Add n_rel correction
@@ -754,8 +841,8 @@ classdef TmatrixDda < ott.Tmatrix
           end
           
           % Calculate fields in Cartesian coordinates
-          E_TE = F * P_TE;
-          E_TM = F * P_TM;
+          E_TE = F_TE * P_TE;
+          E_TM = F_TM * P_TM;
           
           % Apply cartesian to spherical transformation
           % This could also be pre-computed and applied to F
@@ -769,25 +856,72 @@ classdef TmatrixDda < ott.Tmatrix
 					if z_rotation == 1
             % No rotational symmetry
             
-						pq1 = MN\Es_TE;
-						pq2 = MN\Es_TM;
+            if z_mirror
+              % Only mirror symmetry
+              % Parity is conserved, even modes go to even modes, etc.
+              % Reference: https://arxiv.org/pdf/physics/0702045.pdf
+              
+              % Find even modes
+              [alln, allm] = ott.utils.combined_index((1:total_orders).');
+              even_modes = logical(mod(alln + allm, 2));
+              modes = [ even_modes; ~even_modes ];
+              
+              if ~logical(mod(n + m, 2))
+                modes = ~modes;
+              end
+              
+              pq1 = MN(:, modes) \ Es_TE;
+              pq2 = MN(:, ~modes) \ Es_TM;
+
+              data(modes,ci) = pq1;
+              data(~modes,ci+total_orders) = pq2;
+              
+            else
             
-            data(:,ci) = pq1;
-            data(:,ci+total_orders) = pq2;
+              pq1 = MN\Es_TE;
+              pq2 = MN\Es_TM;
+
+              data(:,ci) = pq1;
+              data(:,ci+total_orders) = pq2;
+              
+            end
             
           elseif z_rotation > 1
             % Discrete rotational symmetry
             
             % Calculate which modes preseve symmetry, m = +/- ip
-            [~, allm] = ott.utils.combined_index((1:total_orders).');
+            [alln, allm] = ott.utils.combined_index((1:total_orders).');
             axial_modes = mod(allm - m, z_rotation) == 0;
             modes = [axial_modes; axial_modes];
             
-            pq1 = MN(:, modes) \ Es_TE;
-            pq2 = MN(:, modes) \ Es_TM;
+            if z_mirror
+              
+              % Correct the MN modes to include only even/odd modes
+              even_modes = logical(mod(alln + allm, 2));
+              
+              if logical(mod(n + m, 2))
+                modes_evn = modes & [ even_modes; ~even_modes ];
+                modes_odd = modes & [ ~even_modes; even_modes ];
+              else
+                modes_odd = modes & [ even_modes; ~even_modes ];
+                modes_evn = modes & [ ~even_modes; even_modes ];
+              end
             
-            data(modes,ci) = pq1;
-            data(modes,ci+total_orders) = pq2;
+              pq1 = MN(:, modes_evn) \ Es_TE;
+              pq2 = MN(:, modes_odd) \ Es_TM;
+
+              data(modes_evn,ci) = pq1;
+              data(modes_odd,ci+total_orders) = pq2;
+              
+            else
+            
+              pq1 = MN(:, modes) \ Es_TE;
+              pq2 = MN(:, modes) \ Es_TM;
+
+              data(modes,ci) = pq1;
+              data(modes,ci+total_orders) = pq2;
+            
+            end
             
           elseif z_rotation == 0
             % Infinite rotational symmetry
