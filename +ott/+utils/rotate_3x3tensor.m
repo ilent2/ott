@@ -1,10 +1,10 @@
-function alpha = rotate_polarizability(ualpha, varargin)
-% Apply a set of rotations to the unit-polarisability
+function alpha = rotate_3x3tensor(ualpha, varargin)
+% Apply a set of rotations to a 3x3 tensor
 %
-% alpha = rotate_polarizability(ualpha, R, ...) applies the operation
+% alpha = rotate_3x3tensor(ualpha, R, ...) applies the operation
 % alpha = R*ualpha*inv(R) if R is a 3x3N matrix of rotation matrices.
 %
-% alpha = rotate_polarizability(ualpha, 'direction', dir, ...) computes
+% alpha = rotate_3x3tensor(ualpha, 'direction', dir, ...) computes
 % the appropriate rotation rotation matrix to rotate from the z-axis
 % to the 3xN matrix of directions.  This is useful for uniaxial materials.
 % 'direction' is the [x; y; z] Cartesian coordinate.
