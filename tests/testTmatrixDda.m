@@ -317,3 +317,47 @@ function testSphereRotMirSym(testCase)
       'RelTol', rel_tol, ...
       'T-matrix retol failed');
 end
+
+function testSphere3Modes(testCase)
+  
+  % Large error, unless we want a smoother sphere/slower runtime
+  abs_tol = 2e-3;
+  rel_tol = 22.2e-2;
+  
+  wavelength0 = 1.0e-6;
+
+  shape = ott.shapes.Sphere(0.1*wavelength0);
+
+  nrel = 1.2;
+  
+  % Small changes to spacing spacing seems to have a very large
+  % effect on error, even/odd spacing for voxels also change things
+%   spacing = 1/35;
+  spacing = 1/40 .* wavelength0;
+  
+  Tdda = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
+    'spacing', spacing, 'index_medium', 1.0, 'wavelength0', wavelength0, ...
+    'modes', (1:3).');
+  Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel, ...
+    'index_medium', 1.0, 'wavelength0', wavelength0);
+
+  testCase.verifyEqual(Tdda.Nmax, Tmie.Nmax, ...
+      'Nmax does not match Mie T-matrix');
+
+  diag_dda = diag(Tdda.data);
+  ndiag_dda = Tdda.data - diag(diag_dda);
+  diag_mie = diag(Tmie.data);
+  ndiag_mie = Tmie.data - diag(diag_mie);
+
+  testCase.verifyEqual(full(ndiag_dda), full(ndiag_mie), ...
+      'AbsTol', abs_tol, ...
+      'T-matrix abstol failed');
+
+  testCase.verifyEqual(full(diag_dda([1:3, 25:27])), full(diag_mie([1:3, 25:27])), ...
+      'RelTol', rel_tol, ...
+      'T-matrix retol failed');
+
+  testCase.verifyEqual(full(diag_dda([4:24, 28:end])), 0.*full(diag_mie([4:24, 28:end])), ...
+      'Uncalculated T-matrix modes incorrect');
+
+end

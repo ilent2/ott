@@ -45,9 +45,11 @@ classdef TmatrixDda < ott.Tmatrix
       
       p.addParameter('z_mirror_symmetry', false);
       p.addParameter('z_rotational_symmetry', 1);
+      p.addParameter('low_memory', false);
+      
+      p.addParameter('modes', []);
       
       p.addParameter('verbose', true);
-      p.addParameter('low_memory', false);
       
       % Fields to enable compatability with Tmatrix.simple
       p.addParameter('method', []);
@@ -178,6 +180,16 @@ classdef TmatrixDda < ott.Tmatrix
       %     Degree of rotational symmetry.
       %     Objects with no rotational symetry should set this to 1.
       %     Default: ``1``.
+      %   - low_memory (logical) -- If true, the DDA implementation
+      %     favours additional calculations over additional memory use
+      %     allowing simualtion of larger particles.  Default: false.
+      %     Only applicable with z_mirror_symmetry and
+      %     z_rotational_symmetry.
+      %
+      %   - modes (numeric) -- Specifies the modes to include in the
+      %     calculated T-matrix.  Can either be a Nx2 matrix or a N
+      %     element vector with the (n, m) modes or combined index modes
+      %     respectively.  Default: ``[]``.
       %
       %   - verbose (logical) -- Display additional information.
       %     Doesn't affect the display of the progress callback.
@@ -304,11 +316,18 @@ classdef TmatrixDda < ott.Tmatrix
       assert(isscalar(Nmax), 'Only scalar Nmax supported for now');
 
       % Calculate range of m-orders
-      mrange = -Nmax:Nmax;
+      if ~isempty(pa.Results.modes)
+        modes = pa.Results.modes;
+        if size(modes, 2) == 2
+          modes = ott.utils.combined_index(modes(:, 1), modes(:, 2));
+        end
+      else
+        modes = 1:ott.utils.combined_index(Nmax, Nmax);
+      end
 
       % Calculate the T-matrix
       tmatrix.data = tmatrix.calc_nearfield(Nmax, xyz.', rtp, ...
-          n_relative, mrange, alpha, pa.Results.progress_callback, ...
+          n_relative, modes, alpha, pa.Results.progress_callback, ...
           pa.Results.z_mirror_symmetry, pa.Results.z_rotational_symmetry, ...
           pa.Results.low_memory);
 
@@ -815,7 +834,7 @@ classdef TmatrixDda < ott.Tmatrix
       
     end
 
-    function data = calc_nearfield(Nmax, xyz, rtp, n_rel, mrange, alpha, ...
+    function data = calc_nearfield(Nmax, xyz, rtp, n_rel, modes, alpha, ...
         progress_callback, z_mirror, z_rotation, low_memory)
       % Near-field implementation of T-matrix calculation
       %
@@ -886,10 +905,12 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Allocate memory for T-matrix
       data = zeros(2*total_orders, 2*total_orders);
+      
+      [nmodes, mmodes] = ott.utils.combined_index(modes(:));
 
-      for m = mrange
+      for m = unique(mmodes).'
 
-        progress_callback(struct('m', m, 'mrange', mrange));
+        progress_callback(struct('m', m, 'mrange', mmodes));
 
         if low_memory
 
@@ -907,8 +928,11 @@ classdef TmatrixDda < ott.Tmatrix
             m, z_rotation);
         [Aeven, Aodd] = ott.TmatrixDda.combine_rotsym_matrix(A_total, ...
             m, z_rotation);
+          
+        % Find which modes we should calculate
+        ournmodes = nmodes(mmodes == m).';
 
-        for n = max(1, abs(m)):Nmax % step through n incident
+        for n = ournmodes
           
           % Calculate fields in Cartesian coordinates
           if z_mirror
