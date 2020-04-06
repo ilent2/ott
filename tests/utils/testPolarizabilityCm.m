@@ -11,7 +11,7 @@ function testAlphaValues(testCase)
   spacing = 1.0;
   index = [1, 2];
   
-  alpha = ott.utils.polarizability_CM(spacing,index);
+  alpha = ott.utils.polarizability.CM(spacing,index);
   
   targetAlpha = [0; 0.119366207318922];
   

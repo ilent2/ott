@@ -1,5 +1,5 @@
 % +OTT/+UTILS/+POLARIZABILITY Polarizability calculation methods for DDA
 %
-%   polarizability_CM     - Clausius-Mossoti Polarizability 
-%   polarizability_FCD    - Filtered coupled dipole polarizability
-%   polarizability_LDR    - Lattice dispersion relation polarizablity
+%   CM     - Clausius-Mossoti Polarizability 
+%   FCD    - Filtered coupled dipole polarizability
+%   LDR    - Lattice dispersion relation polarizablity

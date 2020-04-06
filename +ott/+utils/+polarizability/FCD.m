@@ -1,10 +1,10 @@
-function alpha_FCD = polarizability_FCD(spacing, index, varargin)
+function alpha_FCD = FCD(spacing, index, varargin)
 % Filtered coupled dipole polarizability
 %
 % Usage
-%   alpha = polarizability_FCD(spacing, index)
+%   alpha = FCD(spacing, index)
 %   Calculates a Nx1 element vector containing the isotropic
-%   polarisabilities for N dipoles.
+%   polarizabilities for N dipoles.
 %
 % Parameters
 %   - spacing (numeric scalar) -- lattice spacing parameter

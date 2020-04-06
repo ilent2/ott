@@ -1,4 +1,4 @@
-function alpha_LDR = polarizability_LDR(spacing,index,varargin)
+function alpha_LDR = LDR(spacing,index,varargin)
 % Lattice dispersion relation polarizablity
 %
 % Polarizability calculation based on
@@ -8,11 +8,11 @@ function alpha_LDR = polarizability_LDR(spacing,index,varargin)
 %   The Astrophysical Journal, 405:685-697, 1993 March 10
 %
 % Usage
-%   alpha = polarizability_LDR(spacing, index, ...)
+%   alpha = LDR(spacing, index, ...)
 %   Calculates a Nx1 element vector containing the isotropic
 %   polarisabilities for N dipoles.
 %
-%   alpha = polarizability_LDR(spacing, index, kvec, E0, ...)
+%   alpha = LDR(spacing, index, kvec, E0, ...)
 %   As above but specifies the polarisability information for use
 %   with plane wave illumination.
 %
