@@ -358,6 +358,111 @@ classdef Bsc
         beam.b = [beam.b, other.b];
       end
     end
+    
+    function varargout = paraxialFarfield(beam, varargin)
+      % Calcualtes fields in the paraxial far-field
+      %
+      % Usage
+      %   [E, H] = beam.paraxialFarfield(...)
+      %
+      % Optional named arguments
+      %   - 'mapping' (enum) -- mapping to paraxial far-field
+      %   - 'calcE'   bool   calculate E field (default: true)
+      %   - 'calcH'   bool   calculate H field (default: nargout == 2)
+      %   - 'saveData' bool  save data for repeated calculation (default: false)
+      %   - 'data'    data   data saved for repeated calculation.
+      
+      p = inputParser;
+      p.addParameter('calcE', true);
+      p.addParameter('calcH', nargout >= 2);
+      p.addParameter('saveData', false);
+      p.addParameter('data', []);
+      p.addParameter('mapping', 'sin');
+      p.addParameter('size', [50, 50]);
+      p.addParameter('thetaMax', pi/2);
+      p.addParameter('direction', 'pos');
+      p.parse(varargin{:});
+      
+      % Calculate image locations
+      xrange = linspace(-1, 1, p.Results.size(1));
+      yrange = linspace(-1, 1, p.Results.size(2));
+      [xx, yy] = meshgrid(xrange, yrange);
+
+      % Calculate spherical coordinates for pixels
+      phi = atan2(yy, xx);
+      rr = sqrt(xx.^2 + yy.^2);
+      switch p.Results.mapping
+        case 'sin'
+          theta = asin(rr);
+        case 'tan'
+          theta = atan(rr);
+        case 'theta'
+          theta = rr;
+        otherwise
+          error('Unknown mapping argument value, must be sin, tan or theta');
+      end
+      
+      % Only include points within NA range
+      thetaMax = Inf;
+      if ~isempty(p.Results.thetaMax)
+        thetaMax = p.Results.thetaMax;
+      end
+
+      % Determine if the points need calculating
+      pinside = imag(theta) == 0 & theta < thetaMax;
+      iphi = phi(pinside);
+      itheta = theta(pinside);
+      
+      if strcmpi(p.Results.direction, 'neg')
+        itheta = pi - itheta;
+      elseif ~strcmpi(p.Results.direction, 'pos')
+        error('Direction must be ''pos'' or ''neg''');
+      end
+
+      % Calculate the electric field in the farfield
+      [E, H, data] = beam.farfield(itheta(:), iphi(:), ...
+        'saveData', p.Results.saveData, 'data', p.Results.data, ...
+        'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
+      
+      if nargout >= 1
+        
+        if p.Results.calcE
+          % Generate the requested field
+          dEt = beam.GetVisualisationData('Et', [], ...
+            [itheta, iphi, ones(size(iphi))], [], E.');
+          dEp = beam.GetVisualisationData('Ep', [], ...
+            [itheta, iphi, ones(size(iphi))], [], E.');
+
+          Et = zeros(p.Results.size);
+          Et(pinside) = dEt;
+          Ep = zeros(p.Results.size);
+          Ep(pinside) = dEp;
+
+          varargout{1} = Et;
+          varargout{1}(:, :, 2) = Ep;
+        end
+        
+        if nargout >= 2 && p.Results.calcH
+          % Generate the requested field
+          dHt = beam.GetVisualisationData('Et', [], ...
+            [itheta, iphi, ones(size(iphi))], [], H.');
+          dHp = beam.GetVisualisationData('Ep', [], ...
+            [itheta, iphi, ones(size(iphi))], [], H.');
+
+          Ht = zeros(p.Results.size);
+          Ht(pinside) = dHt;
+          Hp = zeros(p.Results.size);
+          Hp(pinside) = dHp;
+
+          varargout{2} = Ht;
+          varargout{2}(:, :, 2) = Hp;
+        end
+      end
+      
+      if nargout >= 3
+        varargout{3} = data;
+      end
+    end
 
     function [E, H, data] = farfield(beam, theta, phi, varargin)
       %FARFIELD finds far field at locations theta, phi.
