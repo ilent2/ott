@@ -95,6 +95,7 @@ classdef BscPlane < ott.Bsc
         Nmax = ott.utils.ka2nmax(p.Results.radius * beam.k_medium);
       elseif ~isempty(p.Results.Nmax)
         Nmax = p.Results.Nmax;
+        assert(isscalar(Nmax), 'Nmax must be scalar');
       else
         error('ott:BscPlane:duplicate_range', ...
             'Nmax and ka specified.  Must specify only one');
