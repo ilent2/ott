@@ -9,8 +9,8 @@
 
 This section provides an overview of the shapes currently in the toolbox.
 
-.. contents::
-   :depth: 1
+.. contents:: Contents
+   :depth: 3
    :local:
 ..
 

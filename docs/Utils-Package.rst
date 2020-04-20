@@ -14,8 +14,8 @@ minor modifications and bug fixes.
 .. warning:: These functions are likely to move in future releases and are
    not very well documented.
 
-.. contents::
-   :depth: 1
+.. contents:: Contents
+   :depth: 3
    :local:
 ..
 

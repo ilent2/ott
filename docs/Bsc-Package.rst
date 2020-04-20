@@ -1,8 +1,10 @@
 
-.. _bsc-classes:
+.. automodule:: +ott.+bsc
+
+.. _bsc-package:
 
 #############
-`Bsc` classes
+`bsc` Package
 #############
 
 This section contains information about the beam shape coefficient classes

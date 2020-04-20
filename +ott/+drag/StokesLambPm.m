@@ -1,4 +1,4 @@
-classdef PmStokesLamb < Stokes
+classdef StokesLambPm < ott.drag.Stokes
 % Calculate drag coefficients using Lamb series and point matching.
 %
 % Based on code by Lachlan Gibson
@@ -75,6 +75,7 @@ classdef PmStokesLamb < Stokes
 
         forcetorque = [force(:); torque(:)];
     end
+  end
 
   methods
     function obj = StokesLambPm(rtp, eta, sorder)

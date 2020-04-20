@@ -14,7 +14,7 @@ classdef FaxenSphere < ott.drag.StokesSphere
 % This class assumes the surface is perpendicular to the z axis, positioned
 % bellow the spherical particle.
 %
-% Properties:
+% Properties
 %   - radius      -- Radius of the sphere
 %   - viscosity   -- Viscosity of the medium
 %   - separation  -- Distance between the sphere surface and plane

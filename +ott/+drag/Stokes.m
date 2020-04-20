@@ -6,14 +6,14 @@ classdef Stokes
 % by a 3x3 translational, rotational, and cross-term matrices in
 % Cartesian coordinates.
 %
-% Properties:
+% Properties
 %  - forward      -- Rank 2 forward tensor
 %  - inverse      -- Rank 2 inverse tensor
 %  - allowchanges -- If false, prevents further changes to dependent proeprties
 %  - viscosity    -- Viscosity of surrounding medium (default: 1.0)
 %  - orientation  -- Current orientation matrix for tensor (default: eye)
 %
-% Dependent properties:
+% Dependent properties
 %  - translation      -- Translational component of tensor
 %  - rotation         -- Rotational component of tensor
 %  - crossterms       -- Cross-terms component of tensor (UD)
@@ -21,14 +21,14 @@ classdef Stokes
 %  - irotation        -- Inverse rotational component of tensor
 %  - icrossterms      -- Inverse cross-terms component of tensor (UD)
 %
-% Methods:
+% Methods
 %  - inv         -- Return the inverse or calculate the inverse
 %  - mtimes      -- Multiply the tensor or calculate the forward and mul
 %  - rotate      -- Rotate the tensor specifying a rotation matrix
 %  - rotate*     -- Rotate the tensor around the X,Y,Z axis
 %  - setOrientation -- Clear the current orientation and apply a new one
 %
-% Static methods:
+% Static methods
 %  - defaultMethod -- Determine the appropriate methods for a particular shape.
 %  - simple        -- Calculate the Stokes drag for a simple shape.
 %

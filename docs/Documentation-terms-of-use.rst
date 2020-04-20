@@ -1,6 +1,6 @@
 
 ##########################
-Documentation terms of use
+Documentation Terms of Use
 ##########################
 
 This documentation is released under the Creative Commons

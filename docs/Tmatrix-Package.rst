@@ -1,15 +1,17 @@
 
-.. _tmatrix-classes:
+.. automodule:: +ott.+tmatrix
+
+.. _tmatrix-package:
 
 #################
-`Tmatrix` classes
+`tmatrix` Package
 #################
 
 This section describes the ``Tmatrix`` classes currently
 implemented in the toolbox.
 
-.. contents::
-   :depth: 1
+.. contents:: Contents
+   :depth: 3
    :local:
 ..
 

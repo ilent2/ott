@@ -178,13 +178,13 @@ and the corresponding folders/file paths:
   such as functions for visualising fields
   and beam related properties (wavelength, numerical aperture, etc.).
   Further details can be found in the
-  :ref:`bsc-classes` and :ref:`tmatrix-classes` reference pages.
+  :ref:`bsc-package` and :ref:`tmatrix-package` reference pages.
 
 **Functions operating on beams and particles** (`+ott/*` functions)
   In addition to the BSC and T-matrix classes, the `+ott` package
   contains a range of other functions for calculating forces
   and locating traps.
-  Further information can be found in :ref:`other-functions`.
+  Further information can be found in :ref:`tools-package`.
 
 **Geometric Shapes** (`+ott/+shapes`)
   This sub-package provides descriptions of Geometric shapes
