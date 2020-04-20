@@ -246,8 +246,8 @@ classdef Stokes
       if isempty(obj.forward)
         obj.forward = zeros(6, 6);
       end
-      obj.forward(4:6, 1:3) = val;
-      obj.forward(1:3, 4:6) = val.';
+      obj.forward(4:6, 1:3) = (4/3).*val.';
+      obj.forward(1:3, 4:6) = val;
     end
 
     function val = get.itranslation(obj)

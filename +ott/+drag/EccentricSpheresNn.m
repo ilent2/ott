@@ -76,10 +76,10 @@ classdef EccentricSpheresNn < ott.drag.Stokes
       obj.forward(6, 6) = obj.forward(6, 6) .* gz;
 
       % Add cross-terms
-      obj.forward(1, 5) = 6*pi*innerRadius^2*fxc;
-      obj.forward(2, 4) = -6*pi*innerRadius^2*fxc;
-      obj.forward(5, 1) = 6*pi*innerRadius^2*fxc;
-      obj.forward(4, 2) = -6*pi*innerRadius^2*fxc;
+      obj.forward(1, 5) = 6*pi*p.Results.viscosity*innerRadius^2*fxc;
+      obj.forward(2, 4) = -6*pi*p.Results.viscosity*innerRadius^2*fxc;
+      obj.forward(5, 1) = 8*pi*p.Results.viscosity*innerRadius^2*fxc;
+      obj.forward(4, 2) = -8*pi*p.Results.viscosity*innerRadius^2*fxc;
 
       % If no inverse/forward, calculate them
       if p.Results.finalize

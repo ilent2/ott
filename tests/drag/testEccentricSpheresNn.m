@@ -23,22 +23,27 @@ function testConstruction(testCase)
 end
 
 function testFaxenLimit(testCase)
+  % Compare against faxen's correction (valid near plane surface,
+  % at least 1 radius spacing between wall and surface).
+  %
+  % This is not the best comparison, since moving far from the wall
+  % reduces Faxen's correction to a Stokes sphere, but too close to the
+  % wall and Faxen's correction breaks.  While for the eccentric sphere
+  % case, if we are too far from the wall, the surface no longer looks
+  % like a infinite plane (i.e. no longer Faxen's).
 
   radius = 1.0;
-  outerRadius = 1000.0;
-  viscosity = 1.0;
-  separation = 900.0;
+  outerRadius = 1e5;
+  viscosity = 3.0;
+  separation = 2.21;  % Faxen's should work to about 1 radius (i.e. sep=2)
 
-  a = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, viscosity);
+  a = ott.drag.EccentricSpheresNn(radius, outerRadius, separation-radius, viscosity);
   b = ott.drag.FaxenSphere(radius, separation, viscosity);
   
-  import matlab.unittest.constraints.IsEqualTo;
-  import matlab.unittest.constraints.AbsoluteTolerance;
-  import matlab.unittest.constraints.RelativeTolerance;
-  testCase.verifyThat(a.forward, IsEqualTo(b.forward, ...
-      'Within', AbsoluteTolerance(3e-2) | RelativeTolerance(1e-2)));
-  testCase.verifyThat(a.inverse, IsEqualTo(b.inverse, ...
-      'Within', AbsoluteTolerance(3e-2) | RelativeTolerance(1e-2)));
+  testCase.verifyEqual(a.forward, b.forward, ...
+      'RelTol', 0.12);
+  testCase.verifyEqual(a.inverse, b.inverse, ...
+      'RelTol', 0.12);
 
 end
 
@@ -53,11 +58,25 @@ function testFarLimit(testCase)
   b = ott.drag.StokesSphere(radius, viscosity);
 
   testCase.verifyEqual(a.forward, b.forward, ...
-      'AbsTol', 3.0e-2, ...
+      'RelTol', 2.0e-3, 'AbsTol', viscosity*3e-2, ...
       'Far-limit doesn''t match forward');
   testCase.verifyEqual(a.inverse, b.inverse, ...
-      'AbsTol', 3.0e-2, ...
+      'RelTol', 2.0e-3, 'AbsTol', 1e-4./viscosity, ...
       'Far-limit doesn''t match inverse');
 
 end
+
+function testViscosity(testCase)
+
+  radius = 1.0;
+  outerRadius = 100.0;
+  separation = 10.0;
+  
+  a = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, 1.0);
+  b = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, 2.0);
+  
+  testCase.verifyEqual(a.forward, 0.5*b.forward, ...
+    'RelTol', 1.0e-16, 'Viscosity has incorrect effect');
+end
+
 
