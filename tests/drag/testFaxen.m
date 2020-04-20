@@ -10,14 +10,12 @@ function testConstruction(testCase)
 
   radius = 1.0;
   viscosity = 1.4;
-  separation = 1.2;
+  separation = 3.0;
   a = ott.drag.FaxenSphere(radius, separation, viscosity);
 
   testCase.verifyEqual(a.separation, separation, 'Separation not set');
   testCase.verifyEqual(a.radius, radius, 'Separation not set');
   testCase.verifyEqual(a.viscosity, viscosity, 'Separation not set');
-
-  testCase.verifyTrue(isdiag(a.forward), 'Drag tensor should be diagonal');
 
   testCase.verifyNotEqual(a.forward(1, 1), a.forward(3, 3), ...
     'A(1,1) should not equal A(3,3)');
@@ -27,6 +25,26 @@ function testConstruction(testCase)
     'A(4,4) should equal A(5,5)');
   testCase.verifyNotEqual(a.forward(5, 5), a.forward(6, 6), ...
     'A(5,5) should equal A(6,6)');
+  
+  testCase.verifyNotEqual(a.forward(1, 5), 0, ...
+    'A(1, 5) should not be zero');
+  testCase.verifyNotEqual(a.forward(2, 4), 0, ...
+    'A(2, 4) should not be zero');
+  testCase.verifyNotEqual(a.forward(4, 2), 0, ...
+    'A(4, 2) should not be zero');
+  testCase.verifyNotEqual(a.forward(5, 1), 0, ...
+    'A(5, 1) should not be zero');
+
+end
+
+function testSmallEpsilonWarning(testCase)
+
+  radius = 1.0;
+  viscosity = 1.0;
+  separation = radius + 0.5*radius;
+  
+  testCase.verifyWarning(@() ott.drag.FaxenSphere(radius, separation, viscosity), ...
+    'ott:drag:FaxenSphere:small_epsilon');
 
 end
 
@@ -40,10 +58,10 @@ function testFarLimit(testCase)
   b = ott.drag.StokesSphere(radius, viscosity);
 
   testCase.verifyEqual(a.forward, b.forward, ...
-      'RelTol', 1.0e-3, ...
+      'RelTol', 1.0e-3, 'AbsTol', 1e-15, ...
       'Far-limit doesn''t match forward');
   testCase.verifyEqual(a.inverse, b.inverse, ...
-      'RelTol', 1.0e-3, ...
+      'RelTol', 1.0e-3, 'AbsTol', 1e-15, ...
       'Far-limit doesn''t match inverse');
 
 end
