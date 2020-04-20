@@ -1,10 +1,10 @@
-function alpha = rotate_polarizability(ualpha, varargin)
-% Apply a set of rotations to the unit-polarisability
+function alpha = rotate_3x3tensor(ualpha, varargin)
+% Apply a set of rotations to a 3x3 tensor
 %
-% alpha = rotate_polarizability(ualpha, R, ...) applies the operation
+% alpha = rotate_3x3tensor(ualpha, R, ...) applies the operation
 % alpha = R*ualpha*inv(R) if R is a 3x3N matrix of rotation matrices.
 %
-% alpha = rotate_polarizability(ualpha, 'direction', dir, ...) computes
+% alpha = rotate_3x3tensor(ualpha, 'direction', dir, ...) computes
 % the appropriate rotation rotation matrix to rotate from the z-axis
 % to the 3xN matrix of directions.  This is useful for uniaxial materials.
 % 'direction' is the [x; y; z] Cartesian coordinate.
@@ -37,9 +37,9 @@ if ~isempty(p.Results.direction)
   assert(size(direction, 1) == 3, 'Direction must be 3xN matrix');
 
   % Calculate rotations off z-axis
-  theta = atan2(direction(2, :), direction(1, :));
+  theta = atan2(direction(2, :), direction(1, :)) * 180/pi;
   phi = atan2(sqrt(direction(2, :).^2 + direction(1, :).^2), ...
-      direction(3, :));
+      direction(3, :)) * 180/pi;
 
   % Calculate rotation matrices
   rotation = zeros(3, 3*size(phi, 2));
@@ -68,14 +68,14 @@ end
 
 % Calculate polarizabilities
 alpha = zeros(size(rotation));
-for ii = 1:size(alpha, 2)/2
+for ii = 1:size(alpha, 2)/3
   R = rotation(:, (1:3) + 3*(ii-1));
   alpha(:, (1:3) + 3*(ii-1)) = R*ualpha*inv(R);
 end
 
 % Calculate inverse if requested
 if p.Results.inverse
-  for ii = 1:size(alpha, 2)/2
+  for ii = 1:size(alpha, 2)/3
     alpha(:, (1:3) + 3*(ii-1)) = inv(alpha(:, (1:3) + 3*(ii-1)));
   end
 end

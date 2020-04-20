@@ -13,6 +13,7 @@ in the ``examples`` directory.
    :maxdepth: 2
 
    Calculating-Forces-On-A-Spherical-Particle.rst
+   Simulating-vaterite-with-dda.rst
    Combining-beams
    Creating-a-custom-beam
    Creating-a-custom-Tmatrix

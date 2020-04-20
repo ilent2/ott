@@ -57,23 +57,14 @@ Helper functions
 
 .. autofunction:: matchsize
 .. autofunction:: threewide
-.. autofunction:: col1to3
-.. autofunction:: col3to1
 .. autofunction:: iseven
 .. autofunction:: isodd
+.. autofunction:: rotate_3x3tensor
 
 .. autofunction:: ka2nmax
 .. autofunction:: nmax2ka
 
-Functions for DDA
 =================
-
-.. autofunction:: calc_Aj
-.. autofunction:: interaction_A
-.. autofunction:: polarizability
-.. autofunction:: polarizability_CM
-.. autofunction:: polarizability_FCD
-.. autofunction:: polarizability_LDR
 
 Geometry functions
 ==================
@@ -87,7 +78,6 @@ Unclassified
 
 .. todo:: These functions should be moved to other categories
 
-.. autofunction:: rotate_polarizability
 .. autofunction:: paraxial_transformation_matrix
 .. autofunction:: paraxial_beam_waist
 .. autofunction:: lgmode
@@ -97,6 +87,14 @@ Unclassified
 .. autofunction:: hgmode
 .. autofunction:: hermite
 .. autofunction:: emField
-.. autofunction:: E_inc_vswf
 .. autofunction:: combined_index
+
+Polarizability calculation
+==========================
+
+.. automodule:: +ott.+utils.+polarizability
+
+.. autofunction:: FCD
+.. autofunction:: LDR
+.. autofunction:: CM
 

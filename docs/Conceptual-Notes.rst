@@ -137,6 +137,8 @@ within the circumscribing sphere.
    (b) Two particles whose circumscribing spheres overlap
    may cause numerical difficulties.
 
+.. _conception-angular-scaling:
+
 Point-matching and angle projections
 ====================================
 

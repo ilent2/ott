@@ -33,16 +33,10 @@
 %   wigner_rotation_matrix         - rotation matrix for rotation of spherical
 %   xyz2rtp                        - coordinate transformation from cartesian to spherical
 %   xyzv2rtpv                      - cartiesian to spherical vector field conversion
+%   rotate_3x3tensor               - rotate a 3x3 tensor or create a 3x3 tensor
 %
-% Files for DDA
-%   E_inc_vswf            - Calculate the incident field for a single vswf mode
-%   calc_Aj               - calculates a 3 X 3N block comprising N number of 3 X 3 Green's tensors  
-%   interaction_A         - Calculate the interaction matrix
-%   polarizability        - Polarizability calculation based on Draine & Goodman, 
-%   polarizability_CM     - Clausius-Mossoti Polarizability 
-%   polarizability_FCD    - Filtered coupled dipole polarizability
-%   polarizability_LDR    - Lattice dispersion relation polarizablity
-%   rotate_polarizability - Apply a set of rotations to the unit-polarisability
-%   col3to1               - Reshape 3 column vector to 1 column vector format
-%   col1to3               - Reshape 1 column vector to 3 column vector format
-
+% Sub-packages
+%   +polarizability                - Polarizability calculation methods for DDA
+%
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using this file.

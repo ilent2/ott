@@ -166,6 +166,11 @@ classdef StarShape < ott.shapes.Shape
       %   - origin (enum) -- Coordinate system origin.  Either 'world'
       %     or 'shape' for world coordinates or shape coordinates.
       %     Default: 'shape'.
+      %   - even_range (logical) -- Ensure the number of dipoles along
+      %     any axis is even, so to avoid 0.  For example:
+      %     When true, a range could be ``[-1.5, -0.5, 0.5, 1.5]``.
+      %     When false, a range might be ``[-1, 0, 1]``.
+      %     Default: ``false``.
 
       p = inputParser;
       p.addParameter('plotoptions', {...
@@ -174,10 +179,16 @@ classdef StarShape < ott.shapes.Shape
           'MarkerSize', 20*spacing/shape.maxRadius});
       p.addParameter('visualise', nargout == 0);
       p.addParameter('origin', 'shape');
+      p.addParameter('even_range', false);
       p.parse(varargin{:});
 
       % Calculate range of dipoles
       numr = ceil(shape.maxRadius / spacing);
+      
+      if p.Results.even_range
+        % Add an extra point so we don't have a point around zero
+        numr = numr + 0.5;
+      end
       rrange = (-numr:numr)*spacing;
 
       % Generate the voxel grid

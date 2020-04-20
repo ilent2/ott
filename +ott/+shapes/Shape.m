@@ -224,7 +224,7 @@ classdef Shape
       end
     end
 
-    function b = insideXyz(shape, x, y, z, varargin)
+    function b = insideXyz(shape, x, varargin)
       % INSIDEXYZ determine if Cartesian point is inside the shape
       %
       % b = inside(shape, x, y, z) determine if the Cartesian point
@@ -240,19 +240,22 @@ classdef Shape
       % See also INSIDE.
 
       p = inputParser;
+      p.addOptional('y', [], @isnumeric);
+      p.addOptional('z', [], @isnumeric);
       p.addParameter('origin', 'world');
       p.parse(varargin{:});
-
-      % Ensure the sizes match
-      if nargin == 4
-        x = x(:);
-        y = y(:);
-        z = z(:);
-        [x, y, z] = ott.utils.matchsize(x, y, z);
-      else
+      
+      if isempty(p.Results.y) && isempty(p.Results.z)
         y = x(2, :);
         z = x(3, :);
         x = x(1, :);
+      elseif ~isempty(p.Results.y) && ~isempty(p.Results.z)
+        x = x(:);
+        y = p.Results.y(:);
+        z = p.Results.z(:);
+        [x, y, z] = ott.utils.matchsize(x, y, z);
+      else
+        error('Must suply either 3xN matrix or x, y and z');
       end
 
       % Translate to shape origin

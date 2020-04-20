@@ -193,9 +193,12 @@ classdef Tmatrix
       end
 
       % Call the appropriate class to do the work
-      method = ott.Tmatrix.defaultMethod(shape, ...
-        'method_tol', p.Results.method_tol, ...
-        'k_medium', k_medium);
+      method = p.Results.method;
+      if isempty(method)
+        method = ott.Tmatrix.defaultMethod(shape, ...
+          'method_tol', p.Results.method_tol, ...
+          'k_medium', k_medium);
+      end
       switch method
         case 'mie'
           tmatrix = ott.TmatrixMie.simple(shape, varargin{:});
@@ -208,7 +211,7 @@ classdef Tmatrix
         case 'ebcm'
           tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
         otherwise
-          error('Internal error: unsupported method string');
+          error('Unsupported method specified');
       end
     end
 

@@ -90,7 +90,7 @@ classdef TriangularMesh < ott.shapes.Shape
       b = shape.insideXyz(x, y, z);
     end
 
-    function b = insideXyz(shape, x, y, z)
+    function b = insideXyz(shape, x, varargin)
       % INSIDEXYZ determine if Cartesian point is inside the shape
       %
       % b = inside(shape, x, y, z) determine if the Cartesian point
@@ -99,18 +99,40 @@ classdef TriangularMesh < ott.shapes.Shape
       % b = insideXyz(shape, xyz) as above, but using a 3xN matrix of
       % [x; y; z] positions.
       %
+      % Optional arguments
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
+      %
       % See also INSIDE.
 
-      % Ensure the sizes match
-      if nargin == 4
-        x = x(:);
-        y = y(:);
-        z = z(:);
-        [x, y, z] = ott.utils.matchsize(x, y, z);
-      else
+      p = inputParser;
+      p.addOptional('y', [], @isnumeric);
+      p.addOptional('z', [], @isnumeric);
+      p.addParameter('origin', 'world');
+      p.parse(varargin{:});
+      
+      if isempty(p.Results.y) && isempty(p.Results.z)
         y = x(2, :);
         z = x(3, :);
         x = x(1, :);
+      elseif ~isempty(p.Results.y) && ~isempty(p.Results.z)
+        x = x(:);
+        y = p.Results.y(:);
+        z = p.Results.z(:);
+        [x, y, z] = ott.utils.matchsize(x, y, z);
+      else
+        error('Must suply either 3xN matrix or x, y and z');
+      end
+
+      % Translate to shape origin
+      if strcmpi(p.Results.origin, 'world')
+        x = x - shape.position(1);
+        y = y - shape.position(2);
+        z = z - shape.position(3);
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
       end
 
       % Using a third-party function for insidexyz

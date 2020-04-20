@@ -193,11 +193,6 @@ set(gcf, 'Name','cross-section','NumberTitle','off');
 
 %% Generate a figure showing the farfield
 
-% First change the beam to outgoing or incoming
-% Scattered fields are already outgoing
-% Incident fields are a mixture of incoming and outgoing
-beam.basis = 'outgoing';
-
 %build grid:
 nt=160;
 [x,y,z]=sphere(nt);
@@ -205,7 +200,9 @@ nt=160;
 %generate angular points for farfield:
 [~,theta,phi]=ott.utils.xyz2rtp(x,y,z);
 
-%find far-field in theta, phi:
+% find far-field in theta, phi
+% This requires an outgoing or incoming beam
+beam.basis = 'outgoing';
 [E,H]=beam.farfield(theta(:),phi(:));
 
 % Calculate the phase of an E field component
@@ -213,7 +210,11 @@ Ep = reshape(angle(E(3, :)),[nt+1,nt+1]);
 
 % Add a small translation, so it looks like a LG fork in farfield
 % This is the pattern we would put on a SLM
+% The translation requires a regular basis, the visualisation requires
+% eitehr an outgoing or incoming basis.
+beam.basis = 'regular';
 slm_beam = beam.translateXyz([5; 0; 0]);
+slm_beam.basis = 'outgoing';
 [E_slm,~]=slm_beam.farfield(theta(:),phi(:));
 Ep_slm = reshape(angle(E_slm(3, :)),[nt+1,nt+1]);
 
