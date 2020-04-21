@@ -23,6 +23,7 @@ classdef (Abstract) DynamicsSystem
     drag                   % Drag tensor
     temperature            % Temperature for brownian motion
     brownian_motion        % If brownian motion is used
+    kb                     % Boltzmann constant
   end
 
   methods (Static)
@@ -60,6 +61,9 @@ classdef (Abstract) DynamicsSystem
       %   - temperature (numeric) -- Temperature for Brownian motion
       %     simulations or function handle.  Default: ``300.0`` [Kelvin].
       %
+      %   - kb (numeric) -- Boltzmann constant.
+      %     Default: ``1.0``.
+      %
       %   - time_threshold (numeric) -- Time scale threshold used for
       %     method selection.  Default: ``1.0e-6`` [seconds].
 
@@ -70,6 +74,7 @@ classdef (Abstract) DynamicsSystem
       p.addParameter('position', [0;0;0]);
       p.addParameter('rotation', eye(3));
       p.addParameter('temperature', 300.0);
+      p.addParameter('kb', 1.0);
       p.addParameter('time_threshold', 1.0e-6);
       p.parse(varargin{:});
 
@@ -89,13 +94,13 @@ classdef (Abstract) DynamicsSystem
         sys = ott.dynamics.Stokes(forceMethod, ...
           'drag', p.Results.drag, ...
           'brownian_motion', p.Results.brownian_motion, ...
-          'temperature', p.Results.temperature);
+          'temperature', p.Results.temperature, 'kb', p.Results.kb);
       else
         sys = ott.dynamics.Newtonian(forceMethod, ...
           'drag', p.Results.drag, ...
           'mass', p.Results.mass, ...
           'brownian_motion', p.Results.brownian_motion, ...
-          'temperature', p.Results.temperature);
+          'temperature', p.Results.temperature, 'kb', p.Results.kb);
       end
     end
   end
@@ -111,14 +116,16 @@ classdef (Abstract) DynamicsSystem
       p = inputParser;
       p.addParameter('drag', 1.0);
       p.addParameter('temperature', 300.0);
+      p.addParameter('kb', 1.0);
       p.addParameter('brownian_motion', true);
       p.parse(varargin{:});
 
       sys.force_method = forceMethod;
 
-      sys.drag = p.Result.drag;
-      sys.temperature = p.results.temperature;
-      sys.brownian_motion = brownian_motion;
+      sys.drag = p.Results.drag;
+      sys.temperature = p.Results.temperature;
+      sys.brownian_motion = p.Results.brownian_motion;
+      sys.kb = p.Results.kb;
     end
   end
 end
