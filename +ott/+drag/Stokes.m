@@ -127,7 +127,10 @@ classdef Stokes
     function obj = Stokes(varargin)
       % Construct a new drag tensor instance.
       %
-      % Optional named parameters:
+      % Usage
+      %   drag = Stokes(...)
+      %
+      % Optional named parameters
       %   - forward (6x6 numeric)   -- Full forward tensor
       %   - inverse (6x6 numeric)   -- Full inverse tensor
       %
@@ -140,6 +143,7 @@ classdef Stokes
       %
       %   - finalize (logical)  -- If inverse/forward should be calculated
       %     when no values are given for the opposite part.
+      %     Default: ``true``.
       %
       %   - viscosity (numeric) -- Viscosity of surrounding medium.
       %     Not used for internal calculations.  Default: 1.0.
@@ -332,6 +336,29 @@ classdef Stokes
       end
 
       drag = tensor * vec;
+    end
+
+    function num = vecnorm(obj, varargin)
+      % Returns the 2-norm of each row of the forward drag tensor
+      %
+      % Usage
+      %   N = vecnorm(obj) Calculates the vecnorm of each row
+      %   of the forward drag tensor.
+      %
+      %   N = vecnorm(obj, p)
+      %   Specifies the type of norm.  Default: 2.
+      %
+      %   N = vecnorm(obj, p, dim)
+      %   Specifies the dimension.
+
+      % Parse inputs
+      p = inputParser;
+      p.addOptional('p', 2);
+      p.addOptional('dim', 2);
+      p.parse(varargin{:});
+
+      % Calculate vecnorm
+      num = vecnorm(obj.forward, p.Results.p, p.Results.dim);
     end
 
     function obj = set.forward(obj, val)
