@@ -12,8 +12,8 @@
 %   TwoStepMilstein -- Estimates error using two half steps
 %
 % Dynamics Systems
-%   Stokes          -- System without inertia
-%   Newtonian       -- System with inertia
+%   Stokes          -- System without inertia (1st order DE)
+%   Newtonian       -- System with inertia (2nd order DE)
 
   % What do we do about walls, multiple particles?
   % We want adapters for beam+Tmatrix as well as explicit force equations,
