@@ -32,8 +32,6 @@ ip.parse(varargin{:});
 
 verbose = ip.Results.verbose;
 
-ott.warning('internal');
-
 % Unpack n and m vectors
 n=nm(1:size(nm,1)/2,1);
 m=nm(size(nm,1)/2+1:size(nm,1),1);
@@ -174,4 +172,3 @@ end
 
 H=-1i*H; %LOOK HERE TO FIX STUFF
 
-ott.warning('external');

@@ -12,8 +12,6 @@ function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott.warning('internal');
-
 if nargin < 6
   
   assert(size(thetav, 2) == 3, 'pos must be Nx3 matrix');
@@ -58,4 +56,3 @@ if nargout < 3
    yv = [ x y z ];
 end
 
-ott.warning('external');

@@ -22,10 +22,7 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 
 import ott.utils.*
 
-ott.warning('internal');
-
 if length(n)>1
-    ott.warning('external');
     error('n must be a scalar at present')
 end
 
@@ -82,7 +79,6 @@ Y = pnm .* expphi;
 if nargout <= 1
    Y=Y.';
    % Doesn't look like it
-   ott.warning('external');
    return
 end
 
@@ -128,4 +124,3 @@ Y=Y(n+mi+1,:).';
 Yphi=Yphi(n+mi+1,:).';
 Ytheta=Ytheta(n+mi+1,:).';
 
-ott.warning('external');

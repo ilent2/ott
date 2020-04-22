@@ -18,8 +18,6 @@ assert(isnumeric(nmax) && isscalar(nmax), ...
 assert(isnumeric(R) && isequal(size(R), [3,3]), ...
     'R must be a 3x3 rotation matrix')
 
-ott.warning('internal');
-
 % Transform cartesian rotation matrix to spinor(?) rotation matrix
 %
 % Note that the order n = 1 scalar spherical harmonics are equal to
@@ -95,6 +93,4 @@ for n = 2:nmax
 end
 
 D = blkdiag(X{:});
-
-ott.warning('external');
 

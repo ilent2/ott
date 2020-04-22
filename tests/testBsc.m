@@ -149,3 +149,20 @@ function testSum(testCase)
   
 end
 
+function testLargeTranslations(testCase)
+
+  import matlab.unittest.constraints.IsEqualTo;
+  import matlab.unittest.constraints.AbsoluteTolerance;
+  tol = 1.0e-6;
+
+  % For this translation the beam power should go to zero
+
+  beam = ott.BscPmGauss();
+  beam.power = 1.0;
+  tbeam = beam.translateXyz([300;0;0]);  % calls translate_z
+
+  testCase.verifyThat(tbeam.power, IsEqualTo(0.0, ...
+      'Within', AbsoluteTolerance(tol)), ...
+      'Beam power does not drop to zero for large radial translations');
+
+end

@@ -26,7 +26,6 @@ function [M,N,M2,N2,M3,N3] = vswfcart(n,m,kr,theta,phi,htype)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.utils.*
-ott.warning('internal');
 
 if nargin < 6
    htype = 0;
@@ -123,4 +122,3 @@ Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
 N3 = [ Mx My Mz ];
 end
 
-ott.warning('external');

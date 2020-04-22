@@ -10,7 +10,7 @@ function [rv,thetav,phiv,r,theta,phi] = xyzv2rtpv(xv,yv,zv,x,y,z)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott.warning('internal');
+% TODO: Should we change this to prefer 3xN matrices?
 
 if nargin < 6
    x = yv(:,1);
@@ -42,4 +42,3 @@ if nargout < 3
    thetav = [ r theta phi ];
 end
 
-ott.warning('external');

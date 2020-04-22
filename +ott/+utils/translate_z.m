@@ -76,7 +76,6 @@ function [A,B,C] = translate_z(nmax,z, varargin)
 % Springer-Verlag, Berlin, 2000
 
 import ott.utils.*
-ott.warning('internal');
 
 p = inputParser;
 p.addParameter('type', 'sbesselj');
@@ -90,7 +89,6 @@ if numel(z)>1
         [A{ii},B{ii}]=translate_z(nmax,z(ii), varargin{:});
     end
     C=0;
-    ott.warning('external');
     return
 end
 
@@ -108,7 +106,6 @@ if z==0
     A=speye(nmax1^2+nmax1*2, nmax2^2+nmax2*2);
     B=sparse(nmax1^2+nmax1*2, nmax2^2+nmax2*2);
     C=A;
-    ott.warning('external');
     return
 end
 
@@ -128,7 +125,6 @@ if nargout>2
     C=C(1:nmax+1,1:nmax+1,1:min(nmax1, nmax2)+1);
 end
 
-ott.warning('external');
 
 end
 

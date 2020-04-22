@@ -30,8 +30,6 @@ function [ modeweights col_modes row_modes ] = paraxial_transformation_matrix( p
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott.warning('internal');
-
 if nargin==3
     normal_mode=0;
 end
@@ -81,7 +79,6 @@ switch 100*normal_mode+10*basis_in(1)+basis_out(1)
     case 122
         modeweights=genLG2IG(paraxial_order,basis_out(2))*genLG2IG(paraxial_order,basis_in(2))';
     otherwise
-        ott.warning('external');
         error('unknown parameter')
 end
 
@@ -122,8 +119,6 @@ switch basis_in(1)
 
 end
 col_modes=[i1_in,i2_in,i3_in];
-
-ott.warning('external');
 
 end
 

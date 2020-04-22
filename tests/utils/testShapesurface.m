@@ -1,4 +1,4 @@
-function tests = shapesurface
+function tests = testShapesurface
   tests = functiontests(localfunctions);
 end
 
@@ -8,8 +8,8 @@ end
 
 function testValues(testCase)
 
-  import ott.shapes.Shape;
-
+  import ott.shapes.*;   % Can't import ott.shapes.Shape???
+  
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
   tol = 1.0e-4;

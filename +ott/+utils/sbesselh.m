@@ -14,8 +14,6 @@ function [hn,dhn] = sbesselh(n,htype,kr)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott.warning('internal');
-
 kr=kr(:);
 n=n(:);
 
@@ -34,4 +32,3 @@ if nargout==2
     hn=hn(1:end,1:end/2);
 end
 
-ott.warning('external');

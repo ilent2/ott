@@ -18,10 +18,8 @@ function [B,C,P] = vsh(n,m,theta,phi)
 % See LICENSE.md for information about using/distributing this file.
 
 import ott.utils.*
-ott.warning('internal');
 
 if length(n)>1
-    ott.warning('external');
     error('n must be a scalar in this version')
 end
 
@@ -48,4 +46,3 @@ C = [Z,Yphi,-Ytheta];
 
 P = [Y,Z,Z];
 
-ott.warning('external');

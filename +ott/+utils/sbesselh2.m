@@ -12,8 +12,6 @@ function [hn,dhn] = sbesselh2(n,kr, varargin)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-ott.warning('internal');
-
 p = inputParser;
 p.addParameter('method', []);
 p.parse(varargin{:});
@@ -58,4 +56,3 @@ if nargout==2
     hn=hn(1:end,1:end/2);
 end
 
-ott.warning('external');
