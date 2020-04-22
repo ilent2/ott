@@ -1,4 +1,4 @@
-classdef StarShape < ott.shapes.Shape
+classdef StarShape < ott.shapes.ShapeSph
 %StarShape abstract class for star shaped particles
 %
 % Abstract methods:
@@ -235,103 +235,27 @@ classdef StarShape < ott.shapes.Shape
           [ zeros(size(theta)), theta, phi ]);
     end
 
-    function b = inside(shape, radius, theta, phi, varargin)
-      % INSIDE determine if point is inside the shape
-      %
-      % b = inside(shape, radius, theta, phi) determine if the
-      % point described by radius, theta (polar), phi (azimuthal)
-      % is inside the shape.
-      %
-      % Optional arguments
-      %   - origin (enum) -- Coordinate system origin.  Either 'world'
-      %     or 'shape' for world coordinates or shape coordinates.
-
-      p = inputParser;
-      p.addParameter('origin', 'world');
-      p.parse(varargin{:});
-
-      theta = theta(:);
-      phi = phi(:);
-      radius = radius(:);
-      [radius,theta,phi] = ott.utils.matchsize(radius,theta,phi);
-
-      % Translate to shape origin
-      if strcmpi(p.Results.origin, 'world')
-
-        % Only do work if we need to
-        if vecnorm(shape.position) ~= 0
-          [x,y,z] = ott.utils.rtp2xyz(radius, theta, phi);
-          x = x - shape.position(1);
-          y = y - shape.position(2);
-          z = z - shape.position(3);
-          [radius, theta, phi] = ott.utils.xyz2rtp(x, y, z);
-        end
-      elseif strcmpi(p.Results.origin, 'shape')
-        % Nothing to do
-      else
-        error('origin must be ''world'' or ''shape''');
-      end
-
-      assert(all(radius >= 0), 'Radii must be positive');
-
-      % Determine if points are less than shape radii
-      r = shape.radii(theta, phi);
-      b = radius < r;
-
-    end
-
-    function b = insideXyz(shape, varargin)
-      % INSIDEXYZ determine if Cartesian point is inside the shape
+    function b = insideRtp(shape, varargin)
+      % Determine if point is inside the shape (Spherical coordinates)
       %
       % Usage
-      %   b = inside(shape, x, y, z) determine if the Cartesian point
-      %   [x, y, z] is inside the star shaped object.
+      %   b = shape.insideRtp(radius, theta, phi, ...) determine if the
+      %   point described by radius, theta (polar), phi (azimuthal)
+      %   is inside the shape.
       %
-      %   b = insideXyz(shape, xyz) as above, but using a 3xN matrix of
-      %   [x; y; z] positions.
+      %   b = shape.insideRtp(rtp, ...) as above, but uses a 3xN input.
       %
       % Optional arguments
       %   - origin (enum) -- Coordinate system origin.  Either 'world'
       %     or 'shape' for world coordinates or shape coordinates.
-      %
-      % See also INSIDE.
 
-      p = inputParser;
-      p.addOptional('x', []);
-      p.addOptional('y', []);
-      p.addOptional('z', []);
-      p.addParameter('origin', 'world');
-      p.parse(varargin{:});
-      
-      % TODO: This should be a function and added to other shapes
-      if isempty(p.Results.y) && isempty(p.Results.z)
-        x = p.Results.x(1, :);
-        y = p.Results.x(2, :);
-        z = p.Results.x(3, :);
-      else
-        x = p.Results.x(:);
-        y = p.Results.y(:);
-        z = p.Results.z(:);
-        [x, y, z] = ott.utils.matchsize(x, y, z);
-      end
+      % Get xyz coordinates from inputs and translated to origin
+      rtp = shape.insideRtpParseArgs(shape.position, varargin{:});
 
-      % Translate to shape origin
-      % TODO: This should be a function and added to other shapes
-      if strcmpi(p.Results.origin, 'world')
-        x = x - shape.position(1);
-        y = y - shape.position(2);
-        z = z - shape.position(3);
-      elseif strcmpi(p.Results.origin, 'shape')
-        % Nothing to do
-      else
-        error('origin must be ''world'' or ''shape''');
-      end
+      % Determine if points are less than shape radii
+      r = shape.radii(rtp(2, :), rtp(3, :));
+      b = rtp(1, :).' < r;
 
-      % Convert to spherical coordinates
-      [r, t, p] = ott.utils.xyz2rtp(x, y, z);
-
-      % Call the spherical coordinate version
-      b = shape.inside(r, t, p, 'origin', 'shape');
     end
 
     function varargout = angulargrid(shape, varargin)

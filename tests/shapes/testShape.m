@@ -23,6 +23,59 @@ function testSimple(testCase)
 
 end
 
+function testInsideXyzHelper(testCase)
+
+  radius = 1.0;
+  shape = ott.shapes.Shape.simple('sphere', radius);
+  
+  oxyz = [0;0;1];
+  
+  xyz = shape.insideXyzParseArgs([0;0;0], oxyz);
+  testCase.verifyEqual(xyz, oxyz, 'Values changed (1 input)');
+  
+  xyz = shape.insideXyzParseArgs([0;0;0], oxyz(1), oxyz(2), oxyz(3));
+  testCase.verifyEqual(xyz, oxyz, 'Values changed (3 input)');
+  
+  origin = -[0;0;1];
+  oxyz = [1;0;0];
+  expected = [1;0;1];
+  
+  rtp = shape.insideXyzParseArgs(origin, oxyz, 'origin', 'world');
+  testCase.verifyEqual(rtp, expected, 'Values changed (1 input + shift)');
+  
+  rtp = shape.insideXyzParseArgs(origin, oxyz(1), oxyz(2), oxyz(3), ...
+      'origin', 'world');
+  testCase.verifyEqual(rtp, expected, 'Values changed (3 input + shift)');
+
+end
+
+function testInsideRtpHelper(testCase)
+
+  radius = 1.0;
+  shape = ott.shapes.Shape.simple('sphere', radius);
+  
+  ortp = [1;0;1];
+  origin = [0;0;0];
+  
+  rtp = shape.insideRtpParseArgs(origin, ortp);
+  testCase.verifyEqual(rtp, ortp, 'Values changed (1 input)');
+  
+  rtp = shape.insideRtpParseArgs(origin, ortp(1), ortp(2), ortp(3));
+  testCase.verifyEqual(rtp, ortp, 'Values changed (3 input)');
+  
+  origin = -[0;0;1];
+  ortp = [1;0;0];
+  expected = [2;0;0];
+  
+  rtp = shape.insideRtpParseArgs(origin, ortp, 'origin', 'world');
+  testCase.verifyEqual(rtp, expected, 'Values changed (1 input + shift)');
+  
+  rtp = shape.insideRtpParseArgs(origin, ortp(1), ortp(2), ortp(3), ...
+      'origin', 'world');
+  testCase.verifyEqual(rtp, expected, 'Values changed (3 input + shift)');
+
+end
+
 function testInsideXyz(testCase)
 
   radius = 1.0;

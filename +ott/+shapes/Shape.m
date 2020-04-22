@@ -1,19 +1,18 @@
 classdef Shape
-%Shape abstract class for optical tweezers toolbox shapes
+% Shape abstract class for optical tweezers toolbox shapes
 %
 % Properties
-%   maxRadius     maximum distance from shape origin
-%   volume        volume of shape
-%   position      Location of shape ``[x, y, z]``
+%   - maxRadius  -- maximum distance from shape origin
+%   - volume     -- volume of shape
+%   - position   -- Location of shape ``[x, y, z]``
 %
-% Methods (abstract):
-%   inside(shape, ...) determine if spherical point is inside shape
+% Methods (abstract)
+%   insideRtp(shape, ...) determine if Spherical point is inside shape
+%   insideXyz(shape, ...) determine if Cartesian point is inside shape
 %
-% Methods:
+% Methods
 %   writeWavefrontObj(shape, ...) write shape to Wavefront OBJ file
 %       only implemented if shape supports this action.
-%   insideXyz(shape, ...) determine if Cartesian point is inside shape
-%       requires inside(shape, ...) to be implemented.
 %   simple(...) simplified constructor for shape-like objects.
 %
 % See also simple, ott.shapes.Cube, ott.shapes.TriangularMesh.
@@ -76,13 +75,93 @@ classdef Shape
     end
   end
 
+  methods (Static, Hidden)
+    function xyz = insideXyzParseArgs(origin, varargin)
+      % Helper for parsing arguments for insideXyz functions
+
+      % Collect arguments
+      p = inputParser;
+      p.addRequired('x');
+      p.addOptional('y', [], @isnumeric);
+      p.addOptional('z', [], @isnumeric);
+      p.addParameter('origin', 'world');
+      p.parse(varargin{:});
+
+      % Handle xyz or [x, y, z] arguments
+      if isempty(p.Results.x)
+        error('Must supply either xyz or x, y and z');
+      elseif isempty(p.Results.y) && isempty(p.Results.z)
+        xyz = p.Results.x;
+      else
+        x = p.Results.x(:);
+        y = p.Results.y(:);
+        z = p.Results.z(:);
+        [x, y, z] = ott.utils.matchsize(x, y, z);
+        xyz = [x y z].';
+      end
+
+      % Translate to shape origin
+      if strcmpi(p.Results.origin, 'world')
+        xyz = xyz - origin(:);
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
+      end
+    end
+
+    function rtp = insideRtpParseArgs(origin, varargin)
+      % Argument parser helper for insideRtp function
+
+      % Collect arguments
+      p = inputParser;
+      p.addRequired('r');
+      p.addOptional('t', [], @isnumeric);
+      p.addOptional('p', [], @isnumeric);
+      p.addParameter('origin', 'world');
+      p.parse(varargin{:});
+
+      % Handle rtp or [r, t, p] arguments
+      if isempty(p.Results.r)
+        error('Must supply either rtp or r, t and p');
+      elseif isempty(p.Results.t) && isempty(p.Results.p)
+        rtp = p.Results.r;
+      else
+        r = p.Results.r(:);
+        theta = p.Results.t(:);
+        phi = p.Results.p(:);
+        [r, theta, phi] = ott.utils.matchsize(r, theta, phi);
+        rtp = [r theta phi].';
+      end
+
+      % Translate to shape origin
+      if strcmpi(p.Results.origin, 'world')
+
+        % Only do work if we need to
+        if vecnorm(origin) ~= 0
+          xyz = ott.utils.rtp2xyz(rtp.').';
+          xyz = xyz - origin(:);
+          rtp = ott.utils.xyz2rtp(xyz.').';
+        end
+
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
+      end
+
+      assert(all(rtp(1, :) >= 0), 'Radii must be positive');
+    end
+  end
+
   properties (Dependent)
     maxRadius       % Maximum particle radius (useful for Nmax calculation)
     volume          % Volume of the particle
   end
 
   methods (Abstract)
-    inside(shape, varargin)   % Determine if point is inside shape
+    insideRtp(shape, varargin)   % Determine if point is inside shape
+    insideXyz(shape, varargin)   % Determine if point is inside shape
 
     get_maxRadius(shape, varargin)    % Get max distance from origin
     get_volume(shape, varargin);      % Get shape volume
@@ -211,7 +290,7 @@ classdef Shape
         if isempty(our_axes)
           our_axes = axes();
         end
-        
+
         plot3(our_axes, xyz(1,:), xyz(2,:), xyz(3,:), 'o', plotoptions{:});
         axis(our_axes, 'equal');
         title(our_axes, ['spacing = ' num2str(p.Results.spacing) ...
@@ -222,58 +301,6 @@ classdef Shape
       if nargout ~= 0
         varargout = {xyz};
       end
-    end
-
-    function b = insideXyz(shape, x, varargin)
-      % INSIDEXYZ determine if Cartesian point is inside the shape
-      %
-      % b = inside(shape, x, y, z) determine if the Cartesian point
-      % [x, y, z] is inside the star shaped object.
-      %
-      % b = insideXyz(shape, xyz) as above, but using a 3xN matrix of
-      % [x; y; z] positions.
-      %
-      % Optional arguments
-      %   - origin (enum) -- Coordinate system origin.  Either 'world'
-      %     or 'shape' for world coordinates or shape coordinates.
-      %
-      % See also INSIDE.
-
-      p = inputParser;
-      p.addOptional('y', [], @isnumeric);
-      p.addOptional('z', [], @isnumeric);
-      p.addParameter('origin', 'world');
-      p.parse(varargin{:});
-      
-      if isempty(p.Results.y) && isempty(p.Results.z)
-        y = x(2, :);
-        z = x(3, :);
-        x = x(1, :);
-      elseif ~isempty(p.Results.y) && ~isempty(p.Results.z)
-        x = x(:);
-        y = p.Results.y(:);
-        z = p.Results.z(:);
-        [x, y, z] = ott.utils.matchsize(x, y, z);
-      else
-        error('Must suply either 3xN matrix or x, y and z');
-      end
-
-      % Translate to shape origin
-      if strcmpi(p.Results.origin, 'world')
-        x = x - shape.position(1);
-        y = y - shape.position(2);
-        z = z - shape.position(3);
-      elseif strcmpi(p.Results.origin, 'shape')
-        % Nothing to do
-      else
-        error('origin must be ''world'' or ''shape''');
-      end
-
-      % Convert to spherical coordinates
-      [r, t, p] = ott.utils.xyz2rtp(x, y, z);
-
-      % Call the spherical coordinate version
-      b = shape.inside(r, t, p, 'origin', 'shape');
     end
 
     function shape = set.position(shape, value)

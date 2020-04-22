@@ -1,4 +1,4 @@
-classdef TriangularMesh < ott.shapes.Shape
+classdef TriangularMesh < ott.shapes.ShapeCart
 % TriangularMesh base class for triangular mesh objects (such as file loaders)
 %
 % Properties (read-only):
@@ -27,7 +27,7 @@ classdef TriangularMesh < ott.shapes.Shape
       % Faces vertices should be ordered so normals face outwards for
       % volume and inside functions to work correctly.
 
-      shape = shape@ott.shapes.Shape();
+      shape = shape@ott.shapes.ShapeCart();
 
       % Verify size of inputs
       assert(size(verts, 1) == 3, 'Verts must be matrix of 3xN');
@@ -79,65 +79,27 @@ classdef TriangularMesh < ott.shapes.Shape
 
     end
 
-    function b = inside(shape, radius, theta, phi)
-      % Determine if spherical point point is inside shape
+    function b = insideXyz(shape, varargin)
+      % Determine if Cartesian point is inside the shape
       %
-      % b = inside(shape, radius, theta, phi) determine if the
-      % point described by radius, theta (polar), phi (azimuthal)
-      % is inside the shape.
-
-      [x, y, z] = ott.utils.rtp2xyz(radius(:), theta(:), phi(:));
-      b = shape.insideXyz(x, y, z);
-    end
-
-    function b = insideXyz(shape, x, varargin)
-      % INSIDEXYZ determine if Cartesian point is inside the shape
+      % Usage
+      %   b = shape.insideXyz(x, y, z) determine if the Cartesian point
+      %   [x, y, z] is inside the star shaped object.
       %
-      % b = inside(shape, x, y, z) determine if the Cartesian point
-      % [x, y, z] is inside the star shaped object.
-      %
-      % b = insideXyz(shape, xyz) as above, but using a 3xN matrix of
-      % [x; y; z] positions.
+      %   b = shape.insideXyz(xyz) as above, but using a 3xN matrix of
+      %   [x; y; z] positions.
       %
       % Optional arguments
       %   - origin (enum) -- Coordinate system origin.  Either 'world'
       %     or 'shape' for world coordinates or shape coordinates.
       %
-      % See also INSIDE.
+      % See also :meth:`insideRtp`.
 
-      p = inputParser;
-      p.addOptional('y', [], @isnumeric);
-      p.addOptional('z', [], @isnumeric);
-      p.addParameter('origin', 'world');
-      p.parse(varargin{:});
-      
-      if isempty(p.Results.y) && isempty(p.Results.z)
-        y = x(2, :);
-        z = x(3, :);
-        x = x(1, :);
-      elseif ~isempty(p.Results.y) && ~isempty(p.Results.z)
-        x = x(:);
-        y = p.Results.y(:);
-        z = p.Results.z(:);
-        [x, y, z] = ott.utils.matchsize(x, y, z);
-      else
-        error('Must suply either 3xN matrix or x, y and z');
-      end
-
-      % Translate to shape origin
-      if strcmpi(p.Results.origin, 'world')
-        x = x - shape.position(1);
-        y = y - shape.position(2);
-        z = z - shape.position(3);
-      elseif strcmpi(p.Results.origin, 'shape')
-        % Nothing to do
-      else
-        error('origin must be ''world'' or ''shape''');
-      end
+      % Get xyz coordinates from inputs and translated to origin
+      xyz = shape.insideXyzParseArgs(shape.position, varargin{:});
 
       % Using a third-party function for insidexyz
-      b = ott.utils.inpolyhedron(shape.faces.', shape.verts.', ...
-          [x(:),y(:),z(:)]);
+      b = ott.utils.inpolyhedron(shape.faces.', shape.verts.', xyz.');
     end
 
     function surf(shape, varargin)

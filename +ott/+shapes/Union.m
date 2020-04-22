@@ -1,4 +1,4 @@
-classdef Union < ott.shapes.Shape
+classdef Union < ott.shapes.ShapeSph
 % Represents union between two shapes.
 % Inherits from :class:`+ott.+shapes.+Shape`.
 %
@@ -30,7 +30,7 @@ classdef Union < ott.shapes.Shape
       %   shape = Union([shape1, shape2, ...])
 
       % Construct base class
-      shape = shape@ott.shapes.Shape();
+      shape = shape@ott.shapes.ShapeSph();
 
       % Store shapes
       shape.shapes = shapes;
@@ -43,44 +43,28 @@ classdef Union < ott.shapes.Shape
       shape.shapes = value;
     end
 
-    function b = inside(shape, radius, theta, phi, varargin)
+    function b = insideRtp(shape, varargin)
       % Determine if point is inside union of shapes
       %
       % Usage
-      %   b = shape.inside(radius, theta, phi) determine if the
+      %   b = shape.insideRtp(radius, theta, phi, ...) determine if the
       %   point described by radius, theta (polar), phi (azimuthal)
       %   is inside the shape.
+      %
+      %   b = shape.insideRtp(rtp, ...) as above but with a 3xN matrix.
       %
       % Optional parameters
       %   - origin (enum) -- Coordinate system origin.  Either 'world'
       %     or 'shape' for world coordinates or shape coordinates.
       %     Default: 'world'.
 
-      p = inputParser;
-      p.addParameter('origin', 'world');
-      p.parse(varargin{:});
+      % Get xyz coordinates from inputs and translated to origin
+      rtp = shape.insideRtpParseArgs(shape.position, varargin{:});
 
-      % Translate to shape origin
-      if strcmpi(p.Results.origin, 'world')
-
-        % Only do work if we need to
-        if vecnorm(shape.position) ~= 0
-          [x,y,z] = ott.utils.rtp2xyz(radius, theta, phi);
-          x = x - shape.position(1);
-          y = y - shape.position(2);
-          z = z - shape.position(3);
-          [radius, theta, phi] = ott.utils.xyz2rtp(x, y, z);
-        end
-      elseif strcmpi(p.Results.origin, 'shape')
-        % Nothing to do
-      else
-        error('origin must be ''world'' or ''shape''');
-      end
-
-      b = shape.shapes(1).inside(radius, theta, phi, 'origin', 'world');
+      b = shape.shapes(1).insideRtp(rtp, 'origin', 'world');
       for ii = 2:numel(shape.shapes)
         % TODO: We only need to check points that are not inside
-        b = b | shape.shapes(ii).inside(radius, theta, phi, 'origin', 'world');
+        b = b | shape.shapes(ii).insideRtp(rtp, 'origin', 'world');
       end
     end
 

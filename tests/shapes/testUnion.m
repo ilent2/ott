@@ -31,12 +31,12 @@ function testInsideXyz(testCase)
   shape2 = ott.shapes.Sphere(radius, offset2);
   union = ott.shapes.Union([shape1, shape2]);
   
-  xyz = [0;0;1] .* linspace(-10, 10, 100);
-  inside1 = shape1.insideXyz(xyz(1, :).', xyz(2, :).', xyz(3, :).', 'origin', 'world');
-  inside2 = shape2.insideXyz(xyz(1, :).', xyz(2, :).', xyz(3, :).', 'origin', 'world');
-  insideU = union.insideXyz(xyz(1, :).', xyz(2, :).', xyz(3, :).');
+  xyz = [0;0;1] .* linspace(-5, 5, 20);
+  inside1 = shape1.insideXyz(xyz, 'origin', 'world');
+  inside2 = shape2.insideXyz(xyz, 'origin', 'world');
+  insideU = union.insideXyz(xyz);
   
-  testCase.verifyThat(insideU, IsEqualTo(inside1 | inside2), ...
+  testCase.verifyEqual(double(insideU), double(inside1 | inside2), ...
     'Union doesn''t match');
   
 end
