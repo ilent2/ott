@@ -29,7 +29,7 @@ classdef (Abstract) ShapeSph < ott.shapes.Shape
       xyz = shape.insideXyzParseArgs(shape.position, varargin{:});
 
       % For planes, it's easier to work in Cartesian coordinates
-      rtp = ott.utils.xyz2rtp(xyz.').';
+      rtp = ott.utils.xyz2rtp(xyz);
 
       % Call Cartesian method
       b = shape.insideRtp(rtp, 'origin', 'shape');

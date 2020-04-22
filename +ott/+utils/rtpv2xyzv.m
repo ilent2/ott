@@ -1,37 +1,56 @@
 function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
-% RTPV2XYZV spherical to cartiesn vector field conversion
+% Spherical to Cartesian vector field conversion
 %
-% [xv,yv,zv,x,y,z] = RTPV2XYZV(rv,thetav,phiv,r,theta,phi)
+% Usage
+%   [xv,yv,zv,x,y,z] = RTPV2XYZV(rv,thetav,phiv,r,theta,phi)
 %
-% [vec_cart,pos_cart] = rtpv2xyzv(vec,pos)
+%   [vec_cart,pos_cart] = rtpv2xyzv(vec,pos)
+%   As above, but with 3xN matrices as inputs and outputs.
 %
-% Inputs must be column vectors or Nx3 matrices.
+% Parameters
+%   - r      -- radial distance [0, Inf)
+%   - theta  -- polar angle, measured from +z axis [0, pi]
+%   - phi    -- azimuthal angle, measured from +x towards +y axes [0, 2*pi)
+%   - rv     -- Vector radial distance
+%   - thetav -- Vector polar angle
+%   - phiv   -- Vector azimuthal angle
+%   - x,y,z  -- Cartesian position coordinates
+%   - xv,yv,zv -- Cartesian vector coordinates
 %
 % See also rtp2xyz and xyzv2rtpv.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-if nargin < 6
+if nargin == 2
   
-  assert(size(thetav, 2) == 3, 'pos must be Nx3 matrix');
-  assert(size(rv, 2) == 3, 'vec must be Nx3 matrix');
-  assert(size(rv, 1) == size(thetav, 1), ...
+  assert(size(thetav, 1) == 3, 'pos must be 3xN matrix');
+  assert(size(rv, 1) == 3, 'vec must be 3xN matrix');
+  assert(size(rv, 2) == size(thetav, 2), ...
       'Number of points in vec and pos must match');
   
-   r = thetav(:,1);
-   theta = thetav(:,2);
-   phi = thetav(:,3);
-   phiv = rv(:,3);
-   thetav = rv(:,2);
-   rv = rv(:,1);
+   r = thetav(1,:).';
+   theta = thetav(2,:).';
+   phi = thetav(3,:).';
+   phiv = rv(3,:).';
+   thetav = rv(2,:).';
+   rv = rv(1,:).';
+elseif nargin == 6
+
+  % Ensure inputs are columns
+  rv = rv(:);
+  thetav = thetav(:);
+  phiv = phiv(:);
+  r = r(:);
+  theta = theta(:);
+  phi = phi(:);
+
+  % Check size
+  N = unique([numel(rv), numel(thetav), numel(phiv), ...
+      numel(r), numel(theta), numel(phi)]);
+  assert(numel(N) == 1, 'Inputs must all be same length');
 else
-  assert(size(rv, 2) == 1, 'rv must be column vector');
-  assert(size(thetav, 2) == 1, 'thetav must be column vector');
-  assert(size(phiv, 2) == 1, 'phiv must be column vector');
-  assert(size(r, 2) == 1, 'r must be column vector');
-  assert(size(theta, 2) == 1, 'theta must be column vector');
-  assert(size(phi, 2) == 1, 'phi must be column vector');
+  error('Must supply 2 or 6 arguments as input');
 end
 
 % Convert points to cartesian coordinates
@@ -52,7 +71,7 @@ yv = dot(J(length(theta)+1:2*length(theta),:),rtpv,2);
 zv = dot(J(2*length(theta)+1:3*length(theta),:),rtpv,2);
 
 if nargout < 3
-   xv = [ xv yv zv ];
-   yv = [ x y z ];
+   xv = [ xv(:), yv(:), zv(:) ].';
+   yv = [ x(:), y(:), z(:) ].';
 end
 

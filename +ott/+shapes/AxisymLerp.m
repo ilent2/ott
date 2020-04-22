@@ -135,7 +135,7 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
       segment_angles = atan2(shape.z(2:end) - shape.z(1:end-1), ...
           shape.rho(2:end) - shape.rho(1:end-1)) + pi/2;
 
-      n = zeros(size(theta, 1), 3);
+      n = zeros(3, size(theta, 1));
 
       % For each side
       for ii = 2:length(corner_angles)
@@ -153,8 +153,8 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
         psi = segment_angles(ii-1) - theta(pts) - pi/2;
 
         % Calculate the normal in spherical coordinates
-        n(pts, 1) = cos(psi);
-        n(pts, 2) = sin(psi);
+        n(1, pts) = cos(psi);
+        n(2, pts) = sin(psi);
       end
     end
 

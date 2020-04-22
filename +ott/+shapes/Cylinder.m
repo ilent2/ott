@@ -69,6 +69,10 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
 
     function n = normals(shape, theta, phi)
       % NORMALS calculate the normals for the specified points.
+      %
+      % Usage
+      %   n = shape.normals(theta, phi)
+      %   Calculates the normals and returns a 3xN matrix.
 
       theta = theta(:);
       phi = phi(:);
@@ -83,11 +87,11 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
       bottom = theta > pi/2 + edge_angle;
       ends = top | bottom;
 
-      n = zeros(size(theta, 1), 3);
-      n(sides,1) = sin(theta(sides));
-      n(sides,2) = cos(theta(sides));
-      n(ends,1) = abs(cos(theta(ends)));
-      n(ends,2) = - sin(theta(ends)) .* sign(cos(theta(ends)));
+      n = zeros(3, size(theta, 1));
+      n(1, sides) = sin(theta(sides));
+      n(2, sides) = cos(theta(sides));
+      n(1, ends) = abs(cos(theta(ends)));
+      n(2, ends) = - sin(theta(ends)) .* sign(cos(theta(ends)));
     end
 
     function [rtp, n, ds] = boundarypoints(shape, varargin)

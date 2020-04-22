@@ -96,6 +96,10 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
 
     function n = normals(shape, theta, phi)
       % NORMALS calcualtes the normals for each requested point
+      %
+      % Usage
+      %   n = shape.normals(theta, phi)
+      %   Calculates the normals and returns a 3xN matrix.
 
       theta = theta(:);
       phi = phi(:);
@@ -117,8 +121,9 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
       sigma_phi = r.^2 .* sin(theta) .* sin(phi) .* cos(phi) .* ...
           (1/shape.b^2 - 1/shape.a^2);
       sigma_mag = sqrt( sigma_r.^2 + sigma_theta.^2 + sigma_phi.^2 );
-      n = [ sigma_r./sigma_mag sigma_theta./sigma_mag ...
-          sigma_phi./sigma_mag ];
+      
+      n = [ sigma_r./sigma_mag, sigma_theta./sigma_mag, ...
+          sigma_phi./sigma_mag ].';
     end
 
     function varargout = axialSymmetry(shape)

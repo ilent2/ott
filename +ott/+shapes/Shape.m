@@ -139,9 +139,9 @@ classdef Shape
 
         % Only do work if we need to
         if vecnorm(origin) ~= 0
-          xyz = ott.utils.rtp2xyz(rtp.').';
+          xyz = ott.utils.rtp2xyz(rtp);
           xyz = xyz - origin(:);
-          rtp = ott.utils.xyz2rtp(xyz.').';
+          rtp = ott.utils.xyz2rtp(xyz);
         end
 
       elseif strcmpi(p.Results.origin, 'shape')

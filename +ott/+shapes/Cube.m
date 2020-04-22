@@ -34,9 +34,11 @@ classdef Cube < ott.shapes.StarShape
     function [f, xyz] = faces(shape, theta, phi)
       % FACE determine which face a point is on
       % Edges and corners belong to multiple faces
+      %
+      % Returns xyz (Nx3), might change in future
 
       % First find the rough Cartesian coordinates
-      xyz = ott.utils.rtp2xyz(sqrt(3), theta, phi);
+      xyz = ott.utils.rtp2xyz(sqrt(3), theta, phi).';
 
       % Round coordinates towards zero (should all now be 0, 1 or -1)
       xyz_sign = fix(xyz);
@@ -64,20 +66,31 @@ classdef Cube < ott.shapes.StarShape
 
     function nxyz = normalsXyz(shape, theta, phi)
       % NORMALSXYZ calculates Cartessian normals
+      %
+      % Usage
+      %   nxyz = shape.normalsXyz(theta, phi)
+      %   Returns a 3xN matrix with the Cartesian normals.
 
       theta = theta(:);
       phi = phi(:);
       [theta,phi] = ott.utils.matchsize(theta,phi);
 
       % Determine which face we are on (i.e. the Cartesian normals)
-      nxyz = shape.faces(theta, phi);
+      nxyz = shape.faces(theta, phi).';
 
       % Normalize the normals
-      nxyz = nxyz ./ sqrt(dot(nxyz, nxyz, 2));
+      nxyz = nxyz ./ vecnorm(nxyz, 2, 1);
     end
 
     function varargout = locations(shape, theta, phi)
       % LOCATIONS calculate the Cartessian coordinate locations
+      %
+      % Usage
+      %   xyz = shape.locations(theta, phi)
+      %   Calculates the Cartesian locations and returns a 3xN matrix
+      %
+      %   [x, y, z] = shape.locations(theta, phi)
+      %   As above, but returns column vectors for the x, y, z locations.
 
       theta = theta(:);
       phi = phi(:);
@@ -101,7 +114,7 @@ classdef Cube < ott.shapes.StarShape
       xyz = xyz .* shape.width / 2.0;
 
       if nargout == 1
-        varargout{1} = xyz;
+        varargout{1} = xyz.';
       else
         varargout{1} = xyz(:, 1);
         varargout{2} = xyz(:, 2);

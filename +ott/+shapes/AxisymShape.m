@@ -54,8 +54,11 @@ classdef AxisymShape < ott.shapes.Shape
 
     function ds = boundarypoints_area(shape, rho, z, rhoout, zout, rtp)
       % Helper for boundarypoints
+      %
+      % Parameters
+      %   rtp (3xN numeric)
 
-      dst=zeros(size(rtp, 1),3);
+      dst=zeros(size(rtp, 2),3);
 
       %calcultes area elements
       dst(2:end-1,1)=(rhoout(3:end)-rhoout(1:end-2))/2;
@@ -67,7 +70,7 @@ classdef AxisymShape < ott.shapes.Shape
 
       % a general axisymmetric conic region has the
       % following area (sans factor of 2*pi):
-      ds=(rtp(:,1).*sqrt(sum(abs(dst).^2,2)).*sin(rtp(:,2)));
+      ds=(rtp(1, :).*sqrt(sum(abs(dst).^2,2)).*sin(rtp(2, :)));
     end
 
     function [rtp, n, ds] = boundarypoints_rhoz(shape, rho, z, varargin)
@@ -137,7 +140,7 @@ classdef AxisymShape < ott.shapes.Shape
       end
 
       %converts the cylindrical coordinates into spherical coordinates
-      [n,rtp]=ott.utils.xyzv2rtpv(nxyz,[rhoout,zeros(size(rhoout)),zout]);
+      [n,rtp]=ott.utils.xyzv2rtpv(nxyz.',[rhoout,zeros(size(rhoout)),zout].');
 
       % Calculate area elements
       ds = shape.boundarypoints_area(rho, z, rhoout, zout, rtp);
@@ -159,6 +162,8 @@ classdef AxisymShape < ott.shapes.Shape
       % and surface normal vectors in spherical coordinates and the area
       % elements of each ring.
       %
+      % rtp is a 3xN array
+      %
       % BOUNDARYPOINTS('Nmax', Nmax) takes a guess at a suitable npts
       % for the given Nmax.
 
@@ -173,8 +178,8 @@ classdef AxisymShape < ott.shapes.Shape
       phi = [phi(1); phi; phi(end)];
 
       xyz = shape.locations(theta, phi);
-      rho = xyz(:, 1);
-      z = xyz(:, 3);
+      rho = xyz(1, :);
+      z = xyz(3, :);
 
       [rtp, n, ds] = shape.boundarypoints_rhoz(rho, z, varargin{:});
     end

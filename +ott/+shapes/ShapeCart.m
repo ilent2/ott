@@ -30,7 +30,7 @@ classdef (Abstract) ShapeCart < ott.shapes.Shape
       rtp = shape.insideRtpParseArgs(shape.position, varargin{:});
 
       % For planes, it's easier to work in Cartesian coordinates
-      xyz = ott.utils.rtp2xyz(rtp.').';
+      xyz = ott.utils.rtp2xyz(rtp);
 
       % Call Cartesian method
       b = shape.insideXyz(xyz, 'origin', 'shape');
