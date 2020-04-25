@@ -80,7 +80,7 @@ classdef RelatedArgumentParser < inputParser
       end
     end
 
-    function addOptional(p, name, varargin)
+    function addOptional(p, name, default_value, varargin)
       % Add an optional named argument to the input parser
       %
       % Usage
@@ -90,11 +90,16 @@ classdef RelatedArgumentParser < inputParser
       %   Specifies the default value to assign before applying relations.
       %   Additional arguments are passed to addParameter
       
+      % Handle default value
+      if nargin < 3
+        default_value = [];
+      end
+      
       % Store name
       p.Optional{end+1} = name;
 
       % Call base method to add parameter
-      p.addParameter(name, varargin{:});
+      p.addParameter(name, default_value, varargin{:});
     end
 
     function addRule(p, var_name, func, varargin)
@@ -112,14 +117,14 @@ classdef RelatedArgumentParser < inputParser
       assert(any(strcmpi(var_name, p.Required)), ...
         'ott:utils:RelatedArgumentParser:var_not_a_required', ...
         'var_name must be a required argument');
-      
+
       % Verify arguments are parameters
       for ii = 1:length(varargin)
         assert(any(strcmpi(varargin{ii}, p.Parameters)), ...
           'ott:utils:RelatedArgumentParser:arg_not_a_parameter', ...
           ['arg ' varargin{ii} ' not a valid parameter name']);
       end
-      
+
       % Store rule
       p.Rules.(var_name){end+1} = {func, varargin};
     end
@@ -136,15 +141,55 @@ classdef RelatedArgumentParser < inputParser
       end
 
       % Apply the relationship rules
-      used_parameters = {};
+      used_parameters = p.resolve({});
+
+      % Set empty required arguments to default value
+      fnames = fieldnames(p.Defaults);
+      for ii = 1:length(fnames)
+        if isempty(p.RequiredResults.(fnames{ii}))
+          p.RequiredResults.(fnames{ii}) = p.Defaults.(fnames{ii});
+        end
+      end
+
+      % Apply the relationship rules (to catch any dependent on defaults)
+      used_parameters = p.resolve(used_parameters);
+
+      % Check for extra arguments and warn
+      for ii = 1:length(p.Optional)
+
+        pname = p.Optional{ii};
+
+        % Don't care about optional arguments with default values
+        if any(strcmpi(pname, p.UsingDefaults))
+          continue;
+        end
+
+        % Don't care about optional arguments that were used
+        if any(strcmpi(pname, used_parameters))
+          continue;
+        end
+
+        warning('ott:utils:RelatedArgumentParser:not_used', ...
+          ['Parameter ' pname ' set but not used in parsing']);
+      end
+    end
+  end
+
+  methods (Access=protected)
+    function used_parameters = resolve(p, used_parameters)
+      % Apply the relationship rules
+      %
+      % Usage
+      %   used_params = p.resolve(used_params)
+
       while true
 
         % Keep track of if we did work in this loop
         done_work = false;
-      
+
         % Loop over unresolved required arguments
         for ii = 1:length(p.Required)
-          
+
           rname = p.Required{ii};
 
           % Check if we are resolved
@@ -190,33 +235,6 @@ classdef RelatedArgumentParser < inputParser
         % Check if we did any work in the last iteration
         if ~done_work
           break;
-        end
-      end
-
-      % Check for extra arguments and warn
-      for ii = 1:length(p.Optional)
-
-        pname = p.Optional{ii};
-        
-        % Don't care about optional arguments with default values
-        if any(strcmpi(pname, p.UsingDefaults))
-          continue;
-        end
-
-        % Don't care about optional arguments that were used
-        if any(strcmpi(pname, used_parameters))
-          continue;
-        end
-
-        warning('ott:utils:RelatedArgumentParser:not_used', ...
-          ['Parameter ' pname ' set but not used in parsing']);
-      end
-
-      % Set empty required arguments to default value
-      fnames = fieldnames(p.Defaults);
-      for ii = 1:length(fnames)
-        if isempty(p.RequiredResults.(fnames{ii}))
-          p.RequiredResults.(fnames{ii}) = p.Defaults.(fnames{ii});
         end
       end
     end

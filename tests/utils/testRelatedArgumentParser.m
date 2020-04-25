@@ -20,6 +20,22 @@ function testExample(testCase)
 
 end
 
+function testRelatedDepDefaults(testCase)
+
+  p = ott.utils.RelatedArgumentParser;
+  p.addRequired('param1', 1.0);
+  p.addRequired('param2', 2.0);
+  p.addRequired('param3');
+  p.addRule('param3', @(s1, s2) s1 + s2, 'param1', 'param2');
+  p.parse();
+  
+  testCase.verifyEqual(p.RequiredResults.param1, 1.0, 'param1');
+  testCase.verifyEqual(p.RequiredResults.param2, 2.0, 'param2');
+  testCase.verifyEqual(p.RequiredResults.param3, 3.0, 'param3');
+
+end
+
+
 function testAddRuleErrors(testCase)
 
   p = ott.utils.RelatedArgumentParser;
