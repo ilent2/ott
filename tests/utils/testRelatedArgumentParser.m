@@ -12,7 +12,7 @@ function testExample(testCase)
   p.addRequired('index_medium', 1.0);
   p.addOptional('speed0', 2.0);
   p.addOptional('speed');
-  p.addRule('index_medium', @(s1, s0) s0 ./ s1, 'speed', 'speed0');
+  p.addRule('index_medium = speed0 ./ speed');
   p.parse('speed', 1.0);
   
   testCase.verifyEqual(p.RequiredResults.index_medium, 2, ...
@@ -26,7 +26,7 @@ function testRelatedDepDefaults(testCase)
   p.addRequired('param1', 1.0);
   p.addRequired('param2', 2.0);
   p.addRequired('param3');
-  p.addRule('param3', @(s1, s2) s1 + s2, 'param1', 'param2');
+  p.addRule('param3 = param1 + param2');
   p.parse();
   
   testCase.verifyEqual(p.RequiredResults.param1, 1.0, 'param1');
@@ -35,21 +35,29 @@ function testRelatedDepDefaults(testCase)
 
 end
 
-
-function testAddRuleErrors(testCase)
+function testMultipleRules(testCase)
 
   p = ott.utils.RelatedArgumentParser;
-  p.addRequired('index_medium', 1.0);
-  p.addOptional('speed0', 2.0);
-  p.addOptional('speed');
+  p.addOptional('param1', 1.0);
+  p.addRequired('param2');
+  p.addOptional('param3', 4.0);
+  p.addRequired('param4');
+  p.addRule('param4 = param1 + param2');
+  p.addRule('param4 = param1 + param3');
+  p.parse();
   
-  testCase.verifyError(...
-    @() p.addRule('not_a_var', @() [], 'speed'), ...
-    'ott:utils:RelatedArgumentParser:var_not_a_required');
-  
-  testCase.verifyError(...
-    @() p.addRule('index_medium', @() [], 'not_a_param'), ...
-    'ott:utils:RelatedArgumentParser:arg_not_a_parameter');
+  testCase.verifyEqual(p.RequiredResults.param2, 4.0, 'param2');
+  testCase.verifyEqual(p.RequiredResults.param4, 5.0, 'param3');
+
+end
+
+function testUnusedParameter(testCase)
+
+  p = ott.utils.RelatedArgumentParser;
+  p.addOptional('param1', 1.0);
+  p.addRequired('param2');
+  testCase.verifyWarning(@() p.parse('param2', 2, 'param1', 1), ...
+    'ott:utils:RelatedArgumentParser:not_used');
 
 end
 

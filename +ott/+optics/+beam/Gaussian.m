@@ -55,25 +55,11 @@ classdef Gaussian < ott.optics.beam.AbstractBeam
       p.addOptional('wavelength0', [], type_check);
 
       % Add rules relating required to optional
-
-      p.addRule('speed0', @(x, y) x .* y, 'wavelength0', 'omega');
-      p.addRule('speed0', @(x, y) sqrt(x) .* y, 'permittivity', 'speed');
-      p.addRule('speed0', @(x, y, z) sqrt(x) .* y .* z ./ (2*pi), ...
-          'permittivity', 'wavelength', 'omega');
-
-      p.addRule('permittivity', @(x) x.^2, 'index_medium');
-      p.addRule('permittivity', @(x, y) (x ./ y).^2, 'speed0', 'speed');
-      p.addRule('permittivity', @(x, y) (x ./ y).^2, ...
-          'wavelength0', 'wavelength');
-      p.addRule('permittivity', @(x, y, z) (x ./ y ./ z .* (2*pi)).^2, ...
-          'speed0', 'wavelength', 'omega');
-
-      p.addRule('wavelength', @(x) 2.*pi./x, 'wavenumber');
-      p.addRule('wavelength', @(x, y) x ./ sqrt(y), ...
-          'wavelength0', 'permittivity');
-      p.addRule('wavelength', @(x, y) x ./ y .* (2*pi), 'speed', 'omega');
-      p.addRule('wavelength', @(x, y, z) x ./ sqrt(y) ./ z .* (2*pi), ...
-          'speed0', 'permittivity', 'omega');
+      p.addRule('speed = speed0 ./ index_medium');
+      p.addRule('wavenumber = 2*pi / wavelength');
+      p.addRule('permittivity = index_medium.^2');
+      p.addRule('speed0 = omega / (2*pi) * wavelength0');
+      p.addRule('speed = omega / (2*pi) * wavelength');
 
       % Parse inputs
       p.parse(varargin{:});

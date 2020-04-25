@@ -15,7 +15,7 @@ classdef RelatedArgumentParser < inputParser
 %   p.addRequired('index_medium', 1.0);
 %   p.addOptional('speed0', 2.0);
 %   p.addOptional('speed');
-%   p.addRule('index_medium', @(s1, s0) s0 ./ s1, 'speed', 'speed0');
+%   p.addRule('index_medium = speed0 ./ speed');
 %   p.parse('speed', 1.0);
 %   disp(p.Results.index_medium)  % should display 2
 %
@@ -28,14 +28,14 @@ classdef RelatedArgumentParser < inputParser
 % Properties
 %   - Required   -- Names of required arguments (char arrays)
 %   - Optional   -- Names of optional arguments (char arrays)
-%   - Rules      -- Relationships between rules (struct of function_handle's)
+%   - Rules      -- Relationships between rules (symbolic expressions)
 %   - Defaults   -- Default values for after rule evaluation
 %   - RequiredResults -- Results of required arguments
 
   properties
     Required    % Names of required arguments (char arrays)
     Optional    % Names of optional arguments (char arrays)
-    Rules       % Relationships between rules (function_handle's)
+    Rules       % Relationships between rules (symbolic expressions)
     Defaults    % Default values for after rule evaluation
     RequiredResults % Results of required arguments
   end
@@ -50,7 +50,7 @@ classdef RelatedArgumentParser < inputParser
       % Initialize properties
       p.Required = {};
       p.Optional = {};
-      p.Rules = struct();
+      p.Rules = {};
       p.Defaults = struct();
       p.RequiredResults = struct();
     end
@@ -71,9 +71,6 @@ classdef RelatedArgumentParser < inputParser
       % Store name
       p.Required{end+1} = name;
 
-      % Setup rules cell array
-      p.Rules.(name) = {};
-
       % Store post-relationship defaults
       if nargin >= 3
         p.Defaults.(name) = default_value;
@@ -89,12 +86,12 @@ classdef RelatedArgumentParser < inputParser
       %   p.addOptional(name, default_value, ...)
       %   Specifies the default value to assign before applying relations.
       %   Additional arguments are passed to addParameter
-      
+
       % Handle default value
       if nargin < 3
         default_value = [];
       end
-      
+
       % Store name
       p.Optional{end+1} = name;
 
@@ -102,31 +99,22 @@ classdef RelatedArgumentParser < inputParser
       p.addParameter(name, default_value, varargin{:});
     end
 
-    function addRule(p, var_name, func, varargin)
+    function addRule(p, expr)
       % Add a rule for calculating a required argument
       %
       % Usage
-      %   p.addRule(var_name, fun, [arg1, arg2, ...])
+      %   p.addRule(sym)
       %
-      % Parameters
-      %   - var_name -- Name of the required argument
-      %   - func -- Function handle describing rule
-      %   - arg1, arg2, ... -- Named arguments to pass to function
+      %   p.addRule(string)  As above, but uses ``str2sym`` to
+      %   convert the string to a symbolic expression.
 
-      % Verify var_name is a required argument
-      assert(any(strcmpi(var_name, p.Required)), ...
-        'ott:utils:RelatedArgumentParser:var_not_a_required', ...
-        'var_name must be a required argument');
-
-      % Verify arguments are parameters
-      for ii = 1:length(varargin)
-        assert(any(strcmpi(varargin{ii}, p.Parameters)), ...
-          'ott:utils:RelatedArgumentParser:arg_not_a_parameter', ...
-          ['arg ' varargin{ii} ' not a valid parameter name']);
+      % Convert from string to symbolic expression
+      if isstr(expr)
+        expr = str2sym(expr);
       end
 
-      % Store rule
-      p.Rules.(var_name){end+1} = {func, varargin};
+      % Store the rule
+      p.Rules{end+1} = expr;
     end
 
     function parse(p, varargin)
@@ -182,59 +170,85 @@ classdef RelatedArgumentParser < inputParser
       % Usage
       %   used_params = p.resolve(used_params)
 
-      while true
-
-        % Keep track of if we did work in this loop
-        done_work = false;
-
-        % Loop over unresolved required arguments
-        for ii = 1:length(p.Required)
-
-          rname = p.Required{ii};
-
-          % Check if we are resolved
-          if ~isempty(p.RequiredResults.(rname))
-            continue;
-          end
-
-          % Apply rules
-          for rule = p.Rules.(rname)
-
-            % Get function name and argument names
-            func = rule{1}{1};
-            arg_names = rule{1}{2};
-
-            % Get list of arguments (from Results or RequiredResults)
-            args = cell(size(arg_names));
-            for jj = 1:length(arg_names)
-              if any(strcmpi(arg_names{jj}, p.Required))
-                args{jj} = p.RequiredResults.(arg_names{jj});
-              else
-                args{jj} = p.Results.(arg_names{jj});
-              end
-            end
-
-            % Check we can do work
-            can_work = all(cellfun(@(arg) ~isempty(arg), args));
-            if ~can_work
-              continue;
-            end
-
-            % Evaluate rule
-            p.RequiredResults.(rname) = func(args{:});
-
-            % Update list of optional arguments used
-            used_parameters = [used_parameters, arg_names]; %#ok<AGROW>
-
-            % Update done_work if work was done
-            done_work = true;
-
-          end
+      % Get list of variables we want to solve for
+      vars = {};
+      for ii = 1:length(p.Required)
+        rname = p.Required{ii};
+        if isempty(p.RequiredResults.(rname))
+          vars{end+1} = rname;
         end
+      end
 
-        % Check if we did any work in the last iteration
-        if ~done_work
-          break;
+      % Check if we have work to do
+      if isempty(vars)
+        return;
+      end
+
+      % Get a list of equations to solve
+      eqns = p.Rules;
+
+      % Get a list of known variables (for substitution)
+      known_syms = {};
+      known_vals = {};
+      for ii = 1:length(p.Required)
+        rname = p.Required{ii};
+        if ~isempty(p.RequiredResults.(rname))
+          known_syms{end+1} = sym(rname);
+          known_vals{end+1} = p.RequiredResults.(rname);
+        end
+      end
+      for ii = 1:length(p.Optional)
+        rname = p.Optional{ii};
+        if ~isempty(p.Results.(rname))
+          known_syms{end+1} = sym(rname);
+          known_vals{end+1} = p.Results.(rname);
+        end
+      end
+
+      % Solve the equations
+      results = solve(eqns, vars, 'ReturnConditions', true);
+
+      % Check for used parameters and assign results
+      for ii = 1:length(vars)
+
+        % Get solution for this variable
+        var_result = results.(vars{ii});
+
+        % Apply substitutions and evaluate result
+        var_result_subs = subs(var_result, known_syms, known_vals);
+        result = p.castToDouble(var_result_subs);
+
+        % Check result
+        if ~isempty(result)
+          used_knowns = {};
+          for jj = 1:length(known_syms)
+            if any(symvar(var_result) == known_syms{jj})
+              used_knowns{end+1} = char(known_syms{jj});
+            end
+          end
+          used_parameters = [used_parameters, used_knowns];
+
+          p.RequiredResults.(vars{ii}) = result;
+        end
+      end
+    end
+
+    function ret = castToDouble(p, val)
+      % Trys to cast the variable to a double, if it can't, returns []
+      %
+      % There might be a more optimal way to do this cast without
+      % catching an exception, but I can't find it in the Matlab doc.
+
+      % Try and convert the number to a double
+      ret = [];
+      try
+        ret = double(val);
+      catch ME
+        switch ME.identifier
+          case 'symbolic:double:cantconvert'
+            % Nothing to do
+          otherwise
+            rethrow(ME);
         end
       end
     end
