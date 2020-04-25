@@ -61,3 +61,18 @@ function testUnusedParameter(testCase)
 
 end
 
+function testUnusedOptionalRule(testCase)
+
+
+  p = ott.utils.RelatedArgumentParser;
+  p.addOptional('param1');
+  p.addOptional('param2');
+  p.addRequired('param3');
+  p.addRule('param3 = param1');
+  p.addRule('param3 = param2');
+  p.parse('param1', 2.0);
+  
+  testCase.verifyEqual(p.RequiredResults.param3, 2.0);
+  
+end
+

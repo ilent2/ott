@@ -171,16 +171,16 @@ classdef RelatedArgumentParser < inputParser
       %   used_params = p.resolve(used_params)
 
       % Get list of variables we want to solve for
-      vars = {};
+      solve_vars = {};
       for ii = 1:length(p.Required)
         rname = p.Required{ii};
         if isempty(p.RequiredResults.(rname))
-          vars{end+1} = rname;
+          solve_vars{end+1} = rname;
         end
       end
 
       % Check if we have work to do
-      if isempty(vars)
+      if isempty(solve_vars)
         return;
       end
 
@@ -190,6 +190,7 @@ classdef RelatedArgumentParser < inputParser
       % Get a list of known variables (for substitution)
       known_syms = {};
       known_vals = {};
+      unknown_syms = {};
       for ii = 1:length(p.Required)
         rname = p.Required{ii};
         if ~isempty(p.RequiredResults.(rname))
@@ -202,20 +203,37 @@ classdef RelatedArgumentParser < inputParser
         if ~isempty(p.Results.(rname))
           known_syms{end+1} = sym(rname);
           known_vals{end+1} = p.Results.(rname);
+        else
+          unknown_syms{end+1} = sym(rname);
         end
       end
 
       % Solve the equations
-      results = solve(eqns, vars, 'ReturnConditions', true);
+      WS = warning('off', 'symbolic:solve:warnmsg3');
+      results = solve(eqns, [unknown_syms, solve_vars], ...
+          'ReturnConditions', true);
+      warning(WS);
 
       % Check for used parameters and assign results
-      for ii = 1:length(vars)
+      for ii = 1:length(solve_vars)
 
         % Get solution for this variable
-        var_result = results.(vars{ii});
+        var_result = results.(solve_vars{ii});
 
-        % Apply substitutions and evaluate result
+        % Apply substitutions
         var_result_subs = subs(var_result, known_syms, known_vals);
+        
+        % Discard non-unique solutions
+        var_result_subs = unique(var_result_subs);
+        
+        % Check we have a unique solution
+        if numel(var_result_subs) > 1
+          warning('ott:utils:RelatedArgumentParser:non_unique_soln', ...
+            'Unable to find unique solution for parameter');
+          var_result_subs = var_result_subs(1);
+        end
+        
+        % Evaluate result
         result = p.castToDouble(var_result_subs);
 
         % Check result
@@ -228,7 +246,7 @@ classdef RelatedArgumentParser < inputParser
           end
           used_parameters = [used_parameters, used_knowns];
 
-          p.RequiredResults.(vars{ii}) = result;
+          p.RequiredResults.(solve_vars{ii}) = result;
         end
       end
     end
