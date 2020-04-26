@@ -157,13 +157,13 @@ classdef Bsc
       %       - Abs(Er), Abs(Et), Abs(Ep), Abs(Ex), Abs(Ey), Abs(Ez)
       %       - Arg(Er), Arg(Et), Arg(Ep), Arg(Ex), Arg(Ey), Arg(Ez)
       
-      assert(size(xyz, 2) == 3 || size(xyz, 2) == 0, ...
+      assert(size(xyz, 1) == 3 || size(xyz, 1) == 0, ...
         'xyz must be Nx3 matrix');
-      assert(size(vxyz, 2) == 3 || size(vxyz, 2) == 0, ...
+      assert(size(vxyz, 1) == 3 || size(vxyz, 1) == 0, ...
         'vxyz must be Nx3 matrix');
-      assert(size(rtp, 2) == 3 || size(rtp, 2) == 0, ...
+      assert(size(rtp, 1) == 3 || size(rtp, 1) == 0, ...
         'rtp must be Nx3 matrix');
-      assert(size(vrtp, 2) == 3 || size(vrtp, 2) == 0, ...
+      assert(size(vrtp, 1) == 3 || size(vrtp, 1) == 0, ...
         'vrtp must be Nx3 matrix');
       
       % Get the coordinates
@@ -191,67 +191,67 @@ classdef Bsc
       
       % Generate the requested field
       if strcmpi(field_type, 'irradiance')
-        data = sqrt(sum(abs(vxyz).^2, 2));
+        data = sqrt(sum(abs(vxyz).^2, 1));
       elseif strcmpi(field_type, 'E2')
-        data = sum(abs(vxyz).^2, 2);
+        data = sum(abs(vxyz).^2, 1);
       elseif strcmpi(field_type, 'Sum(Abs(E))')
-        data = sum(abs(vxyz), 2);
+        data = sum(abs(vxyz), 1);
         
       elseif strcmpi(field_type, 'Re(Er)')
-        data = real(vrtp(:, 1));
+        data = real(vrtp(1, :));
       elseif strcmpi(field_type, 'Re(Et)')
-        data = real(vrtp(:, 2));
+        data = real(vrtp(2, :));
       elseif strcmpi(field_type, 'Re(Ep)')
-        data = real(vrtp(:, 3));
+        data = real(vrtp(3, :));
         
       elseif strcmpi(field_type, 'Re(Ex)')
-        data = real(vxyz(:, 1));
+        data = real(vxyz(1, :));
       elseif strcmpi(field_type, 'Re(Ey)')
-        data = real(vxyz(:, 2));
+        data = real(vxyz(2, :));
       elseif strcmpi(field_type, 'Re(Ez)')
-        data = real(vxyz(:, 3));
+        data = real(vxyz(3, :));
         
       elseif strcmpi(field_type, 'Abs(Er)')
-        data = abs(vrtp(:, 1));
+        data = abs(vrtp(1, :));
       elseif strcmpi(field_type, 'Abs(Et)')
-        data = abs(vrtp(:, 2));
+        data = abs(vrtp(2, :));
       elseif strcmpi(field_type, 'Abs(Ep)')
-        data = abs(vrtp(:, 3));
+        data = abs(vrtp(3, :));
         
       elseif strcmpi(field_type, 'Abs(Ex)')
-        data = abs(vxyz(:, 1));
+        data = abs(vxyz(1, :));
       elseif strcmpi(field_type, 'Abs(Ey)')
-        data = abs(vxyz(:, 2));
+        data = abs(vxyz(2, :));
       elseif strcmpi(field_type, 'Abs(Ez)')
-        data = abs(vxyz(:, 3));
+        data = abs(vxyz(3, :));
         
       elseif strcmpi(field_type, 'Arg(Er)')
-        data = angle(vrtp(:, 1));
+        data = angle(vrtp(1, :));
       elseif strcmpi(field_type, 'Arg(Et)')
-        data = angle(vrtp(:, 2));
+        data = angle(vrtp(2, :));
       elseif strcmpi(field_type, 'Arg(Ep)')
-        data = angle(vrtp(:, 3));
+        data = angle(vrtp(3, :));
         
       elseif strcmpi(field_type, 'Arg(Ex)')
-        data = angle(vxyz(:, 1));
+        data = angle(vxyz(1, :));
       elseif strcmpi(field_type, 'Arg(Ey)')
-        data = angle(vxyz(:, 2));
+        data = angle(vxyz(2, :));
       elseif strcmpi(field_type, 'Arg(Ez)')
-        data = angle(vxyz(:, 3));
+        data = angle(vxyz(3, :));
         
       elseif strcmpi(field_type, 'Er')
-        data = vrtp(:, 1);
+        data = vrtp(1, :);
       elseif strcmpi(field_type, 'Et')
-        data = vrtp(:, 2);
+        data = vrtp(2, :);
       elseif strcmpi(field_type, 'Ep')
-        data = vrtp(:, 3);
+        data = vrtp(3, :);
         
       elseif strcmpi(field_type, 'Ex')
-        data = vxyz(:, 1);
+        data = vxyz(1, :);
       elseif strcmpi(field_type, 'Ey')
-        data = vxyz(:, 2);
+        data = vxyz(2, :);
       elseif strcmpi(field_type, 'Ez')
-        data = vxyz(:, 3);
+        data = vxyz(3, :);
 
       else
         error('OTT:BSC:GetVisualisationData:unknown_field_type', ...
@@ -669,17 +669,21 @@ classdef Bsc
       [a, b] = beam.getCoefficients(ci);
 
       % Calculate the fields
+      % TODO: Should this function be moved to bsc.Static or bsc.private?
+      % TODO: Should this function take 3xN instead of Nx3
       [E, H, data] = ott.utils.emField(rtp.', beam.basis, nm, [a; b], ...
           'saveData', p.Results.saveData, ...
           'data', p.Results.data, ...
           'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
+      E = E.';
+      H = H.';
 
       % Convert from spherical to Cartesian coordinates
       switch p.Results.coord
         case 'cartesian'
-          E = ott.utils.rtpv2xyzv(E,rtp.');
+          E = ott.utils.rtpv2xyzv(E,rtp);
           E(isnan(E)) = 0;
-          H = ott.utils.rtpv2xyzv(H,rtp.');
+          H = ott.utils.rtpv2xyzv(H,rtp);
           H(isnan(H)) = 0;
 
         case 'spherical'
@@ -688,10 +692,6 @@ classdef Bsc
         otherwise
           error('Unknown coordinate system for output');
       end
-      
-      % Make the matrices 3xN
-      E = E.';
-      H = H.';
     end
 
     function [E, H, data] = emFieldXyz(beam, xyz, varargin)
@@ -712,8 +712,8 @@ classdef Bsc
       % If either calcH or calcE is false, the function still returns
       % E and H as matrices of all zeros for the corresponding field.
 
-      rtp = ott.utils.xyz2rtp(xyz.');
-      [E, H, data] = beam.emFieldRtp(rtp.', varargin{:});
+      rtp = ott.utils.xyz2rtp(xyz);
+      [E, H, data] = beam.emFieldRtp(rtp, varargin{:});
     end
     
     function varargout = visualiseFarfieldSlice(beam, phi, varargin)
@@ -1011,13 +1011,13 @@ classdef Bsc
       if ischar(p.Results.axis)
         switch p.Results.axis
           case 'x'
-            xyz = [zz(:), yy(:), xx(:)];
+            xyz = [zz(:), yy(:), xx(:)].';
             alabels = {'Z', 'Y'};
           case 'y'
-            xyz = [yy(:), zz(:), xx(:)];
+            xyz = [yy(:), zz(:), xx(:)].';
             alabels = {'Z', 'X'};
           case 'z'
-            xyz = [xx(:), yy(:), zz(:)];
+            xyz = [xx(:), yy(:), zz(:)].';
             alabels = {'X', 'Y'};
           otherwise
             error('Unknown axis name specified');
@@ -1034,7 +1034,6 @@ classdef Bsc
         alabels = {'Direction 1', 'Direction 2'};
         
         xyz = dir1.*xx(:).' + dir2.*yy(:).' + dir3.*zz(:).';
-        xyz = xyz.';
       else
         error('axis must be character or cell array');
       end
@@ -1052,13 +1051,13 @@ classdef Bsc
       for ii = 1:beam.Nbeams
 
         % Calculate the electric field
-        [E, ~, data] = beam.beam(ii).emFieldXyz(xyz.', ...
+        [E, ~, data] = beam.beam(ii).emFieldXyz(xyz, ...
             'saveData', p.Results.saveData, 'data', data, ...
             'calcE', true', 'calcH', false);
 
         % Generate the requested field
         dataout = beam.GetVisualisationData(p.Results.field, ...
-          xyz, [], E.', []);
+          xyz, [], E, []);
 
         % Reshape the output
         imout(:, :, ii) = reshape(dataout, sz(2), sz(1));
@@ -1074,7 +1073,7 @@ classdef Bsc
         
         % Apply the mask
         if ~isempty(p.Results.mask)
-          imout(p.Results.mask(xyz.')) = NaN;
+          imout(p.Results.mask(xyz)) = NaN;
         end
         
         imagesc(xrange, yrange, imout, 'AlphaData', ~isnan(imout));
@@ -1437,7 +1436,7 @@ classdef Bsc
       if any((theta ~= 0 & abs(theta) ~= pi) | phi ~= 0)
 
         ibeam = beam;
-        beam = ott.Bsc();
+        beam = ott.optics.vswf.bsc.Bsc();
 
         for ii = 1:numel(r)
           [tbeam, D] = ibeam.rotateYz(theta(ii), phi(ii), ...
@@ -2108,7 +2107,7 @@ classdef Bsc
           sbeam.basis = 'regular';
         
           % Wavelength has changed, update it
-          sbeam.k_medium = tmatrix(1).k_particle;
+          sbeam.k_medium = tmatrix(1).wavenumber_particle;
           
         otherwise
           error('Unrecognized T-matrix type');
