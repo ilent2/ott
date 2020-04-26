@@ -30,3 +30,18 @@ function testMultipleOutputs(testCase)
   testCase.verifyEqual(out3, testData(3, :), 'z');
   
 end
+
+function testZeros(testCase)
+
+  rotFun = @(~, pos, ~, rot) rot * pos;
+  
+  orot = ott.utils.rotz(90);
+  opos = rand(3, 5);
+  zerosFun = @(x) ones(x);
+  
+  out = ott.utils.prxfun(rotFun, 3, 'position', opos, ...
+    'rotation', orot, 'zeros', zerosFun);
+  
+  testCase.verifyEqual(out, orot * opos, ...
+    'AbsTol', 1e-15, 'Position of arguments doesnt work');
+end

@@ -24,12 +24,16 @@ function varargout = prxfun(func, sz, varargin)
 %     Default: ``[]``.  The function handle should take two arguments,
 %     the current step index and the total amount of work.
 %
+%   - zeros (function_handle) -- A function like ``zeros`` to call to
+%     allocate memory for the output.  Default: ``zeros``.
+%
 % Number of positions and rotations must be scalar or equal.
 
 p = inputParser;
 p.addParameter('position', []);
 p.addParameter('rotation', []);
 p.addParameter('progress', []);
+p.addParameter('zeros', @zeros);
 p.parse(varargin{:});
 
 position = p.Results.position;
@@ -63,7 +67,7 @@ if Nwork == 0
 end
 
 % Allocate memory for output(s)
-varargout = repmat({zeros([sz, Nwork])}, 1, nargout);
+varargout = repmat({p.Results.zeros([sz, Nwork])}, 1, nargout);
 
 epw = prod(sz);
 
