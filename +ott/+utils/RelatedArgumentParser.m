@@ -188,21 +188,24 @@ classdef RelatedArgumentParser < inputParser
       eqns = p.Rules;
 
       % Get a list of known variables (for substitution)
+      % Reshape known_vals with an extra dimension for later substitution
       known_syms = {};
       known_vals = {};
       unknown_syms = {};
       for ii = 1:length(p.Required)
         rname = p.Required{ii};
+        val = p.RequiredResults.(rname);
         if ~isempty(p.RequiredResults.(rname))
           known_syms{end+1} = sym(rname);
-          known_vals{end+1} = p.RequiredResults.(rname);
+          known_vals{end+1} = reshape(val, [1, size(val)]);
         end
       end
       for ii = 1:length(p.Optional)
         rname = p.Optional{ii};
+        val = p.Results.(rname);
         if ~isempty(p.Results.(rname))
           known_syms{end+1} = sym(rname);
-          known_vals{end+1} = p.Results.(rname);
+          known_vals{end+1} = reshape(val, [1, size(val)]);
         else
           unknown_syms{end+1} = sym(rname);
         end
@@ -219,19 +222,28 @@ classdef RelatedArgumentParser < inputParser
 
         % Get solution for this variable
         var_result = results.(solve_vars{ii});
+        if isempty(var_result)
+          continue;
+        end
 
         % Apply substitutions
         var_result_subs = subs(var_result, known_syms, known_vals);
         
-        % Discard non-unique solutions
-        var_result_subs = unique(var_result_subs);
+        % Discard non-unique solutions from solve
+        sz = size(var_result_subs);
+        var_result_subs = reshape(var_result_subs, sz(1), []);
+        var_result_subs = unique(var_result_subs, 'rows');
         
         % Check we have a unique solution
-        if numel(var_result_subs) > 1
+        if size(var_result_subs, 1) > 1
           warning('ott:utils:RelatedArgumentParser:non_unique_soln', ...
             'Unable to find unique solution for parameter');
-          var_result_subs = var_result_subs(1);
+          var_result_subs = var_result_subs(1, :);
         end
+        
+        % Reshape to original variable size (now we have applied unique)
+        % Drop first dimension which we added to known_vals
+        var_result_subs = reshape(var_result_subs, [sz(2:end), 1]);
         
         % Evaluate result
         result = p.castToDouble(var_result_subs);

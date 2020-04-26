@@ -76,3 +76,15 @@ function testUnusedOptionalRule(testCase)
   
 end
 
+function testDifferentShapes(testCase)
+
+  testData = randn(3, 5);
+  
+  p = ott.utils.RelatedArgumentParser;
+  p.addOptional('param1');
+  p.addRequired('param2');
+  p.addRule('param2 = param1');
+  p.parse('param1', testData);
+  
+  testCase.verifyEqual(p.RequiredResults.param2, testData);
+end
