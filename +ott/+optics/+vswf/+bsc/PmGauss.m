@@ -1,4 +1,4 @@
-classdef BscPmGauss < ott.BscPointmatch
+classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
 %BscPmGauss provides HG, LG and IG beams using point matching method
 %
 % Properties
@@ -44,7 +44,7 @@ classdef BscPmGauss < ott.BscPointmatch
   end
 
   methods
-    function beam = BscPmGauss(varargin)
+    function beam = PmGauss(varargin)
       % Construct a new IG, HG, LG or Gaussian beam.
       %
       % Usage
@@ -89,7 +89,7 @@ classdef BscPmGauss < ott.BscPointmatch
       %        lenses ONLY. Does not preserve high order mode shape
       %        at large angles.
 
-      beam = beam@ott.BscPointmatch(varargin{:});
+      beam = beam@ott.optics.vswf.bsc.Pointmatch(varargin{:});
       beam.type = 'incident';
       beam.basis = 'regular';
 
@@ -127,7 +127,7 @@ classdef BscPmGauss < ott.BscPointmatch
       beam.mode = p.Results.mode;
       beam.polarisation = p.Results.polarisation;
       beam.offset = p.Results.offset;
-      beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
+      beam.k_medium = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
       
       % Ensure beam offset is not empty
@@ -160,8 +160,6 @@ classdef BscPmGauss < ott.BscPointmatch
       import ott.utils.*
 
       axisymmetry = 1;
-
-      ott.warning('internal');
 
       %radial and azimuthal polarisation.
       radial=0;
@@ -265,14 +263,12 @@ classdef BscPmGauss < ott.BscPointmatch
         
         % Only warn if using beams that support matrix translations
         if strcmpi(p.Results.translation_method, 'Default')
-          ott.warning('external');
-          ott.warning('ott:bsc_pointmatch_farfield:offsets', ...
+          warning('ott:bsc_pointmatch_farfield:offsets', ...
               ['Beam offsets with x and y components cannot be ' ...
                'axi-symmetric, beam symmetry is now off, and the ' ...
                'calculation will be much slower. It is highly recommended ' ...
                'that a combination of rotations and translations are ' ...
                'used on BSCs instead.']);
-            ott.warning('internal');
         end
         
         % Turn off axissymmetry
@@ -413,8 +409,6 @@ classdef BscPmGauss < ott.BscPointmatch
       if ~isempty(p.Results.power)
         beam.power = p.Results.power;
       end
-
-      ott.warning('external');
     end
     
     function varargout = translateZ(beam, varargin)
@@ -435,7 +429,7 @@ classdef BscPmGauss < ott.BscPointmatch
       if strcmpi(beam.translation_method, 'Default')
         
         % Use translation matrix method
-        [varargout{1:nargout}] = translateZ@ott.BscPointmatch(beam, varargin{:});
+        [varargout{1:nargout}] = translateZ@ott.optics.vswf.bsc.Pointmatch(beam, varargin{:});
         
       elseif strcmpi(beam.translation_method, 'NewBeamOffset')
         
@@ -482,7 +476,7 @@ classdef BscPmGauss < ott.BscPointmatch
       if strcmpi(beam.translation_method, 'Default')
         
         % Use translation matrix method
-        [varargout{1:nargout}] = translateXyz@ott.BscPointmatch(beam, varargin{:});
+        [varargout{1:nargout}] = translateXyz@ott.optics.vswf.bsc.Pointmatch(beam, varargin{:});
         
       elseif strcmpi(beam.translation_method, 'NewBeamOffset')
         
@@ -534,7 +528,7 @@ classdef BscPmGauss < ott.BscPointmatch
       if strcmpi(beam.translation_method, 'Default')
         
         % Use translation matrix method
-        [varargout{1:nargout}] = translateRtp@ott.BscPointmatch(beam, varargin{:});
+        [varargout{1:nargout}] = translateRtp@ott.optics.vswf.bsc.Pointmatch(beam, varargin{:});
         
       elseif strcmpi(beam.translation_method, 'NewBeamOffset')
         

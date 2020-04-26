@@ -350,7 +350,20 @@ classdef Bsc
 
     function beam = append(beam, other)
       % APPEND joins two beam objects together
+      %
+      % Usaage
+      %   beam = beam.append(other)
+      %   beam = beam.append([beam1, beam2, ...])
+      
+      % Append array of beams
+      if numel(other) > 1
+        for ii = 1:numel(other)
+          beam = beam.append(other(ii));
+        end
+        return;
+      end
 
+      % Append single beam
       if beam.Nbeams == 0
         % Copy the other beam, preserves properties
         beam = other;
@@ -1289,7 +1302,7 @@ classdef Bsc
         z = z * beam.k_medium / 2 / pi;
 
         ibeam = beam;
-        beam = ott.Bsc();
+        beam = ott.optics.vswf.bsc.Bsc();
 
         for ii = 1:numel(z)
           [A, B] = ibeam.translateZ_type_helper(z(ii), [p.Results.Nmax, ibeam.Nmax]);
@@ -1347,7 +1360,7 @@ classdef Bsc
       if ~isempty(p.Results.opt1) && isempty(p.Results.opt2) ...
           && isempty(p.Results.opt3)
         xyz = p.Results.opt1;
-        rtp = ott.utils.xyz2rtp(xyz.').';
+        rtp = ott.utils.xyz2rtp(xyz);
         [varargout{1:nargout}] = beam.translateRtp(rtp, ...
             'Nmax', p.Results.Nmax);
       else
@@ -1729,232 +1742,89 @@ classdef Bsc
       moment = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
     end
 
-    function [a, b, p, q, ...
-      anp1, bnp1, pnp1, qnp1, ...
-      amp1, bmp1, pmp1, qmp1, ...
-      anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
-      anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
-    find_abpq_force_terms(ibeam, sbeam)
-      % Find the terms required for force/torque calculations
-
-      % TODO: There was some Nmax and Nbeams checks that we don't have here
-
-      % Ensure the beam is incoming-outgoing
-      sbeam = sbeam.totalField(ibeam);
-
-      % Get the relevent beam coefficients
-      [a, b] = ibeam.getCoefficients();
-      [p, q] = sbeam.getCoefficients();
-      [n, m] = ibeam.getModeIndices();
-
-      nmax=ibeam.Nmax;
-
-      b=1i*b;
-      q=1i*q;
-
-      addv=zeros(2*nmax+3,1);
-
-      at=[a;repmat(addv, 1, size(a, 2))];
-      bt=[b;repmat(addv, 1, size(b, 2))];
-      pt=[p;repmat(addv, 1, size(p, 2))];
-      qt=[q;repmat(addv, 1, size(q, 2))];
-
-      ci=ott.utils.combined_index(n,m);
-
-      %these preserve order and number of entries!
-      np1=2*n+2;
-      cinp1=ci+np1;
-      cinp1mp1=ci+np1+1;
-      cinp1mm1=ci+np1-1;
-      cimp1=ci+1;
-      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-      %this is for m+1... if m+1>n then we'll ignore!
-      kimp=(m>n-1);
-
-      anp1=at(cinp1, :);
-      bnp1=bt(cinp1, :);
-      pnp1=pt(cinp1, :);
-      qnp1=qt(cinp1, :);
-
-      anp1mp1=at(cinp1mp1, :);
-      bnp1mp1=bt(cinp1mp1, :);
-      pnp1mp1=pt(cinp1mp1, :);
-      qnp1mp1=qt(cinp1mp1, :);
-
-      anp1mm1=at(cinp1mm1, :);
-      bnp1mm1=bt(cinp1mm1, :);
-      pnp1mm1=pt(cinp1mm1, :);
-      qnp1mm1=qt(cinp1mm1, :);
-
-      amp1=at(cimp1, :);
-      bmp1=bt(cimp1, :);
-      pmp1=pt(cimp1, :);
-      qmp1=qt(cimp1, :);
-
-      amp1(kimp, :)=0;
-      bmp1(kimp, :)=0;
-      pmp1(kimp, :)=0;
-      qmp1(kimp, :)=0;
-
-      a=a(ci, :);
-      b=b(ci, :);
-      p=p(ci, :);
-      q=q(ci, :);
-
-    end
-
-    function varargout = mul
-
-    function varargout = forcetorque(beam, other, varargin)
+    function varargout = forcetorque(ibeam, other, varargin)
       % Calculate change in momentum between beams
       %
       % Usage
-      %   force = ibeam.force(sbeam, ...) calculates the force
-      %   between the incident beam ``ibeam`` and scattered beam ``sbeam``.
-      %   Force is a 3xN matrix depending on the number of beams and
+      %   [f, t, s] = ibeam.forcetorque(sbeam, ...) calculates the force,
+      %   torque and spin between the incident beam ``ibeam`` and
+      %   scattered beam ``sbeam``.
+      %   Outputs 3xN matrix depending on the number of beams and
       %   other optional arguments, see bellow for more details.
       %
-      %   force = beam.force(Tmatrix, ...) as above but first calculates
-      %   the scattered beam using the given T-matrix.
+      %   [f, t, s] = beam.forcetorque(Tmatrix, ...) as above but first
+      %   calculates the scattered beam using the given T-matrix.
       %
-      %   [fx, fy, fz] = beam.force(...) as above but returns the
-      %   x, y and z force components as separate vectors.
+      %   [fx, fy, fz, tx, ty, tz, sx, sy, sz] = beam.forcetorque(...) as
+      %   above but returns the x, y and z components as separate vectors.
       %
       % Optional named arguments
       %   - position (3xN numeric) -- Distance to translate beam before
       %     calculating the scattered beam using the T-matrix.
-      %     Default: [].
+      %     Default: ``[]``.
       %   - rotation (3x3N numeric) -- Angle to rotate beam before
       %     calculating the scattered beam using the T-matrix.
       %     Inverse rotation is applied to scattered beam, effectively
       %     rotating the particle.
-      %     Default: [].
+      %     Default: ``[]``.
       %
-      % If both position and rotation are present, the translation is
-      % applied first, followed by the rotation.
-      % If both position and rotation are arrays, they must have the same
-      % number of locations.
+      % For details about position and rotation, see :meth:`scatter`.
       %
       % This uses mathematical result of Farsund et al., 1996, in the form of
       % Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
       % E_{inc}=sum_{nm}(aM+bN);
+      
+      % Parse inputs
+      [ibeam, sbeam, incN] = ibeam.forcetorqueParser(other, varargin{:});
 
-      ip = inputParser;
-      ip.addParameter('combine', []);
-      ip.parse(varargin{:});
-
-      % Combine the beams if coherent
-      if strcmpi(ip.Results.combine, 'coherent')
-        ibeam = sum(ibeam);
-        sbeam = sum(sbeam);
+      % Dispatch to other methods to calculate quantities
+      force = ibeam.force(sbeam);
+      torque = [];
+      spin = [];
+      if nargout > 1
+        torque = ibeam.torque(sbeam);
+        if nargout > 2
+          spin = ibeam.spin(sbeam);
+        end
       end
-
-      % TODO: There is a lot of duplication between this function
-      %       and other functions: spin, torque, forcetorque, force.
-      %       Can we fix this somehow?
-
-      % TODO: I think this function wants to do too much.  Perhaps
-      %       we need a transform function (no!) or a function for
-      %       doing the iteration over particles?
-
-      % Get the abpq terms for the calculation
-      [a, b, p, q, ...
-        anp1, bnp1, pnp1, qnp1, ...
-        amp1, bmp1, pmp1, qmp1, ...
-        anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
-        anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
-      ott.bsc.Bsc.find_abpq_force_terms(ibeam, sbeam);
-
-      % Calculate the Z force
-      Az=m./n./(n+1).*imag(-(a).*conj(b)+conj(q).*(p));
-      Bz=1./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ... %.*n
-          .*imag(anp1.*conj(a)+bnp1.*conj(b)-(pnp1).*conj(p) ...
-          -(qnp1).*conj(q));
-      fz=2*sum(Az+Bz);
-
-      % Calculate the XY force
-      Axy=1i./n./(n+1).*sqrt((n-m).*(n+m+1)) ...
-          .*(conj(pmp1).*q - conj(amp1).*b - conj(qmp1).*p + conj(bmp1).*a);
-      Bxy=1i./(n+1).*sqrt(n.*(n+2))./sqrt((2*n+1).*(2*n+3)).* ... %sqrt(n.*)
-          ( sqrt((n+m+1).*(n+m+2)) .* ( p.*conj(pnp1mp1) + q.* ...
-          conj(qnp1mp1) -a.*conj(anp1mp1) -b.*conj(bnp1mp1)) + ...
-          sqrt((n-m+1).*(n-m+2)) .* (pnp1mm1.*conj(p) + qnp1mm1.* ...
-          conj(q) - anp1mm1.*conj(a) - bnp1mm1.*conj(b)) );
-
-      fxy=sum(Axy+Bxy);
-      fx=real(fxy);
-      fy=imag(fxy);
-
-      % Calculate Z torque
-      tz=sum(m.*(a.*conj(a)+b.*conj(b)-p.*conj(p)-q.*conj(q)));
-
-      % Calculate XY torque
-      txy=sum(sqrt((n-m).*(n+m+1)).*(a.*conj(amp1)+...
-        b.*conj(bmp1)-p.*conj(pmp1)-q.*conj(qmp1)));
-      tx=real(txy);
-      ty=imag(txy);
-
-      % Combine the results if incoherent
-      if strcmpi(ip.Results.combine, 'incoherent')
-        fx = sum(fx, 2);
-        fy = sum(fy, 2);
-        fz = sum(fz, 2);
-        tx = sum(tx, 2);
-        ty = sum(ty, 2);
-        tz = sum(tz, 2);
+      
+      % Combine incoherent beams
+      if incN > 1
+        force = squeeze(sum(reshape(force, 3, incN, []), 2));
+        torque = squeeze(sum(reshape(torque, 3, incN, []), 2));
+        spin = squeeze(sum(reshape(spin, 3, incN, []), 2));
       end
-
-      % Package output
-      if nargout == 6
-        varargout{1} = fx;
-        varargout{2} = fy;
-        varargout{3} = fz;
-        varargout{4} = tx;
-        varargout{5} = ty;
-        varargout{6} = tz;
-      elseif nargout == 2
-        varargout{1} = [fx; fy; fz];
-        varargout{2} = [tx; ty; tz];
-      elseif nargout == 1
-        varargout{1} = [fx; fy; fz; tx; ty; tz];
+      
+      % Package outputs
+      if nargout <= 3
+        varargout{1} = force;
+        varargout{2} = torque;
+        varargout{3} = spin;
       else
-        error('Only 1, 2 or 6 outputs should be requested');
+        varargout{1:3} = {force(1, :), force(2, :), force(3, :)};
+        varargout{4:6} = {torque(1, :), torque(2, :), torque(3, :)};
+        varargout{7:9} = {spin(1, :), spin(2, :), spin(3, :)};
       end
     end
 
-    function varargout = force(beam, other, varargin)
-      % Calculate change in linear momentum between beams
-      %
+    function varargout = force(ibeam, other, varargin)
+      % Calculate change in linear momentum between beams.
       % For details on usage/arguments see :meth:`forcetorque`.
-
-      ip = inputParser;
-      %ip.addParameter('position', []);
-      %ip.addParameter('rotation', []);
-      ip.addParameter('combine', []);
-      ip.parse(varargin{:});
-
-      %positions = p.Results.position;
-      %rotations = p.Results.rotations;
-
-      %assert(isempty(p.Results.position) ...
-      %  || iscell(p.Results.position) ...
-      %  || (isnumeric(p.Results.position) && ismatrix(p.Results.position && size(p.Results.position, 1) == 3, ...
-      %  'position must be either empty, cell array or 3xN matrix');
-
-      % Combine the beams if coherent
-      if strcmpi(ip.Results.combine, 'coherent')
-        ibeam = sum(ibeam);
-        sbeam = sum(sbeam);
-      end
+      %
+      % Usage
+      %   force = ibeam.force(...)
+      %   [fx, fy, fz] = ibeam.force(...)
+      
+      % Parse inputs
+      [ibeam, sbeam, incN] = ibeam.forcetorqueParser(other, varargin{:});
 
       % Get the abpq terms for the calculation
-      [a, b, p, q, ...
+      [a, b, p, q, n, m, ...
         anp1, bnp1, pnp1, qnp1, ...
         amp1, bmp1, pmp1, qmp1, ...
         anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
-        anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
-      ott.bsc.Bsc.find_abpq_force_terms(ibeam, sbeam);
+        anp1mm1, bnp1mm1, pnp1mm1, qnp1mm1] = ...
+      ibeam.find_abpq_force_terms(sbeam);
 
       % Calculate the Z force
       Az=m./n./(n+1).*imag(-(a).*conj(b)+conj(q).*(p));
@@ -1975,46 +1845,42 @@ classdef Bsc
       fxy=sum(Axy+Bxy);
       fx=real(fxy);
       fy=imag(fxy);
-
-      % Combine the results if incoherent
-      if strcmpi(ip.Results.combine, 'incoherent')
-        fx = sum(fx, 2);
-        fy = sum(fy, 2);
-        fz = sum(fz, 2);
+      
+      % Combine incoherent beams
+      if incN > 1
+        fx = sum(reshape(fx, incN, []), 1);
+        fy = sum(reshape(fy, incN, []), 1);
+        fz = sum(reshape(fz, incN, []), 1);
       end
+      
+      % Ensure things are full
+      fx = full(fx);
+      fy = full(fy);
+      fz = full(fz);
 
       % Package output
       if nargout == 3
-        varargout{1} = fx;
-        varargout{2} = fy;
-        varargout{3} = fz;
+        varargout{1:3} = {fx, fy, fz};
       else
         varargout{1} = [fx; fy; fz];
       end
     end
 
-    function varargout = torque(beam, other, varargin)
+    function varargout = torque(ibeam, other, varargin)
       % Calculate change in angular momentum between beams
-      %
       % For details on usage/arguments see :meth:`forcetorque`.
-
-      ip = inputParser;
-      ip.addParameter('combine', []);
-      ip.parse(varargin{:});
-
-      % Combine the beams if coherent
-      if strcmpi(ip.Results.combine, 'coherent')
-        ibeam = sum(ibeam);
-        sbeam = sum(sbeam);
-      end
+      %
+      % Usage
+      %   torque = ibeam.torque(...)
+      %   [tx, ty, tz] = ibeam.torque(...)
+      
+      % Parse inputs
+      [ibeam, sbeam, incN] = ibeam.forcetorqueParser(other, varargin{:});
 
       % Get the abpq terms for the calculation
-      [a, b, p, q, ...
-        anp1, bnp1, pnp1, qnp1, ...
-        amp1, bmp1, pmp1, qmp1, ...
-        anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
-        anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
-      ott.bsc.Bsc.find_abpq_force_terms(ibeam, sbeam);
+      [a, b, p, q, n, m, ~, ~, ~, ~, ...
+        amp1, bmp1, pmp1, qmp1] = ...
+      ibeam.find_abpq_force_terms(sbeam);
 
       tz=sum(m.*(a.*conj(a)+b.*conj(b)-p.*conj(p)-q.*conj(q)));
 
@@ -2022,48 +1888,45 @@ classdef Bsc
         b.*conj(bmp1)-p.*conj(pmp1)-q.*conj(qmp1)));
       tx=real(txy);
       ty=imag(txy);
-
-      % Combine the results if incoherent
-      if strcmpi(ip.Results.combine, 'incoherent')
-        tx = sum(tx, 2);
-        ty = sum(ty, 2);
-        tz = sum(tz, 2);
+      
+      % Combine incoherent beams
+      if incN > 1
+        tx = sum(reshape(tx, incN, []), 1);
+        ty = sum(reshape(ty, incN, []), 1);
+        tz = sum(reshape(tz, incN, []), 1);
       end
+      
+      % Ensure things are full
+      tx = full(tx);
+      ty = full(ty);
+      tz = full(tz);
 
       % Package output
       if nargout == 3
-        varargout{1} = tx;
-        varargout{2} = ty;
-        varargout{3} = tz;
+        varargout{1:3} = {tx, ty, tz};
       else
         varargout{1} = [tx; ty; tz];
       end
     end
 
-    function varargout = spin(beam, other, varargin)
+    function varargout = spin(ibeam, other, varargin)
       % Calculate change in spin between beams
-      %
       % For details on usage/arguments see :meth:`forcetorque`.
-
-      % TODO: T-matrix support
-
-      ip = inputParser;
-      ip.addParameter('combine', []);
-      ip.parse(varargin{:});
-
-      % Combine the beams if coherent
-      if strcmpi(ip.Results.combine, 'coherent')
-        ibeam = sum(ibeam);
-        sbeam = sum(sbeam);
-      end
+      %
+      % Usage
+      %   torque = ibeam.torque(...)
+      %   [tx, ty, tz] = ibeam.torque(...)
+      
+      % Parse inputs
+      [ibeam, sbeam, incN] = ibeam.forcetorqueParser(other, varargin{:});
 
       % Get the abpq terms for the calculation
-      [a, b, p, q, ...
+      [a, b, p, q, n, m, ...
         anp1, bnp1, pnp1, qnp1, ...
         amp1, bmp1, pmp1, qmp1, ...
         anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
-        anp1mm1, anp1mm1, anp1mm1, anp1mm1] = ...
-      ott.bsc.Bsc.find_abpq_force_terms(ibeam, sbeam);
+        anp1mm1, bnp1mm1, pnp1mm1, qnp1mm1] = ...
+      ibeam.find_abpq_force_terms(sbeam);
 
       Cz=m./n./(n+1).*(-(a).*conj(a)+conj(q).*(q)-(b).*conj(b)+conj(p).*(p));
       Dz=-2./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ...
@@ -2085,44 +1948,74 @@ classdef Bsc
       sxy=sum(Cxy+Dxy);
       sy=real(sxy);
       sx=imag(sxy);
-
-      % Combine the results if incoherent
-      if strcmpi(ip.Results.combine, 'incoherent')
-        sx = sum(sx, 2);
-        sy = sum(sy, 2);
-        sz = sum(sz, 2);
+      
+      % Ensure things are full
+      sx = full(sx);
+      sy = full(sy);
+      sz = full(sz);
+      
+      % Combine incoherent beams
+      if incN > 1
+        sx = sum(reshape(sx, incN, []), 1);
+        sy = sum(reshape(sy, incN, []), 1);
+        sz = sum(reshape(sz, incN, []), 1);
       end
 
       % Package output
       if nargout == 3
-        varargout{1} = sx;
-        varargout{2} = sy;
-        varargout{3} = sz;
+        varargout{1:3} = {sx, sy, sz};
       else
         varargout{1} = [sx; sy; sz];
       end
     end
 
     function [sbeam, beam] = scatter(beam, tmatrix, varargin)
-      %SCATTER scatter a beam using a T-matrix
+      % Calculate the beam scattered by a T-matrix
       %
-      % [sbeam, beam] = SCATTER(beam, tmatrix) scatters the beam
-      % returning the scattered beam, sbeam, and the unscattered
-      % but possibly translated beam truncated to tmatrix.Nmax + 1.
+      % Usage
+      %   [sbeam, beam] = beam.scatter(tmatrix) scatters the beam
+      %   returning the scattered beam ``sbeam`` and the unscattered
+      %   but possibly translated beam ``beam`` truncated to
+      %   ``tmatrix.Nmax + 1``.
       %
-      % SCATTER(..., 'position', xyz) applies a translation to the beam
-      % before the beam is scattered by the particle.
+      % Optional named arguments
+      %   - position (3xN numeric) translation applied to the beam
+      %     before the beam is scattered by the particle.  Default: ``[]``.
       %
-      % SCATTER(..., 'rotation', R) applies a rotation to the beam,
-      % calculates the scattered beam and applies the inverse rotation,
-      % effectively rotating the particle.
-
-      % TODO: Support for multiple rotations or translations
-
+      %   - rotation (3x3N numeric) rotation spplied to the beam,
+      %     calculates the scattered beam and applies the inverse rotation,
+      %     effectively rotating the particle.  Default: ``[]``.
+      %
+      % If both position and rotation are present, the translation is
+      % applied first, followed by the rotation.
+      % If both position and rotation are arrays, they must have the same
+      % number of locations.
+      
       p = inputParser;
       p.addParameter('position', []);
       p.addParameter('rotation', []);
+      p.addParameter('combine', []);
       p.parse(varargin{:});
+      
+      % Combine the beams if coherent (nothing to do for incoherent)
+      if strcmpi(p.Results.combine, 'coherent')
+        beam = sum(beam);
+      end
+      
+      % Check if we need to calculate multiple scatters
+      if size(p.Results.position, 2) > 1 || size(p.Results.rotation, 2) > 3
+        [sbeam, beam] = ott.utils.prxfun(...
+            @(varargin) beam.scatter(tmatrix, varargin{:}), 1, ...
+            'position', p.Results.position, ...
+            'rotation', p.Results.rotation, ...
+            'zeros', @(x) repmat(beam, x));
+        
+        % Join outputs (convert from beam arrays to combined beams)
+        sbeam = ott.optics.vswf.bsc.Bsc().append(sbeam);
+        beam = ott.optics.vswf.bsc.Bsc().append(beam);
+        
+        return;
+      end
 
       % Determine the maximum tmatrix.Nmax(2) and check type
       maxNmax1 = 0;
@@ -2186,7 +2079,7 @@ classdef Bsc
       end
 
       % Calculate the resulting beams
-      sbeam = ott.Bsc();
+      sbeam = ott.optics.vswf.bsc.Bsc();
       for ii = 1:numel(tmatrix)
         sbeam = sbeam.append(tmatrix(ii).data * rbeam);
       end
@@ -2328,6 +2221,142 @@ classdef Bsc
       %
       % Useful when generating beams using translations.
       beam.dz = 0.0;
+    end
+  end
+  
+  methods (Hidden)
+    function [a, b, p, q, n, m, ...
+      anp1, bnp1, pnp1, qnp1, ...
+      amp1, bmp1, pmp1, qmp1, ...
+      anp1mp1, bnp1mp1, pnp1mp1, qnp1mp1, ...
+      anp1mm1, bnp1mm1, pnp1mm1, qnp1mm1] = ...
+    find_abpq_force_terms(ibeam, sbeam)
+      % Find the terms required for force/torque calculations
+      %
+      % From forcetorque function in OTTv1
+
+      % Ensure beams are the same size
+      if ibeam.Nmax > sbeam.Nmax
+        sbeam.Nmax = ibeam.Nmax;
+      elseif ibeam.Nmax < sbeam.Nmax
+        ibeam.Nmax = sbeam.Nmax;
+      end
+      
+      % Ensure the beam is incoming-outgoing
+      sbeam = sbeam.totalField(ibeam);
+
+      % Get the relevent beam coefficients
+      [a, b] = ibeam.getCoefficients();
+      [p, q] = sbeam.getCoefficients();
+      [n, m] = ibeam.getModeIndices();
+
+      nmax=ibeam.Nmax;
+
+      b=1i*b;
+      q=1i*q;
+
+      addv=zeros(2*nmax+3,1);
+
+      at=[a;repmat(addv, 1, size(a, 2))];
+      bt=[b;repmat(addv, 1, size(b, 2))];
+      pt=[p;repmat(addv, 1, size(p, 2))];
+      qt=[q;repmat(addv, 1, size(q, 2))];
+
+      ci=ott.utils.combined_index(n,m);
+
+      %these preserve order and number of entries!
+      np1=2*n+2;
+      cinp1=ci+np1;
+      cinp1mp1=ci+np1+1;
+      cinp1mm1=ci+np1-1;
+      cimp1=ci+1;
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+      %this is for m+1... if m+1>n then we'll ignore!
+      kimp=(m>n-1);
+
+      anp1=at(cinp1, :);
+      bnp1=bt(cinp1, :);
+      pnp1=pt(cinp1, :);
+      qnp1=qt(cinp1, :);
+
+      anp1mp1=at(cinp1mp1, :);
+      bnp1mp1=bt(cinp1mp1, :);
+      pnp1mp1=pt(cinp1mp1, :);
+      qnp1mp1=qt(cinp1mp1, :);
+
+      anp1mm1=at(cinp1mm1, :);
+      bnp1mm1=bt(cinp1mm1, :);
+      pnp1mm1=pt(cinp1mm1, :);
+      qnp1mm1=qt(cinp1mm1, :);
+
+      amp1=at(cimp1, :);
+      bmp1=bt(cimp1, :);
+      pmp1=pt(cimp1, :);
+      qmp1=qt(cimp1, :);
+
+      amp1(kimp, :)=0;
+      bmp1(kimp, :)=0;
+      pmp1(kimp, :)=0;
+      qmp1(kimp, :)=0;
+
+      a=a(ci, :);
+      b=b(ci, :);
+      p=p(ci, :);
+      q=q(ci, :);
+
+    end
+    
+    function [ibeam, sbeam, incN] = forcetorqueParser(ibeam, other, varargin)
+      % Input parser for forcetorque and related methods
+      
+      ip = inputParser;
+      ip.addParameter('position', []);  % Only used for T-matrix
+      ip.addParameter('rotation', []);  % Only used for T-matrix
+      ip.addParameter('combine', []);
+      ip.parse(varargin{:});
+      
+      % Ensure we have a T-matrix
+      if isa(other, 'ott.optics.vswf.tmatrix.Tmatrix')
+        
+        % Get the number of beams (for combination)
+        % If coherent, combine before scattering
+        Nbeams = ibeam.Nbeams;
+        if strcmpi(ip.Results.combine, 'coherent')
+          ibeam = sum(ibeam);
+          Nbeams = 1;
+        end
+        
+        [sbeam, ibeam] = ibeam.scatter(other, ...
+            'position', ip.Results.position, ...
+            'rotation', ip.Results.rotation);
+      else
+        sbeam = other;
+        
+        % Get the number of beams (for combination)
+        assert(ibeam.Nbeams == 1 || ibeam.Nbeams == sbeam.Nbeams, ...
+            'Number of incident and scattered beams must be 1 or matching');
+        Nbeams = max(ibeam.Nbeams, sbeam.Nbeams);
+      end
+
+      % Handle the combine argument
+      incN = 1;
+      if isempty(ip.Results.combine) || Nbeams == 1
+        % Nothing to do
+        
+      elseif strcmpi(ip.Results.combine, 'coherent')
+        % Combine the beams before force calculation
+        ibeam = sum(ibeam);
+        sbeam = sum(sbeam);
+        
+      elseif strcmpi(ip.Results.combine, 'incoherent')
+        % Return how many terms need to be combined later
+        assert(numel(ibeam.Nbeams) == 1 ...
+            || numel(ibeam.Nbeams) == numel(sbeam.Nbeams), ...
+            'Number of incident and scattered beams must be 1 or match');
+        incN = Nbeams;
+        
+      end
     end
   end
 end

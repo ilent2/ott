@@ -1,4 +1,4 @@
-classdef BscPlane < ott.Bsc
+classdef Plane < ott.optics.vswf.bsc.Bsc
 %BscPlane representation of a plane wave in VSWF coefficients
 %
 % BscPlane properties:
@@ -23,7 +23,7 @@ classdef BscPlane < ott.Bsc
   end
 
   methods
-    function beam = BscPlane(theta, phi, varargin)
+    function beam = Plane(theta, phi, varargin)
       %BSCPLANE construct a new plane wave beam
       %
       %  BSCPLANE(theta, phi) creates a new circularly polarised plane
@@ -43,7 +43,7 @@ classdef BscPlane < ott.Bsc
       %  BSCPLANE(..., 'polarisation', [ Etheta Ephi ]) specifies
       %  the polarisation in the theta and phi directions.
 
-      beam = beam@ott.Bsc();
+      beam = beam@ott.optics.vswf.bsc.Bsc();
 
       % Parse inputs
       p = inputParser;
@@ -62,7 +62,7 @@ classdef BscPlane < ott.Bsc
 
       beam.type = 'incident';
       beam.basis = 'regular';
-      beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
+      beam.k_medium = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
 
       % If points aren't specified explicitly, use meshgrid
