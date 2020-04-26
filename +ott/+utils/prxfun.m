@@ -1,4 +1,4 @@
-function ret = prxfun(func, sz, varargin)
+function varargout = prxfun(func, sz, varargin)
 % Position-rotation expansion function
 %
 % Applies a specified function to each combination of the input
@@ -6,6 +6,9 @@ function ret = prxfun(func, sz, varargin)
 %
 % Usage
 %   ret = prxfun(func, sz, ...)
+%
+%   [ret1, ret2, ...] = prxfun(func, sz, ...)
+%   Returns multiple arguments.  Requires func to return multiple results.
 %
 % Parameters
 %   - func (function_handle) -- The function to call for each combination
@@ -44,39 +47,53 @@ assert((size(rotation, 1) == 0 || size(rotation, 1) == 3) ...
     'Position must be empty or be 3x3N matrix');
 
 % Get amount of work
-Nposition = max(size(position, 2), 1);
-Nrotation = max(size(rotation, 2), 1)/3;
+Nposition = size(position, 2);
+Nrotation = size(rotation, 2)/3;
 Nwork = max(Nposition, Nrotation);
 
 % Check size of work matches
-assert(Nposition == Nrotation || Nposition == 1 || Nrotation == 1, ...
-    'Length of position/rotation must be scalar or equal');
+assert(Nposition == Nrotation || Nposition == 0 || Nrotation == 0 ...
+    || Nposition == 1 || Nrotation == 1, ...
+    'Length of position/rotation must be empty, scalar or equal');
 
-ret = zeros([sz, Nwork]);
+% If there is no work, just call the function
+if Nwork == 0
+  [varargout{1:nargout}] = func('position', [], 'rotation', []);
+  return
+end
+
+% Allocate memory for output(s)
+varargout = repmat({zeros([sz, Nwork])}, 1, nargout);
+
 epw = prod(sz);
 
 for ii = 1:Nwork
 
   % Get the position
-  if Nposition == 1
+  if Nposition == 1 || Nposition == 0
     our_position = position;
   else
     our_position = position(:, ii);
   end
 
   % Get the rotation
-  if Nrotation == 1
+  if Nrotation == 1 || Nrotation == 0
     our_rotation = rotation;
   else
     our_rotation = rotation(:, (1:3) + (ii-1)*3);
   end
 
   % Calculate the work
-  ret((1:epw) + (ii-1)*epw) = func('position', our_position, ...
+  func_outputs = {};
+  [func_outputs{1:nargout}] = func('position', our_position, ...
       'rotation', our_rotation);
+  for jj = 1:length(func_outputs)
+    varargout{jj}((1:epw) + (ii-1)*epw) = func_outputs{jj};
+  end
 
   if ~isempty(p.Results.progress)
     p.Results.progress(ii, Nwork);
   end
 end
+
 
