@@ -79,7 +79,7 @@ classdef Tmatrix
       p.parse(varargin{:});
 
       % Parse k_medium
-      k_medium = ott.Tmatrix.parser_k_medium(p, 2.0*pi);
+      k_medium = ott.optics.vswf.tmatrix.Tmatrix.parser_k_medium(p, 2.0*pi);
       
       % Get a shape object from the inputs
       if ischar(shape) && ~isempty(p.Results.parameters)
@@ -182,7 +182,7 @@ classdef Tmatrix
       p.parse(varargin{:});
 
       % Parse k_medium
-      k_medium = ott.Tmatrix.parser_k_medium(p, 2.0*pi);
+      k_medium = ott.optics.vswf.tmatrix.Tmatrix.parser_k_medium(p, 2.0*pi);
 
       % Get a shape object from the inputs
       if ischar(shape) && ~isempty(p.Results.parameters)
@@ -195,21 +195,21 @@ classdef Tmatrix
       % Call the appropriate class to do the work
       method = p.Results.method;
       if isempty(method)
-        method = ott.Tmatrix.defaultMethod(shape, ...
+        method = ott.optics.vswf.tmatrix.Tmatrix.defaultMethod(shape, ...
           'method_tol', p.Results.method_tol, ...
           'k_medium', k_medium);
       end
       switch method
         case 'mie'
-          tmatrix = ott.TmatrixMie.simple(shape, varargin{:});
+          tmatrix = ott.optics.vswf.tmatrix.Mie.simple(shape, varargin{:});
         case 'smarties'
-          tmatrix = ott.TmatrixSmarties.simple(shape, varargin{:});
+          tmatrix = ott.optics.vswf.tmatrix.Smarties.simple(shape, varargin{:});
         case 'pm'
-          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
+          tmatrix = ott.optics.vswf.tmatrix.Pm.simple(shape, varargin{:});
         case 'dda'
-          tmatrix = ott.TmatrixDda.simple(shape, varargin{:});
+          tmatrix = ott.optics.vswf.tmatrix.Dda.simple(shape, varargin{:});
         case 'ebcm'
-          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
+          tmatrix = ott.optics.vswf.tmatrix.Ebcm.simple(shape, varargin{:});
         otherwise
           error('Unsupported method specified');
       end
@@ -299,8 +299,8 @@ classdef Tmatrix
       % default is the default value for k_medium;
 
       % Run the original parsers with default arguments
-      km = ott.Tmatrix.parser_k_medium(p, []);
-      kp = ott.Tmatrix.parser_k_particle(p, []);
+      km = ott.optics.vswf.tmatrix.Tmatrix.parser_k_medium(p, []);
+      kp = ott.optics.vswf.tmatrix.Tmatrix.parser_k_particle(p, []);
 
       % If we don't yet have any information, set km from default
       if isempty(km) && isempty(kp)
@@ -585,7 +585,7 @@ classdef Tmatrix
 
     function sbeam = mtimes(tmatrix,ibeam)
       %MTIMES provide T-matrix multiplication overload
-      if isa(ibeam, 'ott.Bsc')
+      if isa(ibeam, 'ott.optics.vswf.bsc.Bsc')
         sbeam = ibeam.scatter(tmatrix);
       else
         % Provide default matrix multiplication

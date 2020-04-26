@@ -2,16 +2,47 @@ function tests = tmatrixmie
   tests = functiontests(localfunctions);
 end
 
-function testConstruct(testCase)
+function setupOnce(testCase)
+  addpath('../../../../');
+end
 
-  addpath('../');
+function testSimple(testCase)
 
-  % Simple sphere
-  Tsimple = ott.TmatrixMie(1.0, 'index_relative', 1.2);
+  index_relative = 1.2;
+  radius = 1.0;
 
-  % Layered sphere
-  Tsimple = ott.TmatrixMie([0.5, 1.0], 'index_relative', [1.4, 1.2]);
+  T = ott.optics.vswf.tmatrix.Mie(radius, 'index_relative', index_relative);
+  
+  % Check all getters
+  testCase.verifyEqual(T.radius, 1.0, 'r');
+  testCase.verifyEqual(T.permittivity_relative, 1.44, 'eps_r');
+  testCase.verifyEqual(T.permeability_relative, 1.0, 'mu_r');
+  testCase.verifyEqual(T.permittivity_medium, 1.0, 'eps_m');
+  testCase.verifyEqual(T.permeability_medium, 1.0, 'mu_m');
+  testCase.verifyEqual(T.wavelength_medium, 1.0, 'lambda');
+  testCase.verifyEqual(T.index_relative, 1.2, 'n_r');
+  testCase.verifyEqual(T.index_medium, 1.0, 'n_m');
+  testCase.verifyEqual(T.index_particle, 1.2, 'n_p');
+  testCase.verifyEqual(T.wavenumber_medium, 2*pi, 'k_m');
+  testCase.verifyEqual(T.wavenumber_particle, 2*pi.*1.2, 'k_p');
+  testCase.verifyEqual(T.permittivity_particle, 1.44, 'eps_particle');
+  testCase.verifyEqual(T.permeability_particle, 1, 'mu_particle');
+  testCase.verifyEqual(T.wavelength_particle, 1.0 ./ 1.2, 'wavelength');
+  testCase.verifyEqual(T.Nmax, [12, 12], 'Nmax');
 
+end
+
+function testLayered(testCase)
+
+  radii = [0.5, 1.0];
+  indexes = [1.4, 1.2];
+
+  T = ott.optics.vswf.tmatrix.Mie(radii, 'index_relative', indexes);
+  
+  testCase.verifyEqual(T.index_relative, indexes, ...
+    'Index_relative not set correctly');
+  testCase.verifyEqual(T.radius, radii, ...
+    'Radius not set correctly');
 end
 
 function testShrink(testCase)
@@ -19,35 +50,30 @@ function testShrink(testCase)
   % A test case to check if shrinking the Nmax after
   % constructing the layered sphere produces a similar force/torque
 
-  addpath('../');
-
   % Generate the layered spheres
-  T0 = ott.TmatrixMie([0.5, 1.0], 'index_relative', [1.4, 1.2], ...
+  import ott.optics.vswf.*;
+  T0 = tmatrix.Mie([0.5, 1.0], 'index_relative', [1.4, 1.2], ...
       'shrink', false);
-  T1 = ott.TmatrixMie([0.5, 1.0], 'index_relative', [1.4, 1.2], ...
+  T1 = tmatrix.Mie([0.5, 1.0], 'index_relative', [1.4, 1.2], ...
       'shrink', true);
+    
+  testCase.verifyNotEqual(T0.Nmax, T1.Nmax, 'Nmaxes are equal');
 
   % Generate a beam for testing
-  beam = ott.BscPmGauss('power', 1.0);
-
-  f0 = ott.forcetorque(beam, T0);
-  f1 = ott.forcetorque(beam, T1);
-
-  import matlab.unittest.constraints.IsEqualTo;
-  import matlab.unittest.constraints.AbsoluteTolerance;
-  tol = 1.0e-6;
-
-  testCase.verifyThat(f1, IsEqualTo(f0, ...
-      'Within', AbsoluteTolerance(tol)), ...
-      'Shrinking layered T-matrix does not work');
-
+  beam = bsc.PmGauss('power', 1.0);
+  
+  % Calculate force
+  f0 = beam.force(T0);
+  f1 = beam.force(T1);
+  
+  testCase.verifyEqual(f1, f0, 'AbsTol', 1.0e-6, 'Shrinking failed');
 end
 
 function testFields(testCase)
 
   % Test internal fields for non-contrast particle
-  T = ott.TmatrixMie(0.5, 'index_relative', 1.0, 'internal', true);
-  beam = ott.BscPmGauss('power', 1.0);
+  T = ott.optics.vswf.tmatrix.Mie(0.5, 'index_relative', 1.0, 'internal', true);
+  beam = ott.optics.vswf.bsc.PmGauss('power', 1.0);
   
   sbeam = T * beam;
   
@@ -65,8 +91,8 @@ function testFields(testCase)
       'Internal field has incorrect value');
     
   % Test external fields for non-contrast particle
-  T = ott.TmatrixMie(0.5, 'index_relative', 1.0, 'internal', false);
-  beam = ott.BscPmGauss('power', 1.0);
+  T = ott.optics.vswf.tmatrix.Mie(0.5, 'index_relative', 1.0, 'internal', false);
+  beam = ott.optics.vswf.bsc.PmGauss('power', 1.0);
   
   sbeam = T * beam;
   
@@ -83,9 +109,9 @@ function testFields(testCase)
   % corss(n, Ei - Ee) = 0 and dot(n, Ei.*n_particle^2 - Ee) = 0
   R = 0.5;
   nrel = 1.2;
-  Te = ott.TmatrixMie(R, 'index_relative', nrel, 'internal', false);
-  Ti = ott.TmatrixMie(R, 'index_relative', nrel, 'internal', true);
-  beam = ott.BscPmGauss('power', 1.0);
+  Te = ott.optics.vswf.tmatrix.Mie(R, 'index_relative', nrel, 'internal', false);
+  Ti = ott.optics.vswf.tmatrix.Mie(R, 'index_relative', nrel, 'internal', true);
+  beam = ott.optics.vswf.bsc.PmGauss('power', 1.0);
   
   % Scatter the beams
   sbeam = Te * beam;
