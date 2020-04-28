@@ -74,6 +74,10 @@ classdef GaussianParaxial < ott.optics.beam.Beam & ott.optics.beam.Gaussian
 
       E = E0 .* A;
       H = E0 .* beam.index_medium .* A;
+
+      % Package output
+      E = ott.utils.FieldVector(xyz, E, 'cartesian');
+      H = ott.utils.FieldVector(xyz, H, 'cartesian');
     end
 
     function E = efieldInternal(beam, xyz)

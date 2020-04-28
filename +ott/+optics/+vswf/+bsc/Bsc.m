@@ -510,9 +510,14 @@ classdef Bsc < ott.optics.beam.Beam
 
       E=[zeros(size(Etheta)),Etheta,Ephi].';
       H=[zeros(size(Htheta)),Htheta,Hphi].';
+      rtp = [zeros(size(Etheta)), theta(:), phi(:)].';
 
       % SI-ify units of H
       H = H * -1i;
+
+      % Package output
+      E = ott.utils.FieldVector(rtp, E, 'spherical');
+      H = ott.utils.FieldVector(rtp, H, 'spherical');
     end
 
     function [E, H, data] = emFieldRtp(beam, rtp, varargin)
@@ -538,7 +543,6 @@ classdef Bsc < ott.optics.beam.Beam
       p.addParameter('calcH', nargout >= 2);
       p.addParameter('saveData', false);
       p.addParameter('data', []);
-      p.addParameter('coord', 'cartesian');
       p.parse(varargin{:});
 
       % Scale the locations by the wave number (unitless coordinates)
@@ -561,20 +565,9 @@ classdef Bsc < ott.optics.beam.Beam
       E = E.';
       H = H.';
 
-      % Convert from spherical to Cartesian coordinates
-      switch p.Results.coord
-        case 'cartesian'
-          E = ott.utils.rtpv2xyzv(E,rtp);
-          E(isnan(E)) = 0;
-          H = ott.utils.rtpv2xyzv(H,rtp);
-          H(isnan(H)) = 0;
-
-        case 'spherical'
-          % Nothing to do
-
-        otherwise
-          error('Unknown coordinate system for output');
-      end
+      % Package output
+      E = ott.utils.FieldVector(rtp, E, 'spherical');
+      H = ott.utils.FieldVector(rtp, H, 'spherical');
     end
 
     function [E, H] = ehfield(beam, xyz)
@@ -811,8 +804,8 @@ classdef Bsc < ott.optics.beam.Beam
         'calcE', true, 'calcH', false);
       
       % Generate the requested field
-      dataout = beam.VisualisationDataRtp(p.Results.field, ...
-        [itheta, iphi, ones(size(iphi))].', ioutputE);
+      
+      dataout = beam.VisualisationData(p.Results.field, ioutputE);
 
       % Pack the result into the images
       imout = zeros(p.Results.size);

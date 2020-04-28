@@ -91,6 +91,9 @@ classdef GaussianDavis5 < ott.optics.beam.Beam & ott.optics.beam.Gaussian
       E = [Ex; Ey; Ez];
       H = [Hx; Hy; Hz];
 
+      % Package output
+      E = ott.utils.FieldVector(xyz, E, 'cartesian');
+      H = ott.utils.FieldVector(xyz, H, 'cartesian');
     end
 
     function E = efieldInternal(beam, xyz)

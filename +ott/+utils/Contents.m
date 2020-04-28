@@ -34,6 +34,7 @@
 %   xyz2rtp                        - coordinate transformation from cartesian to spherical
 %   xyzv2rtpv                      - cartiesian to spherical vector field conversion
 %   rotate_3x3tensor               - rotate a 3x3 tensor or create a 3x3 tensor
+%   FieldVector                    - Class encapsulating vector fields
 %
 % Sub-packages
 %   +polarizability                - Polarizability calculation methods for DDA

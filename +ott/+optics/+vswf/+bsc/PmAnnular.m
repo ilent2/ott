@@ -152,6 +152,7 @@ classdef PmAnnular < ott.optics.vswf.bsc.Pointmatch
         
         % Beam object supplied (no oam)
         [e_field, ~] = p.Results.profile.farfield(theta, phi);
+        e_field = e_field.vrtp;
         
         % Remove parts outside annular
         e_field(:, theta < min(anglez)) = 0;

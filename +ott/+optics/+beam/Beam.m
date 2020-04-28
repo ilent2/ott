@@ -45,60 +45,18 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
   end
 
   methods (Static)
-    function data = VisualisationDataRtp(field_type, rtp, vrtp)
+    function data = VisualisationData(field_type, field)
       % Helper to generate the visualisation data output.
       % This function is not intended to be called directly, instead
       % see :meth:`visualise` or :meth:`visualiseFarfield`.
       %
       % Usage
-      %   data = VisualisationDataRtp(field_type, rtp, vrtp)
-      %
-      % For more details, see :meth:`VisualisationData`.
-
-      assert(size(rtp, 1) == 3, 'rtp must be 3xN matrix');
-      assert(size(vrtp, 1) == 3, 'vrtp must be 3xN matrix');
-
-      % Calculate other coordinates required for VisData
-      [vxyz, xyz] = ott.utils.rtpv2xyzv(vrtp, rtp);
-
-      % Defer work
-      import ott.optics.beam.Beam;
-      data = Beam.VisualisationData(field_type, xyz, rtp, vxyz, vrtp);
-    end
-
-    function data = VisualisationDataXyz(field_type, xyz, vxyz)
-      % Helper to generate the visualisation data output.
-      % This function is not intended to be called directly, instead
-      % see :meth:`visualise` or :meth:`visualiseFarfield`.
-      %
-      % Usage
-      %   data = VisualisationDataXyz(field_type, rtp, vrtp)
-      %
-      % For more details, see :meth:`VisualisationData`.
-
-      assert(size(xyz, 1) == 3, 'xyz must be 3xN matrix');
-      assert(size(vxyz, 1) == 3, 'vxyz must be 3xN matrix');
-
-      % Calculate other coordinates required for VisData
-      [vrtp, rtp] = ott.utils.xyzv2rtpv(vxyz, xyz);
-
-      % Defer work
-      import ott.optics.beam.Beam;
-      data = Beam.VisualisationData(field_type, xyz, rtp, vxyz, vrtp);
-    end
-
-    function data = VisualisationData(field_type, xyz, rtp, vxyz, vrtp)
-      % Helper to generate the visualisation data output.
-      % This function is not intended to be called directly, instead
-      % see :meth:`visualise` or :meth:`visualiseFarfield`.
-      %
-      % Usage
-      %   VisualisationData(field_type, xyz, rtp, vxyz, vrtp)
-      %   Takes a field_type string, the coordinates (either xyz or rtp),
-      %   and the data values (either vxyz or vrtp).
+      %   VisualisationData(field_type, fieldvector)
+      %   Takes a field_type string and a :class:`ott.utils.FieldVector`
+      %   with the coordinates and field vectors.
       %
       % Parameters
-      %   - xyz, rtp, vxyz, vrtp (3xN numeric) -- Field vector values
+      %   - fieldvector (3xN FieldVector) -- Field vector values
       %     and coordinate locations.
       %
       %   - field_type -- (enum) Type of field to calculate.
@@ -112,75 +70,74 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %     - Abs(Er), Abs(Et), Abs(Ep), Abs(Ex), Abs(Ey), Abs(Ez)
       %     - Arg(Er), Arg(Et), Arg(Ep), Arg(Ex), Arg(Ey), Arg(Ez)
 
-      assert(size(rtp, 1) == 3, 'rtp must be 3xN matrix');
-      assert(size(vrtp, 1) == 3, 'vrtp must be 3xN matrix');
-      assert(size(xyz, 1) == 3, 'xyz must be 3xN matrix');
-      assert(size(vxyz, 1) == 3, 'vxyz must be 3xN matrix');
+      assert(size(field, 1) == 3, 'fieldvector must be 3xN matrix');
+      assert(isa(field, 'ott.utils.FieldVector'), ...
+          'fieldvector must be a instance of FieldVector');
 
       % Generate the requested field
       switch field_type
         case 'irradiance'
-          data = sqrt(sum(abs(vxyz).^2, 1));
+          data = sqrt(sum(abs(field.vxyz).^2, 1));
         case 'E2'
-          data = sum(abs(vxyz).^2, 1);
+          data = sum(abs(field.vxyz).^2, 1);
         case 'sum(Abs(E))'
-          data = sum(abs(vxyz), 1);
+          data = sum(abs(field.vxyz), 1);
 
         case 'Re(Er)'
-          data = real(vrtp(1, :));
+          data = real(field.vrtp(1, :));
         case 'Re(Et)'
-          data = real(vrtp(2, :));
+          data = real(field.vrtp(2, :));
         case 'Re(Ep)'
-          data = real(vrtp(3, :));
+          data = real(field.vrtp(3, :));
 
         case 'Re(Ex)'
-          data = real(vxyz(1, :));
+          data = real(field.vxyz(1, :));
         case 'Re(Ey)'
-          data = real(vxyz(2, :));
+          data = real(field.vxyz(2, :));
         case 'Re(Ez)'
-          data = real(vxyz(3, :));
+          data = real(field.vxyz(3, :));
 
         case 'Abs(Er)'
-          data = abs(vrtp(1, :));
+          data = abs(field.vrtp(1, :));
         case 'Abs(Et)'
-          data = abs(vrtp(2, :));
+          data = abs(field.vrtp(2, :));
         case 'Abs(Ep)'
-          data = abs(vrtp(3, :));
+          data = abs(field.vrtp(3, :));
 
         case 'Abs(Ex)'
-          data = abs(vxyz(1, :));
+          data = abs(field.vxyz(1, :));
         case 'Abs(Ey)'
-          data = abs(vxyz(2, :));
+          data = abs(field.vxyz(2, :));
         case 'Abs(Ez)'
-          data = abs(vxyz(3, :));
+          data = abs(field.vxyz(3, :));
 
         case 'Arg(Er)'
-          data = angle(vrtp(1, :));
+          data = angle(field.vrtp(1, :));
         case 'Arg(Et)'
-          data = angle(vrtp(2, :));
+          data = angle(field.vrtp(2, :));
         case 'Arg(Ep)'
-          data = angle(vrtp(3, :));
+          data = angle(field.vrtp(3, :));
 
         case 'Arg(Ex)'
-          data = angle(vxyz(1, :));
+          data = angle(field.vxyz(1, :));
         case 'Arg(Ey)'
-          data = angle(vxyz(2, :));
+          data = angle(field.vxyz(2, :));
         case 'Arg(Ez)'
-          data = angle(vxyz(3, :));
+          data = angle(field.vxyz(3, :));
 
         case 'Er'
-          data = vrtp(1, :);
+          data = field.vrtp(1, :);
         case 'Et'
-          data = vrtp(2, :);
+          data = field.vrtp(2, :);
         case 'Ep'
-          data = vrtp(3, :);
+          data = field.vrtp(3, :);
 
         case 'Ex'
-          data = vxyz(1, :);
+          data = field.vxyz(1, :);
         case 'Ey'
-          data = vxyz(2, :);
+          data = field.vxyz(2, :);
         case 'Ez'
-        data = vxyz(3, :);
+          data = field.vxyz(3, :);
 
         otherwise
           error('OTT:BSC:GetVisualisationData:unknown_field_type', ...
@@ -314,7 +271,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       rtp = beam.paraxial2farfield(nxyz, varargin{:});
 
       % Calculate fields
-      E = beam.hfarfield(rtp);
+      H = beam.hfarfield(rtp);
     end
 
     function [E, H] = ehparaxial(beam, nxyz, varargin)
@@ -417,7 +374,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
         Exyz = beam(ii).efield(our_xyz);
 
         % Generate visualisation and store output
-        visdata = beam.VisualisationDataXyz(p.Results.field, our_xyz, Exyz);
+        visdata = beam.VisualisationData(p.Results.field, Exyz);
 
         % Create layer from masked data
         layer = zeros(sz);
@@ -568,7 +525,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       end
     end
 
-    function rtp = paraxial2farfield(nxyz, varargin{:})
+    function rtp = paraxial2farfield(nxyz, varargin)
       % Convert from paraxial coordinates to far-field coordinates
       %
       % Usage
