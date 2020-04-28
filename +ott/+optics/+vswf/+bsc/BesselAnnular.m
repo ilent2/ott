@@ -76,7 +76,7 @@ classdef BscBesselAnnular < ott.Bsc
 
       verbose = p.Results.verbose;
       Nmax = p.Results.Nmax;
-      beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
+      beam.wavenumber = ott.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
 
       if isempty(p.Results.index_medium)
@@ -113,7 +113,7 @@ classdef BscBesselAnnular < ott.Bsc
       
       % Generate bessel beams
       beams = ott.BscBessel(Nmax, theta, ...
-          'k_medium', beam.k_medium, ...
+          'k_medium', beam.wavenumber, ...
           'polarisation', polarisation, ...
           'lmode', p.Results.oam);
       

@@ -84,7 +84,7 @@ classdef PmAnnular < ott.optics.vswf.bsc.Pointmatch
 
       verbose = p.Results.verbose;
       Nmax = p.Results.Nmax;
-      beam.k_medium = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
+      beam.wavenumber = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
 
       % Handle default argument for invert_coefficient_matrix

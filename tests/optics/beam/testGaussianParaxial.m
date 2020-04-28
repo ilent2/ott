@@ -20,6 +20,6 @@ function testVisualise(testCase)
   
   h = figure();
   beam.visualise();
-%   close(h);
+  close(h);
   
 end

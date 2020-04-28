@@ -1,5 +1,6 @@
-classdef Bsc
-%Bsc abstract class representing beam shape coefficients
+classdef Bsc < ott.optics.beam.Beam
+% Class representing beam shape coefficients.
+% Inherits from :class:`ott.optics.beam.Beam`.
 %
 % Any units can be used for the properties as long as they are
 % consistent in all specified properties.  Calculated quantities
@@ -10,14 +11,14 @@ classdef Bsc
 %   - b           --  Beam shape coefficients b vector
 %   - basis       --  VSWF beam basis (incoming, outgoing or regular)
 %   - omega       --  Angular frequency of beam [2*pi/T]
-%   - k_medium    --  Wavenumber in medium [2*pi/L]
+%   - wavelength  --  Wavelength of beam [L]
 %   - dz          --  Absolute cumulative distance the beam has moved
 %
 % Dependent properties
 %   - Nmax        --  Truncation number for VSWF coefficients
 %   - power       --  Power of the beam [M*L^2/S^3]
 %   - Nbeams      --  Number of beams in this Bsc object
-%   - wavelength  --  Wavelength of beam [L]
+%   - wavenumber  --  Wavenumber in the medium [2*pi/L]
 %   - speed       --  Speed of beam in medium [L/T]
 %
 % Methods
@@ -52,8 +53,6 @@ classdef Bsc
     a           % Beam shape coefficients a vector
     b           % Beam shape coefficients b vector
 
-    k_medium    % Wavenumber in medium
-
     dz          % Absolute cumulative distance the beam has moved
 
     % These can't be tracked using Matrix translation/rotations
@@ -68,10 +67,8 @@ classdef Bsc
 
   properties (Dependent)
     Nmax        % Truncation number for VSWF coefficients
-    power       % Power of the beam
     Nbeams      % Number of beams in this Bsc object
 
-    wavelength  % Wavelength of beam
     speed       % Speed of beam in medium
   end
 
@@ -126,135 +123,8 @@ classdef Bsc
         error('Unable to determine k_medium from inputs');
       end
     end
-    
-    function data = GetVisualisationData(field_type, xyz, rtp, vxyz, vrtp)
-      % Helper to generate the visualisation data output.
-      % This function is not intended to be called directly, instead
-      % see :meth:`visualise` or :meth:`visualiseFarfield`.
-      %
-      % Usage
-      %   GetVisualisationData(field_type, xyz, rtp, vxyz, vrtp)
-      %   Takes a field_type string, the coordinates (either xyz or rtp),
-      %   and the data values (either vxyz or vrtp).
-      %
-      % Parameters
-      %   - xyz, rtp, vxyz, vrtp -- (Nx3 numeric) Coordinates in a
-      %     suitable form to be passed to `ott.utils.xyz2rtp` and similar
-      %     functions.  Pass empty arrays for unused values.
-      %   - field_type -- (enum) Type of field to calculate.
-      %     Supported types include:
-      %       - 'irradiance'  -- :math:`\sqrt{Ex^2 + Ey^2 + Ez^2}`
-      %       - 'E2' -- :math:`Ex^2 + Ey^2 + Ez^2`
-      %       - 'Sum(Abs(E))' -- :math:`|Ex| + |Ey| + |Ez|`
-      %
-      %       - Re(Er), Re(Et), Re(Ep), Re(Ex), Re(Ey), Re(Ez)
-      %       - Abs(Er), Abs(Et), Abs(Ep), Abs(Ex), Abs(Ey), Abs(Ez)
-      %       - Arg(Er), Arg(Et), Arg(Ep), Arg(Ex), Arg(Ey), Arg(Ez)
-      
-      assert(size(xyz, 1) == 3 || size(xyz, 1) == 0, ...
-        'xyz must be Nx3 matrix');
-      assert(size(vxyz, 1) == 3 || size(vxyz, 1) == 0, ...
-        'vxyz must be Nx3 matrix');
-      assert(size(rtp, 1) == 3 || size(rtp, 1) == 0, ...
-        'rtp must be Nx3 matrix');
-      assert(size(vrtp, 1) == 3 || size(vrtp, 1) == 0, ...
-        'vrtp must be Nx3 matrix');
-      
-      % Get the coordinates
-      if isempty(xyz) && ~isempty(rtp)
-        xyz = ott.utils.rtp2xyz(rtp);
-      elseif isempty(rtp) && ~isempty(xyz)
-        rtp = ott.utils.xyz2rtp(xyz);
-      elseif isempty(rpt) && isempty(xyz)
-        error('OTT:BSC:GetVisualisationData:no_coords', ...
-          'Must supply coordinates');
-      end
-      
-      % Get the data
-      if isempty(vxyz) && ~isempty(vrtp)
-        vxyz = ott.utils.rtpv2xyzv(vrtp, rtp);
-      elseif isempty(vrtp) && ~isempty(vxyz)
-        vrtp = ott.utils.xyzv2rtpv(vxyz, xyz);
-      elseif isempty(vrtp) && isempty(vxyz)
-        error('OTT:BSC:GetVisualisationData:no_data', ...
-          'Must supply data');
-      else
-        error('OTT:BSC:GetVisualisationData:too_much_data', ...
-          'Must supply only one data variable');
-      end
-      
-      % Generate the requested field
-      if strcmpi(field_type, 'irradiance')
-        data = sqrt(sum(abs(vxyz).^2, 1));
-      elseif strcmpi(field_type, 'E2')
-        data = sum(abs(vxyz).^2, 1);
-      elseif strcmpi(field_type, 'Sum(Abs(E))')
-        data = sum(abs(vxyz), 1);
-        
-      elseif strcmpi(field_type, 'Re(Er)')
-        data = real(vrtp(1, :));
-      elseif strcmpi(field_type, 'Re(Et)')
-        data = real(vrtp(2, :));
-      elseif strcmpi(field_type, 'Re(Ep)')
-        data = real(vrtp(3, :));
-        
-      elseif strcmpi(field_type, 'Re(Ex)')
-        data = real(vxyz(1, :));
-      elseif strcmpi(field_type, 'Re(Ey)')
-        data = real(vxyz(2, :));
-      elseif strcmpi(field_type, 'Re(Ez)')
-        data = real(vxyz(3, :));
-        
-      elseif strcmpi(field_type, 'Abs(Er)')
-        data = abs(vrtp(1, :));
-      elseif strcmpi(field_type, 'Abs(Et)')
-        data = abs(vrtp(2, :));
-      elseif strcmpi(field_type, 'Abs(Ep)')
-        data = abs(vrtp(3, :));
-        
-      elseif strcmpi(field_type, 'Abs(Ex)')
-        data = abs(vxyz(1, :));
-      elseif strcmpi(field_type, 'Abs(Ey)')
-        data = abs(vxyz(2, :));
-      elseif strcmpi(field_type, 'Abs(Ez)')
-        data = abs(vxyz(3, :));
-        
-      elseif strcmpi(field_type, 'Arg(Er)')
-        data = angle(vrtp(1, :));
-      elseif strcmpi(field_type, 'Arg(Et)')
-        data = angle(vrtp(2, :));
-      elseif strcmpi(field_type, 'Arg(Ep)')
-        data = angle(vrtp(3, :));
-        
-      elseif strcmpi(field_type, 'Arg(Ex)')
-        data = angle(vxyz(1, :));
-      elseif strcmpi(field_type, 'Arg(Ey)')
-        data = angle(vxyz(2, :));
-      elseif strcmpi(field_type, 'Arg(Ez)')
-        data = angle(vxyz(3, :));
-        
-      elseif strcmpi(field_type, 'Er')
-        data = vrtp(1, :);
-      elseif strcmpi(field_type, 'Et')
-        data = vrtp(2, :);
-      elseif strcmpi(field_type, 'Ep')
-        data = vrtp(3, :);
-        
-      elseif strcmpi(field_type, 'Ex')
-        data = vxyz(1, :);
-      elseif strcmpi(field_type, 'Ey')
-        data = vxyz(2, :);
-      elseif strcmpi(field_type, 'Ez')
-        data = vxyz(3, :);
-
-      else
-        error('OTT:BSC:GetVisualisationData:unknown_field_type', ...
-          'Unknown field type value');
-      end
-      
-    end
   end
-  
+
   methods (Access=protected)
     
     function [A, B] = translateZ_type_helper(beam, z, Nmax)
@@ -290,7 +160,7 @@ classdef Bsc
 
   methods
     function beam = Bsc(varargin)
-      %BSC construct a new beam object
+      % Construct a new beam object
       %
       % Usage
       %   beam = Bsc(a, b, basis, ...) constructs a new beam vector.
@@ -341,12 +211,12 @@ classdef Bsc
       % Copy all beam data (except coefficients) from like
       if ~isempty(like)
         beam.dz = like.dz;
-        beam.k_medium = like.k_medium;
+        beam.wavenumber = like.wavenumber;
         beam.omega = like.omega;
         beam.basis = like.basis;
       else
         beam.dz = p.Results.dz;
-        beam.k_medium = p.Results.k_medium;
+        beam.wavenumber = p.Results.k_medium;
         beam.omega = p.Results.omega;
         beam.basis = p.Results.basis;
       end
@@ -672,7 +542,7 @@ classdef Bsc
       p.parse(varargin{:});
 
       % Scale the locations by the wave number (unitless coordinates)
-      rtp(1, :) = rtp(1, :) * abs(beam.k_medium);
+      rtp(1, :) = rtp(1, :) * abs(beam.wavenumber);
 
       % Get the indices required for the calculation
       [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
@@ -705,6 +575,15 @@ classdef Bsc
         otherwise
           error('Unknown coordinate system for output');
       end
+    end
+
+    function [E, H] = ehfield(beam, xyz)
+      % Calculate E and H field
+      %
+      % Usage
+      %   [E, H] = beam.ehfield(xyz)
+      %   Calculates the fields at the specified locations (3xN matrix).
+      [E, H, data] = beam.emFieldXyz(xyz);
     end
 
     function [E, H, data] = emFieldXyz(beam, xyz, varargin)
@@ -932,8 +811,8 @@ classdef Bsc
         'calcE', true, 'calcH', false);
       
       % Generate the requested field
-      dataout = beam.GetVisualisationData(p.Results.field, [], ...
-        [itheta, iphi, ones(size(iphi))].', [], ioutputE);
+      dataout = beam.VisualisationDataRtp(p.Results.field, ...
+        [itheta, iphi, ones(size(iphi))].', ioutputE);
 
       % Pack the result into the images
       imout = zeros(p.Results.size);
@@ -967,170 +846,112 @@ classdef Bsc
       % Create a visualisation of the beam
       %
       % Usage
-      %   visualise(...) displays an image of the beam in the current
+      %   beam.visualise(...) displays an image of the beam in the current
       %   figure window.
       %
-      %   im = visualise(...) returns a image of the beam.
-      %   If the beam object contains multiple beams, returns images
-      %   for each beam.
+      %   im = beam.visualise(...) returns a image of the beam.
+      %   If the beam object is an array, returns an image for each beam.
       %
       % Optional named arguments
-      %   - 'size'    [ x, y ]    Width and height of image
-      %   - 'field'   type        Type of field to calculate
-      %   - 'axis'    ax          Axis to visualise ('x', 'y', 'z') or
-      %     a cell array with 2 or 3 unit vectors for x, y, [z].
-      %   - 'offset'  offset      Plane offset along axis (default: 0.0)
-      %   - 'range'   [ x, y ]    Range of points to visualise.
+      %   - size (2 numeric) -- Number of rows and columns in image.
+      %     Default: ``[80, 80]``.
+      %
+      %   - field (enum) -- Type of visualisation to generate, see
+      %     :meth:`VisualisationData` for valid options.
+      %     Default: ``'irradiance'``.
+      %
+      %   - axis (enum|cell) -- Describes the slice to visualise.
+      %     Can either be 'x', 'y' or 'z' for a plane perpendicular to
+      %     the x, y and z axes respectively; or a cell array with 2
+      %     or 3 unit vectors (3x1) for x, y, [z] directions.
+      %     Default: ``'z'``.
+      %
+      %   - offset (numeric) -- Plane offset along axis (default: 0.0)
+      %
+      %   - range (numeric|cell) -- Range of points to visualise.
       %     Can either be a cell array { x, y }, two scalars for
       %     range [-x, x], [-y, y] or 4 scalars [ x0, x1, y0, y1 ].
-      %   - 'mask'    func(xyz)   Mask function for regions to keep in vis
-      %   - 'combine' (enum)      If multiple beams should be treated as
-      %     'coherent' or 'incoherent' beams and their outputs added.
-      %     incoherent may only makes sense if the field is an intensity.
-      %     Default: [].
+      %     Default: ``[1, 1].*nmax2ka(Nmax)/abs(wavenumber)``.
+      %
+      %   - mask (function_handle) Describes regions to remove from the
+      %     generated image.  Function should take one argument for the
+      %     3xN field xyz field locations and return a logical array mask.
+      %     Default: ``[]``.
+      %
+      %   - axes (axes handle) -- Axes to place the visualisation in.
+      %     If empty, no visualisation is generated.
+      %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
+      %
+      %   - combine (enum|empty) -- Method to use when combining beams.
+      %     Can either be emtpy (default), 'coherent' or 'incoherent'.
+      
+      assert(numel(beam) == 1, ...
+        'Only single beam inputs supported for Bsc.visualise');
 
       p = inputParser;
-      p.addParameter('field', 'irradiance');
-      p.addParameter('size', [ 80, 80 ]);
+      p.KeepUnmatched = true;
       p.addParameter('axis', 'z');
-      p.addParameter('offset', 0.0);
-      p.addParameter('range', ...
-          [1,1]*ott.utils.nmax2ka(beam.Nmax)/abs(beam.k_medium));
-      p.addParameter('saveData', nargout == 2);
-      p.addParameter('data', []);
-      p.addParameter('mask', []);
-      p.addParameter('showVisualisation', nargout == 0);
       p.addParameter('combine', []);
+      p.addParameter('range', ...
+          [1,1].*ott.utils.nmax2ka(beam.Nmax)./abs(beam.wavenumber));
+      p.addParameter('size', []);
+      p.addParameter('plot_axes', []);
       p.parse(varargin{:});
 
-      if iscell(p.Results.range)
-        xrange = p.Results.range{1};
-        yrange = p.Results.range{2};
-        sz = [length(yrange), length(xrange)];
-      elseif length(p.Results.range) == 2
-        xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
-        yrange = linspace(-1, 1, p.Results.size(2))*p.Results.range(2);
-        sz = p.Results.size;
-      elseif length(p.Results.range) == 4
-        xrange = linspace(p.Results.range(1), p.Results.range(2), p.Results.size(1));
-        yrange = linspace(p.Results.range(3), p.Results.range(4), p.Results.size(2));
-        sz = p.Results.size;
-      else
-        error('ott:Bsc:visualise:range_error', 'Incorrect number of range arguments');
-      end
-      [xx, yy, zz] = meshgrid(xrange, yrange, p.Results.offset);
+      assert(isempty(p.Results.combine) || ...
+          any(strcmpi(p.Results.combine, {'coherent', 'incoherent'})), ...
+          'combine must be one of empty, ''coherent'' or ''incoherent''');
 
-      % Generate the xyz grid for the used requested plane
-      if ischar(p.Results.axis)
-        switch p.Results.axis
-          case 'x'
-            xyz = [zz(:), yy(:), xx(:)].';
-            alabels = {'Z', 'Y'};
-          case 'y'
-            xyz = [yy(:), zz(:), xx(:)].';
-            alabels = {'Z', 'X'};
-          case 'z'
-            xyz = [xx(:), yy(:), zz(:)].';
-            alabels = {'X', 'Y'};
-          otherwise
-            error('Unknown axis name specified');
-        end
-      elseif iscell(p.Results.axis)
-        dir1 = p.Results.axis{1}(:);
-        dir2 = p.Results.axis{2}(:);
-        if numel(p.Results.axis) == 3
-          dir3 = p.Results.axis{3}(:);
-        else
-          dir3 = cross(dir1(:), dir2(:));
-        end
-        
-        alabels = {'Direction 1', 'Direction 2'};
-        
-        xyz = dir1.*xx(:).' + dir2.*yy(:).' + dir3.*zz(:).';
-      else
-        error('axis must be character or cell array');
-      end
-      
-      if strcmpi(p.Results.combine, 'coherent')
-        % Reduce the amount of work done in emFieldXyz
+      % Get unmatched arguments
+      unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
+
+      % Combine coherent beams
+      if strcmpi(p.Results.combine, 'coherent') || beam.Nbeams == 1
         beam = sum(beam);
-      end
-      
-      imout = zeros(sz(2), sz(1), beam.Nbeams);
-      
-      % If save data is requested, this gets reused for multiple beams
-      data = p.Results.data;
-      
-      for ii = 1:beam.Nbeams
+        [varargout{1:nargout}] = visualise@ott.optics.beam.Beam(...
+            beam, unmatched{:}, 'range', p.Results.range, ...
+            'size', p.Results.size, 'axis', p.Results.axis, ...
+            'plot_axes', p.Results.plot_axes);
+      else
 
-        % Calculate the electric field
-        [E, ~, data] = beam.beam(ii).emFieldXyz(xyz, ...
-            'saveData', p.Results.saveData, 'data', data, ...
-            'calcE', true', 'calcH', false);
-
-        % Generate the requested field
-        dataout = beam.GetVisualisationData(p.Results.field, ...
-          xyz, [], E, []);
-
-        % Reshape the output
-        imout(:, :, ii) = reshape(dataout, sz(2), sz(1));
-        
-      end
-      
-      if strcmpi(p.Results.combine, 'incoherent')
-        imout = sum(imout, 3);
-      end
-
-      % Display the visualisation
-      if p.Results.showVisualisation && ismatrix(imout)
-        
-        % Apply the mask
-        if ~isempty(p.Results.mask)
-          imout(p.Results.mask(xyz)) = NaN;
+        % Separate beams into beam array
+        beam_array = beam.beam(1);
+        for ii = 2:beam.Nbeams
+          beam_array(ii) = beam.beam(ii);
         end
-        
-        imagesc(xrange, yrange, imout, 'AlphaData', ~isnan(imout));
-        xlabel(alabels{1});
-        ylabel(alabels{2});
-        axis image;
-      elseif p.Results.showVisualisation
-        warning('OTT:Bsc:visualise:too_many_beams', ...
-          ['Visualisation not shown for multiple beams\n', ...
-           '> Consider combining beams coherently or incoherently']);
+
+        % Generate the data
+        imout = visualise@ott.optics.beam.Beam(...
+            beam_array, unmatched{:}, 'range', p.Results.range, ...
+            'size', p.Results.size, 'axis', p.Results.axis, ...
+            'plot_axes', []);
+
+        % Combine incoherently
+        if strcmpi(p.Results.combine, 'incoherent')
+          imout = sum(im, 3);
+        end
+
+        % Get data for plot
+        default_sz = [80, 80];
+        [xrange, yrange, ~] = beam.visualiseGetRange(p.Results.range, ...
+            p.Results.size, default_sz);
+        [~, labels] = beam.visualiseGetXyz([], [], [], p.Results.axis);
+
+        % Call visualisation helper
+        beam.visualiseShowPlot(nargout, p.Results.plot_axes, imout, ...
+            {xrange, yrange}, labels);
+
+        % Assign outputs if requested
+        if nargout == 1
+          varargout{1} = imout;
+        end
+
       end
-      
-      % Handle outputs
-      if nargout == 1
-        varargout{1} = imout;
-      elseif nargout == 2
-        varargout{1} = imout;
-        varargout{2} = data;
-      end
-    end
-
-    function p = get.power(beam)
-      % get.power calculate the power of the beam
-      p = full(sum(abs(beam.a).^2 + abs(beam.b).^2));
-    end
-
-    function beam = set.power(beam, p)
-      % set.power set the beam power
-      beam = sqrt(p / beam.power) * beam;
-    end
-
-    function lambda = get.wavelength(beam)
-      % Get the beam wavelength
-      lambda = 2*pi/beam.k_medium;
-    end
-
-    function beam = set.wavelength(beam, lambda)
-      % Set the beam wavelength
-      beam.k_medium = 2*pi/lambda;
     end
 
     function speed = get.speed(beam)
       % Get the speed of the beam in medium
-      speed = beam.omega / beam.k_medium;
+      speed = beam.omega / beam.wavenumber;
     end
 
     function beam = set.basis(beam, basis)
@@ -1296,14 +1117,14 @@ classdef Bsc
         % Add a warning when the beam is translated outside nmax2ka(Nmax) 
         % The first time may be OK, the second time does not have enough
         % information.
-        if any(beam.dz > ott.utils.nmax2ka(beam.Nmax)./beam.k_medium)
+        if any(beam.dz > ott.utils.nmax2ka(beam.Nmax)./beam.wavenumber)
           warning('ott:Bsc:translateZ:outside_nmax', ...
               'Repeated translation of beam outside Nmax region');
         end
         beam.dz = beam.dz + abs(z);
 
         % Convert to beam units
-        z = z * beam.k_medium / 2 / pi;
+        z = z * beam.wavenumber / 2 / pi;
 
         ibeam = beam;
         beam = ott.optics.vswf.bsc.Bsc();
@@ -2063,8 +1884,26 @@ classdef Bsc
       beam.dz = 0.0;
     end
   end
-  
+
   methods (Hidden)
+    function p = getBeamPower(beam)
+      % get.power calculate the power of the beam
+      p = full(sum(abs(beam.a).^2 + abs(beam.b).^2));
+    end
+    function beam = setBeamPower(beam, p)
+      % set.power set the beam power
+      beam = sqrt(p / beam.power) * beam;
+    end
+
+    function E = efieldInternal(beam, xyz)
+      % Method used by efield(xyz)
+      [E, ~, ~] = beam.emFieldXyz(xyz);
+    end
+    function H = hfieldInternal(beam, xyz)
+      % Method used by hfield(xyz)
+      [~, H, ~] = beam.emFieldXyz(xyz);
+    end
+
     function [a, b, p, q, n, m, ...
       anp1, bnp1, pnp1, qnp1, ...
       amp1, bmp1, pmp1, qmp1, ...

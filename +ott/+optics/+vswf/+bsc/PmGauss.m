@@ -127,7 +127,7 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       beam.mode = p.Results.mode;
       beam.polarisation = p.Results.polarisation;
       beam.offset = p.Results.offset;
-      beam.k_medium = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
+      beam.wavenumber = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
       
       % Ensure beam offset is not empty
@@ -299,7 +299,7 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       % If we have an offset, we need to have a high enough resolution
       % to match the phase gradient across the far-field
       if ~isempty(p.Results.offset)
-        offset_lambda = vecnorm(p.Results.offset)*beam.k_medium/(2*pi);
+        offset_lambda = vecnorm(p.Results.offset)./beam.wavelength;
         ntheta = max(ntheta, 3*ceil(offset_lambda));
         nphi = max(nphi, 2*3*ceil(offset_lambda));
       end
@@ -371,7 +371,7 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
         rhat = rtpv2xyzv( ones(size(theta)), zeros(size(theta)), ...
             zeros(size(theta)), ones(size(theta)), theta, phi );
         [offset,rhat] = matchsize(offset.',rhat);
-        phase_shift = exp( 1i * beam.k_medium * dot(offset,rhat,2) );
+        phase_shift = exp( 1i * beam.wavenumber * dot(offset,rhat,2) );
         beam_envelope = beam_envelope .* phase_shift;
       end
       Ex = xcomponent * beam_envelope * central_amplitude;

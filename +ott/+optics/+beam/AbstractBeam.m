@@ -1,4 +1,4 @@
-classdef (Abstract) AbstractBeam
+classdef (Abstract) AbstractBeam < ott.optics.beam.BeamProperties
 % Base class for beam descriptions (no fields)
 %
 % Classes that inherit from this class include a description of the

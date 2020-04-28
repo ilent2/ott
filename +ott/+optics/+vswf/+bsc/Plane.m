@@ -61,7 +61,7 @@ classdef Plane < ott.optics.vswf.bsc.Bsc
       p.parse(varargin{:});
 
       beam.basis = 'regular';
-      beam.k_medium = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
+      beam.wavenumber = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
 
       % If points aren't specified explicitly, use meshgrid
@@ -91,7 +91,7 @@ classdef Plane < ott.optics.vswf.bsc.Bsc
             'No range specified for plane wave, using range of ka=1');
         Nmax = ott.utils.ka2nmax(1);
       elseif ~isempty(p.Results.radius)
-        Nmax = ott.utils.ka2nmax(p.Results.radius * beam.k_medium);
+        Nmax = ott.utils.ka2nmax(p.Results.radius * beam.wavenumber);
       elseif ~isempty(p.Results.Nmax)
         Nmax = p.Results.Nmax;
         assert(isscalar(Nmax), 'Nmax must be scalar');
@@ -168,13 +168,13 @@ classdef Plane < ott.optics.vswf.bsc.Bsc
 
         % Add a warning when the beam is translated outside nmax2ka(Nmax)
         beam.dz = beam.dz + abs(z);
-        if beam.dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
+        if beam.dz > ott.utils.nmax2ka(beam.Nmax)/beam.wavenumber
           warning('ott:BscPlane:translateZ:outside_nmax', ...
               'Repeated translation of beam outside Nmax region');
         end
 
         % Convert to beam units
-        z = z * beam.k_medium / 2 / pi;
+        z = z ./ beam.wavelength;
 
         [A, B] = beam.translateZ_type_helper(z, [p.Results.Nmax, beam.Nmax]);
 

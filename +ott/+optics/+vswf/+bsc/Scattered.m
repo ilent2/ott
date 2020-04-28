@@ -370,7 +370,7 @@ classdef Scattered < ott.optics.vswf.bsc.Bsc
           sbeam.basis = 'regular';
 
           % Wavelength has changed, update it
-          sbeam.k_medium = tmatrix(1).wavenumber_particle;
+          sbeam.wavenumber = tmatrix(1).wavenumber_particle;
 
         otherwise
           error('Unrecognized T-matrix type');

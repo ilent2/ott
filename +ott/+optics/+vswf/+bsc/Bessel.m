@@ -161,7 +161,7 @@ classdef Bessel < ott.optics.vswf.bsc.Bsc
 
       % Setup the beam object
       beam.basis = 'regular';
-      beam.k_medium = p.Results.k_medium;
+      beam.wavenumber = p.Results.k_medium;
       beam.theta = theta.';
       beam.lmode = p.Results.lmode.';
 

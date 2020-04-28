@@ -13,7 +13,7 @@ function testConstructDefault(testCase)
   testCase.verifyEqual(beam.a, [], 'a');
   testCase.verifyEqual(beam.b, [], 'b');
   testCase.verifyEqual(beam.basis, 'regular', 'basis');
-  testCase.verifyEqual(beam.k_medium, 2*pi, 'a');
+  testCase.verifyEqual(beam.wavenumber, 2*pi, 'a');
   testCase.verifyEqual(beam.omega, 2*pi, 'b');
   testCase.verifyEqual(beam.dz, 0, 'dz');
 
@@ -26,7 +26,7 @@ function testConstructDefault(testCase)
   testCase.verifyEqual(beam.a, [], 'a');
   testCase.verifyEqual(beam.b, [], 'b');
   testCase.verifyEqual(beam.basis, 'regular', 'basis');
-  testCase.verifyEqual(beam.k_medium, k_medium, 'a');
+  testCase.verifyEqual(beam.wavenumber, k_medium, 'a');
   testCase.verifyEqual(beam.omega, omega, 'b');
   testCase.verifyEqual(beam.dz, dz, 'dz');
 end
@@ -40,7 +40,7 @@ function testConstructFromBsc(testCase)
   testCase.verifyEqual(beam.a, bsc.a, 'a');
   testCase.verifyEqual(beam.b, bsc.b, 'b');
   testCase.verifyEqual(beam.basis, bsc.basis, 'basis');
-  testCase.verifyEqual(beam.k_medium, bsc.k_medium, 'a');
+  testCase.verifyEqual(beam.wavenumber, bsc.wavenumber, 'a');
   testCase.verifyEqual(beam.omega, bsc.omega, 'b');
   testCase.verifyEqual(beam.dz, bsc.dz, 'dz');
 end
@@ -56,7 +56,7 @@ function testConstructAbBasis(testCase)
   testCase.verifyEqual(beam.a, a, 'a');
   testCase.verifyEqual(beam.b, b, 'b');
   testCase.verifyEqual(beam.basis, basis, 'basis');
-  testCase.verifyEqual(beam.k_medium, 2*pi, 'a');
+  testCase.verifyEqual(beam.wavenumber, 2*pi, 'a');
   testCase.verifyEqual(beam.omega, 2*pi, 'b');
   testCase.verifyEqual(beam.dz, 0, 'dz');
 
@@ -65,7 +65,7 @@ function testConstructAbBasis(testCase)
   testCase.verifyEqual(beam.a, a, 'a');
   testCase.verifyEqual(beam.b, b, 'b');
   testCase.verifyEqual(beam.basis, 'regular', 'basis');
-  testCase.verifyEqual(beam.k_medium, 2*pi, 'a');
+  testCase.verifyEqual(beam.wavenumber, 2*pi, 'a');
   testCase.verifyEqual(beam.omega, 2*pi, 'b');
   testCase.verifyEqual(beam.dz, 0, 'dz');
 end

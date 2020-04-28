@@ -23,14 +23,12 @@ classdef Gaussian < ott.optics.beam.AbstractBeam
   properties
     waist          % Beam waist radius
     permittivity   % Relative permittivity of medium (default: 1.0)
-    wavelength     % Wavelength of beam in medium (default: 1.0)
     speed0         % Speed of light in vacuum (default: 1.0)
   end
 
   properties (Dependent)
     omega          % Optical frequency of light
     index_medium   % Refractive index in medium
-    wavenumber     % Wave-number of beam in medium
     speed          % Speed of light in medium
     wavelength0    % Vacuum wavelength of beam
   end
@@ -107,11 +105,6 @@ classdef Gaussian < ott.optics.beam.AbstractBeam
         'waist must be numeric scalar');
       beam.waist = val;
     end
-    function beam = set.wavelength(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-        'wavelength must be numeric scalar');
-      beam.wavelength = val;
-    end
     function beam = set.speed0(beam, val)
       assert(isnumeric(val) && isscalar(val), ...
         'speed0 must be numeric scalar');
@@ -129,9 +122,6 @@ classdef Gaussian < ott.optics.beam.AbstractBeam
     end
     function val = get.index_medium(beam)
       val = sqrt(beam.permittivity);
-    end
-    function val = get.wavenumber(beam)
-      val = 2*pi/beam.wavelength;
     end
     function val = get.speed(beam)
       val = beam.speed0 ./ beam.index_medium;
