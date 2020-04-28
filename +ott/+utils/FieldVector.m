@@ -18,6 +18,10 @@ classdef FieldVector < double
 % using/distributing this file.
 
 % TODO: Implement subsref etc (and remove double(field) in getters)
+%   This would be an optimisation.  But, we shouldn't allow direct
+%   access to the data.  So field.vxyz(1, 3) should be the same
+%   as field(1, 3) (without the cast), but field(1, 3) should be
+%   disallowed.
 
   properties
     locations  % Location data for field vectors (can be empty)
