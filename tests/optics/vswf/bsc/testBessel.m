@@ -4,13 +4,13 @@ end
 
 function setup(testCase)
 
-  addpath('../');
+  addpath('../../../../');
 
 end
 
 function testConstruct(testCase)
 
-  beam = ott.BscBessel(12, [0.0, pi/4]);
+  beam = ott.optics.vswf.bsc.Bessel(12, [0.0, pi/4]);
 
   import matlab.unittest.constraints.IsEqualTo;
   testCase.verifyThat(beam.Nbeams, IsEqualTo(2), ...
@@ -23,6 +23,8 @@ function testMultiple(testCase)
 
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
+  import ott.optics.vswf.*;
+  
   tol = 1.0e-14;
   Nmax = 10;
   
@@ -30,10 +32,10 @@ function testMultiple(testCase)
   theta2 = 0.6*pi/2;
   theta3 = 0.5*pi/2;
 
-  beam1 = ott.BscBessel(Nmax, theta1, 'Etheta', 1, 'Ephi', 0);
-  beam2 = ott.BscBessel(Nmax, theta2, 'Etheta', 1, 'Ephi', 0);
-  beam3 = ott.BscBessel(Nmax, theta3, 'Etheta', 1, 'Ephi', 0);
-  beamc = ott.BscBessel(Nmax, [theta1, theta2, theta3], 'Etheta', 1, 'Ephi', 0);
+  beam1 = bsc.Bessel(Nmax, theta1, 'Etheta', 1, 'Ephi', 0);
+  beam2 = bsc.Bessel(Nmax, theta2, 'Etheta', 1, 'Ephi', 0);
+  beam3 = bsc.Bessel(Nmax, theta3, 'Etheta', 1, 'Ephi', 0);
+  beamc = bsc.Bessel(Nmax, [theta1, theta2, theta3], 'Etheta', 1, 'Ephi', 0);
   
   
   testCase.verifyThat(beamc.beam(1).getCoefficients, IsEqualTo(beam1.getCoefficients, ...
@@ -58,27 +60,28 @@ function testZeroAngle(testCase)
 
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
+  import ott.optics.vswf.*;
   tol = 1.0e-14;
   Nmax = 10;
 
   % Test x polarisation
-  beam = ott.BscBessel(Nmax, 0.0, 'polarisation', [1, 0]);
-  beamPlane = ott.BscPlane(0, 0, 'polarisation', [1, 0], 'Nmax', Nmax);
+  beam = bsc.Bessel(Nmax, 0.0, 'polarisation', [1, 0]);
+  beamPlane = bsc.Plane(0, 0, 'polarisation', [1, 0], 'Nmax', Nmax);
   testCase.verifyThat(beam.getCoefficients, IsEqualTo(beamPlane.getCoefficients, ...
     'Within', AbsoluteTolerance(tol)), ...
     'Incorrect coefficients for x polarisation');
   
   % Test y polarisation
-  beam = ott.BscBessel(Nmax, 0.0, 'polarisation', [0, 1]);
-  beamPlane = ott.BscPlane(0, 0, 'polarisation', [0, 1], 'Nmax', Nmax);
+  beam = bsc.Bessel(Nmax, 0.0, 'polarisation', [0, 1]);
+  beamPlane = bsc.Plane(0, 0, 'polarisation', [0, 1], 'Nmax', Nmax);
   testCase.verifyThat(beam.getCoefficients, IsEqualTo(beamPlane.getCoefficients, ...
     'Within', AbsoluteTolerance(tol)), ...
     'Incorrect coefficients for y polarisation');
   
   % We need to handle these cases differently
   % These are non-sensical, so we won't worry about them for now
-  beam = ott.BscBessel(Nmax, 0.0, 'Etheta', 1, 'Ephi', 0);
-  beam = ott.BscBessel(Nmax, 0.0, 'Etheta', 0, 'Ephi', 1);
+  beam = bsc.Bessel(Nmax, 0.0, 'Etheta', 1, 'Ephi', 0);
+  beam = bsc.Bessel(Nmax, 0.0, 'Etheta', 0, 'Ephi', 1);
 
 end
 
@@ -87,10 +90,11 @@ function testValues(testCase)
 
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
+  import ott.optics.vswf.*;
   tol = 1.0e-4;
   
-  beam1 = ott.BscBessel(2, pi/4, 'Etheta', 1, 'Ephi', 0);
-  beam2 = ott.BscBessel(2, 3*pi/4, 'Etheta', 1, 'Ephi', 0);
+  beam1 = bsc.Bessel(2, pi/4, 'Etheta', 1, 'Ephi', 0);
+  beam2 = bsc.Bessel(2, 3*pi/4, 'Etheta', 1, 'Ephi', 0);
   
   t1a = sparse([], [], [], 8, 1);
   t2a = sparse([], [], [], 8, 1);

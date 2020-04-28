@@ -1,11 +1,10 @@
-classdef BscBessel < ott.Bsc
+classdef Bessel < ott.optics.vswf.bsc.Bsc
 %BscBessel representation of a Bessel beam and Bessel-like beams with OAM
 %
 % BscBessel properties:
 %   theta        Bessel beam angle in far-field
 %   a            (Bsc) Beam shape coefficients a vector
 %   b            (Bsc) Beam shape coefficients b vector
-%   type         (Bsc) Beam type (incident, scattered, total)
 %   basis        (Bsc) VSWF beam basis (incoming, outgoing or regular)
 %   Nmax         (Bsc) Truncation number for VSWF coefficients
 %   power        (Bsc) Power of the beam [M*L^2/S^3]
@@ -27,7 +26,7 @@ classdef BscBessel < ott.Bsc
   end
 
   methods
-    function beam = BscBessel(nmax, theta, varargin)
+    function beam = Bessel(nmax, theta, varargin)
       %BSCBESSEL construct a new Bessel beam or Bessel-like beam
       %
       % BSCBESSEL(Nmax, theta, ...) creates a new beam with size Nmax
@@ -48,7 +47,7 @@ classdef BscBessel < ott.Bsc
       %
       % See also beam, mergeBeams, ott.BscPlane
 
-      beam = beam@ott.Bsc();
+      beam = beam@ott.optics.vswf.bsc.Bsc();
 
       % Parse optional inputs
       p = inputParser;
@@ -161,7 +160,6 @@ classdef BscBessel < ott.Bsc
       end
 
       % Setup the beam object
-      beam.type = 'incident';
       beam.basis = 'regular';
       beam.k_medium = p.Results.k_medium;
       beam.theta = theta.';
@@ -173,7 +171,7 @@ classdef BscBessel < ott.Bsc
       b=b(ci,:);
 
       % Make the beam vector and store the coefficients
-      [beam.a, beam.b] = ott.Bsc.make_beam_vector(a, b, nn, mm);
+      [beam.a, beam.b] = ott.optics.vswf.bsc.Bsc.make_beam_vector(a, b, nn, mm);
     end
   end
 end

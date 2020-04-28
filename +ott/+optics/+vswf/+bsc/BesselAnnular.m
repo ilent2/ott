@@ -5,7 +5,6 @@ classdef BscBesselAnnular < ott.Bsc
 % Properties:
 %   a               (Bsc) Beam shape coefficients a vector
 %   b               (Bsc) Beam shape coefficients b vector
-%   type            (Bsc) Beam type (incoming, outgoing or scattered)
 %   NA              Numerical aperture of inner and outer edge [r1, r2]
 %
 % Methods:
@@ -137,7 +136,6 @@ classdef BscBesselAnnular < ott.Bsc
         
       end
 
-      beam.type = 'incident';
       beam.basis = 'regular';
       
       % Update progress callback

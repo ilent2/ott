@@ -3,16 +3,18 @@ function tests = testBscPmAnnular
 end
 
 function setupOnce(testCase)
-  addpath('../');
+  addpath('../../../../');
 end
 
 function testUniform(testCase)
+  
+  import ott.optics.vswf.*;
   
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
   tol = 0.1;
 
-  beam = ott.BscPmAnnular([0.5, 1.0]);
+  beam = bsc.PmAnnular([0.5, 1.0]);
   
   beam.basis = 'incoming';
   E = beam.farfield([pi, pi-0.8*pi/2], [0, 0]);
@@ -36,8 +38,10 @@ end
 
 function testFromProfile(testCase)
 
+  import ott.optics.vswf.*;
+  
   profile = linspace(0, 1, 20);
-  beam = ott.BscPmAnnular([0.5, 1.0], 'profile', profile);
+  beam = bsc.PmAnnular([0.5, 1.0], 'profile', profile);
   
   figure();
   beam.basis = 'incoming';
@@ -47,10 +51,12 @@ end
 
 function testFromBeam(testCase)
 
-  oldBeam = ott.BscPmGauss();
+  import ott.optics.vswf.*;
+
+  oldBeam = bsc.PmGauss();
   oldBeam.basis = 'incoming';
 
-  beam = ott.BscPmAnnular([0.5, 1.0], 'profile', oldBeam);
+  beam = bsc.PmAnnular([0.5, 1.0], 'profile', oldBeam);
   
   figure();
   beam.basis = 'incoming';

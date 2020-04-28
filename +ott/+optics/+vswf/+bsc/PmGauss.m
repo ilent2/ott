@@ -90,12 +90,12 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       %        at large angles.
 
       beam = beam@ott.optics.vswf.bsc.Pointmatch(varargin{:});
-      beam.type = 'incident';
       beam.basis = 'regular';
 
       % Parse inputs
       p = inputParser;
-      p.addOptional('type', 'lg', @ott.BscPmGauss.supported_beam_type);
+      p.addOptional('type', 'lg', ...
+        @ott.optics.vswf.bsc.PmGauss.supported_beam_type);
       p.addOptional('mode', [ 0 0 ]);
 
       p.addParameter('Nmax', []);
@@ -105,7 +105,7 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       p.addParameter('power', []);
       p.addParameter('progress_callback', []);
       p.addParameter('translation_method', 'Default', ...
-        @ott.BscPmGauss.validate_translation_method);
+        @ott.optics.vswf.bsc.PmGauss.validate_translation_method);
 
       p.addParameter('omega', 2*pi);
       p.addParameter('k_medium', []);
@@ -446,8 +446,9 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
           'polarisation', beam.polarisation, ...
           'truncation_angle', beam.truncation_angle, ...
           'Nmax', p.Results.Nmax, 'angle', beam.angle);
-        varargout{1}.type = beam.type;
         varargout{1}.basis = beam.basis;
+      else
+        error('Unrecognized beam translation method');
       end
     end
     
@@ -498,7 +499,6 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
           'polarisation', beam.polarisation, ...
           'truncation_angle', beam.truncation_angle, ...
           'Nmax', p.Results.Nmax, 'angle', beam.angle);
-        varargout{1}.type = beam.type;
         varargout{1}.basis = beam.basis;
       end
     end
@@ -551,7 +551,6 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
           'polarisation', beam.polarisation, ...
           'truncation_angle', beam.truncation_angle, ...
           'Nmax', p.Results.Nmax, 'angle', beam.angle);
-        varargout{1}.type = beam.type;
         varargout{1}.basis = beam.basis;
       end
     end

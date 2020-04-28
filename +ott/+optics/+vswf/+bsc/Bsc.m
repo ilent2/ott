@@ -8,16 +8,17 @@ classdef Bsc
 % Properties
 %   - a           --  Beam shape coefficients a vector
 %   - b           --  Beam shape coefficients b vector
-%   - type        --  Beam type (incident, scattered, total)
 %   - basis       --  VSWF beam basis (incoming, outgoing or regular)
+%   - omega       --  Angular frequency of beam [2*pi/T]
+%   - k_medium    --  Wavenumber in medium [2*pi/L]
+%   - dz          --  Absolute cumulative distance the beam has moved
+%
+% Dependent properties
 %   - Nmax        --  Truncation number for VSWF coefficients
 %   - power       --  Power of the beam [M*L^2/S^3]
 %   - Nbeams      --  Number of beams in this Bsc object
 %   - wavelength  --  Wavelength of beam [L]
 %   - speed       --  Speed of beam in medium [L/T]
-%   - omega       --  Angular frequency of beam [2*pi/T]
-%   - k_medium    --  Wavenumber in medium [2*pi/L]
-%   - dz          --  Absolute cumulative distance the beam has moved
 %
 % Methods
 %   - append      --  Joins two beam objects together
@@ -30,8 +31,6 @@ classdef Bsc
 %   - emFieldRtp   -- Calculate field values in spherical coordinates
 %   - getCoefficients -- Get the beam coefficients [a, b]
 %   - getModeIndices -- Get the mode indices [n, m]
-%   - totalField   -- Calculate the total field reprsentation of the beam
-%   - scatteredField -- Calcualte the scattered field representation of the beam
 %   - visualise      -- Generate a visualisation of the beam near-field
 %   - visualiseFarfield -- Generate a visualisation of the beam far-field
 %   - visualiseFarfieldSlice  -- Generate scattering slice at specific angle
@@ -64,8 +63,6 @@ classdef Bsc
 
   properties
     basis       % VSWF beam basis (incoming, outgoing or regular)
-    type        % Beam type (incident, scattered, total)
-    
     omega       % Angular frequency of beam
   end
 
@@ -76,9 +73,6 @@ classdef Bsc
 
     wavelength  % Wavelength of beam
     speed       % Speed of beam in medium
-  end
-
-  methods (Abstract)
   end
 
   methods (Static)
@@ -295,57 +289,76 @@ classdef Bsc
   end
 
   methods
-    function beam = Bsc(a, b, basis, type, varargin)
+    function beam = Bsc(varargin)
       %BSC construct a new beam object
       %
-      % beam = Bsc(a, b, basis, type, ...) constructs a new beam vector.
-      % Useful if you have a specific set of a/b coefficients that you
-      % want to wrap in a beam object.
+      % Usage
+      %   beam = Bsc(a, b, basis, ...) constructs a new beam vector.
+      %   Useful if you have a specific set of a/b coefficients that you
+      %   want to wrap in a beam object.
       %
-      % Basis: incoming, outgoing or regular
-      % Type: incident, scattered, total, internal
+      %   beam = Bsc(a, b)  As above, but uses 'regular' as the basis.
       %
-      % Optional named arguments:
-      %    k_medium  n  Wavenumber in medium (default: 2*pi)
-      %    omega     n  Angular frequency (default: 2*pi)
-      %    dz        n  Initial displacement of the beam (default: 0)
-      %    like    beam Construct this beam to be like another beam
-      
+      %   beam = Bsc()  Constructs an empty beam object.
+      %   beam = Bsc(bsc)  Construct a copy of the existing bsc object.
+      %
+      % Parameters
+      %   - a,b (numeric) -- Vectors of VSWF coefficients
+      %   - bsc (vswf.bsc.Bsc) -- An existing BSC object
+      %   - basis (enum) -- VSWF basis: incoming, outgoing or regular
+      %
+      % Optional named arguments
+      %   - k_medium  n -- Wavenumber in medium (default: 2*pi)
+      %   - omega     n -- Angular frequency (default: 2*pi)
+      %   - dz        n -- Initial displacement of the beam (default: 0)
+      %   - like   beam -- Construct this beam to be like another beam
+
       p = inputParser;
+      p.addOptional('a', [], ...
+        @(x) isnumeric(x) || isa(x, 'ott.optics.vswf.bsc.Bsc'));
+      p.addOptional('b', [], @isnumeric);
+      p.addOptional('basis', 'regular', ...
+        @(x) any(strcmpi(x, {'incoming', 'outgoing', 'regular'})));
       p.addParameter('like', []);
       p.addParameter('k_medium', 2.0*pi);
       p.addParameter('omega', 2*pi);
       p.addParameter('dz', 0.0);
       p.parse(varargin{:});
-      
-      beam.dz = p.Results.dz;
-      beam.k_medium = p.Results.k_medium;
-      beam.omega = p.Results.omega;
-      
-      if ~isempty(p.Results.like)
-        beam.omega = p.Results.like.omega;
-        beam.k_medium = p.Results.like.k_medium;
-        beam.dz = p.Results.like.dz;
+
+      a = p.Results.a;
+      b = p.Results.b;
+      like = p.Results.like;
+
+      % Copy all data from an existing BSC
+      if isa(a, 'ott.optics.vswf.bsc.Bsc')
+        assert(isempty(b), 'Too many arguments supplied');
+
+        like = a;
+        a = like.a;
+        b = like.b;
       end
 
-      if nargin ~= 0
-      
-        % Check size of a and b
-        assert(all(size(a) == size(b)), 'size of a and b must match');
-        if isvector(a)
-          a = a(:);
-        end
-        if isvector(b)
-          b = b(:);
-        end
-        assert(size(a, 1) >= 3 && sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1)), ...
-          'number of multipole terms must be 3, 8, 15, 24, ...');
-        
-        beam.a = a;
-        beam.b = b;
-        beam.basis = basis;
-        beam.type = type;
+      % Copy all beam data (except coefficients) from like
+      if ~isempty(like)
+        beam.dz = like.dz;
+        beam.k_medium = like.k_medium;
+        beam.omega = like.omega;
+        beam.basis = like.basis;
+      else
+        beam.dz = p.Results.dz;
+        beam.k_medium = p.Results.k_medium;
+        beam.omega = p.Results.omega;
+        beam.basis = p.Results.basis;
       end
+
+      % Check size of a and b and assign
+      assert(all(size(a) == size(b)), 'size of a and b must match');
+      assert(isempty(a) || ...
+          (size(a, 1) >= 3 && ...
+          sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1))), ...
+        'number of multipole terms must be empty, 3, 8, 15, 24, ...');
+      beam.a = a;
+      beam.b = b;
     end
 
     function beam = append(beam, other)
@@ -920,7 +933,7 @@ classdef Bsc
       
       % Generate the requested field
       dataout = beam.GetVisualisationData(p.Results.field, [], ...
-        [itheta, iphi, ones(size(iphi))], [], ioutputE.');
+        [itheta, iphi, ones(size(iphi))].', [], ioutputE);
 
       % Pack the result into the images
       imout = zeros(p.Results.size);
@@ -1128,14 +1141,6 @@ classdef Bsc
       beam.basis = basis;
     end
 
-    function beam = set.type(beam, type)
-      % Set the beam type, checking it is a valid type first
-      if ~any(strcmpi(type, {'incident', 'scattered', 'total', 'internal'}))
-        error('OTT:Bsc:set_type:invalid_value', 'Invalid beam type');
-      end
-      beam.type = type;
-    end
-
     function nbeams = get.Nbeams(beam)
       % get.beams get the number of beams in this object
       nbeams = size(beam.a, 2);
@@ -1291,7 +1296,7 @@ classdef Bsc
         % Add a warning when the beam is translated outside nmax2ka(Nmax) 
         % The first time may be OK, the second time does not have enough
         % information.
-        if beam.dz > ott.utils.nmax2ka(beam.Nmax)/beam.k_medium
+        if any(beam.dz > ott.utils.nmax2ka(beam.Nmax)./beam.k_medium)
           warning('ott:Bsc:translateZ:outside_nmax', ...
               'Repeated translation of beam outside Nmax region');
         end
@@ -1587,54 +1592,6 @@ classdef Bsc
       import ott.utils.*;
       [beam, D] = beam.rotate(rotz(anglez*180/pi)* ...
           roty(angley*180/pi)*rotx(anglex*180/pi), varargin{:});
-    end
-
-    function beam = totalField(beam, ibeam)
-      % Calculate the total field representation of the beam
-      %
-      % total_beam = beam.totalField(incident_beam)
-      
-      switch beam.type
-        case 'total'
-          % Nothing to do
-          
-        case 'scattered'
-          beam = 2*beam + ibeam;
-          beam.type = 'total';
-          
-        case 'internal'
-          error('Cannot convert from internal to total field');
-          
-        case 'incident'
-          error('Cannot convert from incident to total field');
-          
-        otherwise
-          error('Unknown beam type');
-      end
-    end
-
-    function beam = scatteredField(beam, ibeam)
-      % Calculate the scattered field representation of the beam
-      %
-      % scattered_beam = beam.totalField(incident_beam)
-      
-      switch beam.type
-        case 'total'
-          beam = 0.5*(beam - ibeam);
-          beam.type = 'scattered';
-          
-        case 'scattered'
-          % Nothing to do
-          
-        case 'internal'
-          error('Cannot convert from internal to scattered field');
-          
-        case 'incident'
-          error('Cannot convert from incident to total field');
-          
-        otherwise
-          error('Unknown beam type');
-      end
     end
 
     function [a, b] = getCoefficients(beam, ci)
@@ -1968,13 +1925,13 @@ classdef Bsc
       end
     end
 
-    function [sbeam, beam] = scatter(beam, tmatrix, varargin)
+    function [sbeam, tbeam] = scatter(beam, tmatrix, varargin)
       % Calculate the beam scattered by a T-matrix
       %
       % Usage
-      %   [sbeam, beam] = beam.scatter(tmatrix) scatters the beam
+      %   [sbeam, tbeam] = beam.scatter(tmatrix) scatters the beam
       %   returning the scattered beam ``sbeam`` and the unscattered
-      %   but possibly translated beam ``beam`` truncated to
+      %   but possibly translated beam ``tbeam`` truncated to
       %   ``tmatrix.Nmax + 1``.
       %
       % Optional named arguments
@@ -1985,133 +1942,17 @@ classdef Bsc
       %     calculates the scattered beam and applies the inverse rotation,
       %     effectively rotating the particle.  Default: ``[]``.
       %
+      %   - combine (enum|empty) -- Beam combination method.  Can be
+      %     'incoherent' (ignored), 'coherent', or empty (ignored).
+      %
       % If both position and rotation are present, the translation is
       % applied first, followed by the rotation.
       % If both position and rotation are arrays, they must have the same
       % number of locations.
-      
-      p = inputParser;
-      p.addParameter('position', []);
-      p.addParameter('rotation', []);
-      p.addParameter('combine', []);
-      p.parse(varargin{:});
-      
-      % Combine the beams if coherent (nothing to do for incoherent)
-      if strcmpi(p.Results.combine, 'coherent')
-        beam = sum(beam);
-      end
-      
-      % Check if we need to calculate multiple scatters
-      if size(p.Results.position, 2) > 1 || size(p.Results.rotation, 2) > 3
-        [sbeam, beam] = ott.utils.prxfun(...
-            @(varargin) beam.scatter(tmatrix, varargin{:}), 1, ...
-            'position', p.Results.position, ...
-            'rotation', p.Results.rotation, ...
-            'zeros', @(x) repmat(beam, x));
-        
-        % Join outputs (convert from beam arrays to combined beams)
-        sbeam = ott.optics.vswf.bsc.Bsc().append(sbeam);
-        beam = ott.optics.vswf.bsc.Bsc().append(beam);
-        
-        return;
-      end
 
-      % Determine the maximum tmatrix.Nmax(2) and check type
-      maxNmax1 = 0;
-      maxNmax2 = 0;
-      tType = tmatrix(1).type;
-      for ii = 1:numel(tmatrix)
-        maxNmax1 = max(maxNmax1, tmatrix(ii).Nmax(1));
-        maxNmax2 = max(maxNmax2, tmatrix(ii).Nmax(2));
-        if ~strcmpi(tmatrix(ii).type, tType)
-          error('T-matrices must be same type');
-        end
-      end
-
-      % If the T is scattered, we can save time by throwing away columns
-      if strcmpi(tmatrix(1).type, 'scattered')
-        maxNmax2 = min(maxNmax2, beam.Nmax);
-      end
-
-      % Ensure all T-matrices are the same size
-      for ii = 1:numel(tmatrix)
-        tmatrix(ii).Nmax = [maxNmax1, maxNmax2];
-      end
-
-      % Apply translation to the beam
-      if ~isempty(p.Results.position)
-
-        % Requires scattered beam, convert if needed
-        if ~strcmpi(tmatrix(1).type, 'scattered')
-          maxNmax2 = min(maxNmax2, beam.Nmax);
-          for ii = 1:numel(tmatrix)
-            tmatrix(ii).type = 'scattered';
-            tmatrix(ii).Nmax = [maxNmax1, maxNmax2];
-          end
-        end
-
-        % Apply translation
-        % We need Nmax+1 terms for the force calculation
-        beam = beam.translateXyz(p.Results.position, 'Nmax', maxNmax2+1);
-      end
-
-      % Apply rotation to the beam
-      rbeam = beam;
-      if ~isempty(p.Results.rotation)
-        [rbeam, D] = rbeam.rotate(p.Results.rotation, ...
-            'Nmax', maxNmax1);
-      end
-
-      % Ensure the Nmax for the inner dimension matches
-      if strcmpi(tmatrix(1).type, 'scattered')
-        % T-matrix is already done
-        rbeam = rbeam.set_Nmax(maxNmax2, 'powerloss', 'ignore');
-      else
-        for ii = 1:numel(tmatrix)
-          tmatrix(ii) = tmatrix(ii).set_Nmax([maxNmax1, rbeam.Nmax], ...
-              'powerloss', 'ignore');
-        end
-        if ~strcmpi(tmatrix(1).type, 'internal')
-          ott.warning('ott:Bsc:scatter', ...
-              'It may be more optimal to use a scattered T-matrix');
-        end
-      end
-
-      % Calculate the resulting beams
-      sbeam = ott.optics.vswf.bsc.Bsc();
-      for ii = 1:numel(tmatrix)
-        sbeam = sbeam.append(tmatrix(ii).data * rbeam);
-      end
-
-      % Apply the inverse rotation
-      if ~isempty(p.Results.rotation)
-
-        % This seems to take a long time
-        %sbeam = sbeam.rotate('wigner', D');
-
-        sbeam = sbeam.rotate(inv(p.Results.rotation));
-      end
-
-      % Assign a type to the resulting beam
-      switch tmatrix(1).type
-        case 'total'
-          sbeam.type = 'total';
-          sbeam.basis = 'outgoing';
-          
-        case 'scattered'
-          sbeam.type = 'scattered';
-          sbeam.basis = 'outgoing';
-          
-        case 'internal'
-          sbeam.type = 'internal';
-          sbeam.basis = 'regular';
-        
-          % Wavelength has changed, update it
-          sbeam.k_medium = tmatrix(1).wavenumber_particle;
-          
-        otherwise
-          error('Unrecognized T-matrix type');
-      end
+      dummy_type = 'total';
+      tbeam = ott.optics.vswf.bsc.Scattered(beam, dummy_type);
+      [sbeam, tbeam] = tbeam.calculateScatteredBeam(tmatrix, varargin{:});
     end
 
     function beam = mtimes(a,b)

@@ -1,10 +1,9 @@
-classdef BscPmAnnular < ott.BscPointmatch
+classdef PmAnnular < ott.optics.vswf.bsc.Pointmatch
 %BscPmAnnular gennerate a beam with an annular far-field profile
 %
 % Properties:
 %   a               (Bsc) Beam shape coefficients a vector
 %   b               (Bsc) Beam shape coefficients b vector
-%   type            (Bsc) Beam type (incoming, outgoing or scattered)
 %   NA              Numerical aperture of inner and outer edge [r1, r2]
 %
 % Methods:
@@ -29,7 +28,7 @@ classdef BscPmAnnular < ott.BscPointmatch
   end
   
   methods
-    function beam = BscPmAnnular(NA, varargin);
+    function beam = PmAnnular(NA, varargin);
       % BscPmAnnular gennerate BSC with an annular far-field profile
       %
       % beam = BscPmParaxial(NA, ...) generates beam with an annular
@@ -85,7 +84,7 @@ classdef BscPmAnnular < ott.BscPointmatch
 
       verbose = p.Results.verbose;
       Nmax = p.Results.Nmax;
-      beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
+      beam.k_medium = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
 
       % Handle default argument for invert_coefficient_matrix
@@ -149,7 +148,7 @@ classdef BscPmAnnular < ott.BscPointmatch
         % Generate e_field for point matching
         e_field=[Et(:);Ep(:)];
         
-      elseif isa(p.Results.profile, 'ott.Bsc')
+      elseif isa(p.Results.profile, 'ott.optics.vswf.bsc.Bsc')
         
         % Beam object supplied (no oam)
         [e_field, ~] = p.Results.profile.farfield(theta, phi);
@@ -161,7 +160,7 @@ classdef BscPmAnnular < ott.BscPointmatch
         % Strip R component and package
         e_field = [e_field(2, :).'; e_field(3, :).'];
         
-      elseif min(size(p.Results.profile)) == 1
+      elseif isnumeric(p.Results.profile) && min(size(p.Results.profile)) == 1
         
         % Radial profile of beam (posibly with oam)
         
@@ -233,7 +232,6 @@ classdef BscPmAnnular < ott.BscPointmatch
         beam.inv_coefficient_matrix = [];
       end
 
-      beam.type = 'incident';
       beam.basis = 'regular';
       
       % Update progress callback

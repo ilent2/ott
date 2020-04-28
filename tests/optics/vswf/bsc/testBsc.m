@@ -3,13 +3,71 @@ function tests = bsc
 end
 
 function setupOnce(testCase)
+  addpath('../../../../');
+end
 
-  % Ensure the ott package is in our path
-  addpath('../');
+function testConstructDefault(testCase)
 
-  % Generate a gaussian beam for testing
-  testCase.TestData.beam = ott.BscPmGauss();
+  beam = ott.optics.vswf.bsc.Bsc();
+  
+  testCase.verifyEqual(beam.a, [], 'a');
+  testCase.verifyEqual(beam.b, [], 'b');
+  testCase.verifyEqual(beam.basis, 'regular', 'basis');
+  testCase.verifyEqual(beam.k_medium, 2*pi, 'a');
+  testCase.verifyEqual(beam.omega, 2*pi, 'b');
+  testCase.verifyEqual(beam.dz, 0, 'dz');
 
+  dz = 1.0;
+  omega = 2.0;
+  k_medium = 3.0;
+  beam = ott.optics.vswf.bsc.Bsc(...
+    'dz', dz, 'omega', omega, 'k_medium', k_medium);
+  
+  testCase.verifyEqual(beam.a, [], 'a');
+  testCase.verifyEqual(beam.b, [], 'b');
+  testCase.verifyEqual(beam.basis, 'regular', 'basis');
+  testCase.verifyEqual(beam.k_medium, k_medium, 'a');
+  testCase.verifyEqual(beam.omega, omega, 'b');
+  testCase.verifyEqual(beam.dz, dz, 'dz');
+end
+
+function testConstructFromBsc(testCase)
+
+  bsc = ott.optics.vswf.bsc.Bsc('dz', 1.0, 'omega', 4, 'k_medium', 1);
+  
+  beam = ott.optics.vswf.bsc.Bsc(bsc);
+  
+  testCase.verifyEqual(beam.a, bsc.a, 'a');
+  testCase.verifyEqual(beam.b, bsc.b, 'b');
+  testCase.verifyEqual(beam.basis, bsc.basis, 'basis');
+  testCase.verifyEqual(beam.k_medium, bsc.k_medium, 'a');
+  testCase.verifyEqual(beam.omega, bsc.omega, 'b');
+  testCase.verifyEqual(beam.dz, bsc.dz, 'dz');
+end
+
+function testConstructAbBasis(testCase)
+
+  a = [];
+  b = [];
+  basis = 'incoming';
+
+  beam = ott.optics.vswf.bsc.Bsc(a, b, basis);
+  
+  testCase.verifyEqual(beam.a, a, 'a');
+  testCase.verifyEqual(beam.b, b, 'b');
+  testCase.verifyEqual(beam.basis, basis, 'basis');
+  testCase.verifyEqual(beam.k_medium, 2*pi, 'a');
+  testCase.verifyEqual(beam.omega, 2*pi, 'b');
+  testCase.verifyEqual(beam.dz, 0, 'dz');
+
+  beam = ott.optics.vswf.bsc.Bsc(a, b);
+  
+  testCase.verifyEqual(beam.a, a, 'a');
+  testCase.verifyEqual(beam.b, b, 'b');
+  testCase.verifyEqual(beam.basis, 'regular', 'basis');
+  testCase.verifyEqual(beam.k_medium, 2*pi, 'a');
+  testCase.verifyEqual(beam.omega, 2*pi, 'b');
+  testCase.verifyEqual(beam.dz, 0, 'dz');
 end
 
 function testTranslation(testCase)
@@ -18,7 +76,7 @@ function testTranslation(testCase)
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
 
-  beam = testCase.TestData.beam;
+  beam = ott.optics.vswf.bsc.PmGauss();
   beam.power = 1.0;
   dz = pi/2;
   tol = 1.0e-6;
@@ -73,7 +131,7 @@ function testUnevenTranslation(testCase)
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
 
-  beam = testCase.TestData.beam;
+  beam = ott.optics.vswf.bsc.PmGauss();
   beam.power = 1.0;
   dz = pi/2;
   tol = 1.0e-6;
@@ -94,12 +152,12 @@ function testMakeBeamVectorEmpty(testCase)
   nn = [];
   mm = [];
   
-  [a1, b1] = ott.Bsc.make_beam_vector(a, b, nn, mm);
+  [a1, b1] = ott.optics.vswf.bsc.Bsc.make_beam_vector(a, b, nn, mm);
   
   testCase.verifyThat([size(a1), size(b1)], IsEqualTo([0, 0, 0, 0]), ...
     'Size of beam vectors incorrect with implicit Nmax');
   
-  [a2, b2] = ott.Bsc.make_beam_vector(a, b, nn, mm, 1);
+  [a2, b2] = ott.optics.vswf.bsc.Bsc.make_beam_vector(a, b, nn, mm, 1);
   
   testCase.verifyThat([size(a2), size(b2)], IsEqualTo([3, 0, 3, 0]), ...
     'Size of beam vectors incorrect with explicit Nmax');
@@ -115,10 +173,10 @@ function testMakeBeamVectorMulti(testCase)
   nn = [1; 2; 3];
   mm = [0; 0; 0];
   
-  [a1, b1] = ott.Bsc.make_beam_vector(a, b, nn, mm);
-  [a2, b2] = ott.Bsc.make_beam_vector(a+6, b+6, nn, mm);
+  [a1, b1] = ott.optics.vswf.bsc.Bsc.make_beam_vector(a, b, nn, mm);
+  [a2, b2] = ott.optics.vswf.bsc.Bsc.make_beam_vector(a+6, b+6, nn, mm);
   
-  [ac, bc] = ott.Bsc.make_beam_vector([a, a+6], [b, b+6], nn, mm);
+  [ac, bc] = ott.optics.vswf.bsc.Bsc.make_beam_vector([a, a+6], [b, b+6], nn, mm);
   
   import matlab.unittest.constraints.IsEqualTo;
   
@@ -132,8 +190,8 @@ end
 
 function testSum(testCase)
 
-  beam1 = ott.BscPmGauss('polarisation', [0, 1i]);
-  beam2 = ott.BscPmGauss('polarisation', [1, 0]);
+  beam1 = ott.optics.vswf.bsc.PmGauss('polarisation', [0, 1i]);
+  beam2 = ott.optics.vswf.bsc.PmGauss('polarisation', [1, 0]);
   beam3 = beam1 + beam2;
   
   beamU = beam1.append(beam2);
@@ -157,7 +215,7 @@ function testLargeTranslations(testCase)
 
   % For this translation the beam power should go to zero
 
-  beam = ott.BscPmGauss();
+  beam = ott.optics.vswf.bsc.PmGauss();
   beam.power = 1.0;
   tbeam = beam.translateXyz([300;0;0]);  % calls translate_z
 

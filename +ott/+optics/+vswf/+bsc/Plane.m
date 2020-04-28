@@ -60,7 +60,6 @@ classdef Plane < ott.optics.vswf.bsc.Bsc
 
       p.parse(varargin{:});
 
-      beam.type = 'incident';
       beam.basis = 'regular';
       beam.k_medium = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;

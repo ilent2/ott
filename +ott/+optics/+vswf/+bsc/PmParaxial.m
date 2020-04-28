@@ -1,10 +1,9 @@
-classdef BscPmParaxial < ott.BscPointmatch
+classdef PmParaxial < ott.optics.vswf.bsc.Pointmatch
 %BscPmParaxial calculate representation from farfield/paraxial beam
 %
 % Properties:
 %   a               (Bsc) Beam shape coefficients a vector
 %   b               (Bsc) Beam shape coefficients b vector
-%   type            (Bsc) Beam type (incoming, outgoing or scattered)
 %
 % Methods:
 %   translateZ      (Bsc) Translates the beam along the z axis
@@ -29,7 +28,7 @@ classdef BscPmParaxial < ott.BscPointmatch
   end
 
   methods
-    function beam = BscPmParaxial(NA, E_ff, varargin);
+    function beam = PmParaxial(NA, E_ff, varargin);
       % BscPmParaxial generates BSC from far-field complex field amplitudes
       %
       % beam = BscPmParaxial(NA, Eff, ...) generates beam with specified
@@ -94,7 +93,7 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       verbose = p.Results.verbose;
       Nmax = p.Results.Nmax;
-      beam.k_medium = ott.Bsc.parser_k_medium(p, 2*pi);
+      beam.k_medium = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
       beam.omega = p.Results.omega;
 
       % Handle default argument for invert_coefficient_matrix
@@ -115,7 +114,6 @@ classdef BscPmParaxial < ott.BscPointmatch
       ra=false;
       az=false;
 
-      function_theta=[];
       switch lower(p.Results.mapping)
         case 'sintheta'
           function_theta=2;
@@ -239,7 +237,7 @@ classdef BscPmParaxial < ott.BscPointmatch
 
       % Get a previous coefficient matrix
       if ~isempty(p.Results.beamData)
-        if isa(p.Results.beamData, 'ott.BscPmParaxial')
+        if isa(p.Results.beamData, 'ott.optics.vswf.bsc.PmParaxial')
 
           % Check properties of beams match
           % TODO: Check e_field/theta/phi locations
@@ -251,8 +249,10 @@ classdef BscPmParaxial < ott.BscPointmatch
             warning('ott:BscPmParaxial:BscPmParaxial:empty_icm', ...
                 'Not inverse coefficient matrix data associated with beam');
           end
-        else
+        elseif isnumeric(p.Results.beamData)
           icm = p.Results.beamData;
+        else
+          error('inverse coefficient matrix must be beam or numeric');
         end
       else
         icm = [];
@@ -273,7 +273,6 @@ classdef BscPmParaxial < ott.BscPointmatch
         beam.inv_coefficient_matrix = [];
       end
 
-      beam.type = 'incident';
       beam.basis = 'regular';
       
       % Update progress callback

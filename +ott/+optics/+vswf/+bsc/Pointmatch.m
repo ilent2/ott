@@ -6,7 +6,6 @@ classdef Pointmatch < ott.optics.vswf.bsc.Bsc
 %   inv_coefficient_matrix  Pseudo-inverse coefficient matrix for PM
 %   a            (Bsc) Beam shape coefficients a vector
 %   b            (Bsc) Beam shape coefficients b vector
-%   type         (Bsc) Beam type (incident, scattered, total)
 %   basis        (Bsc) VSWF beam basis (incoming, outgoing or regular)
 %   Nmax         (Bsc) Truncation number for VSWF coefficients
 %   power        (Bsc) Power of the beam [M*L^2/S^3]
@@ -64,6 +63,7 @@ classdef Pointmatch < ott.optics.vswf.bsc.Bsc
 
       % Generate coefficient matrix
       icm = p.Results.inv_coefficient_matrix;
+      assert(isnumeric(icm), 'Inverse coefficient matrix must be numeric');
       if isempty(icm)
         coefficient_matrix = zeros(length(e_field), 2*length(nn));
         for n = 1:max(nn)
