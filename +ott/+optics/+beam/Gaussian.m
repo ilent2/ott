@@ -20,9 +20,11 @@ classdef Gaussian < ott.optics.beam.AbstractBeam
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+% TODO: Some of these properties should move to beam properties
+% TODO: Some inconsistencies with relative and absolute permittivity
+
   properties
     waist          % Beam waist radius
-    permittivity   % Relative permittivity of medium (default: 1.0)
     speed0         % Speed of light in vacuum (default: 1.0)
   end
 
@@ -109,11 +111,6 @@ classdef Gaussian < ott.optics.beam.AbstractBeam
       assert(isnumeric(val) && isscalar(val), ...
         'speed0 must be numeric scalar');
       beam.speed0 = val;
-    end
-    function beam = set.permittivity(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-        'permittivity must be numeric scalar');
-      beam.permittivity = val;
     end
 
     function val = get.omega(beam)

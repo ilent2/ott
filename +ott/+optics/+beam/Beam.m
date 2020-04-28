@@ -31,6 +31,8 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 % Abstract methods
 %   - efieldInternal    -- Called by efield
 %   - hfieldInternal    -- Called by hfield
+%   - efarfieldInternal -- Called by efarfield
+%   - hfarfieldInternal -- Called by hfarfield
 %   - getBeamPower      -- get method called by dependent property power
 
 % Copyright 2020 Isaac Lenton
@@ -42,6 +44,8 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
   methods (Abstract)
     efieldInternal      % Method called by efield
     hfieldInternal      % Method called by hfield
+    efarfieldInternal   % Called by efarfield
+    hfarfieldInternal   % Called by hfarfield
     getBeamPower        % Get the beam power
   end
 

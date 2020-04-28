@@ -1,4 +1,4 @@
-classdef GaussianParaxial < ott.optics.beam.Beam & ott.optics.beam.Gaussian
+classdef GaussianParaxial < ott.optics.beam.Paraxial & ott.optics.beam.Gaussian
 % Paraxial approximation of a Gaussian beam
 % Inherits from :class:`Beam` and :class:`Gaussian`.
 %
@@ -49,8 +49,8 @@ classdef GaussianParaxial < ott.optics.beam.Beam & ott.optics.beam.Gaussian
   end
 
   methods (Hidden)
-    function [E, H] = ehfieldInternal(beam, xyz)
-      % Calculate the E and H fields
+    function E = efieldInternal(beam, xyz)
+      % Calculate the E (and H) fields
 
       % Calculate normalised beam waist (Eq 1)
       s = 1 ./ (beam.wavenumber .* beam.waist);
@@ -73,21 +73,13 @@ classdef GaussianParaxial < ott.optics.beam.Beam & ott.optics.beam.Gaussian
           .* beam.speed0 .* beam.waist.^2 .* (1 + s.^2 + 1.5.*s.^4)));
 
       E = E0 .* A;
-      H = E0 .* beam.index_medium .* A([2, 1, 3], :);
 
       % Package output
       E = ott.utils.FieldVector(xyz, E, 'cartesian');
-      H = ott.utils.FieldVector(xyz, H, 'cartesian');
     end
 
-    function E = efieldInternal(beam, xyz)
-      % Calculate only E-field
-      [E, ~] = beam.ehfieldInternal(xyz);
-    end
-
-    function H = hfieldInternal(beam, xyz)
-      % Calculate only H-field
-      [~, H] = beam.ehfieldInternal(xyz);
+    function E = efarfieldInternal(beam)
+      error('Not yet implemented');
     end
 
     function val = getBeamPower(beam)

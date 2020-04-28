@@ -5,22 +5,37 @@ classdef (Abstract) BeamProperties
 % two classes.
 %
 % Properties
-%   - power       -- The power of the beam (may be infinite)
+%   - power         -- The power of the beam (may be infinite)
 %   - wavelength    -- Wavelength of beam in medium (default: 1.0)
+%   - permittivity  -- Material relative permittivity (default: 1.0)
+%   - permeability  -- Material relative permeability (default: 1.0)
 %
 % Dependent properties
 %   - wavenumber    -- Wave-number of beam in medium
+%   - impedance     -- Impedance of the medium
 %
 % Abstract methods
 %   - getBeamPower      -- get method called by dependent property power
 
   properties
     wavelength     % Wavelength of beam in medium (default: 1.0)
+    permittivity   % Material relative permittivity (default: 1.0)
+    permeability   % Material relative permeability (default: 1.0)
   end
 
   properties (Dependent)
     power           % The power of the beam (may be infinite)
     wavenumber      % Wave-number of beam in medium
+    impedance       % Impedance of the medium
+  end
+
+  methods
+    function beam = BeamProperties()
+      % Initialize properties to defaults
+      beam.wavelength = 1.0;
+      beam.permittivity = 1.0;
+      beam.permeability = 1.0;
+    end
   end
 
   methods (Hidden)
@@ -52,6 +67,23 @@ classdef (Abstract) BeamProperties
     end
     function val = get.wavenumber(beam)
       val = 2*pi/beam.wavelength;
+    end
+
+    function beam = set.permittivity(beam, val)
+      assert(isscalar(val) && isnumeric(val), ...
+          'permittivity must be numeric scalar');
+      beam.permittivity = val;
+    end
+
+    function beam = set.permeability(beam, val)
+      assert(isscalar(val) && isnumeric(val), ...
+          'permeability must be numeric scalar');
+      beam.permeability = val;
+    end
+
+    function val = get.impedance(beam)
+      % TODO: What about tensor properties
+      val = sqrt(beam.permeability ./ beam.permittivity);
     end
   end
 end
