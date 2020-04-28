@@ -6,6 +6,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 %   - efield     -- Calculate electric field around the origin
 %   - hfield     -- Calculate magnetic field around the origin
 %   - ehfield    -- Calculate electric and magnetic fields around the origin
+%   - poynting   -- Calculate the Poynting vector field
 %   - efarfield  -- Calculate electric fields in the far-field
 %   - hfarfield  -- Calculate magnetic fields in the far-field
 %   - ehfarfield -- Calculate electric and magnetic fields in the far-field
@@ -182,6 +183,22 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       % in which case this method should be over-written.
       E = beam.efield(xyz);
       H = beam.hfield(xyz);
+    end
+
+    function S = poynting(beam, xyz)
+      % Calculate the Poynting vector
+      %
+      % This function calculates::
+      %
+      %     S = E \times H
+      %
+      % Usage
+      %   S = beam.poynting(xyz)
+      %   Calculates the Poynting vector at the locations (3xN matrix)
+      %   Returns a :class:`ott.utils.FieldVector`.
+
+      [E, H] = beam.ehfield(xyz);
+      S = ott.utils.FieldVector(xyz, cross(E.vxyz, H.vxyz), 'cartesian');
     end
 
     function E = efarfield(beam, rtp, varargin)
