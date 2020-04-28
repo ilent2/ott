@@ -10,14 +10,15 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 %   - efarfield  -- Calculate electric fields in the far-field
 %   - hfarfield  -- Calculate magnetic fields in the far-field
 %   - ehfarfield -- Calculate electric and magnetic fields in the far-field
+%   - poyntingFarfield -- Calculate the Poynting vector in the far-field
 %   - eparaxial  -- Calculate electric fields in the paraxial far-field
 %   - hparaxial  -- Calculate magnetic fields in the paraxial far-field
 %   - ehparaxial -- Calculate electric and magnetic paraxial far-fields
+%   - intensityMoment -- Calculate moment of beam intensity in the far-field
 %
 % Field visualisation methods
 %   - visualise -- Generate a visualisation around the origin
 %   - visualiseFarfield -- Generate a visualisation at the far-field
-%   - visualiseParaxial -- Generate a visualisation at the paraxial far-field
 %   - visualiseFarfieldSlice -- Visualise the field on a angular slice
 %   - visualiseFarfieldSphere -- Visualise the filed on a sphere
 %
@@ -205,6 +206,19 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       S = ott.utils.FieldVector(xyz, cross(E.vxyz, H.vxyz), 'cartesian');
     end
 
+    function S = poyntingFarfield(beam, rtp)
+      % Calculate the Poynting vector in the far-field
+      % See :meth:`poynting` for further information.
+      %
+      % Usage
+      %   S = beam.poyntingFarfield(rtp)
+      %   Returns a :class:`ott.utils.FieldVector`.
+
+      [E, H] = beam.ehfarfield(rtp);
+      xyz = ott.utils.rtp2xyz(E.locations);
+      S = ott.utils.FieldVector(xyz, cross(E.vxyz, H.vxyz), 'cartesian');
+    end
+
     function E = efarfield(beam, rtp, varargin)
       % Calculate E and H field
       %
@@ -313,7 +327,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       H = beam.hfarfield(rtp);
     end
 
-    function visualise(beam, varargin)
+    function varargout = visualise(beam, varargin)
       % Create a visualisation of the beam
       %
       % Usage
@@ -349,7 +363,10 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %     3xN field xyz field locations and return a logical array mask.
       %     Default: ``[]``.
       %
-      %   - axes (axes handle) -- Axes to place the visualisation in.
+      %   - combine (enum|empty) -- Method to use when combining beams.
+      %     Can either be emtpy (default), 'coherent' or 'incoherent'.
+      %
+      %   - plot_axes (axes handle) -- Axes to place the visualisation in.
       %     If empty, no visualisation is generated.
       %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
 
@@ -361,6 +378,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       p.addParameter('range', [1, 1].*beam.wavelength);
       p.addParameter('mask', []);
       p.addParameter('plot_axes', []);
+      p.addParameter('combine', []);
       p.parse(varargin{:});
 
       % Get range and size of data
@@ -383,6 +401,14 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
         mask = p.Results.mask(xyz);
       end
 
+      % Combine beams coherently (if requested)
+      assert(isempty(p.Results.combine) || ...
+          any(strcmpi(p.Results.combine, {'coherent', 'incoherent'})), ...
+          'combine must be one of empty, ''coherent'' or ''incoherent''');
+      if strcmpi(p.Results.combine, 'coherent')
+        beam = sum(beam);
+      end
+
       % Allocate memory for output
       imout = zeros(sz(1), sz(2), numel(beam));
 
@@ -392,10 +418,10 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
         our_xyz = xyz(:, mask(:));
 
         % Calculate field
-        Exyz = beam(ii).efield(our_xyz);
+        E = beam(ii).efield(our_xyz);
 
-        % Generate visualisation and store output
-        visdata = beam.VisualisationData(p.Results.field, Exyz);
+        % Generate visualisation
+        visdata = beam.VisualisationData(p.Results.field, E);
 
         % Create layer from masked data
         layer = zeros(sz);
@@ -407,6 +433,15 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 
       end
 
+      % Ensure size matches input size
+      imout = reshape(imout, [sz, size(beam)]);
+
+      % Combine incoherently (if requested)
+      if strcmpi(p.Results.combine, 'incoherent')
+        imout = sum(imout, 3);
+        imout = permute(imout, [1, 2, 4:ndims(imout), 3]);
+      end
+
       % Display the visualisation
       beam.visualiseShowPlot(nargout, p.Results.plot_axes, imout, ...
           {xrange, yrange}, labels);
@@ -416,9 +451,410 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
         varargout{1} = imout;
       end
     end
+
+    function varargout = visualiseFarfield(beam, varargin)
+      % Create a visualisation of the beam by projecting the far-field
+      % onto a plane.
+      %
+      % Usage
+      %   beam.visualiseFarfield(...) displays an image of the beam
+      %   in the current axes.
+      %
+      %   im = beam.visualise(...) returns a image of the beam.
+      %   If the beam object is an array, returns an image for each beam.
+      %
+      % Optional named arguments
+      %   - size (2 numeric) -- Number of rows and columns in image.
+      %     Default: ``[80, 80]``.
+      %
+      %   - field (enum) -- Type of visualisation to generate, see
+      %     :meth:`VisualisationData` for valid options.
+      %     Default: ``'irradiance'``.
+      %
+      %   - range (numeric|cell) -- Range of points to visualise.
+      %     Can either be a cell array { x, y }, two scalars for
+      %     range [-x, x], [-y, y] or 4 scalars [ x0, x1, y0, y1 ].
+      %     Default: ``[1, 1]``.
+      %
+      %   - direction (enum|2 numeric|3x3 numeric) -- Direction to visualise.
+      %     Either 'pos', 'neg' for the positive and negative z hemispheres,
+      %     [roty, rotz] for the rotation angles (in degrees), or
+      %     a 3x3 rotation matrix to apply to the coordinates.
+      %     Default: ``'pos'``.
+      %
+      %   - mapping (enum) -- Mapping from theta-phi to far-field.
+      %     Must be one of 'sin', 'tan' or 'theta'.
+      %     Default: ``'sin'``.
+      %
+      %   - combine (enum|empty) -- Method to use when combining beams.
+      %     Can either be emtpy (default), 'coherent' or 'incoherent'.
+      %
+      %   - plot_axes (axes handle) -- Axes to place the visualisation in.
+      %     If empty, no visualisation is generated.
+      %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
+
+      % Parse arguments
+      p = inputParser;
+      p.addParameter('field', 'irradiance');
+      p.addParameter('size', []);
+      p.addParameter('direction', 'pos');
+      p.addParameter('range', [1, 1]);
+      p.addParameter('mapping', 'sin');
+      p.addParameter('combine', []);
+      p.addParameter('plot_axes', []);
+      p.parse(varargin{:});
+
+      % Generate grid of coordinates
+      default_sz = [80, 80];
+      [xrange, yrange, sz] = beam.visualiseGetRange(p.Results.range, ...
+          p.Results.size, default_sz);
+      [xx, yy] = meshgrid(xrange, yrange);
+      nxyz = [xx(:), yy(:), zeros(size(xx(:)))].';
+
+      % Convert coordinates to spherical
+      rtp = beam.paraxial2farfield(nxyz, 'mapping', p.Results.mapping);
+      rtp(imag(rtp) ~= 0) = nan;
+
+      % Apply direction coordinate transformation
+      if ischar(p.Results.direction)
+        if strcmpi(p.Results.direction, 'pos')
+          % Nothing to do
+        elseif strcmpi(p.Results.direction, 'neg')
+          rtp(2, :) = pi - rtp(2, :);
+        else
+          error('Unknonw direction char string');
+        end
+      elseif isnumeric(p.Results.direction)
+        if all(size(p.Results.direction) == [3, 3])
+          R = p.Results.direction;
+        elseif numel(p.Results.direction) == 2
+          R = ott.utils.roty(p.Results.direction(1));
+          R = ott.utils.roty(p.Results.direction(2)) * R;
+        else
+          error('direction must be char, 3x3 numeric or 2-numeric')
+        end
+
+        xyz = R * ott.utils.rtp2xyz(rtp);
+        rtp = ott.utils.xyz2rtp(xyz);
+      end
+
+      % Calculate field data
+      imout = beam.visualiseImoutRtp(sz, rtp, ...
+          p.Results.combine, p.Results.field);
+
+      % Display the visualisation
+      beam.visualiseShowPlot(nargout, p.Results.plot_axes, imout, ...
+          {xrange, yrange}, {'Direction 1', 'Direction 2'});
+
+      % Assign outputs if requested
+      if nargout == 1
+        varargout{1} = imout;
+      end
+    end
+
+    function varargout = visualiseFarfieldSphere(beam, varargin)
+      % Generate a spherical surface visualisation of the far-field
+      %
+      % Usage
+      %   beam.visualiseFarfieldSphere(...)
+      %   Generate a visualisation of the far-field in the current axes.
+      %
+      %   [I, X, Y, Z] = beam.visualiseFarfieldSphere(...)
+      %   Outputs the field value and three coordinate matrices that
+      %   can be passed to ``surf(X, Y, Z)``.
+      %
+      % Optional named arguments
+      %   - field (enum) -- Type of visualisation to generate, see
+      %     :meth:`VisualisationData` for valid options.
+      %     Default: ``'irradiance'``.
+      %
+      %   - normalise (logical) -- If the field value should be normalized.
+      %     Default: ``false``.
+      %
+      %   - type (enum) -- Type of surface visualisation.
+      %     Can be either 'sphere' or '3dpolar'.
+      %     Default: ``'sphere'``.
+      %
+      %   - npts (numeric) -- Number of points for sphere surface.
+      %     Passed to ``sphere(npts)``.  Default: ``100``.
+      %
+      %   - combine (enum|empty) -- Method to use when combining beams.
+      %     Can either be emtpy (default), 'coherent' or 'incoherent'.
+      %
+      %   - plot_axes (axes handle) -- Axes to place the visualisation in.
+      %     If empty, no visualisation is generated.
+      %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
+
+      p = inputParser;
+      p.addParameter('field', 'irradiance');
+      p.addParameter('normalise', false);
+      p.addParameter('type', 'sphere');
+      p.addParameter('npts', 100);
+      p.addParameter('combine', []);
+      p.addParameter('plot_axes', []);
+      p.parse(varargin{:});
+
+      % Generate grid
+      [X,Y,Z] = sphere(p.Results.npts);
+
+      % Calculate field data
+      rtp = ott.utils.xyz2rtp(X, Y, Z);
+      imout = beam.visualiseImoutRtp(size(X), rtp, p.Results.combine, p.Results.field);
+
+      % Generate visualisation
+      if nargout == 0 || ~isempty(p.Results.plot_axes)
+
+        % Get the default axes
+        our_axes = p.Results.plot_axes;
+        if isempty(our_axes)
+          our_axes = gca();
+        end
+
+        % Check that we only have one visualisation to show
+        if ~ismatrix(imout)
+          warning('ott:optics:beam:Beam:non_matrix_plot', ...
+              'Multiple beams generated, only showing first');
+        end
+
+        I = imout(:, :, 1);
+        if p.Results.normalise
+          I = I ./ max(abs(I(:)));
+        end
+
+        switch p.Results.type
+          case 'sphere'
+            surf(our_axes, X, Y, Z, I, ...
+                'facecolor','interp','edgecolor','none');
+          case '3dpolar'
+            surf(our_axes, abs(I).*X,abs(I).*Y,abs(I).*Z,I,...
+              'facecolor','interp','edgecolor','none');
+          otherwise
+            error('Unknown visualisation type');
+        end
+
+        zlabel(our_axes, 'Z');
+        xlabel(our_axes, 'X');
+        ylabel(our_axes, 'Y');
+        view(our_axes, 50, 20);
+        axis(our_axes, 'equal');
+      end
+
+      % Assign output data
+      if nargout >= 1
+        varargout{1} = imout;
+        if nargout == 4
+          varargout{2:4} = {X, Y, Z};
+        end
+      end
+    end
+
+    function varargout = visualiseFarfieldSlice(beam, phi, varargin)
+      % Generate a 2-D slice through the far-field
+      %
+      % Usage
+      %   beam.visualiseFarfieldSlice(phi, ...)
+      %   Generates a 2-D slice at angle phi around the z-axis.
+      %   Plots into the current axes.
+      %
+      %   im = beam.visualiseFarfieldSlice(...)
+      %   Outputs the calculated values.
+      %
+      %   [theta, im] = beam.visualiseFarfieldSlice(...)
+      %   Also outputs the corresponding angles.
+      %
+      % Optional named arguments
+      %   - field (enum) -- Type of visualisation to generate, see
+      %     :meth:`VisualisationData` for valid options.
+      %     Default: ``'irradiance'``.
+      %
+      %   - normalise (logical) -- If the field value should be normalized.
+      %     Default: ``false``.
+      %
+      %   - npts (numeric) -- Number of points for sphere surface.
+      %     Passed to ``sphere(npts)``.  Default: ``100``.
+      %
+      %   - combine (enum|empty) -- Method to use when combining beams.
+      %     Can either be emtpy (default), 'coherent' or 'incoherent'.
+      %
+      %   - plot_axes (axes handle) -- Axes to place the visualisation in.
+      %     If empty, no visualisation is generated.
+      %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
+
+      p = inputParser;
+      p.addParameter('field', 'irradiance');
+      p.addParameter('normalise', false);
+      p.addParameter('npts', 100);
+      p.addParameter('combine', []);
+      p.addParameter('plot_axes', []);
+      p.parse(varargin{:});
+
+      % Generate grid
+      ptheta = linspace(0, 2*pi, p.Results.npts);
+      [r, theta, phi] = ott.utils.matchsize(0, ptheta(:), phi);
+      rtp = [r(:), theta(:), phi(:)].';
+
+      % Calculate fields
+      imout = beam.visualiseImoutRtp(p.Results.npts, rtp, p.Results.combine, p.Results.field);
+
+      % Generate visualisation
+      if nargout == 0 || ~isempty(p.Results.plot_axes)
+
+        % Get the default axes
+        our_axes = p.Results.plot_axes;
+        if isempty(our_axes)
+          our_axes = gca();
+        end
+
+        % Check that we only have one visualisation to show
+        if ~ismatrix(imout)
+          warning('ott:optics:beam:Beam:non_matrix_plot', ...
+              'Multiple beams generated, only showing first');
+        end
+
+        I = imout(:, :, 1);
+        if p.Results.normalise
+          I = I ./ max(abs(I(:)));
+        end
+
+        % Generate plot
+        polaraxes(our_axes);
+        polarplot(ptheta, I);
+      end
+
+      % Assign outputs
+      if nargout == 2
+        varargout{1:2} = {theta, imout};
+      elseif nargout == 1
+        varargout{1} = imout;
+      end
+    end
+
+    function [moments, ints] = intensityMoment(beam, varargin)
+      % Calculate moment of the beam intensity in the far-field
+      %
+      % Usage
+      %   [moment, int] = beam.intensityMoment(...)
+      %
+      % Optional named arguments
+      %   - theta_range (2 numeric) -- Range of angles to integrate over.
+      %     Default: ``[0, pi]``.
+      %
+      %   - ntheta (numeric) -- Number of theta points.  (Default: 100)
+      %   - nphi (numeric) -- Number of phi points.  (Default: 100)
+      %
+      %   - combine (enum|empty) -- Method to use when combining beams.
+      %     Can either be emtpy (default), 'coherent' or 'incoherent'.
+
+      p = inputParser;
+      p.addParameter('theta_range', [0, pi]);
+      p.addParameter('combine', []);
+      p.addParameter('ntheta', 100);
+      p.addParameter('nphi', 100);
+      p.parse(varargin{:});
+
+      % Setup grid
+      [theta, phi] = ott.utils.angulargrid(p.Results.ntheta, p.Results.nphi);
+      dtheta = theta(2) - theta(1);
+      dphi = phi(p.Results.ntheta+1) - phi(1);
+
+      % Truncate the theta range
+      keep = theta > p.Results.thetaRange(1) & theta < p.Results.thetaRange(2);
+      theta = theta(keep);
+      phi = phi(keep);
+
+      rtp = [ones(numel(theta), 1), theta(:), phi(:)].';
+
+      % Combine beams coherently (if requested)
+      assert(isempty(combine) || ...
+          any(strcmpi(combine, {'coherent', 'incoherent'})), ...
+          'combine must be one of empty, ''coherent'' or ''incoherent''');
+      if strcmpi(combine, 'coherent')
+        beam = sum(beam);
+      end
+
+      moments = zeros(3, numel(beam));
+      ints = zeros(1, numel(beam));
+
+      % So integrals match sign convention used in ott.forcetorque
+      uxyz = ott.utils.rtp2xyz(rtp);
+      uxyz(3, :) = -uxyz(3, :);
+
+      for ii = 1:numel(beam)
+
+        % Calculate fields
+        E = beam(ii).efarfield(rtp);
+
+        % Calculate the irradiance
+        Eirr = sum(abs(E.vrtp).^2, 1);
+        ints(ii) = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
+
+        % Calculate moment in Cartesian coordinates
+        Eirr_xyz = uxyz .* Eirr;
+        moments(:, ii) = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
+
+      end
+
+      % Ensure size matches input size
+      moments = reshape(moments, [3, size(beam)]);
+      ints = reshape(ints, [1, size(beam)]);
+
+      % Combine incoherently (if requested)
+      if strcmpi(combine, 'incoherent')
+        ints = sum(ints, 2);
+        ints = permute(ints, [1, 3:ndims(imout), 2]);
+
+        moments = sum(moments, 2);
+        moments = permute(moments, [1, 3:ndims(imout), 2]);
+      end
+    end
   end
 
-  % Methods related to beam.visualise
+  methods (Hidden)
+    function imout = visualiseImoutRtp(beam, sz, rtp, combine, field_type)
+      % Calculate field data for all beams
+      %
+      % Helper for use with visualiseFarfield functions.
+      %
+      % Usage
+      %   imout = beam.visualiseImoutRtp(rtp, combine, field_type)
+
+      % Combine beams coherently (if requested)
+      assert(isempty(combine) || ...
+          any(strcmpi(combine, {'coherent', 'incoherent'})), ...
+          'combine must be one of empty, ''coherent'' or ''incoherent''');
+      if strcmpi(combine, 'coherent')
+        beam = sum(beam);
+      end
+
+      % Allocate memory for output
+      imout = zeros([sz, numel(beam)]);
+
+      for ii = 1:numel(beam)
+
+        % Calculate fields at location
+        E = beam(ii).efarfield(rtp);
+
+        % Generate visualisation
+        visdata = beam.VisualisationData(field_type, E);
+
+        % Assign output
+        imout(:, :, ii) = reshape(visdata, [sz, 1]);
+
+      end
+
+      % Ensure size matches input size
+      imout = reshape(imout, [sz, size(beam)]);
+
+      % Combine incoherently (if requested)
+      if strcmpi(combine, 'incoherent')
+        sumdim = numel(sz)+1;
+        imout = sum(imout, sumdim);
+        imout = permute(imout, ...
+          [1:numel(sz), (sumdim+1):ndims(imout), sumdim]);
+      end
+    end
+  end
+
   methods (Static)
 
     function [xrange, yrange, sz] = visualiseGetRange(range, sz, default_sz)
@@ -561,7 +997,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %     Must be 'neg' or 'pos'.  Default: ``pos``.
       %
       %   - keepr (logical) -- If true, the output is a 3xN matrix.
-      %     Default: ``size(nxyz, 1) == 3``.
+      %     Radial dimension is ones.  Default: ``size(nxyz, 1) == 3``.
 
       p = inputParser;
       p.addParameter('mapping', 'sin');
@@ -600,7 +1036,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 
       % Package output
       if p.Results.keepr
-        rtp = [rr; theta; phi];
+        rtp = [ones(size(rr)); theta; phi];
       else
         rtp = [theta; phi];
       end

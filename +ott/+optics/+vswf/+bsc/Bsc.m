@@ -257,113 +257,8 @@ classdef Bsc < ott.optics.beam.Beam
         beam.b = [beam.b, other.b];
       end
     end
-    
-    function varargout = paraxialFarfield(beam, varargin)
-      % Calcualtes fields in the paraxial far-field
-      %
-      % Usage
-      %   [E, H] = beam.paraxialFarfield(...)
-      %
-      % Optional named arguments
-      %   - 'mapping' (enum) -- mapping to paraxial far-field
-      %   - 'calcE'   bool   calculate E field (default: true)
-      %   - 'calcH'   bool   calculate H field (default: nargout == 2)
-      %   - 'saveData' bool  save data for repeated calculation (default: false)
-      %   - 'data'    data   data saved for repeated calculation.
-      
-      p = inputParser;
-      p.addParameter('calcE', true);
-      p.addParameter('calcH', nargout >= 2);
-      p.addParameter('saveData', false);
-      p.addParameter('data', []);
-      p.addParameter('mapping', 'sin');
-      p.addParameter('size', [50, 50]);
-      p.addParameter('thetaMax', pi/2);
-      p.addParameter('direction', 'pos');
-      p.parse(varargin{:});
-      
-      % Calculate image locations
-      xrange = linspace(-1, 1, p.Results.size(1));
-      yrange = linspace(-1, 1, p.Results.size(2));
-      [xx, yy] = meshgrid(xrange, yrange);
 
-      % Calculate spherical coordinates for pixels
-      phi = atan2(yy, xx);
-      rr = sqrt(xx.^2 + yy.^2);
-      switch p.Results.mapping
-        case 'sin'
-          theta = asin(rr);
-        case 'tan'
-          theta = atan(rr);
-        case 'theta'
-          theta = rr;
-        otherwise
-          error('Unknown mapping argument value, must be sin, tan or theta');
-      end
-      
-      % Only include points within NA range
-      thetaMax = Inf;
-      if ~isempty(p.Results.thetaMax)
-        thetaMax = p.Results.thetaMax;
-      end
-
-      % Determine if the points need calculating
-      pinside = imag(theta) == 0 & theta < thetaMax;
-      iphi = phi(pinside);
-      itheta = theta(pinside);
-      
-      if strcmpi(p.Results.direction, 'neg')
-        itheta = pi - itheta;
-      elseif ~strcmpi(p.Results.direction, 'pos')
-        error('Direction must be ''pos'' or ''neg''');
-      end
-
-      % Calculate the electric field in the farfield
-      [E, H, data] = beam.farfield(itheta(:), iphi(:), ...
-        'saveData', p.Results.saveData, 'data', p.Results.data, ...
-        'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
-      
-      if nargout >= 1
-        
-        if p.Results.calcE
-          % Generate the requested field
-          dEt = beam.GetVisualisationData('Et', [], ...
-            [itheta, iphi, ones(size(iphi))], [], E.');
-          dEp = beam.GetVisualisationData('Ep', [], ...
-            [itheta, iphi, ones(size(iphi))], [], E.');
-
-          Et = zeros(p.Results.size);
-          Et(pinside) = dEt;
-          Ep = zeros(p.Results.size);
-          Ep(pinside) = dEp;
-
-          varargout{1} = Et;
-          varargout{1}(:, :, 2) = Ep;
-        end
-        
-        if nargout >= 2 && p.Results.calcH
-          % Generate the requested field
-          dHt = beam.GetVisualisationData('Et', [], ...
-            [itheta, iphi, ones(size(iphi))], [], H.');
-          dHp = beam.GetVisualisationData('Ep', [], ...
-            [itheta, iphi, ones(size(iphi))], [], H.');
-
-          Ht = zeros(p.Results.size);
-          Ht(pinside) = dHt;
-          Hp = zeros(p.Results.size);
-          Hp(pinside) = dHp;
-
-          varargout{2} = Ht;
-          varargout{2}(:, :, 2) = Hp;
-        end
-      end
-      
-      if nargout >= 3
-        varargout{3} = data;
-      end
-    end
-
-    function [E, H, data] = farfield(beam, theta, phi, varargin)
+    function [E, H, data] = ehfarfield(beam, rtp, varargin)
       %FARFIELD finds far field at locations theta, phi.
       %
       % [E, H] = beam.farfield(theta, phi) calculates the farfield
@@ -391,6 +286,14 @@ classdef Bsc < ott.optics.beam.Beam
       ip.addParameter('saveData', false);
       ip.addParameter('data', []);
       ip.parse(varargin{:});
+
+      if size(rtp, 1) == 3
+        theta = rtp(2, :).';
+        phi = rtp(3, :).';
+      else
+        theta = rtp(1, :);
+        phi = rtp(2, :);
+      end
 
       [theta,phi] = ott.utils.matchsize(theta,phi);
 
@@ -520,23 +423,37 @@ classdef Bsc < ott.optics.beam.Beam
       H = ott.utils.FieldVector(rtp, H, 'spherical');
     end
 
-    function [E, H, data] = emFieldRtp(beam, rtp, varargin)
+    function [E, H, data] = ehfieldRtp(beam, rtp, varargin)
       % Calculates the E and H field at specified locations
       %
-      % [E, H] = beam.emFieldRtp(rtp, ...) calculates the complex field
-      % at locations xyz (3xN matrix of spherical coordinates).
-      % Returns 3xN matrices for the E and H field at these locations.
+      % Usage
+      %   [E, H] = beam.ehfieldRtp(rtp, ...) calculates the complex field
+      %   at locations xyz (3xN matrix of spherical coordinates).
+      %   Returns 3xN matrices for the E and H field at these locations.
+      %
+      %   [E, H, data] = beam.emFieldXyz(...) returns data used in the
+      %   calculation.  See 'data' optional parameter.
       %
       % Optional named arguments:
-      %    'calcE'   bool   calculate E field (default: true)
-      %    'calcH'   bool   calculate H field (default: nargout == 2)
-      %    'saveData' bool  save data for repeated calculation (default: false)
-      %    'data'    data   data saved for repeated calculation.
-      %    'coord'   str    coordinates to use for calculated field
-      %       'cartesian' (default) or 'spherical'
+      %   - calcE   bool   calculate E field (default: true)
+      %
+      %   - calcH   bool   calculate H field (default: nargout == 2)
+      %
+      %   - saveData bool  save data for repeated calculation (default: false)
+      %
+      %   - data    data   data saved for repeated calculation.
+      %
+      %   - coord   str    coordinates to use for calculated field
+      %    'cartesian' (default) or 'spherical'
       %
       % If either calcH or calcE is false, the function still returns
       % E and H as matrices of all zeros for the corresponding field.
+      %
+      % If internal fields are calculated only the theta and phi components
+      % of E are continuous at the boundary. Conversely, only the kr
+      % component of D is continuous at the boundary.
+      %
+      % This function is based on the emField function from OTTv1.
 
       p = inputParser;
       p.addParameter('calcE', true);
@@ -550,289 +467,155 @@ classdef Bsc < ott.optics.beam.Beam
 
       % Get the indices required for the calculation
       [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
-      nm = [ n; m ];
 
       ci = ott.utils.combined_index(n, m);
       [a, b] = beam.getCoefficients(ci);
 
-      % Calculate the fields
-      % TODO: Should this function be moved to bsc.Static or bsc.private?
-      % TODO: Should this function take 3xN instead of Nx3
-      [E, H, data] = ott.utils.emField(rtp.', beam.basis, nm, [a; b], ...
-          'saveData', p.Results.saveData, ...
-          'data', p.Results.data, ...
-          'calcE', p.Results.calcE, 'calcH', p.Results.calcH);
-      E = E.';
+      % Get unique rtp for faster calculation
+      [r_new,~,indR]=unique(rtp(1, :).');
+      [theta_new,~,indTheta]=unique(rtp(2, :).');
+      [phi_new,~,indPhi]=unique(rtp(3, :).');
+
+      % Remove zeros
+      r_new(r_new == 0) = 1e-15;
+
+      % Allocate memory for outputs
+      E = zeros(size(rtp)).';
+      H = zeros(size(rtp)).';
+
+      un = unique(n);
+
+      % Allocate memory for output data
+      data = [];
+      if p.Results.saveData
+        data = zeros(numel(indTheta), 0);
+      end
+
+      % Start a counter for accessing the data
+      if ~isempty(p.Results.data)
+        dataCount = 0;
+      end
+
+      for nn = 1:max(un)
+        Nn = 1/sqrt(nn*(nn+1));
+        vv=find(n==nn);
+
+        if ~isempty(vv)
+
+          kr=r_new(indR);
+
+          if isempty(p.Results.data)
+
+            [Y,Ytheta,Yphi] = ott.utils.spharm(nn,m(vv),theta_new, ...
+                zeros(size(theta_new)));
+
+            switch beam.basis
+              case 'incoming'
+                [hn,dhn]=ott.utils.sbesselh2(nn,r_new);
+                hn = hn ./ 2;
+                dhn = dhn ./ 2;
+
+              case 'outgoing'
+                [hn,dhn]=ott.utils.sbesselh1(nn,r_new);
+                hn = hn ./ 2;
+                dhn = dhn ./ 2;
+
+              case 'regular'
+                [hn,dhn]=ott.utils.sbesselj(nn,r_new);
+
+              otherwise
+                error('Unknown beam type');
+            end
+
+            [M,PHI]=meshgrid(1i*m(vv),phi_new);
+
+            expimphi=exp(M.*PHI);
+
+            hnU=hn(indR);
+            dhnU=dhn(indR);
+
+            [jnr,djnr]=ott.utils.sbesselj(nn,r_new);
+            jnrU=jnr(indR);
+            djnrU=djnr(indR);
+
+            % Create full Y, Ytheta, Yphi, expimphi matrices (opt, R2018a)
+            expimphif = expimphi(indPhi, :);
+            YExpf = Y(indTheta, :).*expimphif;
+            YthetaExpf = Ytheta(indTheta, :).*expimphif;
+            YphiExpf = Yphi(indTheta, :).*expimphif;
+
+            % Save the data if requested
+            if p.Results.saveData
+              data(:, end+1) = hnU;
+              data(:, end+1) = dhnU;
+              data(:, end+(1:size(Ytheta, 2))) = YExpf;
+              data(:, end+(1:size(Ytheta, 2))) = YthetaExpf;
+              data(:, end+(1:size(Ytheta, 2))) = YphiExpf;
+            end
+
+          else
+
+            % Load the data if present
+            hnU = p.Results.data(:, dataCount+1);
+            dataCount = dataCount + 1;
+            dhnU = p.Results.data(:, dataCount+1);
+            dataCount = dataCount + 1;
+            YExpf = p.Results.data(:, dataCount+(1:length(vv)));
+            dataCount = dataCount + length(vv);
+            YthetaExpf = p.Results.data(:, dataCount+(1:length(vv)));
+            dataCount = dataCount + length(vv);
+            YphiExpf = p.Results.data(:, dataCount+(1:length(vv)));
+            dataCount = dataCount + length(vv);
+
+          end
+
+          pidx = full(a(vv));
+          qidx = full(b(vv));
+
+          % Now we use full matrices, we can use matmul (opt, R2018a)
+          if p.Results.calcE
+            E(:,1)=E(:,1)+Nn*nn*(nn+1)./kr.*hnU.*YExpf*qidx(:);
+            E(:,2)=E(:,2)+Nn*(hnU.*YphiExpf*pidx(:) ...
+                + dhnU.*YthetaExpf*qidx(:));
+            E(:,3)=E(:,3)+Nn*(-hnU.*YthetaExpf*pidx(:) ...
+                + dhnU.*YphiExpf*qidx(:));
+          end
+
+          if p.Results.calcH
+            H(:,1)=H(:,1)+Nn*nn*(nn+1)./kr.*hnU.*YExpf*pidx(:);
+            H(:,2)=H(:,2)+Nn*((hnU(:).*YphiExpf)*qidx(:) ...
+                +(dhnU(:).*YthetaExpf)*pidx(:));
+            H(:,3)=H(:,3)+Nn*((-hnU(:).*YthetaExpf)*qidx(:) ...
+                +(dhnU(:).*YphiExpf)*pidx(:));
+          end
+        end
+      end
+
       H = H.';
+      E = E.';
+
+      H=-1i*H; %LOOK HERE TO FIX STUFF
 
       % Package output
       E = ott.utils.FieldVector(rtp, E, 'spherical');
       H = ott.utils.FieldVector(rtp, H, 'spherical');
     end
 
-    function [E, H] = ehfield(beam, xyz)
-      % Calculate E and H field
+    function [E, H, data] = ehfield(beam, xyz, varargin)
+      % Calculates the E and H field at specified locations
       %
       % Usage
-      %   [E, H] = beam.ehfield(xyz)
-      %   Calculates the fields at the specified locations (3xN matrix).
-      [E, H, data] = beam.emFieldXyz(xyz);
-    end
-
-    function [E, H, data] = emFieldXyz(beam, xyz, varargin)
-      %EMFIELDXYZ calculates the E and H field at specified locations
+      %   [E, H] = beam.emFieldXyz(xyz, ...) calculates the complex field
+      %   at locations xyz (3xN matrix of Cartesian coordinates).
+      %   Returns 3xN :class:`ott.utils.FieldVector` for the E and H fields.
       %
-      % [E, H] = beam.emFieldXyz(xyz, ...) calculates the complex field
-      % at locations xyz (3xN matrix of Cartesian coordinates).
-      % Returns 3xN matrices for the E and H field at these locations.
+      %   [E, H, data] = beam.emFieldXyz(...) returns data used in the
+      %   calculation.  See 'data' optional parameter.
       %
-      % Optional named arguments:
-      %    'calcE'   bool   calculate E field (default: true)
-      %    'calcH'   bool   calculate H field (default: nargout == 2)
-      %    'saveData' bool  save data for repeated calculation (default: false)
-      %    'data'    data   data saved for repeated calculation.
-      %    'coord'   str    coordinates to use for calculated field
-      %       'cartesian' (default) or 'spherical'
-      %
-      % If either calcH or calcE is false, the function still returns
-      % E and H as matrices of all zeros for the corresponding field.
+      % For further details, see :meth:`ehfieldRtp`.
 
       rtp = ott.utils.xyz2rtp(xyz);
-      [E, H, data] = beam.emFieldRtp(rtp, varargin{:});
-    end
-    
-    function varargout = visualiseFarfieldSlice(beam, phi, varargin)
-      % Generate a 2-D scattering plot of the far-field
-      %
-      % beam.visualiseFarfieldSlice(phi) display a visualisation
-      % of the farfield.
-      %
-      % [theta, I] = beam.visualiseFarfieldSlice(phi) calculate data
-      % for the visualisation.  Pass showVisualisation, true to show.
-      
-      p = inputParser;
-      p.addParameter('field', 'irradiance');
-      p.addParameter('normalise', false);
-      p.addParameter('ntheta', 100);
-      p.addParameter('showVisualisation', nargout == 0);
-      p.parse(varargin{:});
-      
-      ptheta = linspace(0, 2*pi, p.Results.ntheta);
-      
-      % TODO: Other field types
-
-      % Calculate electric field
-      [E, ~] = beam.farfield(ptheta, phi);
-      
-      % Calculate desired field
-      [rtp{1:3}] = ott.utils.matchsize(0, ptheta(:), phi);
-      I = beam.GetVisualisationData(p.Results.field, [], [rtp{1}, rtp{2}, rtp{3}], [], E.');
-%       I = sum(abs(E).^2, 1);
-      
-      if p.Results.normalise
-        I = I ./ max(abs(I(:)));
-      end
-
-      % Setup outputs
-      if nargout == 2
-        varargout{1} = theta;
-        varargout{2} = I;
-      end
-      
-      % Display visualisation
-      if p.Results.showVisualisation
-        polarplot(ptheta, I);
-      end
-      
-    end
-    
-    function visualiseFarfieldSphere(beam, varargin)
-      % Generate a spherical surface visualisation of the far-field
-      %
-      % beam.visualiseFarfieldSphere(phi)
-      %
-      % Optional named arguments:
-      %   npts      num   Number of points to use for sphere surface
-      %   normalise bool  If intensity values should be normalised to 1
-      %   type      str   Type of visualisation to produce.
-      %       sphere    (default) draw a sphere with intensity as color
-      %       3dpolar   scale the radius by the intensity
-      
-      p = inputParser;
-      p.addParameter('field', 'irradiance');
-      p.addParameter('npts', 100);
-      p.addParameter('normalise', false);
-      p.addParameter('type', 'sphere');
-      p.parse(varargin{:});
-      
-      % build grid:
-      [x,y,z]=sphere(p.Results.npts);
-
-      % generate angular points for farfield:
-      [~,theta,phi]=ott.utils.xyz2rtp(x,y,z);
-
-      % find far-field in theta, phi:
-      [E,~]=beam.farfield(theta(:),phi(:));
-      
-      % Calculate the requested field
-      dataout = beam.GetVisualisationData(p.Results.field, [], ...
-        [theta(:), phi(:), ones(size(phi(:)))], [], E.');
-
-      % Reshape to match the input
-      I=reshape(dataout,size(x));
-      
-      if p.Results.normalise
-        I = I ./ max(abs(I(:)));
-      end
-      
-      switch p.Results.type
-        case 'sphere'
-          surf(x,y,z,I,'facecolor','interp','edgecolor','none');
-        case '3dpolar'
-          surf(abs(I).*x,abs(I).*y,abs(I).*z,I,...
-              'facecolor','interp','edgecolor','none');
-        otherwise
-          error('Unknown visualisation type');
-      end
-
-      zlabel('Z');
-      xlabel('X');
-      ylabel('Y');
-      view(50, 20);
-      axis equal;
-    end
-
-    function varargout = visualiseFarfield(beam, varargin)
-      % Create a 2-D visualisation of the farfield of the beam
-      %
-      % visualiseFarfield(...) displays an image of the farfield in
-      % the current figure window.
-      %
-      % im = visualiseFarfield(...) returns a 2-D image of the farfield.
-      %
-      % [im, data] = visualiseFarfield(..., 'saveData', true) returns the
-      % saved data that can be used for repeated calculation.
-      %
-      %    TODO: Should the data object instead be a callable object?
-      %     This would make the interface simpler.
-      %
-      % Optional named arguments:
-      %     'size'    [ x, y ]    Size of the image
-      %     'direction'  dir      Hemisphere string ('pos' or 'neg'),
-      %        2-vector (theta, phi) or 3x3 rotation matrix.
-      %     'field'   type        Type of field to calculate
-      %     'mapping' map         Mapping from sphere to plane ('sin', 'tan')
-      %     'range'   [ x, y ]    Range of points to visualise
-      %    'saveData' bool  save data for repeated calculation (default: false)
-      %    'data'    data   data saved for repeated calculation.
-      %    'thetaMax' num   maximum theta angle to include in image
-      %    'showVisualisation'  bool   show the visualisation in the
-      %       current figure (default: nargout == 0).
-
-      p = inputParser;
-      p.addParameter('size', [80, 80]);
-      p.addParameter('direction', 'pos');
-      p.addParameter('field', 'irradiance');
-      p.addParameter('mapping', 'sin');
-      p.addParameter('range', [1, 1]);
-      p.addParameter('saveData', nargout == 2);
-      p.addParameter('data', []);
-      p.addParameter('thetaMax', []);
-      p.addParameter('showVisualisation', nargout == 0);
-      p.parse(varargin{:});
-      
-      % If direction is a vector, rotate to that direction
-      if ~ischar(p.Results.direction)
-        dir = p.Results.direction;
-        if numel(dir) == 2
-          rbeam = beam.rotateYz(dir(1), dir(2));
-        elseif all(size(dir) == [3, 3])
-          rbeam = beam.rotate(dir);
-        else
-          error('OTT:BSC:visualiseFarfield:bad_direction', ...
-            'Direction must be char array or 2 element vector or 3x3 matrix');
-        end
-        
-        [varargout{1:nargout}] = rbeam.visualiseFarfield(...
-          'size', p.Results.size, 'direction', 'pos', ...
-          'field', p.Results.field, 'mapping', p.Results.mapping, ...
-          'range', p.Results.range, 'saveData', p.Results.saveData, ...
-          'data', p.Results.data, 'thetaMax', p.Results.thetaMax, ...
-          'showVisualisation', p.Results.showVisualisation);
-        return;  % All done
-      end
-
-      % Calculate image locations
-      xrange = linspace(-1, 1, p.Results.size(1))*p.Results.range(1);
-      yrange = linspace(-1, 1, p.Results.size(2))*p.Results.range(2);
-      [xx, yy] = meshgrid(xrange, yrange);
-
-      % Calculate spherical coordinates for pixels
-      phi = atan2(yy, xx);
-      rr = sqrt(xx.^2 + yy.^2);
-      switch p.Results.mapping
-        case 'sin'
-          theta = asin(rr);
-        case 'tan'
-          theta = atan(rr);
-        case 'theta'
-          theta = rr;
-        otherwise
-          error('Unknown mapping argument value, must be sin, tan or theta');
-      end
-      
-      % Only include points within NA range
-      thetaMax = Inf;
-      if ~isempty(p.Results.thetaMax)
-        thetaMax = p.Results.thetaMax;
-      end
-
-      % Determine if the points need calculating
-      pinside = imag(theta) == 0 & theta < thetaMax;
-      iphi = phi(pinside);
-      itheta = theta(pinside);
-      
-      if strcmpi(p.Results.direction, 'neg')
-        itheta = pi - itheta;
-      elseif ~strcmpi(p.Results.direction, 'pos')
-        error('Direction must be ''pos'' or ''neg''');
-      end
-
-      % Calculate the electric field in the farfield
-      [ioutputE, ~, data] = beam.farfield(itheta(:), iphi(:), ...
-        'saveData', p.Results.saveData, 'data', p.Results.data, ...
-        'calcE', true, 'calcH', false);
-      
-      % Generate the requested field
-      
-      dataout = beam.VisualisationData(p.Results.field, ioutputE);
-
-      % Pack the result into the images
-      imout = zeros(p.Results.size);
-      imout(pinside) = dataout;
-
-      % Display the visualisation
-      if p.Results.showVisualisation
-        
-        % Check the field is real
-        if ~isreal(imout)
-          error(['Unsupported field type for visualisation: ' p.Results.field]);
-        end
-        
-        imagesc(xrange, yrange, imout);
-        caxis([min(dataout), max(dataout)]);
-        xlabel('X');
-        ylabel('Y');
-        axis image;
-      end
-      
-      % Handle outputs
-      if nargout == 1
-        varargout{1} = imout;
-      elseif nargout == 2
-        varargout{1} = imout;
-        varargout{2} = data;
-      end
+      [E, H, data] = beam.ehfieldRtp(rtp, varargin{:});
     end
 
     function varargout = visualise(beam, varargin)
@@ -877,69 +660,17 @@ classdef Bsc < ott.optics.beam.Beam
       %
       %   - combine (enum|empty) -- Method to use when combining beams.
       %     Can either be emtpy (default), 'coherent' or 'incoherent'.
-      
-      assert(numel(beam) == 1, ...
-        'Only single beam inputs supported for Bsc.visualise');
 
+      % Default parameter changes for this function
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addParameter('axis', 'z');
-      p.addParameter('combine', []);
       p.addParameter('range', ...
           [1,1].*ott.utils.nmax2ka(beam.Nmax)./abs(beam.wavenumber));
-      p.addParameter('size', []);
-      p.addParameter('plot_axes', []);
       p.parse(varargin{:});
 
-      assert(isempty(p.Results.combine) || ...
-          any(strcmpi(p.Results.combine, {'coherent', 'incoherent'})), ...
-          'combine must be one of empty, ''coherent'' or ''incoherent''');
-
-      % Get unmatched arguments
       unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
-
-      % Combine coherent beams
-      if strcmpi(p.Results.combine, 'coherent') || beam.Nbeams == 1
-        beam = sum(beam);
-        [varargout{1:nargout}] = visualise@ott.optics.beam.Beam(...
-            beam, unmatched{:}, 'range', p.Results.range, ...
-            'size', p.Results.size, 'axis', p.Results.axis, ...
-            'plot_axes', p.Results.plot_axes);
-      else
-
-        % Separate beams into beam array
-        beam_array = beam.beam(1);
-        for ii = 2:beam.Nbeams
-          beam_array(ii) = beam.beam(ii);
-        end
-
-        % Generate the data
-        imout = visualise@ott.optics.beam.Beam(...
-            beam_array, unmatched{:}, 'range', p.Results.range, ...
-            'size', p.Results.size, 'axis', p.Results.axis, ...
-            'plot_axes', []);
-
-        % Combine incoherently
-        if strcmpi(p.Results.combine, 'incoherent')
-          imout = sum(im, 3);
-        end
-
-        % Get data for plot
-        default_sz = [80, 80];
-        [xrange, yrange, ~] = beam.visualiseGetRange(p.Results.range, ...
-            p.Results.size, default_sz);
-        [~, labels] = beam.visualiseGetXyz([], [], [], p.Results.axis);
-
-        % Call visualisation helper
-        beam.visualiseShowPlot(nargout, p.Results.plot_axes, imout, ...
-            {xrange, yrange}, labels);
-
-        % Assign outputs if requested
-        if nargout == 1
-          varargout{1} = imout;
-        end
-
-      end
+      [varargout{1:nargout}] = visualise@ott.optics.beam.Beam(...
+          beam, unmatched{:}, 'range', p.Results.range);
     end
 
     function speed = get.speed(beam)
@@ -1447,71 +1178,6 @@ classdef Bsc < ott.optics.beam.Beam
       beam.b = beam.b / o;
     end
 
-    function [moment, int, data] = intensityMoment(beam, varargin)
-      % intensityMoment Calculate moment of beam intensity in the far-field
-      %
-      % [moment, int, data] = intensityMoment(...) integrates over the
-      % incoming/outgoing field in the far-field to calculate the
-      % moment of the intensity.  Also calculates the intensity.
-      %
-      % Can be used to calculate the force by comparing the outgoing component
-      % of the incident beam with the total scattered beam.
-      %
-      % Optional named arguments:
-      %   thetaRange   [min, max]  Range of angles from the pole to
-      %      integrate over.  Default is 0 to pi (exclusive).
-      %   saveData   bool  save data for repeated calculation (default: false)
-      %   data       data  data saved for repeated calculation.
-      %   ntheta     num   number of samples over 0 to pi theta range.
-      %   nphi       num   number of samples over 0 to 2*pi phi range.
-
-      % Parse inputs
-      p = inputParser;
-      p.addParameter('thetaRange', [0, pi]);
-      p.addParameter('saveData', false);
-      p.addParameter('ntheta', 100);
-      p.addParameter('nphi', 100);
-      p.addParameter('data', []);
-      p.parse(varargin{:});
-
-      % Regular beams have trivial solution
-      if strcmpi(beam.basis, 'regular')
-        moment = [0;0;0];
-        int = 0;
-        data = p.Results.data;
-        warning('Regular wavefunctions go to zero in far-field');
-        return;
-      end
-
-      % Setup the angular grid
-      [theta, phi] = ott.utils.angulargrid(p.Results.ntheta, p.Results.nphi);
-      dtheta = theta(2) - theta(1);
-      dphi = phi(p.Results.ntheta+1) - phi(1);
-
-      % Truncate the theta range
-      keep = theta > p.Results.thetaRange(1) & theta < p.Results.thetaRange(2);
-      theta = theta(keep);
-      phi = phi(keep);
-
-      uxyz = ott.utils.rtp2xyz([ones(size(theta)), theta, phi]).';
-      
-      % So integrals match sign convention used in ott.forcetorque
-      uxyz(3, :) = -uxyz(3, :);
-
-      % Calculate E-field in far-field
-      [E, ~, data] = beam.farfield(theta, phi, ...
-          'saveData', p.Results.saveData, ...
-          'data', p.Results.data);
-
-      % Calculate the irradiance
-      Eirr = sum(abs(E).^2, 1);
-      int = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
-
-      % Calculate moment in Cartesian coordinates
-      Eirr_xyz = uxyz .* Eirr;
-      moment = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
-    end
-
     function varargout = forcetorque(ibeam, other, varargin)
       % Calculate change in momentum between beams
       %
@@ -1888,13 +1554,22 @@ classdef Bsc < ott.optics.beam.Beam
       beam = sqrt(p / beam.power) * beam;
     end
 
-    function E = efieldInternal(beam, xyz)
+    function [E, data] = efieldInternal(beam, xyz, varargin)
       % Method used by efield(xyz)
-      [E, ~, ~] = beam.emFieldXyz(xyz);
+      [E, ~, data] = beam.ehfield(xyz, varargin{:});
     end
-    function H = hfieldInternal(beam, xyz)
+    function [H, data] = hfieldInternal(beam, xyz, varargin)
       % Method used by hfield(xyz)
-      [~, H, ~] = beam.emFieldXyz(xyz);
+      [~, H, data] = beam.ehfield(xyz, varargin{:});
+    end
+
+    function [E, data] = efarfieldInternal(beam, rtp, varargin)
+      % Method used by efield(xyz)
+      [E, ~, data] = beam.ehfarfield(rtp, varargin{:});
+    end
+    function [H, data] = hfarfieldInternal(beam, rtp, varargin)
+      % Method used by hfield(xyz)
+      [~, H, data] = beam.ehfarfield(rtp, varargin{:});
     end
 
     function [a, b, p, q, n, m, ...
