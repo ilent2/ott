@@ -36,3 +36,14 @@ function testVisualise(testCase)
   close(h);
   
 end
+
+function testVisualiseFarfieldSphere(testCase)
+
+  waist = 0.5;
+  beam = ott.optics.beam.GaussianParaxial(waist);
+  
+  h = figure();
+  beam.visualiseFarfieldSphere();
+  close(h);
+  
+end

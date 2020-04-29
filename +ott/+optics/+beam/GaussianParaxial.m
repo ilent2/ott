@@ -78,10 +78,6 @@ classdef GaussianParaxial < ott.optics.beam.Paraxial & ott.optics.beam.Gaussian
       E = ott.utils.FieldVector(xyz, E, 'cartesian');
     end
 
-    function E = efarfieldInternal(beam)
-      error('Not yet implemented');
-    end
-
     function val = getBeamPower(beam)
       % Get the internal power value
       val = beam.internalPower;
