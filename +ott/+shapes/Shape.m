@@ -250,6 +250,7 @@ classdef Shape
       p.addParameter('scale', 1.0);
       p.addParameter('axes', []);
       p.addParameter('origin', 'shape');
+      p.addParameter('even_range', false);
       p.parse(varargin{:});
 
       plotoptions = p.Results.plotoptions;
@@ -262,6 +263,12 @@ classdef Shape
 
       % Calculate range of dipoles
       numr = ceil(shape.maxRadius * p.Results.scale / p.Results.spacing);
+
+      % Add an extra point so we don't have a point around zero
+      if p.Results.even_range
+        numr = numr + 0.5;
+      end
+
       rrange = (-numr:numr)*p.Results.spacing;
 
       % Generate the voxel grid
