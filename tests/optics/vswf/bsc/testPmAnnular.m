@@ -17,7 +17,7 @@ function testUniform(testCase)
   beam = bsc.PmAnnular([0.5, 1.0]);
   
   beam.basis = 'incoming';
-  E = beam.farfield([pi, pi-0.8*pi/2], [0, 0]);
+  E = beam.efarfield([[1, 1].', [pi, pi-0.8*pi/2].', [0, 0].']);
   E = sqrt(sum(abs(E).^2, 1));
   
   testCase.verifyThat(E(1), ...
@@ -30,9 +30,10 @@ function testUniform(testCase)
     'Within', AbsoluteTolerance(tol)), ...
     'Edge of beam does not go to one');
   
-  figure();
+  h = figure();
   beam.basis = 'incoming';
   beam.visualiseFarfield('dir', 'neg');
+  close(h);
 
 end
 
@@ -43,9 +44,10 @@ function testFromProfile(testCase)
   profile = linspace(0, 1, 20);
   beam = bsc.PmAnnular([0.5, 1.0], 'profile', profile);
   
-  figure();
+  h = figure();
   beam.basis = 'incoming';
   beam.visualiseFarfield('dir', 'neg');
+  close(h);
   
 end
 
@@ -58,8 +60,9 @@ function testFromBeam(testCase)
 
   beam = bsc.PmAnnular([0.5, 1.0], 'profile', oldBeam);
   
-  figure();
+  h = figure();
   beam.basis = 'incoming';
   beam.visualiseFarfield('dir', 'neg');
+  close(h);
   
 end

@@ -29,6 +29,9 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 % Dependent properties
 %   - wavenumber    -- Wave-number of beam in medium
 %
+% Utility methods
+%   - toArray           -- Convert the beam collection to an array
+%
 % Abstract methods
 %   - efieldInternal    -- Called by efield
 %   - hfieldInternal    -- Called by hfield
@@ -153,6 +156,25 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
   end
 
   methods
+    function beam = toArray(beam)
+      % Convert the beam object to an array of beam objects
+      %
+      % This is a work-around to implementing ``subsref`` for Beam
+      % classes which contain multiple beams.
+      %
+      % The function by default just returns the beam object.
+      % Overload this function to return a cell array of beam objects.
+      %
+      % Usage
+      %   array = beam.toArray()
+      %
+      % Conditions
+      %   size(array) == size(beam)
+      %   size(array{1, 1}) = size(beam(1).sub_beams)
+
+      % Nothing to do: beam = beam
+    end
+
     function E = efield(beam, xyz)
       % Calculate E and H field
       %
@@ -375,7 +397,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       p.addParameter('size', []);
       p.addParameter('axis', 'z');
       p.addParameter('offset', 0.0);
-      p.addParameter('range', [1, 1].*beam.wavelength);
+      p.addParameter('range', [1, 1].*max([beam(:).wavelength]));
       p.addParameter('mask', []);
       p.addParameter('plot_axes', []);
       p.addParameter('combine', []);
@@ -400,50 +422,17 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       else
         mask = p.Results.mask(xyz);
       end
-
-      % Combine beams coherently (if requested)
-      assert(isempty(p.Results.combine) || ...
-          any(strcmpi(p.Results.combine, {'coherent', 'incoherent'})), ...
-          'combine must be one of empty, ''coherent'' or ''incoherent''');
-      if strcmpi(p.Results.combine, 'coherent')
-        beam = sum(beam);
-      end
-
-      % Allocate memory for output
-      imout = zeros(sz(1), sz(2), numel(beam));
-
-      for ii = 1:numel(beam)
-
-        % Calculate which points are needed
-        our_xyz = xyz(:, mask(:));
-
-        % Calculate field
-        E = beam(ii).efield(our_xyz);
-
-        % Generate visualisation
-        visdata = beam.VisualisationData(p.Results.field, E);
-
-        % Create layer from masked data
-        layer = zeros(sz);
-        layer(mask) = visdata;
-        layer(~mask) = nan;
-
-        % Store layer
-        imout(:, :, ii) = layer;
-
-      end
-
-      % Ensure size matches input size
-      imout = reshape(imout, [sz, size(beam)]);
-
-      % Combine incoherently (if requested)
-      if strcmpi(p.Results.combine, 'incoherent')
-        imout = sum(imout, 3);
-        imout = permute(imout, [1, 2, 4:ndims(imout), 3]);
-      end
+      
+      % Calculate which points are needed
+      our_xyz = xyz(:, mask(:));
+     
+      % Calculate visualisation data
+      imout = beam.processBeamArray(sz, p.Results.combine, ...
+        @(sub) sub.visualiseImoutXyzMasked(sz, our_xyz, p.Results.field, mask));
 
       % Display the visualisation
-      beam.visualiseShowPlot(nargout, p.Results.plot_axes, imout, ...
+      ott.optics.beam.Beam.visualiseShowPlot(...
+          nargout, p.Results.plot_axes, imout, ...
           {xrange, yrange}, labels);
 
       % Assign outputs if requested
@@ -539,11 +528,12 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       end
 
       % Calculate field data
-      imout = beam.visualiseImoutRtp(sz, rtp, ...
-          p.Results.combine, p.Results.field);
+      imout = beam.processBeamArray(sz, p.Results.combine, ...
+        @(sub) sub.visualiseImoutRtp(sz, rtp, p.Results.field));
 
       % Display the visualisation
-      beam.visualiseShowPlot(nargout, p.Results.plot_axes, imout, ...
+      ott.optics.beam.Beam.visualiseShowPlot(...
+          nargout, p.Results.plot_axes, imout, ...
           {xrange, yrange}, {'Direction 1', 'Direction 2'});
 
       % Assign outputs if requested
@@ -599,7 +589,8 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 
       % Calculate field data
       rtp = ott.utils.xyz2rtp(X, Y, Z);
-      imout = beam.visualiseImoutRtp(size(X), rtp, p.Results.combine, p.Results.field);
+      imout = beam.processBeamArray(size(X), p.Results.combine, ...
+        @(sub) sub.visualiseImoutRtp(size(X), rtp, p.Results.field));
 
       % Generate visualisation
       if nargout == 0 || ~isempty(p.Results.plot_axes)
@@ -694,7 +685,8 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       rtp = [r(:), theta(:), phi(:)].';
 
       % Calculate fields
-      imout = beam.visualiseImoutRtp(p.Results.npts, rtp, p.Results.combine, p.Results.field);
+      imout = beam.processBeamArray(p.Results.npts, p.Results.combine, ...
+        @(sub) sub.visualiseImoutRtp(p.Results.npts, rtp, p.Results.field));
 
       % Generate visualisation
       if nargout == 0 || ~isempty(p.Results.plot_axes)
@@ -764,59 +756,22 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 
       rtp = [ones(numel(theta), 1), theta(:), phi(:)].';
 
-      % Combine beams coherently (if requested)
-      assert(isempty(combine) || ...
-          any(strcmpi(combine, {'coherent', 'incoherent'})), ...
-          'combine must be one of empty, ''coherent'' or ''incoherent''');
-      if strcmpi(combine, 'coherent')
-        beam = sum(beam);
-      end
-
-      moments = zeros(3, numel(beam));
-      ints = zeros(1, numel(beam));
-
       % So integrals match sign convention used in ott.forcetorque
       uxyz = ott.utils.rtp2xyz(rtp);
       uxyz(3, :) = -uxyz(3, :);
+      
+      imout = beam.processBeamArray(4, p.Results.combine, ...
+        @(sub) sub.intensityMomentImout(4, rtp, uxyz));
 
-      for ii = 1:numel(beam)
-
-        % Calculate fields
-        E = beam(ii).efarfield(rtp);
-
-        % Calculate the irradiance
-        Eirr = sum(abs(E.vrtp).^2, 1);
-        ints(ii) = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
-
-        % Calculate moment in Cartesian coordinates
-        Eirr_xyz = uxyz .* Eirr;
-        moments(:, ii) = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
-
-      end
-
-      % Ensure size matches input size
-      moments = reshape(moments, [3, size(beam)]);
-      ints = reshape(ints, [1, size(beam)]);
-
-      % Combine incoherently (if requested)
-      if strcmpi(combine, 'incoherent')
-        ints = sum(ints, 2);
-        ints = permute(ints, [1, 3:ndims(imout), 2]);
-
-        moments = sum(moments, 2);
-        moments = permute(moments, [1, 3:ndims(imout), 2]);
-      end
+      moments = imout(1:3, :);
+      ints = imout(4, :);
     end
   end
 
   methods (Hidden)
-    function imout = visualiseImoutRtp(beam, sz, rtp, combine, field_type)
-      % Calculate field data for all beams
-      %
-      % Helper for use with visualiseFarfield functions.
-      %
-      % Usage
-      %   imout = beam.visualiseImoutRtp(rtp, combine, field_type)
+    
+    function imout = processBeamArray(beam, sz, combine, func)
+      % Helper function for processing multiple beams
 
       % Combine beams coherently (if requested)
       assert(isempty(combine) || ...
@@ -825,33 +780,98 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       if strcmpi(combine, 'coherent')
         beam = sum(beam);
       end
+      
+      % Ensure the beam is a array
+      beam = beam.toArray();
 
       % Allocate memory for output
-      imout = zeros([sz, numel(beam)]);
+      if iscell(beam)
+        imout = cell(size(beam));
+      else
+        beam = {beam};
+        imout = {};
+      end
+      
+      % Keep track of if we have already applied incoherent
+      done_incoherent = false;
 
       for ii = 1:numel(beam)
 
-        % Calculate fields at location
-        E = beam(ii).efarfield(rtp);
+        sub_beam = beam{ii};
+        imout{ii} = zeros([sz, numel(sub_beam)]);
 
-        % Generate visualisation
-        visdata = beam.VisualisationData(field_type, E);
+        % Process each sub-beam and store layer
+        for jj = 1:numel(sub_beam)
+          imout{ii}(:, :, jj) = func(sub_beam(jj));
+        end
+        
+        if ~isvector(sub_beam)
+          imout{ii} = reshape(imout{ii}, [sz, size(sub_beam)]);
+        end
 
-        % Assign output
-        imout(:, :, ii) = reshape(visdata, [sz, 1]);
-
+        % Combine incoherently (if requested)
+        if numel(sub_beam) > 1 && strcmpi(combine, 'incoherent')
+          imout{ii} = sum(imout{ii}, 3);
+          imout{ii} = permute(imout{ii}, [1, 2, 4:ndims(imout), 3]);
+          done_incoherent = true;
+        end
       end
 
-      % Ensure size matches input size
-      imout = reshape(imout, [sz, size(beam)]);
+      if numel(imout) > 1
+        szimout = size(imout);
+        if isvector(imout)
+          szimout = max(szimout);
+        end
+        if size(imout{1}, 3) > 1
+          szimout = [1, szimout];
+        end
+        imout = reshape(imout, [1, 1, szimout]);
+      end
+      imout = cell2mat(imout);
 
       % Combine incoherently (if requested)
-      if strcmpi(combine, 'incoherent')
-        sumdim = numel(sz)+1;
-        imout = sum(imout, sumdim);
-        imout = permute(imout, ...
-          [1:numel(sz), (sumdim+1):ndims(imout), sumdim]);
+      if ~done_incoherent && strcmpi(combine, 'incoherent')
+        imout = sum(imout, 3);
+        imout = permute(imout, [1, 2, 4:ndims(imout), 3]);
       end
+    end
+    
+    function imout = intensityMomentImout(beam, ~, rtp, uxyz)
+      % Calculate the imout data for the intensityMoment function
+      
+      % Calculate fields
+      E = beam.efarfield(rtp);
+
+      % Calculate the irradiance
+      Eirr = sum(abs(E.vrtp).^2, 1);
+      ints = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
+
+      % Calculate moment in Cartesian coordinates
+      Eirr_xyz = uxyz .* Eirr;
+      moments = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
+      
+      imout = [moments(:); ints];
+    end
+    
+    function imout = visualiseImoutXyzMasked(beam, sz, xyz, field_type, mask)
+      % Calculate the imout data for the visualise function
+      
+      % Calculate field and visualisation data
+      E = beam.efield(xyz);
+      visdata = beam.VisualisationData(field_type, E);
+
+      % Create layer from masked data
+      imout = zeros(sz);
+      imout(mask) = visdata;
+      imout(~mask) = nan;
+    end
+    
+    function imout = visualiseImoutRtp(beam, sz, rtp, field_type)
+      % Calculate the imout data for farfield visualisation functions
+      
+      E = beam.efarfield(rtp);
+      visdata = beam.VisualisationData(field_type, E);
+      imout = reshape(visdata, [sz, 1]);
     end
   end
 

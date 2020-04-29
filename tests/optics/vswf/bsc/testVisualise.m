@@ -51,3 +51,44 @@ function testVisualiseFarfieldSphere(testCase)
 
 end
 
+function testVisualiseArray(testCase)
+
+  beam = ott.optics.vswf.bsc.PmGauss();
+  beam(2) = beam;
+  
+  im = beam.visualise();
+  testCase.verifyEqual(size(im), [80, 80, 2], 'default');
+
+  im = beam.visualise('combine', 'coherent');
+  testCase.verifyEqual(size(im), [80, 80], 'coherent');
+  
+  im = beam.visualise('combine', 'incoherent');
+  testCase.verifyEqual(size(im), [80, 80], 'incoherent');
+  
+  beam(3) = beam(1);
+  beam = [beam; beam];
+  
+  im = beam.visualise();
+  testCase.verifyEqual(size(im), [80, 80, 2, 3], 'matrix');
+end
+
+function testVisualiseAppend(testCase)
+
+  beam = ott.optics.vswf.bsc.PmGauss();
+  beam = beam.append(beam);
+  
+  im = beam.visualise();
+  testCase.verifyEqual(size(im), [80, 80, 2], 'default');
+
+  im = beam.visualise('combine', 'coherent');
+  testCase.verifyEqual(size(im), [80, 80], 'coherent');
+  
+  im = beam.visualise('combine', 'incoherent');
+  testCase.verifyEqual(size(im), [80, 80], 'incoherent');
+  
+  beam = [beam, beam, beam];
+  beam = [beam; beam];
+  
+  im = beam.visualise();
+  testCase.verifyEqual(size(im), [80, 80, 2, 2, 3], 'matrix');
+end

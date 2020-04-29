@@ -454,6 +454,9 @@ classdef Bsc < ott.optics.beam.Beam
       % component of D is continuous at the boundary.
       %
       % This function is based on the emField function from OTTv1.
+      
+      assert(numel(beam) == 1, ...
+        'Function only supports single beam operations');
 
       p = inputParser;
       p.addParameter('calcE', true);
@@ -618,6 +621,19 @@ classdef Bsc < ott.optics.beam.Beam
       [E, H, data] = beam.ehfieldRtp(rtp, varargin{:});
     end
 
+    function beam = toArray(beam)
+      % Convert the beam set to an array of beams
+
+      if numel(beam) > 1
+        beam = num2cell(beam);
+        for ii = 1:numel(beam)
+          beam{ii} = beam{ii}.toArray();
+        end
+      else
+        beam = arrayfun(@(ii) beam.beam(ii), 1:beam.Nbeams);
+      end
+    end
+
     function varargout = visualise(beam, varargin)
       % Create a visualisation of the beam
       %
@@ -661,11 +677,13 @@ classdef Bsc < ott.optics.beam.Beam
       %   - combine (enum|empty) -- Method to use when combining beams.
       %     Can either be emtpy (default), 'coherent' or 'incoherent'.
 
+      import ott.utils.nmax2ka;
+
       % Default parameter changes for this function
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addParameter('range', ...
-          [1,1].*ott.utils.nmax2ka(beam.Nmax)./abs(beam.wavenumber));
+      p.addParameter('range', [1,1].*nmax2ka(max([beam.Nmax])) ... 
+          ./abs(min([beam.wavenumber])));
       p.parse(varargin{:});
 
       unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
