@@ -18,6 +18,11 @@ classdef StarShape < ott.shapes.ShapeSph
 
   methods
 
+    function nxyz = normalsRtp(shape, rtp)
+      % TODO: Consider removing ``normals(shape, theta, phi)``.
+      nxyz = shape.normals(rtp(2, :), rtp(3, :));
+    end
+
     function varargout = mirrorSymmetry(shape)
       % Return the mirror symmetry for the particle
       %
@@ -108,23 +113,7 @@ classdef StarShape < ott.shapes.ShapeSph
       % Calculate Cartesian coordinates
       [X, Y, Z] = shape.locations(theta, phi);
 
-      % Apply a rotation to the surface
-      if ~isempty(p.Results.rotation)
-        XYZ = [X, Y, Z].';
-        XYZ = p.Results.rotation * XYZ;
-        X = XYZ(1, :);
-        Y = XYZ(2, :);
-        Z = XYZ(3, :);
-      end
-
-      % Apply a translation to the surface
-      if ~isempty(p.Results.position)
-        X = X + p.Results.position(1);
-        Y = Y + p.Results.position(2);
-        Z = Z + p.Results.position(3);
-      end
-
-      % Reshape the output to match the size
+      % Reshape to desired shape
       X = reshape(X, sz);
       Y = reshape(Y, sz);
       Z = reshape(Z, sz);
@@ -134,22 +123,8 @@ classdef StarShape < ott.shapes.ShapeSph
       Y(:, end+1) = Y(:, 1);
       Z(:, end+1) = Z(:, 1);
 
-      % Generate the surface
-      if nargout == 0 || ~isempty(p.Results.axes)
-        
-        % Place the surface in the specified axes
-        our_axes = p.Results.axes;
-        if isempty(our_axes)
-          our_axes = gca();
-        end
-        
-        surf(our_axes, X, Y, Z, p.Results.surfoptions{:});
-      end
-      
-      % Set outputs if requested
-      if nargout ~= 0
-        varargout = { X, Y, Z };
-      end
+      % Draw the figure and handle rotations/translations
+      shape.surfCommon(p, sz, X, Y, Z);
     end
 
     function varargout = voxels(shape, spacing, varargin)

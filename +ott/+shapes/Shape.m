@@ -7,8 +7,12 @@ classdef Shape
 %   - position   -- Location of shape ``[x, y, z]``
 %
 % Methods (abstract)
-%   insideRtp(shape, ...) determine if Spherical point is inside shape
-%   insideXyz(shape, ...) determine if Cartesian point is inside shape
+%   insideRtp       -- Determine if Spherical point is inside shape
+%   insideXyz       -- Determine if Cartesian point is inside shape
+%   normalsRtp      -- Calculate normals at surface location
+%   normalsXyz      -- Calculate normals at surface location
+%   get_maxRadius   -- Get max distance from origin
+%   get_volume      -- Get shape volume
 %
 % Methods
 %   writeWavefrontObj(shape, ...) write shape to Wavefront OBJ file
@@ -309,7 +313,77 @@ classdef Shape
         varargout = {xyz};
       end
     end
+  end
 
+  methods (Hidden)
+    function varargout = surfCommon(shape, p, sz, xx, yy, zz)
+      % Helper for doing the final parts of surf
+      %
+      % Usage
+      %   [varargout{1:nargout}] = shape.surfCommon(p, sz, X, Y, Z)
+      %
+      % Parameters
+      %   - p -- inputParser
+      %   - sz -- Desired size of shape values
+      %   - X, Y, Z -- shape values
+
+      % Apply a rotation to the surface
+      if ~isempty(p.Results.rotation)
+        XYZ = [xx(:), yy(:), zz(:)].';
+        XYZ = p.Results.rotation * XYZ;
+        xx = reshape(XYZ(1, :), sz);
+        yy = reshape(XYZ(2, :), sz);
+        zz = reshape(XYZ(3, :), sz);
+      end
+
+      % Apply a translation to the surface
+      if ~isempty(p.Results.position)
+        xx = xx + p.Results.position(1);
+        yy = yy + p.Results.position(2);
+        zz = zz + p.Results.position(3);
+      end
+
+      % Generate the surface
+      if nargout == 0 || ~isempty(p.Results.axes)
+
+        % Place the surface in the specified axes
+        our_axes = p.Results.axes;
+        if isempty(our_axes)
+          our_axes = gca();
+        end
+
+        surf(our_axes, xx, yy, zz, p.Results.surfoptions{:});
+        axis(our_axes, 'equal');
+
+        % Compute and add surface normals
+        if p.Results.show_normals
+          nxyz = shape.normalsXyz([xx(:), yy(:), zz(:)].');
+
+          % Preserve hold-no state
+          isholdon = ishold();
+          if ~isholdon
+            hold('on');
+          end
+
+          % Generate plot of surface normals
+          s = 0.1*shape.maxRadius;
+          quiver3(xx(:).', yy(:).', zz(:).', ...
+              s.*nxyz(1, :), s.*nxyz(2, :), s.*nxyz(3, :), 0);
+
+          if ~isholdon
+            hold('off');
+          end
+        end
+      end
+
+      % Set outputs if requested
+      if nargout ~= 0
+        varargout = { xx, yy, zz };
+      end
+    end
+  end
+
+  methods % Getters/Setters
     function shape = set.position(shape, value)
       % Check position values
       assert(numel(value) == 3, 'Position must be 3 element vector');

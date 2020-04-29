@@ -1,26 +1,34 @@
 classdef AxisymShape < ott.shapes.Shape
-%AxisymShape abstract class for axisymetric particles
+% Abstract class for axis-symmetric particles.
+% Inherits from :class:`Shape`.
 %
 % Methods
 %   - boundarypoints  calculate boudary points for surface integral
 %
+% Properties
+%   - perimeter     -- Perimeter of the shape
+%
 % Abstract methods
-%   - radii           Calculates the particle radii for angular coordinates
 %   - normals         Calculates the particle normals for angular coorindates
 %   - axialSymmetry   Returns x, y, z rotational symmetry (0 for infinite)
+%   - get_perimiter -- Get the perimeter of the shape
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties
-  end
+% TODO: We need to come back and re-write chunks of this,
+%   it seems most of this is for star-shaped particles
+%   (but it doesn't need to be).
+
+% TODO: What is this class currently for and what is it used for?
+%     Do we need it, does it need to be completely re-written?
+%     Do we even need a axialSymmetry function if we have a label class?
 
   properties (Dependent)
-    perimiter
+    perimiter       % Perimeter of the shape
   end
 
   methods (Abstract)
-    radii(shape, theta, phi);
     normals(shape, theta, phi);
     axialSymmetry(shape);
 

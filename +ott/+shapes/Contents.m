@@ -7,6 +7,7 @@
 %   TriangularMesh - Base for triangular mesh objects (such as file loaders)
 %   StarShape      - Abstract base class for star shaped particles
 %   AxisymShape    - Abstract base class for axis-symmetric particles
+%   Extrusion      - Abstract class for shapes described by a height function
 %
 % Simple geometric shapes
 %   Cube           - Cube shape

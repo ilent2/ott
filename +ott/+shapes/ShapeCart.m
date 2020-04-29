@@ -4,9 +4,11 @@ classdef (Abstract) ShapeCart < ott.shapes.Shape
 %
 % Abstract methods
 %   - insideXyz     -- Determines if a point is inside the shape
+%   - normalsXyz    -- Calculate normals at a surface location
 %
 % Methods
 %   - insideRtp     -- Spherical coordinate inputs, calls insideXyz
+%   - normalsRtp    -- Calculate normals, calls normalsXyz
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -34,6 +36,20 @@ classdef (Abstract) ShapeCart < ott.shapes.Shape
 
       % Call Cartesian method
       b = shape.insideXyz(xyz, 'origin', 'shape');
+    end
+
+    function nxyz = normalsRtp(shape, rtp, varargin)
+      % Calculate normals at the specified surface locations
+      %
+      % Usage
+      %   nxyz = shape.normalsRtp(rtp, ...) calculates the normal at
+      %   the specified location.
+
+      % Transform to Cartesian coordinates
+      xyz = ott.utils.rtp2xyz(rtp);
+
+      % Call Spherical method
+      nxyz = shape.normalsXyz(xyz, varargin{:});
     end
   end
 end
