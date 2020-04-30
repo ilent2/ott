@@ -1,6 +1,7 @@
-classdef Bsc < ott.optics.beam.Beam
+classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
 % Class representing beam shape coefficients.
-% Inherits from :class:`ott.optics.beam.Beam`.
+% Inherits from :class:`ott.optics.beam.Beam` and
+% :class:`ott.utils.RotateHelper`.
 %
 % Any units can be used for the properties as long as they are
 % consistent in all specified properties.  Calculated quantities
@@ -1067,6 +1068,9 @@ classdef Bsc < ott.optics.beam.Beam
       p.addParameter('wigner', []);
       p.parse(varargin{:});
 
+      % Check number of outputs is at least 1
+      beam.nargoutCheck(nargout);
+
       if ~isempty(p.Results.R) && isempty(p.Results.wigner)
 
         R = p.Results.R;
@@ -1105,56 +1109,6 @@ classdef Bsc < ott.optics.beam.Beam
       else
         error('One of wigner or R must be specified');
       end
-    end
-
-    function [beam, D] = rotateX(beam, angle, varargin)
-      %ROTATEX rotates the beam about the x-axis an angle in radians
-      import ott.utils.*;
-      [beam, D] = beam.rotate(rotx(angle*180/pi), varargin{:});
-    end
-
-    function [beam, D] = rotateY(beam, angle, varargin)
-      %ROTATEX rotates the beam about the y-axis an angle in radians
-      import ott.utils.*;
-      [beam, D] = beam.rotate(roty(angle*180/pi), varargin{:});
-    end
-
-    function [beam, D] = rotateZ(beam, angle, varargin)
-      %ROTATEX rotates the beam about the z-axis an angle in radians
-      import ott.utils.*;
-      [beam, D] = beam.rotate(rotz(angle*180/pi), varargin{:});
-    end
-
-    function [beam, D] = rotateXy(beam, anglex, angley, varargin)
-      %ROTATEX rotates the beam about the x then y axes
-      import ott.utils.*;
-      [beam, D] = beam.rotate(roty(angley*180/pi)*rotx(anglex*180/pi), ...
-          varargin{:});
-    end
-
-    function [beam, D] = rotateXz(beam, anglex, anglez, varargin)
-      %ROTATEX rotates the beam about the x then z axes
-      import ott.utils.*;
-      [beam, D] = beam.rotate(rotz(anglez*180/pi)*rotx(anglex*180/pi), ...
-          varargin{:});
-    end
-
-    function [beam, D] = rotateYz(beam, angley, anglez, varargin)
-      %ROTATEX rotates the beam about the y then z axes
-      import ott.utils.*;
-      [beam, D] = beam.rotate(rotz(anglez*180/pi)*roty(angley*180/pi), ...
-          varargin{:});
-    end
-
-    function [beam, D] = rotateXyz(beam, anglex, angley, anglez, varargin)
-      % Rotate the beam about the x, y then z axes
-      %
-      % [beam, D] = rorateXyz(anglex, angley, anglez, ...) additional
-      % arguments are passed to beam.rotate.  Angles in radians.
-
-      import ott.utils.*;
-      [beam, D] = beam.rotate(rotz(anglez*180/pi)* ...
-          roty(angley*180/pi)*rotx(anglex*180/pi), varargin{:});
     end
 
     function [a, b] = getCoefficients(beam, ci)
