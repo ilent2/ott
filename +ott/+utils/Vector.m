@@ -1,9 +1,14 @@
-classdef Vector
+classdef Vector < ott.utils.RotateHelper
 % A class describing a vector with a origin and direction
+% Inherits from :class:`RotateHelper`.
 %
 % Properties
 %   - origin    -- Vector origins, n-dimensional array with 3 rows
 %   - direction -- Vector directions, n-dimensional array with 3 rows
+%
+% Methods
+%   - rotate    -- Rotate the vectors (and optionally, their origins)
+%   - rotate*   -- Rotate the vectors around the X,Y,Z axis
 %
 % Loosely based on Shapes.Vector from OTGO
 
@@ -249,7 +254,7 @@ classdef Vector
     end
 
     function vec = mtimes(vec1, vec2)
-      % Scalar multiplication
+      % Scalar and matrix multiplication
       %
       % Implements scalar multiplication.  For cross-products see
       % :meth:`cross`.
@@ -257,6 +262,12 @@ classdef Vector
       % Usage
       %   new_vec = vec * scalar
       %   new_vec = scalar * vec
+      %   Scalar multiplication.
+      %
+      %   new_vec = R * vec
+      %   Matrix-vector multiplication.  R must be a 3xN matrix.
+      %   Rotates vectors about their origins, for rotation of origins
+      %   see :meth:`rotate`.
 
       if isscalar(vec1) && isa(vec2, 'ott.utils.Vector')
         vec = vec2;
@@ -264,6 +275,10 @@ classdef Vector
       elseif isscalar(vec2) && isa(vec1, 'ott.utils.Vector')
         vec = vec1;
         vec.direction = vec.direction * vec2;
+      elseif ismatrix(vec1) && all(size(vec1) == [3, 3]) ...
+          && isa(vec2, 'ott.utils.Vector')
+        vec = vec2;
+        vec.direction = vec1 * vec.direction;
       else
         error('One input must be scalar the other a Vector');
       end
@@ -306,6 +321,29 @@ classdef Vector
         vec = ott.utils.Vector(vec2.origin, dot(vec1, vec2.direction));
       else
         error('Expected at least one Vector instance');
+      end
+    end
+
+    function vec = rotate(vec, R, varargin)
+      % Applies a rotation to vectors or vectors and origins
+      %
+      % Usage
+      %   vec = vec.rotate(vec, R)
+      %   Rotates vectors about origins.
+      %
+      %   vec = vec.rotate(vec, R, 'origin', true)
+      %   Rotate vectors and origins.
+
+      p = inputParser;
+      p.addParameter('origin', false);
+      p.parse(varargin{:});
+
+      % Apply rotation to vectors
+      vec = R * vec;
+
+      % Apply rotation to origin too
+      if p.Results.origin
+        vec.origin = R * vec.origin;
       end
     end
 
