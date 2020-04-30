@@ -1,6 +1,6 @@
-classdef Stokes
+classdef Stokes < ott.utils.RotateHelper
 % Base class for 6-vector force/torque drag tensors.
-% Inherits from :class:`Stokes`.
+% Inherits from :class:`ott.utils.RotateHelper`.
 %
 % This class is the base class for drag tensors which can be described
 % by a 3x3 translational, rotational, and cross-term matrices in
@@ -420,51 +420,12 @@ classdef Stokes
       obj.orientation = val;
     end
 
-    function obj = rotateX(obj, angle_rad)
-      % Rotate the particle about the x-axis an angle in radians
-      import ott.utils.*;
-      obj = obj.rotate(rotx(180*angle_rad/pi));
-    end
-
-    function obj = rotateY(obj, angle_rad)
-      % Rotate the particle about the y-axis an angle in radians
-      import ott.utils.*;
-      obj = obj.rotate(roty(180*angle_rad/pi));
-    end
-
-    function obj = rotateZ(obj, angle_rad)
-      % Rotate the particle about the z-axis an angle in radians
-      import ott.utils.*;
-      obj = obj.rotate(rotz(180*angle_rad/pi));
-    end
-
-    function obj = rotateXy(obj, anglex, angley)
-      % Rotate the particle about the x then y axis (units radians)
-      import ott.utils.*;
-      obj = obj.rotate(roty(180*angley/pi) * rotx(180*anglex/pi));
-    end
-
-    function obj = rotateXz(obj, anglex, anglez)
-      % Rotate the particle about the x then z axis (units radians)
-      import ott.utils.*;
-      obj = obj.rotate(rotz(180*anglez/pi) * rotx(180*anglex/pi));
-    end
-
-    function obj = rotateYz(obj, angley, anglez)
-      % Rotate the particle about the y then z axis (units radians)
-      import ott.utils.*;
-      obj = obj.rotate(rotz(180*anglez/pi) * roty(180*angley/pi));
-    end
-
-    function obj = rotateXyz(obj, anglex, angley, anglez)
-      % Rotate the particle about the x, y then z axis (units radians)
-      import ott.utils.*;
-      obj = obj.rotate(rotz(180*anglez/pi) * ...
-          roty(180*angley/pi) * rotx(180*anglex/pi));
-    end
-
     function obj = rotate(obj, rot)
       % Applies a 3x3 rotation matrix to the current orientation
+
+      % Check at least one output argument
+      obj.nargoutCheck(nargout);
+
       obj = obj.rotate_data(rot);
       obj.orientation = rot * obj.orientation;
     end
