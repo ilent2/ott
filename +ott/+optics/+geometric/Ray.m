@@ -1,12 +1,25 @@
-classdef Ray < ott.utils.Vector
-% Geometric optics ray
-% Inherits from :class:`ott.utils.Vector`.
+classdef Ray < ott.optics.beam.PlaneWave
+% Geometric optics ray collection.
+% Inherits from :class:`ott.optics.beam.PlaneWave`.
+%
+% Provides the methods for calculating scattering, forces and torques
+% from Ray representations of plane wave beams.
+%
+% Unlike the PlaneWave beam this object inherits from, the Ray set
+% power is finite.
 %
 % Properties
 %   - origin        -- Ray origins, n-dimensional array with 3 rows
 %   - direction     -- Ray directions, n-dimensional array with 3 rows
-%   - power         -- Power, n-dimensional array with 1 row
+%   - field         -- Field parallel and perpendicular to polarisation
 %   - polarisation  -- Polarisation, n-dimensional array with 3 rows
+%   - power         -- Finite power of the ray set
+%
+% Methods
+%   - focus         -- Focus rays to a point
+%   - scatter       -- Calculate how rays are scattered
+%   - rotate        -- Rotate the ray and the polarisation
+%   - rotate*       -- Rotate the particle around the X,Y,Z axis
 %
 % Static methods
 %   - FromNearfield -- Construct a Ray instance from a near-field beam slice
@@ -19,135 +32,8 @@ classdef Ray < ott.utils.Vector
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-% TODO: It would be nice to keep track of Ray phases
-
-  properties
-    power          % Power, n-dimensional array with 1 row
-    polarisation   % Polarisation, n-dimensional array with 3 rows
-  end
-
-  methods (Static)
-    function ray = FromFieldVectors(E, H)
-      % Construct a new Ray from E and H field vectors
-      %
-      % Usage
-      %   ray = FromFieldVectors(E, H)
-
-      assert(isa(E, 'ott.utils.FieldVector'), 'E must be a FieldVector');
-      assert(isa(H, 'ott.utils.FieldVector'), 'H must be a FieldVector');
-
-      % Get coordinates
-      if strcmpi(E.type, 'spherical')
-        xyz = ott.utils.rtp2xyz(E.locations);
-      elseif strcmpi(E.type, 'cartesian')
-        % Nothing to do
-      else
-        error('Unsupported field vector type');
-      end
-
-      Exyz = E.vxyz;
-      Hxyz = H.vxyz;
-
-      % Calculate Poynting vector
-      S = 0.5.*real(cross(Exyz, conj(Hxyz)));
-      Snorm = vecnorm(S, 2, 1);
-
-      % Filter points with no intensity
-      mask = Snorm == 0;
-      xyz(:, mask) = [];
-      S(:, mask) = [];
-      Snorm(:, mask) = [];
-
-      % Normalise S afterwards (to avoid nan)
-      S = S ./ Snorm;
-
-      % Calculate orthogonal vectors (if present/needed)
-      Ex = real(Exyz(:, mask));
-      Ey = imag(Eyxz(:, mask));
-      Exnorm = vecnorm(Ex, 2, 1) ./ vecnorm(abs(Exyz(:, mask)), 2, 1);
-      Eynorm = vecnorm(Ey, 2, 1) ./ vecnorm(abs(Eyxz(:, mask)), 2, 1);
-      Snorm = [Snorm, Snorm] .* [Exnorm, Eynorm];
-
-      % Filter properties (and duplicate as required)
-      xyz = [xyz(:, Exnorm ~= 0), xyz(:, Eynorm ~= 0)];
-      S = [S(:, Exnorm ~= 0), S(:, Eynorm ~= 0)];
-      Snorm = Snorm(:, [Exnorm ~= 0, Eynorm ~= 0]);
-      pol = [Ex(:, Exnorm ~= 0), Ey(:, Eynorm ~= 0)];
-
-      % Construct ray object
-      ray = ott.optics.geometric.Ray(xyz, S, normS, pol);
-    end
-
-    function ray = FromFarfield(beam)
-      % Constructs a new Ray instance from the beam far-field
-      %
-      % Uses the ``ehfarfield()`` methods from a :class:`ott.optics.beam.Beam`
-      % to sample a slice of the near-field.  The ray direction and intensity
-      % is set from the cross product of the E and H fields.
-      %
-      % Each sample location produces zeros, one or two rays, corresponding
-      % to the real and imaginary parts of E.  If either the real or
-      % imaginary part is zero, only one ray is produced.
-      %
-      % Usage
-      %   ray = FromFarfield(beam, ...)
-
-      % Calculate fields on a grid
-      [xx, yy, zz] = sphere(40);
-      xyz = [xx(:), yy(:), zz(:)].';
-      rtp = ott.utils.xyz2rtp(xyz);
-      [E, H] = beam.ehfarfield(rtp);
-
-      % Generate from field vectors
-      ray = ott.optics.geometric.Ray.FromFieldVectors(E, H);
-    end
-
-    function ray = FromNearfield(beam)
-      % Constructs a new Ray instance from a near-field beam slice
-      %
-      % Uses the ``ehfield()`` methods from a :class:`ott.optics.beam.Beam`
-      % to sample a slice of the near-field.  The ray direction and intensity
-      % is set from the cross product of the E and H fields.
-      %
-      % Each sample location produces zero, one or two rays, corresponding
-      % to the real and imaginary parts of E.  If either the real or
-      % imaginary part is zero, only one ray is produced.
-      %
-      % Usage
-      %   ray = FromNearfield(beam, ...)
-
-      % Calculate fields on a grid
-      [xx, yy, zz] = meshgrid(linspace(-1, 1), linspace(-1, 1), 0);
-      xyz = [xx(:), yy(:), zz(:)].';
-      [E, H] = beam.ehfield(xyz);
-
-      % Generate from field vectors
-      ray = ott.optics.geometric.Ray.FromFieldVectors(E, H);
-    end
-
-    function ray = FromParaxial(beam)
-      % Constructs a new Ray instance from the beam paraxial far-field
-      %
-      % Uses the ``ehparaxial()`` methods from a :class:`ott.optics.beam.Beam`
-      % to sample a slice of the near-field.  The ray direction and intensity
-      % is set from the cross product of the E and H fields.
-      %
-      % Each sample location produces zero, one or two rays, corresponding
-      % to the real and imaginary parts of E.  If either the real or
-      % imaginary part is zero, only one ray is produced.
-      %
-      % Usage
-      %   ray = FromNearfield(beam, ...)
-
-      % Calculate fields on a grid
-      [xx, yy, zz] = meshgrid(linspace(-1, 1), linspace(-1, 1), 0);
-      xyz = [xx(:), yy(:), zz(:)].';
-      [E, H] = beam.ehparaxial(xyz);
-
-      % Generate from field vectors
-      ray = ott.optics.geometric.Ray.FromFieldVectors(E, H);
-    end
-  end
+% TODO: Review other features in OTGO (not just in the Ray class)
+% TODO: snellslaw
 
   methods
     function ray = Ray(origin, direction, power, polarisation)
@@ -183,6 +69,24 @@ classdef Ray < ott.utils.Vector
       % Store polarisation and power
       ray.power = power;
       ray.polarisation = polarisation;
+    end
+
+    function ray = focus(ray, location)
+      % Focus rays to a point
+      %
+      % Rotates each ray to face the specified location.
+      % For this method to do anything sensible, the origins of
+      % the origin rays must be set.
+      %
+      % Usage
+      %   fray = ray.focus(location)
+      %
+      % Parameters
+      %   - location (3x1 numeric) -- Location to focus rays towards.
+
+      rdir = cross(ray, location - ray.origin);
+      rmat = ott.utils.rotation_matrix(rdir.direction);
+      ray = ray.rotate(rmat);
     end
 
     function [rray, tray, perp] = scatter(ray, normals, n1, n2, varargin)
@@ -329,103 +233,35 @@ classdef Ray < ott.utils.Vector
         perp = ott.utils.Vector(tray.position, sdirection);
       end
     end
-
-    % TODO: Rotations, translations, angle, snellslaw
-    % TODO: beam2rays beam2focussed
-    % TODO: disp method
-
-    function varargout = plot(vec, varargin)
-      % Plots the vector set in 3-D.
-      %
-      % Uses the quiver function to generate a visualisation of the
-      % vector set.
-      %
-      % Usage
-      %   h = plot(vec, ...)
-      %
-      % Optional named arguments
-      %   - Scale (numeric) -- rescales the coordinates and components
-      %     of the vector before plotting.  Can either be a scalar
-      %     or vector ``[S1, S2]`` specifying separate scaling for the
-      %     coordinates and components.  Default: ``[1, 1]``.
-      %
-      % Any unmatched named arguments are applied to the plot handles
-      % returned by the quiver function calls.
-
-      % Parse inputs
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addParameter('Scale', [1, 1]);
-      p.parse(varargin{:});
-
-      S1 = p.Results.Scale(1);
-      S2 = p.Results.Scale(2);
-
-      isholdon = ishold();
-
-      % Generate plot of directions
-      h = quiver3(S1*vec.origin(1, :), S1*vec.origin(2, :), ...
-          S1*vec.origin(3, :), S2*vec.direction(1, :), ...
-          S2*vec.direction(2, :), S2*vec.direction(3, :), 0);
-
-      if ~isholdon
-        hold('on');
-      end
-
-      % Generate plot of polarisations
-      h(2) = quiver3(S1*vec.origin(1, :), S1*vec.origin(2, :), ...
-          S1*vec.origin(3, :), S2*vec.polarisation(1, :), ...
-          S2*vec.polarisation(2, :), S2*vec.polarisation(3, :), 0);
-
-      if ~isholdon
-        hold('off');
-      end
-
-      % Apply unmatched arguments to plot handle
-      unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
-      if ~isempty(unmatched)
-        set(h, unmatched{:});
-      end
-
-      % Assign outputs
-      if nargout > 0
-        varargout{1} = h;
-      end
-    end
   end
 
-  methods
-    function ray = set.power(ray, val)
-
-      assert(size(val, 1) == 1, 'power must have 1 rows');
-
-      szpol = size(val);
-      szpol = szpol(2:end);
-      if numel(szpol) == 1
-        szpol = [szpol, 1];
-      end
-      assert(all(szpol == size(ray)), ...
-          'Power should have same number of elements and size as rays');
-
-      assert(isreal(val) && all(val(:) >= 0.0), ...
-          'Power must be positive and real');
-      ray.power = val;
+  methods (Hidden)
+    function p = getBeamPower(beam)
+      % Returns finite power of the ray set
+      p = sum(abs(beam.fields(:)));
     end
 
-    function ray = set.polarisation(ray, val)
-      
-      % Only interested in the direction
-      if isa(val, 'ott.utils.Vector')
-        val = val.direction;
-      end
+    function E = efieldInternal(beam, xyz, varargin)
+      % Calculate the E-field
+      %
+      % Usage
+      %   E = beam.efieldInternal(xyz, ...)
+      %
+      % Optional named arguments
+      %   - method (enum) -- Method to use when drawing rays
+      %     Can be one of
+      %     - inf -- Infinite extend plane waves
+      %     - ray_invr -- Power scaled with 1/distance from centre
+      %     - invr -- Power scaled with 1/distance from origin
+      %     Default: ``'ray_invr'``.
 
-      assert(size(val, 1) == 3, 'polarisation must have 3 rows');
-      assert(all(size(ray.origin) == size(val)), ...
-          'origin and polarisation must have same size');
-      assert(isnumeric(val) && isreal(val), ...
-          'polarisation must be real numeric matrix');
+      % Change default parameters
+      p = inputParser;
+      p.addParameter('method', 'ray_invr');
+      p.parse(varargin{:});
 
-      ray.polarisation = val;
+      E = efieldInternal@ott.optics.beam.PlaneWave(beam, xyz, ...
+          'method', p.results.method);
     end
   end
 end
