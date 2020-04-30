@@ -9,7 +9,6 @@ classdef AxisymShape < ott.shapes.Shape
 %   - perimeter     -- Perimeter of the shape
 %
 % Abstract methods
-%   - normals         Calculates the particle normals for angular coorindates
 %   - axialSymmetry   Returns x, y, z rotational symmetry (0 for infinite)
 %   - get_perimiter -- Get the perimeter of the shape
 
@@ -29,7 +28,6 @@ classdef AxisymShape < ott.shapes.Shape
   end
 
   methods (Abstract)
-    normals(shape, theta, phi);
     axialSymmetry(shape);
 
     get_perimiter(shape, varargin);
