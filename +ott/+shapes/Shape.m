@@ -1,10 +1,12 @@
-classdef Shape
-% Shape abstract class for optical tweezers toolbox shapes
+classdef (Abstract) Shape < ott.utils.RotateHelper
+% Shape abstract class for optical tweezers toolbox shapes.
+% Inherits from :class:`ott.utils.RotateHelper`.
 %
 % Properties
 %   - maxRadius  -- maximum distance from shape origin
 %   - volume     -- volume of shape
 %   - position   -- Location of shape ``[x, y, z]``
+%   - rotation   -- Orientation of the particle (3x3 rotation matrix)
 %
 % Methods (abstract)
 %   insideRtp       -- Determine if Spherical point is inside shape
@@ -18,14 +20,19 @@ classdef Shape
 %   writeWavefrontObj(shape, ...) write shape to Wavefront OBJ file
 %       only implemented if shape supports this action.
 %   simple(...) simplified constructor for shape-like objects.
+%  - rotate      -- Rotate the particle specifying a rotation matrix
+%  - rotate*     -- Rotate the particle around the X,Y,Z axis
 %
 % See also simple, ott.shapes.Cube, ott.shapes.TriangularMesh.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% TODO: Use rotations where appropriate
+
   properties
-    position = [0;0;0];       % Location of shape ``[x, y, z]``
+    position       % Location of shape ``[x, y, z]``
+    rotation       % Orientation of the shape (3x3 matrix)
   end
 
   methods (Static)
@@ -204,6 +211,41 @@ classdef Shape
   end
 
   methods
+    function shape = Shape(varargin)
+      % Construct a new shape instance.
+      %
+      % This class cannot be instanced directly, use one of the other
+      % shape descriptions to create a new shape.
+      %
+      % Usage
+      %   shape = Shape(...)
+      %
+      % Optional named arguments
+      %   - position (3 numeric) -- Position of the shape.
+      %     Default: ``[0;0;0]``.
+      %
+      %   - rotation (3x3 numeric) -- Orientation of the shape.
+      %     Default: ``eye(3)``.
+
+      p = inputParser;
+      p.addParameter('position', [0;0;0]);
+      p.addParameter('rotation', eye(3));
+      p.parse(varargin{:});
+
+      % Store initial position and rotation
+      shape.position = p.Results.position;
+      shape.rotation = p.Results.rotation;
+    end
+
+    function shape = rotate(shape, R)
+      % Apply the rotation matrix to the shapes internal rotation
+
+      % Check at least one output
+      shape.nargoutCheck(nargout);
+
+      % Apply rotation
+      shape = R * shape.rotation;
+    end
 
     function r = get.maxRadius(shape)
       % Get the particle max radius

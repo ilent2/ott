@@ -1,4 +1,4 @@
-classdef RotateHelper
+classdef (Abstract) RotateHelper
 % A helper class providing may short-hand rotation methods.
 %
 % This class ensures a consistent rotation interface for all classes
