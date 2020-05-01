@@ -8,5 +8,17 @@ classdef (Abstract) AbstractBeam < ott.optics.beam.BeamProperties
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+  methods
+    function beam = AbstractBeam(varargin)
+      % Construct an abstract beam instance
+      %
+      % beam = AbstractBeam(...)
+      %
+      % For optional parameters, see :class:`BeamProperties`.
+
+      beam = beam@ott.optics.beam.BeamProperties(varargin{:});
+    end
+  end
+
 end
 
