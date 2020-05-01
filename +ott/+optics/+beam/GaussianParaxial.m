@@ -44,10 +44,6 @@ classdef GaussianParaxial < ott.optics.beam.Paraxial & ott.optics.beam.Gaussian
     polarisation      % x and y polarisation
   end
 
-  properties (Hidden)
-    internalPower     % Actual beam power value
-  end
-
   methods (Hidden)
     function E = efieldInternal(beam, xyz)
       % Calculate the E (and H) fields
@@ -76,16 +72,6 @@ classdef GaussianParaxial < ott.optics.beam.Paraxial & ott.optics.beam.Gaussian
 
       % Package output
       E = ott.utils.FieldVector(xyz, E, 'cartesian');
-    end
-
-    function val = getBeamPower(beam)
-      % Get the internal power value
-      val = beam.internalPower;
-    end
-    function beam = setBeamPower(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-        'power must be numeric scalar');
-      beam.internalPower = val;
     end
   end
 

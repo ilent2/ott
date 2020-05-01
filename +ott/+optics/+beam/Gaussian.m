@@ -1,6 +1,7 @@
-classdef Gaussian < ott.optics.beam.AbstractBeam
+classdef Gaussian < ott.optics.beam.AbstractBeam ...
+    & ott.optics.beam.utils.VariablePower
 % Abstract description of a Gaussian beam.
-% Inherits from :class:`AbstractBeam`.
+% Inherits from :class:`AbstractBeam` and :class:`utils.VariablePower`.
 %
 % Units of the fields depend on units used for the properties.
 %
@@ -35,9 +36,20 @@ classdef Gaussian < ott.optics.beam.AbstractBeam
       % Parameters
       %   - waist (numeric) -- Beam waist [L]
       %
+      % Optional named arguments
+      %   - power (numeric) -- beam power.  Default: ``1.0``.
+      %
       % For optional parameters, see :class:`BeamProperties`.
 
-      beam = beam@ott.optics.beam.AbstractBeam(varargin{:});
+      % Filter output power for Variable power constructor
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addParameter('power', 1.0);
+      p.parse(varargin{:});
+      unmatched = [fieldnames(p.Unmatched).', struct2cell(p.Unmatched).'];
+
+      beam = beam@ott.optics.beam.utils.VariablePower(p.Results.power);
+      beam = beam@ott.optics.beam.AbstractBeam(unmatched{:});
       beam.waist = waist;
     end
   end

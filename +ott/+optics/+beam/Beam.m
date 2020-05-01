@@ -50,7 +50,6 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
     hfieldInternal      % Method called by hfield
     efarfieldInternal   % Called by efarfield
     hfarfieldInternal   % Called by hfarfield
-    getBeamPower        % Get the beam power
   end
 
   methods (Static)

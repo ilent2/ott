@@ -36,6 +36,10 @@ classdef (Abstract) BeamProperties
     wavelength0    % Vacuum wavelength of beam
   end
 
+  methods (Abstract)
+    getBeamPower    % get method called by dependent property power
+  end
+
   methods (Static)
     function [permittivity, wavelength, speed0] = parseInputs(varargin)
       % Helper to parse the inputs to the constructor
