@@ -46,7 +46,6 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
 % using/distributing this file.
 
   properties
-    direction      % Direction of propagation (3xN Cartesian)
     field          % Field parallel and perpendicular to polarisation
     polarisation   % Primary polarisation direction
   end
@@ -175,17 +174,21 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
   end
 
   methods
-    function beam = PlaneWave(direction, polarisation, varargin)
+    function beam = PlaneWave(varargin)
       % Construct a new plane wave beam or beam array
       %
       % Usage
       %   beam = PlaneWave(direction, polarisation, ...)
       %
       % Parameters
-      %   - direction (3xN numeric) -- direction vectors (Cartesian)
-      %   - polarisation (3xN numeric) -- polarisation vectors (Cartesian)
       %
       % Optional named arguments
+      %   - direction (3xN numeric) -- direction vectors (Cartesian)
+      %     Default: ``[0;0;1]``.
+      %
+      %   - polarisation (3xN numeric) -- polarisation vectors (Cartesian)
+      %     Default: ``[1;0;0]``.
+      %
       %   - field (1xN|2xN numeric) -- Field vectors parallel and
       %     (optionally) perpendicular to the polarisation direction.
       %     Allows for 0 intensity with finite polarisation direction.
@@ -194,36 +197,20 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       %   - origin (3xN numeric) -- Origin of plane waves.
       %     Default: ``[0;0;0]``.
 
+      % Parse parameters
       p = inputParser;
+      p.addParameter('direction', [0;0;1]);
+      p.addParameter('polarisation', [0;0;1]);
       p.addParameter('origin', [0;0;0]);
       p.addParameter('field', 1.0);
       p.parse(varargin{:});
 
-      assert(isnumeric(direction) && size(direction, 1) == 3, ...
-          'polarisation must be 3xN numeric matrix');
-      assert(isnumeric(polarisation) && size(polarisation, 1) == 3, ...
-          'polarisation must be 3xN numeric matrix');
+      % Get Vector to store most
+      beam = beam@ott.utils.Vector(p.Results.origin, p.Results.direction);
 
-      Ndir = numel(direction)/3;
-      Npol = numel(polarisation)/3;
-
-      assert(Ndir == 1 || Npol == 1 || ...
-          all(size(direction) == size(polarisation)), ...
-          'polarisation and direction must be scalar or same length');
-
-      % Get the size of the beam object
-      if Ndir > Npol
-        szbeam = size(direction);
-      else
-        szbeam = size(polarisation);
-      end
-
-      % Construct the beam
-      beam(szbeam(2:end)) = beam@ott.optics.beam.Beam();
-      beam.direction = direction;
-      beam.polarisation = polarisation;
+      % Store remaining parameters
       beam.field = p.Results.field;
-      beam.origin = p.Results.origin;
+      beam.polarisation = p.Results.polarisation;
     end
 
     function beam = rotate(beam, varargin)
@@ -422,7 +409,7 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
           'field must be numeric 1xN or 2xN matrix');
 
       % Check length
-      assert(size(val, 2) == size(beam.direction), ...
+      assert(size(val, 2) == size(beam.direction, 2), ...
           'field must have same length as direction');
 
       beam.field = val;
@@ -431,11 +418,11 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
     function beam = set.polarisation(beam, val)
 
       % Check type and rows
-      assert(isnumeric(val) && any(size(val, 1) == 3]), ...
+      assert(isnumeric(val) && size(val, 1) == 3, ...
           'polarisation must be numeric 3xN matrix');
 
       % Check length
-      assert(size(val, 2) == size(beam.direction), ...
+      assert(size(val, 2) == size(beam.direction, 2), ...
           'polarisation must have same length as direction');
 
       beam.polarisation = val;
