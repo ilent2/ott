@@ -27,6 +27,23 @@ function testRotateOrigin(testCase)
 
 end
 
+function testDot(testCase)
+
+  origin = [1;0;0];
+  vec = ott.utils.Vector(origin, [0;0;1]);
+  
+  val = dot(vec, [0;0;1]);
+  testCase.verifyEqual(val, 1.0, 'vec num');
+  
+  val = dot([0;0;1], vec);
+  testCase.verifyEqual(val, 1.0, 'num vec');
+
+  vec2 = ott.utils.Vector(origin, [0;0;1]);
+  val = dot(vec, vec2);
+  testCase.verifyEqual(val, 1.0, 'vec vec');
+  
+end
+
 function testScalarMul(testCase)
 
   origin = [1;0;0];

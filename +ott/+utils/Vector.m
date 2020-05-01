@@ -313,12 +313,11 @@ classdef Vector < ott.utils.RotateHelper
       %   new_vec = dot(vec1, vec2)
 
       if isa(vec1, 'ott.utils.Vector') && isa(vec2, 'ott.utils.Vector')
-        vec = ott.utils.Vector(vec1.origin, ...
-            dot(vec1.direction, vec2.direction));
+        m = dot(vec1.direction, vec2.direction);
       elseif isa(vec1, 'ott.utils.Vector')
-        vec = ott.utils.Vector(vec1.origin, dot(vec1.direction, vec2));
+        m = dot(vec1.direction, vec2);
       elseif isa(vec2, 'ott.utils.Vector')
-        vec = ott.utils.Vector(vec2.origin, dot(vec1, vec2.direction));
+        m = dot(vec1, vec2.direction);
       else
         error('Expected at least one Vector instance');
       end
