@@ -21,7 +21,7 @@ classdef (Abstract) Paraxial < ott.optics.beam.Beam
 % using/distributing this file.
 
   methods (Hidden)
-    function H = hfieldInternal(beam, xyz)
+    function H = hfieldInternal(beam, xyz, varargin)
       % Calculate h field from e field
       %
       % Usage
@@ -29,7 +29,7 @@ classdef (Abstract) Paraxial < ott.optics.beam.Beam
       %   Calculates the fields at the specified locations (3xN matrix).
       %   Returns a :class:`ott.utils.FieldVector`.
 
-      E = beam.efieldInternal(xyz);
+      E = beam.efieldInternal(xyz, varargin{:});
 
       % Construct H-field (
       H = zeros(size(E));
@@ -61,6 +61,7 @@ classdef (Abstract) Paraxial < ott.optics.beam.Beam
       p.addParameter('mapping', 'theta');
       p.addParameter('far_distance', 10*max([beam.wavelength]));
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Choose a distance
       r = p.Results.far_distance;
@@ -72,7 +73,7 @@ classdef (Abstract) Paraxial < ott.optics.beam.Beam
 
       % Calculate the fields at this distance
       xyz = ott.utils.rtp2xyz(rtp);
-      E = beam.efieldInternal(xyz);
+      E = beam.efieldInternal(xyz, unmatched{:});
 
       onesrow = ones(size(rtp(1, :)));
       zerosrow = zeros(size(rtp(1, :)));
@@ -99,7 +100,7 @@ classdef (Abstract) Paraxial < ott.optics.beam.Beam
       E = ott.utils.FieldVector(rtp, Ertp, 'spherical');
     end
 
-    function H = hfarfieldInternal(beam, rtp)
+    function H = hfarfieldInternal(beam, rtp, varargin)
       % Calculate h field from e far-field
       %
       % Usage
@@ -107,7 +108,7 @@ classdef (Abstract) Paraxial < ott.optics.beam.Beam
       %   Calculates the fields at the specified locations (3xN matrix).
       %   Returns a :class:`ott.utils.FieldVector`.
 
-      E = beam.efarfieldInternal(rtp);
+      E = beam.efarfieldInternal(rtp, varargin{:});
 
       % Construct H-field (might have 2 or three rows)
       H = zeros(size(E));

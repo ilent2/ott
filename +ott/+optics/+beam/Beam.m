@@ -174,7 +174,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       % Nothing to do: beam = beam
     end
 
-    function E = efield(beam, xyz)
+    function E = efield(beam, xyz, varargin)
       % Calculate E and H field
       %
       % Usage
@@ -182,10 +182,10 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %   Calculates the fields at the specified locations (3xN matrix).
       %   Returns a :class:`ott.utils.FieldVector`.
 
-      E = beam.hfieldInternal(xyz);
+      E = beam.hfieldInternal(xyz, varargin{:});
     end
 
-    function H = hfield(beam, xyz)
+    function H = hfield(beam, xyz, varargin)
       % Calculate E and H field
       %
       % Usage
@@ -193,10 +193,10 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %   Calculates the fields at the specified locations (3xN matrix).
       %   Returns a :class:`ott.utils.FieldVector`.
 
-      H = beam.efieldInternal(xyz);
+      H = beam.efieldInternal(xyz, varargin{:});
     end
 
-    function [E, H] = ehfield(beam, xyz)
+    function [E, H] = ehfield(beam, xyz, varargin)
       % Calculate E and H field
       %
       % Usage
@@ -207,11 +207,11 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       % Default implementation just calls each part, but for some
       % beams it may be more efficient to calculate these together,
       % in which case this method should be over-written.
-      E = beam.efield(xyz);
-      H = beam.hfield(xyz);
+      E = beam.efield(xyz, varargin{:});
+      H = beam.hfield(xyz, varargin{:});
     end
 
-    function S = poynting(beam, xyz)
+    function S = poynting(beam, xyz, varargin)
       % Calculate the Poynting vector
       %
       % This function calculates::
@@ -223,11 +223,11 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %   Calculates the Poynting vector at the locations (3xN matrix)
       %   Returns a :class:`ott.utils.FieldVector`.
 
-      [E, H] = beam.ehfield(xyz);
+      [E, H] = beam.ehfield(xyz, varargin{:});
       S = ott.utils.FieldVector(xyz, cross(E.vxyz, H.vxyz), 'cartesian');
     end
 
-    function S = poyntingFarfield(beam, rtp)
+    function S = poyntingFarfield(beam, rtp, varargin)
       % Calculate the Poynting vector in the far-field
       % See :meth:`poynting` for further information.
       %
@@ -235,7 +235,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %   S = beam.poyntingFarfield(rtp)
       %   Returns a :class:`ott.utils.FieldVector`.
 
-      [E, H] = beam.ehfarfield(rtp);
+      [E, H] = beam.ehfarfield(rtp, varargin{:});
       xyz = ott.utils.rtp2xyz(E.locations);
       S = ott.utils.FieldVector(xyz, cross(E.vxyz, H.vxyz), 'cartesian');
     end
@@ -252,10 +252,10 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %   - rtp (2xN | 3xN numeric) -- Far-field locations.
       %     radial coordinate is ignored by most methods.
 
-      E = beam.hfarfieldInternal(rtp);
+      E = beam.hfarfieldInternal(rtp, varargin{:});
     end
 
-    function H = hfarfield(beam, rtp)
+    function H = hfarfield(beam, rtp, varargin)
       % Calculate E and H field
       %
       % Usage
@@ -265,10 +265,10 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %
       % See :meth:`efarfield` for parameters.
 
-      H = beam.efarfieldInternal(rtp);
+      H = beam.efarfieldInternal(rtp, varargin{:});
     end
 
-    function [E, H] = ehfarfield(beam, rtp)
+    function [E, H] = ehfarfield(beam, rtp, varargin)
       % Calculate E and H far-fields
       %
       % Usage
@@ -281,8 +281,8 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       % Default implementation just calls each part, but for some
       % beams it may be more efficient to calculate these together,
       % in which case this method should be over-written.
-      E = beam.efarfield(rtp);
-      H = beam.hfarfield(rtp);
+      E = beam.efarfield(rtp, varargin{:});
+      H = beam.hfarfield(rtp, varargin{:});
     end
 
     function E = eparaxial(beam, nxyz, varargin)
@@ -310,7 +310,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       rtp = beam.paraxial2farfield(nxyz, varargin{:});
 
       % Calculate fields
-      E = beam.efarfield(rtp);
+      E = beam.efarfield(rtp, varargin{:});
     end
 
     function H = hparaxial(beam, nxyz, varargin)
@@ -327,7 +327,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       rtp = beam.paraxial2farfield(nxyz, varargin{:});
 
       % Calculate fields
-      H = beam.hfarfield(rtp);
+      H = beam.hfarfield(rtp, varargin{:});
     end
 
     function [E, H] = ehparaxial(beam, nxyz, varargin)
@@ -344,8 +344,8 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       rtp = beam.paraxial2farfield(nxyz, varargin{:});
 
       % Calculate fields
-      E = beam.efarfield(rtp);
-      H = beam.hfarfield(rtp);
+      E = beam.efarfield(rtp, varargin{:});
+      H = beam.hfarfield(rtp, varargin{:});
     end
 
     function varargout = visualise(beam, varargin)
@@ -390,8 +390,11 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %   - plot_axes (axes handle) -- Axes to place the visualisation in.
       %     If empty, no visualisation is generated.
       %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
+      %
+      % Unmatched arguments are passed to the field function.
 
       p = inputParser;
+      p.KeepUnmatched = true;
       p.addParameter('field', 'irradiance');
       p.addParameter('size', []);
       p.addParameter('axis', 'z');
@@ -401,6 +404,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       p.addParameter('plot_axes', []);
       p.addParameter('combine', []);
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Get range and size of data
       default_sz = [80, 80];
@@ -427,7 +431,8 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
      
       % Calculate visualisation data
       imout = beam.processBeamArray(sz, p.Results.combine, ...
-        @(sub) sub.visualiseImoutXyzMasked(sz, our_xyz, p.Results.field, mask));
+        @(sub) sub.visualiseImoutXyzMasked(sz, our_xyz, p.Results.field, mask, ...
+        unmatched{:}));
 
       % Display the visualisation
       ott.optics.beam.Beam.visualiseShowPlot(...
@@ -480,9 +485,12 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %   - plot_axes (axes handle) -- Axes to place the visualisation in.
       %     If empty, no visualisation is generated.
       %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
+      %
+      % Unmatched arguments are passed to the field function.
 
       % Parse arguments
       p = inputParser;
+      p.KeepUnmatched = true;
       p.addParameter('field', 'irradiance');
       p.addParameter('size', []);
       p.addParameter('direction', 'pos');
@@ -491,6 +499,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       p.addParameter('combine', []);
       p.addParameter('plot_axes', []);
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Generate grid of coordinates
       default_sz = [80, 80];
@@ -528,7 +537,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 
       % Calculate field data
       imout = beam.processBeamArray(sz, p.Results.combine, ...
-        @(sub) sub.visualiseImoutRtp(sz, rtp, p.Results.field));
+        @(sub) sub.visualiseImoutRtp(sz, rtp, p.Results.field, unmatched{:}));
 
       % Display the visualisation
       ott.optics.beam.Beam.visualiseShowPlot(...
@@ -573,8 +582,11 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %   - plot_axes (axes handle) -- Axes to place the visualisation in.
       %     If empty, no visualisation is generated.
       %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
+      %
+      % Unmatched arguments are passed to the field function.
 
       p = inputParser;
+      p.KeepUnmatched = true;
       p.addParameter('field', 'irradiance');
       p.addParameter('normalise', false);
       p.addParameter('type', 'sphere');
@@ -582,6 +594,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       p.addParameter('combine', []);
       p.addParameter('plot_axes', []);
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Generate grid
       [X,Y,Z] = sphere(p.Results.npts);
@@ -589,7 +602,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       % Calculate field data
       rtp = ott.utils.xyz2rtp(X, Y, Z);
       imout = beam.processBeamArray(size(X), p.Results.combine, ...
-        @(sub) sub.visualiseImoutRtp(size(X), rtp, p.Results.field));
+        @(sub) sub.visualiseImoutRtp(size(X), rtp, p.Results.field, unmatched{:}));
 
       % Generate visualisation
       if nargout == 0 || ~isempty(p.Results.plot_axes)
@@ -669,14 +682,18 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %   - plot_axes (axes handle) -- Axes to place the visualisation in.
       %     If empty, no visualisation is generated.
       %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
+      %
+      % Unmatched arguments are passed to the field function.
 
       p = inputParser;
+      p.KeepUnmatched = true;
       p.addParameter('field', 'irradiance');
       p.addParameter('normalise', false);
       p.addParameter('npts', 100);
       p.addParameter('combine', []);
       p.addParameter('plot_axes', []);
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Generate grid
       ptheta = linspace(0, 2*pi, p.Results.npts);
@@ -685,7 +702,8 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 
       % Calculate fields
       imout = beam.processBeamArray(p.Results.npts, p.Results.combine, ...
-        @(sub) sub.visualiseImoutRtp(p.Results.npts, rtp, p.Results.field));
+        @(sub) sub.visualiseImoutRtp(p.Results.npts, rtp, p.Results.field, ...
+        unmatched{:}));
 
       % Generate visualisation
       if nargout == 0 || ~isempty(p.Results.plot_axes)
@@ -735,13 +753,17 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       %
       %   - combine (enum|empty) -- Method to use when combining beams.
       %     Can either be emtpy (default), 'coherent' or 'incoherent'.
+      %
+      % Unmatched arguments are passed to the field function.
 
       p = inputParser;
+      p.KeepUnmatched = true;
       p.addParameter('theta_range', [0, pi]);
       p.addParameter('combine', []);
       p.addParameter('ntheta', 100);
       p.addParameter('nphi', 100);
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Setup grid
       [theta, phi] = ott.utils.angulargrid(p.Results.ntheta, p.Results.nphi);
@@ -760,7 +782,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       uxyz(3, :) = -uxyz(3, :);
       
       imout = beam.processBeamArray(4, p.Results.combine, ...
-        @(sub) sub.intensityMomentImout(4, rtp, uxyz));
+        @(sub) sub.intensityMomentImout(4, rtp, uxyz, unmatched{:}));
 
       moments = imout(1:3, :);
       ints = imout(4, :);
@@ -835,11 +857,11 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       end
     end
     
-    function imout = intensityMomentImout(beam, ~, rtp, uxyz)
+    function imout = intensityMomentImout(beam, ~, rtp, uxyz, varargin)
       % Calculate the imout data for the intensityMoment function
       
       % Calculate fields
-      E = beam.efarfield(rtp);
+      E = beam.efarfield(rtp, varargin{:});
 
       % Calculate the irradiance
       Eirr = sum(abs(E.vrtp).^2, 1);
@@ -852,11 +874,11 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       imout = [moments(:); ints];
     end
     
-    function imout = visualiseImoutXyzMasked(beam, sz, xyz, field_type, mask)
+    function imout = visualiseImoutXyzMasked(beam, sz, xyz, field_type, mask, varargin)
       % Calculate the imout data for the visualise function
       
       % Calculate field and visualisation data
-      E = beam.efield(xyz);
+      E = beam.efield(xyz, varargin{:});
       visdata = beam.VisualisationData(field_type, E);
 
       % Create layer from masked data
@@ -865,10 +887,10 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       imout(~mask) = nan;
     end
     
-    function imout = visualiseImoutRtp(beam, sz, rtp, field_type)
+    function imout = visualiseImoutRtp(beam, sz, rtp, field_type, varargin)
       % Calculate the imout data for farfield visualisation functions
       
-      E = beam.efarfield(rtp);
+      E = beam.efarfield(rtp, varargin{:});
       visdata = beam.VisualisationData(field_type, E);
       imout = reshape(visdata, [sz, 1]);
     end

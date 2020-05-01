@@ -1,8 +1,6 @@
-classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
-    & ott.utils.Vector
+classdef PlaneWave < ott.optics.beam.Beam & ott.utils.Vector
 % Description of a plane wave beam.
-% Inherits from :class:`Beam`, :class:`Paraxial`
-% and :class:`ott.utils.Vector`.
+% Inherits from :class:`Beam` and :class:`ott.utils.Vector`.
 %
 % The class has separate vectors for the field and the polarisation.
 % This allows the field to be zero without loosing information about
@@ -61,9 +59,9 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       assert(isa(H, 'ott.utils.FieldVector'), 'H must be a FieldVector');
 
       % Get coordinates
-      if strcmpi(E.type, 'spherical')
+      if strcmpi(E.basis, 'spherical')
         xyz = ott.utils.rtp2xyz(E.locations);
-      elseif strcmpi(E.type, 'cartesian')
+      elseif strcmpi(E.basis, 'cartesian')
         % Nothing to do
       else
         error('Unsupported field vector type');
@@ -86,10 +84,10 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       S = S ./ Snorm;
 
       % Calculate orthogonal vectors (if present/needed)
-      Ex = real(Exyz(:, mask));
-      Ey = imag(Eyxz(:, mask));
-      Exnorm = vecnorm(Ex, 2, 1) ./ vecnorm(abs(Exyz(:, mask)), 2, 1);
-      Eynorm = vecnorm(Ey, 2, 1) ./ vecnorm(abs(Eyxz(:, mask)), 2, 1);
+      Ex = real(Exyz(:, ~mask));
+      Ey = imag(Exyz(:, ~mask));
+      Exnorm = vecnorm(Ex, 2, 1) ./ vecnorm(abs(Exyz(:, ~mask)), 2, 1);
+      Eynorm = vecnorm(Ey, 2, 1) ./ vecnorm(abs(Exyz(:, ~mask)), 2, 1);
       Snorm = [Snorm, Snorm] .* [Exnorm, Eynorm];
 
       % Filter properties (and duplicate as required)
@@ -99,10 +97,13 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       pol = [Ex(:, Exnorm ~= 0), Ey(:, Eynorm ~= 0)];
 
       % Construct beam object
-      beam = ott.optics.geometric.Ray(xyz, S, normS, pol);
+      % TODO: Should use use a 2xN field instead of a 1xN field?
+      %       This was leftover from when it was in the Ray class
+      beam = ott.optics.beam.PlaneWave('origin', xyz, ...
+        'direction', S, 'field', Snorm, 'polarisation', pol);
     end
 
-    function beam = FromFarfield(beam)
+    function beam = FromFarfield(oldbeam)
       % Constructs a new Ray instance from the beam far-field
       %
       % Uses the ``ehfarfield()`` methods from a :class:`ott.optics.beam.Beam`
@@ -120,13 +121,13 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       [xx, yy, zz] = sphere(40);
       xyz = [xx(:), yy(:), zz(:)].';
       rtp = ott.utils.xyz2rtp(xyz);
-      [E, H] = beam.ehfarfield(rtp);
+      [E, H] = oldbeam.ehfarfield(rtp);
 
       % Generate from field vectors
-      ray = ott.optics.geometric.Ray.FromFieldVectors(E, H);
+      beam = ott.optics.beam.PlaneWave.FromFieldVectors(E, H);
     end
 
-    function ray = FromNearfield(beam)
+    function beam = FromNearfield(oldbeam)
       % Constructs a new Ray instance from a near-field beam slice
       %
       % Uses the ``ehfield()`` methods from a :class:`ott.optics.beam.Beam`
@@ -143,13 +144,13 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       % Calculate fields on a grid
       [xx, yy, zz] = meshgrid(linspace(-1, 1), linspace(-1, 1), 0);
       xyz = [xx(:), yy(:), zz(:)].';
-      [E, H] = beam.ehfield(xyz);
+      [E, H] = oldbeam.ehfield(xyz);
 
       % Generate from field vectors
-      ray = ott.optics.geometric.Ray.FromFieldVectors(E, H);
+      beam = ott.optics.beam.PlaneWave.FromFieldVectors(E, H);
     end
 
-    function ray = FromParaxial(beam)
+    function beam = FromParaxial(oldbeam)
       % Constructs a new Ray instance from the beam paraxial far-field
       %
       % Uses the ``ehparaxial()`` methods from a :class:`ott.optics.beam.Beam`
@@ -166,10 +167,10 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       % Calculate fields on a grid
       [xx, yy, zz] = meshgrid(linspace(-1, 1), linspace(-1, 1), 0);
       xyz = [xx(:), yy(:), zz(:)].';
-      [E, H] = beam.ehparaxial(xyz);
+      [E, H] = oldbeam.ehparaxial(xyz);
 
       % Generate from field vectors
-      ray = ott.optics.geometric.Ray.FromFieldVectors(E, H);
+      beam = ott.optics.beam.PlaneWave.FromFieldVectors(E, H);
     end
   end
 
@@ -178,9 +179,7 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       % Construct a new plane wave beam or beam array
       %
       % Usage
-      %   beam = PlaneWave(direction, polarisation, ...)
-      %
-      % Parameters
+      %   beam = PlaneWave(...)
       %
       % Optional named arguments
       %   - direction (3xN numeric) -- direction vectors (Cartesian)
@@ -300,6 +299,14 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
 
   methods (Hidden)
     function E = efieldInternal(beam, xyz, varargin)
+      [E, ~] = beam.ehfieldInternal(xyz, varargin{:});
+    end
+
+    function H = hfieldInternal(beam, xyz, varargin)
+      [~, H] = beam.ehfieldInternal(xyz, varargin{:});
+    end
+
+    function [E, H] = ehfieldInternal(beam, xyz, varargin)
       % Calculate the E-field
       %
       % Usage
@@ -316,6 +323,9 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       p = inputParser;
       p.addParameter('method', 'inf');
       p.parse(varargin{:});
+      
+      E = zeros(size(xyz));
+      H = zeros(size(xyz));
 
       for ii = 1:size(xyz, 2)
 
@@ -338,21 +348,35 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
             error('Unknown method specified');
         end
 
+        Hdir = cross(beam.direction, beam.polarisation);
+
         % Calculate the polarisation (possibly in two directions)
         P0 = beam.polarisation .* beam.field(1, :);
+        H0 = Hdir .* beam.field(1, :);
         if size(beam.field, 1) == 2
-          P0 = P0 + cross(beam, beam.polarisation) .* beam.field(2, :);
+          P0 = P0 + Hdir .* beam.field(2, :);
+          H0 = H0 + beam.polarisation .* beam.field(2, :);
         end
 
         % Calculate the field at the location
-        E(:, ii) = P0 .* exp(1i.*beam.wavenumber.*dist);
+        E(:, ii) = sum(scale .* P0 .* exp(1i.*beam.wavenumber.*dist), 2);
+        H(:, ii) = sum(scale .* H0 .* exp(1i.*beam.wavenumber.*dist), 2);
       end
 
       % Package output
       E = ott.utils.FieldVector(xyz, E, 'cartesian');
+      H = ott.utils.FieldVector(xyz, H, 'cartesian');
     end
 
-    function E = efarfieldInternal(beam, rtp)
+    function E = efarfieldInternal(beam, rtp, varargin)
+      [E, ~] = beam.ehfarfieldInternal(rtp, varargin{:});
+    end
+
+    function H = hfarfieldInternal(beam, rtp, varargin)
+      [~, H] = beam.ehfarfieldInternal(rtp, varargin{:});
+    end
+
+    function [E, H] = ehfarfieldInternal(beam, rtp, varargin)
       % Calculate the E-field in the far-field
       %
       % Usage
@@ -373,22 +397,43 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       rtp(1, :) = 1.0;
       xyz = ott.utils.rtp2xyz(rtp);
 
-      % Calculate component of ray in specified direction
-      intensities = sum(beam.direction .* xyz, 1)./vecnorm(beam.direction);
+      Edir = beam.polarisation;
+      Hdir = cross(beam.direction, beam.polarisation);
 
-      switch p.Results.method
-        case 'dot'
-          % Nothing to do
-        case 'delta'
-          tol = 1.0e-6;
-          intensities = double(all(ddot < tol, 1));
-        otherwise
-          error('Unknown method specified');
+      % Calculate the polarisation (possibly in two directions)
+      E0 = Edir .* beam.field(1, :);
+      H0 = Hdir .* beam.field(1, :);
+      if size(beam.field, 1) == 2
+        E0 = E0 + Hdir .* beam.field(2, :);
+        H0 = H0 + Edir .* beam.field(2, :);
+      end
+      
+      E = zeros(size(xyz));
+      H = zeros(size(xyz));
+
+      for ii = 1:size(xyz, 2)
+
+        % Calculate component of ray in specified direction
+        intensities = sum(beam.direction .* xyz(:, ii), 1)./vecnorm(beam.direction);
+
+        switch p.Results.method
+          case 'dot'
+            % Nothing to do
+          case 'delta'
+            tol = 1.0e-6;
+            intensities = double(abs(1 - intensities) < tol);
+          otherwise
+            error('Unknown method specified');
+        end
+
+        % Calculate the field at the location
+        E(:, ii) = sum(intensities .* E0, 2);
+        H(:, ii) = sum(intensities .* H0, 2);
       end
 
       % Return result in Cartesian coordinates
-      E = ott.utils.FieldVector(xyz, ...
-          intensities .* beam.polarisations, 'cartesian');
+      E = ott.utils.FieldVector(xyz, E, 'cartesian');
+      H = ott.utils.FieldVector(xyz, H, 'cartesian');
     end
 
     function p = getBeamPower(beam)
@@ -409,8 +454,8 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
           'field must be numeric 1xN or 2xN matrix');
 
       % Check length
-      assert(size(val, 2) == size(beam.direction, 2), ...
-          'field must have same length as direction');
+      assert(any(size(val, 2) == [1, size(beam.direction, 2)]), ...
+          'field must have length 1 or same length as direction');
 
       beam.field = val;
     end
@@ -422,8 +467,8 @@ classdef PlaneWave < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
           'polarisation must be numeric 3xN matrix');
 
       % Check length
-      assert(size(val, 2) == size(beam.direction, 2), ...
-          'polarisation must have same length as direction');
+      assert(any(size(val, 2) == [1, size(beam.direction, 2)]), ...
+          'polarisation must have length 1 or same length as direction');
 
       beam.polarisation = val;
     end
