@@ -64,7 +64,7 @@ classdef Ray < ott.optics.beam.PlaneWave
       end
 
       % Call the base constructor (must be outside if statement)
-      ray = ray@ott.utils.Vector(vecArgs{:});
+      ray = ray@ott.utils.PlaneWave(vecArgs{:});
 
       % Store polarisation and power
       ray.power = power;
