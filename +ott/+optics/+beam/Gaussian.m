@@ -46,7 +46,7 @@ classdef Gaussian < ott.optics.beam.AbstractBeam ...
       p.KeepUnmatched = true;
       p.addParameter('power', 1.0);
       p.parse(varargin{:});
-      unmatched = [fieldnames(p.Unmatched).', struct2cell(p.Unmatched).'];
+      unmatched = ott.utils.unmatchedArgs(p);
 
       beam = beam@ott.optics.beam.utils.VariablePower(p.Results.power);
       beam = beam@ott.optics.beam.AbstractBeam(unmatched{:});

@@ -1,6 +1,7 @@
-classdef GaussianParaxial < ott.optics.beam.Paraxial & ott.optics.beam.Gaussian
+classdef Gaussian < ott.optics.beam.paraxial.Paraxial ...
+    & ott.optics.beam.Gaussian & ott.optics.beam.utils.Vector2Polarisation
 % Paraxial approximation of a Gaussian beam
-% Inherits from :class:`Beam` and :class:`Gaussian`.
+% Inherits from :class:`Paraxial` and :class:`Gaussian`.
 %
 % The paraxial beam is described by the potential::
 %
@@ -40,10 +41,6 @@ classdef GaussianParaxial < ott.optics.beam.Paraxial & ott.optics.beam.Gaussian
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
-    polarisation      % x and y polarisation
-  end
-
   methods (Hidden)
     function E = efieldInternal(beam, xyz)
       % Calculate the E (and H) fields
@@ -65,8 +62,8 @@ classdef GaussianParaxial < ott.optics.beam.Paraxial & ott.optics.beam.Gaussian
       polarisation = [beam.polarisation(:); 0];
       A = polarisation .* psi0 .* exp(-1i .* z ./ s.^2);
 
-      E0 = sqrt(16 .* beam.power ./ (beam.index_medium ...
-          .* beam.speed0 .* beam.waist.^2 .* (1 + s.^2 + 1.5.*s.^4)));
+      E0 = sqrt(4 .* beam.power .* beam.speed0 ...
+          ./ (pi .* beam.index_medium .* beam.waist.^2));
 
       E = E0 .* A;
 
@@ -76,11 +73,11 @@ classdef GaussianParaxial < ott.optics.beam.Paraxial & ott.optics.beam.Gaussian
   end
 
   methods
-    function beam = GaussianParaxial(waist, varargin)
+    function beam = Gaussian(waist, varargin)
       % Construct a new Gaussian paraxial beam representation
       %
       % Usage
-      %   beam = GaussianParaxial(waist, ...)
+      %   beam = paraxial.Gaussian(waist, ...)
       %
       % Parameters
       %   - waist (numeric) -- Beam waist [L]
@@ -100,24 +97,14 @@ classdef GaussianParaxial < ott.optics.beam.Paraxial & ott.optics.beam.Gaussian
 
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addParameter('power', 1.0);
       p.addParameter('polarisation', [1;0]);
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Call base constructor
-      unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
-      beam = beam@ott.optics.beam.Gaussian(waist, varargin{:});
-
-      beam.power = p.Results.power;
-      beam.polarisation = p.Results.polarisation;
-    end
-  end
-
-  methods
-    function beam = set.polarisation(beam, val)
-      assert(isnumeric(val) && all(size(val) == [2, 1]), ...
-        'polarisation must be 2x1 vector');
-      beam.polarisation = val;
+      beam = beam@ott.optics.beam.utils.Vector2Polarisation(...
+          p.Results.polarisation);
+      beam = beam@ott.optics.beam.Gaussian(waist, unmatched{:});
     end
   end
 end

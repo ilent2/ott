@@ -83,6 +83,17 @@ classdef Vector < ott.utils.RotateHelper
 
       assert(size(origin, 1) == 3, 'origin must have 3 rows');
       assert(size(direction, 1) == 3, 'direction must have 3 rows');
+      
+      if size(origin, 2) ~= size(direction, 2)
+        if size(origin, 2) == 1
+          origin = repmat(origin, 1, size(direction, 2));
+        elseif size(direction, 2) == 1
+          direction = repmat(direction, 1, size(origin, 2));
+        else
+          error('origin and direction must have same size or length 1');
+        end
+      end
+      
       assert(all(size(origin) == size(direction)), ...
           'origin and direction must have same size');
       assert(isnumeric(origin) && isreal(origin), ...
