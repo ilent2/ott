@@ -7,7 +7,8 @@
 % or approximation used for the scattering calculation.
 %
 % Sub-packages
-%   +tmatrix        - T-matrix method (based on OTT version 1)
+%   +vswf           - Vector spherical wave function basis (based on OTT v1)
+%   +planewave      - Plane wave basis scattering
 %   +geometric      - Geometric optics (based on OTGO)
 %   +dipole         - Dipole approximation
 %   +shapeforce     - Shape-induced force field method
