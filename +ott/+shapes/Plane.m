@@ -88,6 +88,39 @@ classdef Plane < ott.shapes.ShapeCart
       b = (sum(xyz .* shape.normal, 1) - shape.offset) > 0;
     end
 
+    function [locs, norms] = intersect(shape, vecs)
+      % Calculate the intersection point on the plane surface.
+      %
+      % Rays will intersect the plane as long as they are traveling
+      % towards the surface.  The normal will always be the surface
+      % normal.
+      %
+      % Usage
+      %   [locs, norms] = shape.intersect(vec)
+      %   Returns a 3xN matrix of intersection locations or nan.
+      %
+      % Parameters
+      %   - vec (utils.Vector) -- A vector or type that can be cast
+      %     to a Vector.
+
+      % Duplicate the normals
+      norms = repmat(shape.normal, 1, numel(vecs));
+
+      % Calculate intersection location relative to ray origin
+      dirs = vecs.direction ./ vecnorm(vecs.direction);
+      ndirs = dot(dirs, norms);
+      locs = -(dot(vecs.origin, norms) - shape.offset) .* dirs ./ ndirs;
+
+      % Remove rays traveling away from the plane
+      locs(:, dot(locs, dirs) < 0) = nan;
+
+      % Translate to origin
+      locs = vecs.origin + locs;
+
+      % Ensure infs are also nans
+      locs(~isfinite(locs)) = nan;
+    end
+
     function varargout = surf(shape, varargin)
       % Generate a visualisation of the shape
       %

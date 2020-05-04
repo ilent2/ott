@@ -99,3 +99,40 @@ function testInsideXyz(testCase)
   testCase.verifyEqual(shape.insideXyz(xyz, 'origin', 'world'), b, ...
     'insideXyz with 1 argument failed and optional arg');
 end
+
+function testIntersectBoundingBox(testCase)
+
+  shape = ott.shapes.Sphere(1.0);
+  
+  vec = ott.utils.Vector([0;0;-5], [0;0;1]);
+  ints = shape.intersectBoundingBox(vec);
+  testCase.verifyEqual(ints, [0;0;-1;0;0;1], 'z ray on axis');
+  
+  vec = ott.utils.Vector([10;10;-5], [0;0;1]);
+  ints = shape.intersectBoundingBox(vec);
+  testCase.verifyEqual(ints, nan(6, 1), 'far away ray');
+
+  vec = ott.utils.Vector([10;10;-5], [0;0;-1]);
+  ints = shape.intersectBoundingBox(vec);
+  testCase.verifyEqual(ints, nan(6, 1), 'leaving ray');
+  
+  vec = ott.utils.Vector([0;0;0], [0;0;-1]);
+  ints = shape.intersectBoundingBox(vec);
+  testCase.verifyEqual(ints, [nan(3, 1); 0;0;-1], 'inside ray');
+end
+
+function testIntersect(testCase)
+
+  radius = 1.0;
+  vecs = ott.utils.Vector([0;0;0], randn(3, 500));
+  shape = ott.shapes.Sphere(radius);
+  ints = shape.intersect(vecs);
+  
+%   figure();
+%   plot3(ints(1, :), ints(2, :), ints(3, :), '*');
+%   axis equal;
+  
+  testCase.verifyEqual(vecnorm(ints), radius.*ones(1, size(ints, 2)), ...
+    'AbsTol', 1.0e-4, 'Radius check');
+
+end

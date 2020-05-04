@@ -37,4 +37,27 @@ function testSurf(testCase)
   close(h);
 
 end
+
+function testIntersect(testCase)
+
+  normal = [0;0;1];
+  offset = 0.0;
+
+  plane = ott.shapes.Plane(normal, offset);
+  
+  ray = ott.utils.Vector([0;0;-1], [1;0;0]);
+  locs = plane.intersect(ray);
+  testCase.verifyEqual(locs, nan(3, 1), 'parallel ray');
+  
+  ray = ott.utils.Vector([0;0;-1], [0;0;1]);
+  locs = plane.intersect(ray);
+  testCase.verifyEqual(locs, [0;0;0], 'nice ray');
+  
+  ray = ott.utils.Vector([0;0;-1], [0;0;-1]);
+  locs = plane.intersect(ray);
+  testCase.verifyEqual(locs, nan(3, 1), 'negative ray');
+  
+
+end
+
   

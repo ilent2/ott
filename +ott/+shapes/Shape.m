@@ -22,6 +22,7 @@ classdef (Abstract) Shape < ott.utils.RotateHelper
 %   simple(...) simplified constructor for shape-like objects.
 %  - rotate      -- Rotate the particle specifying a rotation matrix
 %  - rotate*     -- Rotate the particle around the X,Y,Z axis
+%  - intersect   -- Calculate intersection between vectors and surface
 %
 % See also simple, ott.shapes.Cube, ott.shapes.TriangularMesh.
 
@@ -274,6 +275,75 @@ classdef (Abstract) Shape < ott.utils.RotateHelper
       error('Shape does not support surf visualisation');
     end
 
+    function [locs, norms] = intersect(shape, vecs)
+      % Calculate the intersection between the shape and a vector set.
+      %
+      % If the vector is inside the shape, finds the intersect between
+      % the shapes surface.
+      %
+      % Usage
+      %   [locs, norms] = shape.intersect(vec)
+      %
+      % Parameters
+      %   - vec (utils.Vector) -- A vector or type that can be cast
+      %     to a Vector.
+      %
+      % The default implementation uses insideXyz to test when the
+      % rays are inside the shape.  For some shapes there may be
+      % faster methods.  Normals are calculated with the normalsXyz method.
+
+      if ~isa(vecs, 'ott.utils.Vector')
+        vecs = ott.utils.Vector(vecs);
+      end
+
+      dx = shape.maxRadius ./ 100;
+      if ~isfinite(dx)
+        dx = 1.0e-3;
+      end
+
+      % Start by calculating intersects with bounding box
+      ints = shape.intersectBoundingBox(vecs);
+      ints(1:3, isnan(ints(1, :))) = vecs.origin(:, isnan(ints(1, :)));
+
+      % Calculate distance we want to search for each vector
+      search_distance = vecnorm(ints(4:6, :) - ints(1:3, :));
+
+      % Distance from bounding box to intersection
+      locs = zeros(1, numel(vecs));
+      orgs = ints(1:3, :);
+      found = false(1, numel(vecs));
+      dirs = vecs.direction ./ vecnorm(vecs.direction);
+      
+      % Determine which points were already inside
+      was_inside = shape.insideXyz(orgs);
+
+      % Find a point between the intersects in the shape
+      remaining = locs < search_distance & ~found;
+      while any(remaining)
+
+        % March the ray
+        locs(remaining) = locs(remaining) + dx;
+
+        % Determine if new point is inside
+        inside = shape.insideXyz(orgs(:, remaining) ...
+          + locs(remaining).*dirs(:, remaining));
+        found(remaining) = inside ~= was_inside(remaining);
+
+        % Determine which points remain
+        remaining = locs < search_distance & ~found;
+      end
+
+      % Remove logs that weren't found
+      locs(~found) = nan;
+
+      % Convert length to location vector
+      locs = ints(1:3, :) + locs .* dirs;
+
+      if nargout > 1
+        norms = shape.normalXyz(locs);
+      end
+    end
+
     function varargout = voxels(shape, varargin)
       % Generate an array of xyz coordinates for voxels inside the shape
       %
@@ -421,6 +491,107 @@ classdef (Abstract) Shape < ott.utils.RotateHelper
       % Set outputs if requested
       if nargout ~= 0
         varargout = { xx, yy, zz };
+      end
+    end
+
+    function ints = intersectBoundingBox(shape, vecs)
+      % Calculate the bounding box intersections for the vector
+      %
+      % Usage
+      %   ints = intersectBoundingBox(vecs)
+      %   vecs is a ott.utils.Vector
+      %   ints is a 6xN matrix of intersection locations or nan
+
+      dirs = vecs.direction ./ vecnorm(vecs.direction);
+      orgs = vecs.origin;
+
+      R = shape.maxRadius;
+      if ~isfinite(R)
+        ints = nan(6, size(dirs, 2));
+        return;
+      end
+
+      % Calculate intersection with planes
+      lz = orgs - (orgs(3, :) - R) .* dirs ./ dirs(3, :);
+      uz = orgs - (orgs(3, :) + R) .* dirs ./ dirs(3, :);
+      ly = orgs - (orgs(2, :) - R) .* dirs ./ dirs(2, :);
+      uy = orgs - (orgs(2, :) + R) .* dirs ./ dirs(2, :);
+      lx = orgs - (orgs(1, :) - R) .* dirs ./ dirs(1, :);
+      ux = orgs - (orgs(1, :) + R) .* dirs ./ dirs(1, :);
+
+      % Find which planes the ray intersects
+      lxb = all(lx(2:3, :) < R & lx(2:3, :) > -R, 1);
+      uxb = all(ux(2:3, :) < R & ux(2:3, :) > -R, 1);
+      lyb = all(ly([1,3], :) < R & ly([1,3], :) > -R, 1);
+      uyb = all(uy([1,3], :) < R & uy([1,3], :) > -R, 1);
+      lzb = all(lz(1:2, :) < R & lz(1:2, :) > -R, 1);
+      uzb = all(uz(1:2, :) < R & uz(1:2, :) > -R, 1);
+      brr = [lxb; uxb; lyb; uyb; lzb; uzb];
+
+      ints = zeros(6, size(dirs, 2));
+
+      % Assign intersects
+      for ii = 1:size(ints, 2)
+
+        this_ints = zeros(6, 1);
+        jj = 1;
+
+        % Get which vector matched
+        % This feels like KLUDGE
+        if lxb(ii)
+          this_ints(jj:jj+2) = lx(:, ii);
+          jj = jj + 3;
+        end
+        if uxb(ii)
+          this_ints(jj:jj+2) = ux(:, ii);
+          jj = jj + 3;
+        end
+        if lyb(ii)
+          this_ints(jj:jj+2) = ly(:, ii);
+          jj = jj + 3;
+        end
+        if uyb(ii)
+          this_ints(jj:jj+2) = uy(:, ii);
+          jj = jj + 3;
+        end
+        if lzb(ii)
+          this_ints(jj:jj+2) = lz(:, ii);
+          jj = jj + 3;
+        end
+        if uzb(ii)
+          this_ints(jj:jj+2) = uz(:, ii);
+          jj = jj + 3;
+        end
+
+        % Filter out non-intersects
+        if jj == 1
+          ints(:, ii) = nan;
+
+        elseif jj == 4
+
+          % This shouldn't happen since we haven't checked direction yet
+          warning('Unexpected intersection event');
+          ints(1:3, ii) = nan;
+          ints(4:6, ii) = this_ints(1:3);
+
+        else
+
+          % Sort the intercepts
+          l1 = dot(this_ints(1:3) - orgs(:, ii), dirs(:, ii));
+          l2 = dot(this_ints(4:6) - orgs(:, ii), dirs(:, ii));
+          if l2 < l1
+            this_ints = [this_ints(4:6); this_ints(1:3)];
+          end
+
+          % Ray originated from inside, discard other ray
+          if l1 < 0 || l2 < 0
+            this_ints(1:3) = nan;
+          end
+
+          % Store result
+          ints(:, ii) = this_ints;
+        end
+
       end
     end
   end
