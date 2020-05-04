@@ -79,9 +79,7 @@ classdef StarShape < ott.shapes.ShapeSph
       %   surfoptions   {varargin} options to be passed to surf.
 
       p = inputParser;
-      p.addParameter('points', []);
-      p.addParameter('npoints', [100, 100]);
-      beam.surfAddArgs(p);
+      shape.surfAddArgs(p);
       p.parse(varargin{:});
 
       % Get the points to use for the surface
@@ -110,10 +108,10 @@ classdef StarShape < ott.shapes.ShapeSph
       % Calculate Cartesian coordinates
       [X, Y, Z] = shape.locations(theta, phi);
 
-      % Reshape to desired shape
-      X = reshape(X, sz);
-      Y = reshape(Y, sz);
-      Z = reshape(Z, sz);
+      % Reshape to desired shape and translate
+      X = reshape(X, sz) + shape.position(1);
+      Y = reshape(Y, sz) + shape.position(2);
+      Z = reshape(Z, sz) + shape.position(3);
 
       % Complete the sphere (add the missing faces)
       X(:, end+1) = X(:, 1);
@@ -326,7 +324,7 @@ classdef StarShape < ott.shapes.ShapeSph
       % Add surface drawing args to the input parser for surf
       p.addParameter('points', []);
       p.addParameter('npoints', [100, 100]);
-      surfAddArgs@ott.shapes.ShapeCart(beam, p);
+      surfAddArgs@ott.shapes.ShapeSph(beam, p);
     end
   end
 end
