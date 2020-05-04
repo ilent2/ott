@@ -7,6 +7,7 @@ classdef Vector < ott.utils.RotateHelper
 %   - direction -- Vector directions, n-dimensional array with 3 rows
 %
 % Methods
+%   - cat       -- Concatenate two vector objects
 %   - rotate    -- Rotate the vectors (and optionally, their origins)
 %   - rotate*   -- Rotate the vectors around the X,Y,Z axis
 %
@@ -146,24 +147,51 @@ classdef Vector < ott.utils.RotateHelper
       end
     end
 
-    % TODO: disp method
-
-    function sz = size(vec, dim)
-      % Get the number of vectors contained in this object
+    function sz = size(vec, varargin)
+      % Get the number of vectors contained in this object.
+      %
+      % The leading dimension size is always 3 to make the class
+      % more compatible as a drop-in replacement for 3xN arrays.
       %
       % Usage
-      %   sz = size(vec) Returns the size of the vectors.
+      %   sz = size(vec) Returns the size of the vectors in a size array.
       %
       %   sz = size(vec, dim) Returns the size of the specified dimension.
+      %
+      %   Supports other arguments that can be passed to builtin size.
 
-      sz = size(vec.data);
-      sz = sz(2:end);
+      sz = size(vec.data(1:3, :), varargin{:});
+    end
 
-      if nargin == 2
-        sz = sz(dim);
-      elseif numel(sz) == 1
-        sz = [sz, 1];
+    function vec = cat(dim, vec1, varargin)
+      % Concatenates two or more Vector objects
+      %
+      % Usage
+      %   vec = cat(dim, vec1, vec2, vec3, ...)
+      %
+      % Parameters
+      %   - dim (numeric) -- Dimension to concatenate along, starting from
+      %     1 for horizontal concatenation.
+
+      vec = varargin{1};
+      for ii = 1:length(varargin)
+        ovec = varargin{ii};
+        vec.data = cat(dim+1, vec.data, ovec.data);
       end
+    end
+
+    function vec = horzcat(varargin)
+      % Horizontal concatenation of vectors
+      %
+      % Usage
+      %   vec = [vec1, vec2, vec3];
+
+      vec = cat(1, varargin{:});
+    end
+
+    function vec = vertcat(varargin)
+      % Disallow vertcat on Vectors (ambiguous)
+      error('Vector only supports hozcat, use cat for other dimensions');
     end
 
     function num = numel(vec)
@@ -172,7 +200,8 @@ classdef Vector < ott.utils.RotateHelper
       % Usage
       %   num = numel(vec)
 
-      num = prod(vec.size());
+      sz = vec.size();
+      num = prod(sz(2:end));
     end
 
     function vec = uminus(vec)
@@ -396,7 +425,8 @@ classdef Vector < ott.utils.RotateHelper
       vec.data(1:3, :) = val(:, :);
     end
     function val = get.origin(vec)
-      val = reshape(vec.data(1:3, :), [3, vec.size()]);
+      sz = size(vec.data);
+      val = reshape(vec.data(1:3, :), [3, sz(2:end)]);
     end
 
     function vec = set.direction(vec, val)
@@ -410,7 +440,8 @@ classdef Vector < ott.utils.RotateHelper
       vec.data(4:6, :) = val(:, :);
     end
     function val = get.direction(vec)
-      val = reshape(vec.data(4:6, :), [3, vec.size()]);
+      sz = size(vec.data);
+      val = reshape(vec.data(4:6, :), [3, sz(2:end)]);
     end
   end
 end
