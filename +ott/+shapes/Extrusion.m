@@ -151,7 +151,7 @@ classdef (Abstract) Extrusion < ott.shapes.ShapeCart
       end
 
       % Draw the figure and handle rotations/translations
-      shape.surfCommon(p, sz, xx, yy, zz);
+      [varargout{1:nargout}] = shape.surfCommon(p, sz, xx, yy, zz);
     end
 
     function nxyz = normalsXyz(shape, xyz, varargin)

@@ -33,6 +33,31 @@ classdef Plane < ott.shapes.ShapeCart
       shape.offset = offset;
     end
 
+    function shape = ott.shapes.Strata(planearray)
+      % Array of planes can be cast to Strata if normals align
+
+      % Check normals
+      normal = planearray(1).normal;
+      for ii = 2:numel(planearray)
+        assert(all(normal == planearray(ii).normal), ...
+            'All normals must match');
+      end
+
+      % Calculate depth of each slab
+      offsets = [shape.offset];
+      depth = diff(offsets);
+
+      % Create shape
+      shape = ott.shapes.Strata(normal, planearray(1).offset, depth);
+    end
+
+    function shape = ott.shapes.Slab(planearray)
+      % Array of two shapes can be cast to Slab
+
+      stratashape = ott.shapes.Strata(planearray);
+      shape = ott.shapes.Slab(stratashape);
+    end
+
     function r = get_maxRadius(shape)
       % Infinite plane has infinite maximum radius
       r = Inf;
@@ -87,6 +112,18 @@ classdef Plane < ott.shapes.ShapeCart
       p.addParameter('axes', []);
       p.parse(varargin{:});
 
+      % Calculate the X, Y, Z coordinates for a plane surface
+      [X, Y, Z] = shape.calculateSurface(p)
+
+      % Draw the figure and handle rotations/translations
+      [varargout{1:nargout}] = shape.surfCommon(p, sz, X, Y, Z);
+    end
+  end
+
+  methods (Hidden)
+    function [X, Y, Z] = calculateSurface(shape, p)
+      % Calculate the X, Y, Z coordinates for a plane surface
+
       % Calculate two orthogonal vectors
       v = shape.normal;
       [~, I] = min(abs(v));
@@ -109,23 +146,6 @@ classdef Plane < ott.shapes.ShapeCart
       X = reshape(data(1, :), [2, 2]);
       Y = reshape(data(2, :), [2, 2]);
       Z = reshape(data(3, :), [2, 2]);
-
-      % Generate the surface
-      if nargout == 0 || ~isempty(p.Results.axes)
-
-        % Place the surface in the specified axes
-        our_axes = p.Results.axes;
-        if isempty(our_axes)
-          our_axes = gca();
-        end
-
-        surf(our_axes, X, Y, Z, p.Results.surfoptions{:});
-      end
-
-      % Set outputs if requested
-      if nargout ~= 0
-        varargout = { X, Y, Z };
-      end
     end
   end
 end

@@ -124,7 +124,7 @@ classdef StarShape < ott.shapes.ShapeSph
       Z(:, end+1) = Z(:, 1);
 
       % Draw the figure and handle rotations/translations
-      shape.surfCommon(p, sz, X, Y, Z);
+      [varargout{1:nargout}] = shape.surfCommon(p, sz, X, Y, Z);
     end
 
     function varargout = voxels(shape, spacing, varargin)
