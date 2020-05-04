@@ -41,7 +41,7 @@ classdef Ray < ott.beam.PlaneWave
       %     Default: ``[0;0;0]``.
 
       % Call the base constructor (must be outside if statement)
-      ray = ray@ott.beam.PlaneWave(varargin{:});
+      beam = beam@ott.beam.PlaneWave(varargin{:});
     end
 
     function ray = focus(ray, location)

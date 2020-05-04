@@ -1,16 +1,25 @@
-% ott.optics.beam Basic descriptions for electromagnetic beams
+% ott.beam Package containing descriptions of beams
+%
+% This package contains descriptions of optical beams.
+% Sub-packages contain implementations using various approximations.
+%
+% Sub-packages
+%   +paraxial       -- Beam descriptions in the Paraxial approximation
+%   +vswf           -- Vector spherical wave function representations
+%   +abstract       -- Abstract representations of beams
+%   +utils          -- Utilities for describing beams
 %
 % Base classes
 %   Beam            -- Base class for beam approximations
-%   AbstractBeam    -- Base class for beam descriptions (no fields)
+%   Properties      -- Class defining properties of beams
 %
-% Beam descriptions
-%   Gaussian          -- A Gaussian beam description
+% Beam classes
+%   PlaneWave       -- Plane wave implementation
+%   Ray             -- Plane wave specialisation for rays
+%   ScatteredRay    -- Scattered instance of Ray
+%   TopHat          -- A beam with a Top-Hat profile
+%   GaussianDavis5  -- 5th order approximation for a Gaussian
 %
-% Beam approximations
-%   GaussianParaxial  -- Paraxial approximation of a Gaussian beam
-%   GaussianDavis5    -- Fifth-order Davis approximation of a Gaussian beam
-
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
