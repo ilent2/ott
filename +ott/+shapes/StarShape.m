@@ -85,6 +85,7 @@ classdef StarShape < ott.shapes.ShapeSph
       p.addParameter('position', []);
       p.addParameter('rotation', []);
       p.addParameter('axes', []);
+      p.addParameter('show_normals', false);
       p.parse(varargin{:});
 
       % Get the points to use for the surface
