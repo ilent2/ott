@@ -1,4 +1,4 @@
-classdef (Abstract) BeamProperties
+classdef (Abstract) Properties
 % A base class for Beam and AbstractBeam representations
 %
 % This class defines the common properties and methods to these
@@ -44,14 +44,31 @@ classdef (Abstract) BeamProperties
     function [permittivity, wavelength, speed0] = parseInputs(varargin)
       % Helper to parse the inputs to the constructor
 
+      % Pre-parse (for like argument)
+      pre = inputParser;
+      pre.KeepUnmatched = true;
+      pre.addParameter('like', []);
+      pre.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(pre);
+
+      % Get defaults from like (if available)
+      def_permittivity = 1.0;
+      def_wavelength = 1.0;
+      def_speed0 = 1.0;
+      if ~isempty(pre.Results.like)
+        def_permittivity = pre.Results.like.permittivity;
+        def_wavelength = pre.Results.like.wavelength;
+        def_speed0 = pre.Results.like.speed0;
+      end
+
       % All values should be numeric scalars
       type_check = @(x) isnumeric(x) & isscalar(x);
 
       % Setup input arguments
       p = ott.utils.RelatedArgumentParser;
-      p.addRequired('permittivity', 1.0, type_check);
-      p.addRequired('wavelength', 1.0, type_check);
-      p.addRequired('speed0', 1.0, type_check);
+      p.addRequired('permittivity', def_permittivity, type_check);
+      p.addRequired('wavelength', def_wavelength, type_check);
+      p.addRequired('speed0', def_speed0, type_check);
       p.addOptional('omega', [], type_check);
       p.addOptional('index_medium', [], type_check);
       p.addOptional('wavenumber', [], type_check);
@@ -66,7 +83,7 @@ classdef (Abstract) BeamProperties
       p.addRule('speed = omega / (2*pi) * wavelength');
 
       % Parse inputs
-      p.parse(varargin{:});
+      p.parse(unmatched{:});
 
       % Assign variables to output
       speed0 = p.RequiredResults.speed0;
@@ -76,7 +93,7 @@ classdef (Abstract) BeamProperties
   end
 
   methods
-    function beam = BeamProperties(varargin)
+    function beam = Properties(varargin)
       % Initialize properties to defaults
       %
       % Optional named arguments
@@ -89,6 +106,8 @@ classdef (Abstract) BeamProperties
       %   - wavenumber (numeric) -- Wave-number in medium [2*pi/L]
       %   - speed (numeric) -- Speed of light in medium [L/T]
       %   - wavelength0 (numeric) -- Wavelength in medium [L]
+      %
+      %   - like (Beam) -- Uses this beam for default properties.
 
       beam.wavelength = 1.0;
       beam.permittivity = 1.0;

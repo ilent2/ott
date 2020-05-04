@@ -38,7 +38,7 @@ classdef HermiteGaussian < ott.optics.beam.Gaussian
       %   - mmode (integer) -- Mode number
       %   - nmode (integer) -- Mode number
       %
-      % For optional parameters, see :class:`BeamProperties`.
+      % For optional parameters, see :class:`Properties`.
 
       beam = beam@ott.optics.beam.Gaussian(waist, varargin{:});
       beam.mmode = mmode;

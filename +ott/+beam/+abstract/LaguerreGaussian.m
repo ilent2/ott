@@ -38,7 +38,7 @@ classdef LaguerreGaussian < ott.optics.beam.Gaussian
       %   - lmode (integer)     -- Azimuthal LG mode
       %   - pmode (integer > 0) -- Radial LG mode
       %
-      % For optional parameters, see :class:`BeamProperties`.
+      % For optional parameters, see :class:`Properties`.
 
       beam = beam@ott.optics.beam.Gaussian(waist, varargin{:});
       beam.lmode = lmode;
