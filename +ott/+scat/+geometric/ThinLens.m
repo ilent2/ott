@@ -2,6 +2,8 @@ classdef ThinLens < ott.shapes.Plane
 % Thin lens approximation.
 % Inherits from :class:`ott.shapes.Plane`.
 %
+% The thin lens focuses rays to a focal plane parallel to the lens plane.
+%
 % For a ray incident normal on the lens, the ray is focussed to a
 % point a distance `focal_length` away from the lens centre.
 % For non-normal rays, the focal spot shifts depending on the
@@ -63,13 +65,18 @@ classdef ThinLens < ott.shapes.Plane
       % Calculate intersection locations
       locs = lens.intersect(ibeam);
 
-      % Translate vectors to lens origin
-      local_locs = locs - lens.position;
+      % Calculate focal point location
+      dirs = ibeam.direction ./ vecnorm(ibeam.direction);
+      ndirs = sum(dirs .* lens.normal, 1);
+      fp = lens.position + lens.focal_length .* dirs ./ ndirs;
+
+      % Calculate new directions
+      directions = sign(lens.focal_length)*(fp - locs);
+      directions = directions ./ vecnorm(directions);
 
       % Create transmitted beam
-      tbeam = ott.beam.Ray('origin', locs, ...
-          'direction', ibeam.direction - local_locs, ...
-          'like', ibeam);
+      tbeam = ott.beam.ScatteredRay(ibeam, 'origin', locs, ...
+          'direction', directions, 'like', ibeam);
     end
   end
 

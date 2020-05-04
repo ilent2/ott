@@ -21,7 +21,7 @@ classdef ScatteredRay < ott.beam.Ray
   end
 
   methods
-    function ray = ScatteredRay(incident_beam, varargin)
+    function beam = ScatteredRay(incident_beam, varargin)
       % Construct a new scattered ray representation
       %
       % Usage

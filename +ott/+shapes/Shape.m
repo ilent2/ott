@@ -428,6 +428,17 @@ classdef (Abstract) Shape < ott.utils.RotateHelper
   end
 
   methods (Hidden)
+    function surfAddArgs(beam, p)
+      % Add surface drawing args to the input parser for surf
+      % These arguments are needed by surfCommon
+      
+      p.addParameter('surfoptions', {});
+      p.addParameter('position', []);
+      p.addParameter('rotation', []);
+      p.addParameter('axes', []);
+      p.addParameter('show_normals', false);
+    end
+    
     function varargout = surfCommon(shape, p, sz, xx, yy, zz)
       % Helper for doing the final parts of surf
       %

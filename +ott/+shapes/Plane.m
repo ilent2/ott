@@ -103,18 +103,22 @@ classdef Plane < ott.shapes.ShapeCart
       %   - vec (utils.Vector) -- A vector or type that can be cast
       %     to a Vector.
 
+      % Apply rotation to normal
+      normal = shape.rotation * shape.normal;
+
       % Duplicate the normals
-      norms = repmat(shape.normal, 1, numel(vecs));
+      norms = repmat(normal, 1, numel(vecs));
 
       % Calculate intersection location relative to ray origin
       dirs = vecs.direction ./ vecnorm(vecs.direction);
       ndirs = dot(dirs, norms);
-      locs = -(dot(vecs.origin, norms) - shape.offset) .* dirs ./ ndirs;
+      locs = -(dot(vecs.origin - shape.position, norms) ...
+          - shape.offset) .* dirs ./ ndirs;
 
       % Remove rays traveling away from the plane
       locs(:, dot(locs, dirs) < 0) = nan;
 
-      % Translate to origin
+      % Translate to vector origin
       locs = vecs.origin + locs;
 
       % Ensure infs are also nans
@@ -140,45 +144,52 @@ classdef Plane < ott.shapes.ShapeCart
       %     Default: ``{}``.
 
       p = inputParser;
-      p.addParameter('scale', 1.0);
-      p.addParameter('surfoptions', {});
-      p.addParameter('axes', []);
+      shape.surfAddArgs(p);
       p.parse(varargin{:});
 
       % Calculate the X, Y, Z coordinates for a plane surface
-      [X, Y, Z] = shape.calculateSurface(p)
+      [X, Y, Z] = shape.calculateSurface(p);
 
       % Draw the figure and handle rotations/translations
-      [varargout{1:nargout}] = shape.surfCommon(p, sz, X, Y, Z);
+      [varargout{1:nargout}] = shape.surfCommon(p, size(X), X, Y, Z);
     end
   end
 
   methods (Hidden)
+    function surfAddArgs(beam, p)
+      % Add surface drawing args to the input parser for surf
+      p.addParameter('scale', 1.0);
+      surfAddArgs@ott.shapes.ShapeCart(beam, p);
+    end
+    
     function [X, Y, Z] = calculateSurface(shape, p)
       % Calculate the X, Y, Z coordinates for a plane surface
 
+      % Apply rotation to normal
+      normal = shape.rotation * shape.normal;
+
       % Calculate two orthogonal vectors
-      v = shape.normal;
+      v = normal;
       [~, I] = min(abs(v));
       v(I) = max(abs(v));
-      c1 = cross(v, shape.normal);
-      c2 = cross(c1, shape.normal);
+      c1 = cross(v, normal);
+      c2 = cross(c1, normal);
 
       % Apply scale to c1 and c2
       c1 = c1 ./ vecnorm(c1) .* p.Results.scale;
       c2 = c2 ./ vecnorm(c2) .* p.Results.scale;
 
       % Calculate 4 corners of plane
-      v1 = c1 + c2 + shape.normal*shape.offset;
-      v2 = c1 - c2 + shape.normal*shape.offset;
-      v3 = -c1 + c2 + shape.normal*shape.offset;
-      v4 = -c1 - c2 + shape.normal*shape.offset;
+      v1 = c1 + c2 + normal*shape.offset;
+      v2 = c1 - c2 + normal*shape.offset;
+      v3 = -c1 + c2 + normal*shape.offset;
+      v4 = -c1 - c2 + normal*shape.offset;
 
       % Reshape into surf form
       data = [v1, v2, v3, v4];
-      X = reshape(data(1, :), [2, 2]);
-      Y = reshape(data(2, :), [2, 2]);
-      Z = reshape(data(3, :), [2, 2]);
+      X = reshape(data(1, :), [2, 2]) + shape.position(1);
+      Y = reshape(data(2, :), [2, 2]) + shape.position(2);
+      Z = reshape(data(3, :), [2, 2]) + shape.position(3);
     end
   end
 end

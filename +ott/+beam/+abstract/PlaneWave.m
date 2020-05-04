@@ -10,6 +10,7 @@ classdef PlaneWave < ott.beam.abstract.Abstract & ott.utils.Vector
 % Methods
 %   - rotate      -- Rotate the direction and polarisation
 %   - rotate*     -- Rotate the particle around the X,Y,Z axis
+%   - size        -- Get size of beam array
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -85,6 +86,14 @@ classdef PlaneWave < ott.beam.abstract.Abstract & ott.utils.Vector
       beam.polarisation = R * beam.polarisation;
 
     end
+
+    function sz = size(vec, varargin)
+      % Get the number of beams contained in this object
+      %
+      % The leading dimension is always 1.  May change in future.
+
+      sz = size(vec.data(1, :), varargin{:});
+    end
   end
 
   methods (Hidden)
@@ -113,6 +122,9 @@ classdef PlaneWave < ott.beam.abstract.Abstract & ott.utils.Vector
       % Check length
       assert(any(size(val, 2) == [1, size(beam.direction, 2)]), ...
           'field must have length 1 or same length as direction');
+      if size(val, 2) == 1
+        val = repmat(val, 1, size(beam.direction, 2));
+      end
 
       beam.field = val;
     end
@@ -126,6 +138,9 @@ classdef PlaneWave < ott.beam.abstract.Abstract & ott.utils.Vector
       % Check length
       assert(any(size(val, 2) == [1, size(beam.direction, 2)]), ...
           'polarisation must have length 1 or same length as direction');
+      if size(val, 2) == 1
+        val = repmat(val, 1, size(beam.direction, 2));
+      end
 
       beam.polarisation = val;
     end

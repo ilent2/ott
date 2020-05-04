@@ -204,8 +204,6 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave
       % Usage
       %   h = beam.visualiseRays(...)
       %
-      % Does not support arrays of beams.
-      %
       % Optional named arguments
       %   - Scale (numeric) -- rescales the coordinates and components
       %     of the vector before plotting.  Can either be a scalar
@@ -218,13 +216,12 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave
       % Any unmatched named arguments are applied to the plot handles
       % returned by the quiver function calls.
 
-      assert(numel(vec) == 1, 'Does not support arrays of beams');
-
       % Parse inputs
       p = inputParser;
       p.KeepUnmatched = true;
       p.addParameter('Scale', [1, 1]);
       p.addParameter('ray_lengths', []);
+      p.addParameter('show_polarisation', true);
       p.parse(varargin{:});
 
       S1 = p.Results.Scale(1);
@@ -243,17 +240,21 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave
           S1*vec.origin(3, :), S2.*vec.direction(1, :), ...
           S2.*vec.direction(2, :), S2.*vec.direction(3, :), 0);
 
-      if ~isholdon
-        hold('on');
-      end
+      if p.Results.show_polarisation
 
-      % Generate plot of polarisations
-      h(2) = quiver3(S1*vec.origin(1, :), S1*vec.origin(2, :), ...
-          S1*vec.origin(3, :), S2pol.*vec.polarisation(1, :), ...
-          S2pol.*vec.polarisation(2, :), S2pol.*vec.polarisation(3, :), 0);
+        if ~isholdon
+          hold('on');
+        end
 
-      if ~isholdon
-        hold('off');
+        % Generate plot of polarisations
+        h(2) = quiver3(S1*vec.origin(1, :), S1*vec.origin(2, :), ...
+            S1*vec.origin(3, :), S2pol.*vec.polarisation(1, :), ...
+            S2pol.*vec.polarisation(2, :), S2pol.*vec.polarisation(3, :), 0);
+
+        if ~isholdon
+          hold('off');
+        end
+
       end
 
       % Apply unmatched arguments to plot handle

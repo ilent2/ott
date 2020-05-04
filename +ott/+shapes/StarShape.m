@@ -81,11 +81,7 @@ classdef StarShape < ott.shapes.ShapeSph
       p = inputParser;
       p.addParameter('points', []);
       p.addParameter('npoints', [100, 100]);
-      p.addParameter('surfoptions', {});
-      p.addParameter('position', []);
-      p.addParameter('rotation', []);
-      p.addParameter('axes', []);
-      p.addParameter('show_normals', false);
+      beam.surfAddArgs(p);
       p.parse(varargin{:});
 
       % Get the points to use for the surface
@@ -322,6 +318,15 @@ classdef StarShape < ott.shapes.ShapeSph
           varargout{3} = phi;
         end
       end
+    end
+  end
+  
+  methods (Hidden)
+    function surfAddArgs(beam, p)
+      % Add surface drawing args to the input parser for surf
+      p.addParameter('points', []);
+      p.addParameter('npoints', [100, 100]);
+      surfAddArgs@ott.shapes.ShapeCart(beam, p);
     end
   end
 end
