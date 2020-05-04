@@ -13,11 +13,11 @@ function testFresnelCoefficientsIndexMatched(testCase)
   kix = n1*2*pi;
   ktx = n2*2*pi;
   
-  [Sr, St] = ott.scat.geometric.Plane.fresnelS(kix, ktx, n1, n2);
+  [Sr, St] = ott.scat.planewave.Plane.fresnelS(kix, ktx, n1, n2);
   testCase.verifyEqual(Sr, 0.0, 'Sr n1 = n2');
   testCase.verifyEqual(St, 1.0, 'St n1 = n2');
   
-  [Pr, Pt] = ott.scat.geometric.Plane.fresnelP(kix, ktx, n1, n2);
+  [Pr, Pt] = ott.scat.planewave.Plane.fresnelP(kix, ktx, n1, n2);
   testCase.verifyEqual(Pr, 0.0, 'Pr n1 = n2');
   testCase.verifyEqual(Pt, 1.0, 'Pt n1 = n2');
 
@@ -31,11 +31,11 @@ function testFresnelCoefficientsPureComplex(testCase)
   kix = n1*2*pi;
   ktx = n2*2*pi;
   
-  [Sr, St] = ott.scat.geometric.Plane.fresnelS(kix, ktx, n1, n2);
+  [Sr, St] = ott.scat.planewave.Plane.fresnelS(kix, ktx, n1, n2);
   testCase.verifyEqual(abs(Sr).^2, 1.0, 'Sr n2 = -1i');
   testCase.verifyTrue(~isreal(St), 'St n2 = -1i');
   
-  [Pr, Pt] = ott.scat.geometric.Plane.fresnelP(kix, ktx, n1, n2);
+  [Pr, Pt] = ott.scat.planewave.Plane.fresnelP(kix, ktx, n1, n2);
   testCase.verifyEqual(abs(Pr).^2, 1.0, 'Pr n2 = -1i');
   testCase.verifyTrue(~isreal(Pt), 'Pt n2 = -1i');
 
@@ -50,11 +50,11 @@ function testFresnelCoefficientsTir(testCase)
   kix = 2*pi*sin(ang);
   ktx = 2*pi*sqrt(1 - (n2./n1).^2 .* sin(ang).^2);
   
-  [Sr, St] = ott.scat.geometric.Plane.fresnelS(kix, ktx, n1, n2);
+  [Sr, St] = ott.scat.planewave.Plane.fresnelS(kix, ktx, n1, n2);
   testCase.verifyEqual(abs(Sr).^2, 1.0, 'AbsTol', 1e-15, 'Sr n2 = 2');
   testCase.verifyTrue(~isreal(St), 'St n2 = 2');
   
-  [Pr, Pt] = ott.scat.geometric.Plane.fresnelP(kix, ktx, n1, n2);
+  [Pr, Pt] = ott.scat.planewave.Plane.fresnelP(kix, ktx, n1, n2);
   testCase.verifyEqual(abs(Pr).^2, 1.0, 'Pr n2 = 2');
   testCase.verifyTrue(~isreal(Pt), 'Pt n2 = 2');
 
@@ -62,8 +62,8 @@ end
 
 function testScatterIndexMatched(testCase)
 
-  plane = ott.scat.geometric.Plane(1.0, [1;0;0]);
-  beam = ott.beam.PlaneWave('direction', [1;0;0], ...
+  plane = ott.scat.planewave.Plane(1.0, [1;0;0]);
+  beam = ott.beam.abstract.PlaneWave('direction', [1;0;0], ...
     'polarisation', [0;1;0], 'origin', [0;0;0], ...
     'field', 1.0);
   

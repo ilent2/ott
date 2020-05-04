@@ -134,7 +134,9 @@ classdef Strata
       %   [rbeam, tbeam, ibeams] = strata.scatter(beam)
 
       % Cast the beam to a plane wave
-      beam = ott.beam.PlaneWave(beam);
+      if ~isa(beam, 'ott.beam.abstract.PlaneWave')
+        beam = ott.beam.abstract.PlaneWave(beam);
+      end
 
       % Get incident wave-vector (direction)
       ki = beam.wavevector;
@@ -162,15 +164,49 @@ classdef Strata
         kt(:, ii) = ko + sqrt(kn2) .* strata.normal;
       end
 
-
       % Solve the boundary value problem
+      [aS, bS] = strata.coeffS(strata.normal, strata.depth, [ki, kt]);
+      [aP, bP] = strata.coeffP(strata.normal, strata.depth, [ki, kt]);
 
+      polarisation = beam.polarisation;
 
-      % Split the incident field (polarisation) into s and p vectors
+      % TODO: Use field vector
+
+      % Split the field (polarisation) into s and p vectors
       svec = cross(beam.direction, plane.normal);
       Es = dot(polarisation, svec);
       Ep = vecnorm(polarisation - Es .* svec);
 
+      % Calculate transmitted and reflected pvec directions
+      pvecr = cross(svec, kr)./vecnorm(kr);
+      pvect = cross(svec, kt)./vecnorm(kt);
+
+      rbeam = ott.beam.abstract.PlaneWave('wave_vector', kr, ...
+          'polarisation', bS(1) .* Es .* svec + bP(1) .* Ep .* pvecr, ...
+          'index_medium', beam.index_medium, ...
+          'origin', plane.position);
+      tbeam = ott.beam.abstract.PlaneWave('wave_vector', kt, ...
+          'polarisation', aS(end) .* Es .* svec + aP(end) .* Ep .* pvect, ...
+          'index_medium', beam.index_medium .* plane.index_relative, ...
+          'origin', plane.position);
+
+      if nargout == 3
+
+        ibeams(2*(length(aS)-1)) = ott.beam.abstract.PlaneWave();
+        for ii = 2:length(aS)
+          ibeams(ii-1) = ott.beam.abstract.PlaneWave(...
+            'wave_vector', kt(:, ii-1), ...
+            'polarisation', aS(ii-1) .* Es .* svec + aP(ii-1) .* Ep .* pvect, ...
+            'index_medium', beam.index_medium .* strata.index_relative(ii), ...
+            'origin', beam.origin);
+
+          ibeams(ii+length(aS)-2) = ott.beam.abstract.PlaneWave(...
+            'wave_vector', kt(:, ii-1), ...
+            'polarisation', bS(ii) .* Es .* svec + bP(ii) .* Ep .* pvect, ...
+            'index_medium', beam.index_medium .* strata.index_relative(ii), ...
+            'origin', beam.origin);
+        end
+      end
     end
   end
 end

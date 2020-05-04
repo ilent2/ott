@@ -43,7 +43,9 @@ classdef Plane
       % Calculate reflected and transmitted beams
 
       % Cast the beam to a plane wave
-      beam = ott.beam.PlaneWave(beam);
+      if ~isa(beam, 'ott.beam.abstract.PlaneWave')
+        beam = ott.beam.abstract.PlaneWave(beam);
+      end
 
       % Get incident wave-vector (direction)
       ki = beam.wavevector;
@@ -63,35 +65,36 @@ classdef Plane
       % Calculate polarisation (phase-shifted by distance from beam
       % origin to plane)
       polarisation = beam.polarisation;
-      if any(beam.origin(:))
-        dist = dot(beam.wave_vector, plane.position - beam.origin);
-        polarisation = polarisation .* exp(1i*dist);
-      end
+
+      % TODO: Use field vector
 
       % Split the field (polarisation) into s and p vectors
       svec = cross(beam.direction, plane.normal);
       Es = dot(polarisation, svec);
       Ep = vecnorm(polarisation - Es .* svec);
 
+      n1 = beam.index_medium;
+      n2 = beam.index_medium .* plane.index_relative;
+
       % Calculate the Fresnel coefficients
       kix = dot(plane.normal, ki);
       ktx = dot(plane.normal, kt);
-      [Sr, St] = beam.fresnelS(kix, ktx, n1, n2);
-      [Pr, Pt] = beam.fresnelP(kix, ktx, n1, n2);
+      [Sr, St] = plane.fresnelS(kix, ktx, n1, n2);
+      [Pr, Pt] = plane.fresnelP(kix, ktx, n1, n2);
 
       % Calculate transmitted and reflected pvec directions
       pvecr = cross(svec, kr)./vecnorm(kr);
       pvect = cross(svec, kt)./vecnorm(kt);
 
       % Generate the reflected and transmitted vectors
-      rbeam = ott.beam.PlaneWave('wave_vector', kr, ...
+      rbeam = ott.beam.abstract.PlaneWave('direction', kr./vecnorm(kr), ...
           'polarisation', Sr .* Es .* svec + Pr .* Ep .* pvecr, ...
-          'index_medium', beam.index_medium, ...
-          'origin', plane.position);
-      tbeam = ott.beam.PlaneWave('wave_vector', kt, ...
+          'index_medium', n1, ...
+          'origin', beam.origin);
+      tbeam = ott.beam.abstract.PlaneWave('direction', kt./vecnorm(kt), ...
           'polarisation', St .* Es .* svec + Pt .* Ep .* pvect, ...
-          'index_medium', beam.index_medium .* plane.index_relative, ...
-          'origin', plane.position);
+          'index_medium', n2, ...
+          'origin', beam.origin);
     end
   end
 end
