@@ -1,33 +1,28 @@
-% ott.optics.geometric Classes for geometric optics calculations
+% ott.optics.geometric Scattering calculations using geometric optics
 %
-% TODO
-
-% Ray -- Object describing geometric rays
-%   Supports calculating scattering by a plane
-%   Supports calculating momentum?
-%   Provides a scatter method (taking normals as inputs)
+% Geometric optics involves describing scattering particles by
+% by surfaces and applying Snell's law to calculate reflected and
+% refracted ray directions.
 %
-% Beam?
-%   In OTGO these described the paraxial beams
-%   We just need a way to construct Ray objects for different beams
-%   Maybe we should provide a .simple constructor to Ray and
-%   wrap a beam object described elsewhere?
+% Geometric optics uses the Ray beam, which is a specialisation of the
+% PlaneWave beam with a finite area (and finite power).
+% Scattering by a plane is equivalent to scattering of a plane wave by
+% an infinite plane, except the scattered beams are :class:`Ray`s.
 %
-% Particle -- Object describing a geometric optics particle
-%   Wraps a shape object
-%   Provides a force and torque method and a scatter method
-%   To be consisten with bsc, should we only have scatter as part of Ray?
+% For arbitrary shapes, scattering is implemented by calculating the
+% intersection of rays with the shape and using the surface normals
+% to calculate the scattering.
 %
-% System -- For use with dynamics systems
-%   Wraps a Ray and Particle object
-%   Provides the force(position, rotation, ...) method needed for dynamics
-%   Need to review how other optics method define/will define a system
+% In the future, specific shapes might get specialised implementations.
 %
-% We really need to review other optics packages in order to provide
-% a consistent feel to the toolbox.
-% Where are we going to put Davis beams and paraxial beam representations?
-
+% Particles
+%   Plane         -- Describes scattering by a plane
+%   Shape         -- Describes scattering by an arbitrary geometric shape
+%
+% Lenses
+%   ThinLens      -- Thin lens approximation
+%   SphericalLens -- Spherical lens approximation
+%
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
-% using/distributing this file.
-
+% using/distributing this file
