@@ -9,19 +9,10 @@ classdef (Abstract) Properties
 %   - wavelength    -- Wavelength of beam in medium (default: 1.0)
 %   - permittivity  -- Material relative permittivity (default: 1.0)
 %   - permeability  -- Material relative permeability (default: 1.0)
-%   - combine_rules -- Combination rules for beam array dimensions
 %
 % Dependent properties
 %   - wavenumber    -- Wave-number of beam in medium
 %   - impedance     -- Impedance of the medium
-%   - coherent_dims -- Coherent dimensions of beam array (logical mask)
-%   - incoherent_dims -- Incoherent dimensions of beam array (logical mask)
-%
-% Methods
-%   - size          -- Size of the beam array
-%   - cat           -- Concatenation method for beam arrays
-%   - combineArray  -- Combine an array using combination rules
-%   - combinedSize  -- Size of the beam after applying combination rules
 %
 % Abstract methods
 %   - getBeamPower      -- get method called by dependent property power
@@ -33,7 +24,6 @@ classdef (Abstract) Properties
     permittivity   % Material relative permittivity (default: 1.0)
     permeability   % Material relative permeability (default: 1.0)
     speed0         % Speed of light in vacuum (default: 1.0)
-    combine_rules  % Combination rules for beam array dimensions (cell array)
   end
 
   properties (Dependent)
@@ -44,9 +34,6 @@ classdef (Abstract) Properties
     index_medium   % Refractive index in medium
     speed          % Speed of light in medium
     wavelength0    % Vacuum wavelength of beam
-
-    coherent_dims   % Coherent dimensions of beam array (logical mask)
-    incoherent_dims % Incoherent dimensions of beam array (logical mask)
   end
 
   methods (Abstract)
@@ -130,117 +117,6 @@ classdef (Abstract) Properties
       [beam.permittivity, beam.wavelength, beam.speed0] = ...
           beam.parseInputs(varargin{:});
     end
-
-    function arr = combineArray(beam, arr, base_sz, combine_type)
-      % Apply combination rules to a arbitrary array.
-      %
-      % Usage
-      %   arr = beam.combineArray(arr, base_sz, combine_type)
-      %
-      % Parameters
-      %   arr -- The array to apply the rules too.
-      %   The size of arr (excluding leading dimensions) must match the
-      %   size of the beam array or the beam array after applying
-      %   the incoherent or coherent rules first.
-      %
-      %   base_sz (numeric) -- The number of leading dimensions to
-      %   ignore in arr.
-      %
-      %   combine_type (enum) -- Combination rules to apply.
-      %   Specify the combination type, can either be 'both', 'coherent'
-      %   or 'incoherent'.  Default: 'both'.
-
-      if nargin < 4
-        combine_type = 'both';
-      end
-
-      assert(isnumeric(base_sz) && isscalar(base_sz) && base_sz >= 0 ...
-          && round(base_sz) == base_sz, ...
-          'base_sz must be positive integer');
-
-      % Get array of dimensions to combine
-      switch combine_type
-        case 'both'
-          mask = beam.coherent_dims | beam.incoherent_dims;
-          assert(base_sz + ndims(arr) == numel(mask), ...
-              'Array has too few dimensions');
-        case 'coherent'
-          mask = beam.coherent_dims;
-
-          if base_sz + ndims(arr) < numel(mask)
-            % Try discarding incoherent dimensions
-            mask(beam.incoherent_dims) = [];
-            assert(base_sz + ndims(arr) == numel(mask), ...
-                'Array has too few dimensions');
-          end
-
-        case 'incoherent'
-          mask = beam.incoherent_dims;
-
-          if base_sz + ndims(arr) < numel(mask)
-            % Try discarding coherent dimensions
-            mask(beam.coherent_dims) = [];
-            assert(base_sz + ndims(arr) == numel(mask), ...
-                'Array has too few dimensions');
-          end
-
-        otherwise
-          error('Unknown combine type specified');
-      end
-      sum_dims = base_sz + find(mask);
-
-      % Sum dimensions in reverse order
-      for dim = flip(sum_dims)
-        arr = sum(arr, dim);
-      end
-    end
-
-    function sz = combinedSize(beam, combine_type, dim)
-      % Calculate the size of the beam after applying combination rules
-      %
-      % Usage
-      %   sz = beam.combinedSize()
-      %
-      %   sz = beam.combinedSize(combine_type)
-      %   Specify the combination type, can either be 'both', 'coherent'
-      %   or 'incoherent'.  Default: 'both'.
-      %
-      %   sz = beam.combineSize(combine_type, dim)
-      %   Only return the size of the specified dimension.
-      %
-      % The minimum size is [1, 1].
-
-      % Get the un-combined size
-      sz = size(beam);
-
-      if nargin < 2
-        combine_type = 'both';
-      end
-
-      switch combine_type
-        case 'both'
-          mask = beam.coherent_dims | beam.incoherent_dims;
-        case 'coherent'
-          mask = beam.coherent_dims;
-        case 'incoherent'
-          mask = beam.incoherent_dims;
-        otherwise
-          error('Unknown combine type specified');
-      end
-
-      % Remove combined dimensions
-      sz(mask) = [];
-      if numel(sz) == 0
-        sz = [1, 1];
-      elseif numel(sz) == 1
-        sz = [1, sz];
-      end
-
-      % Get specified dimension
-      if nargin == 3
-        sz = sz(dim);
-      end
-    end
   end
 
   methods (Hidden)
@@ -309,13 +185,6 @@ classdef (Abstract) Properties
     end
     function val = get.wavelength0(beam)
       val = beam.wavelength ./ beam.index_medium;
-    end
-
-    function val = get.coherent_dims(beam)
-      val = strcmpi('coherent', beam.combine_rules);
-    end
-    function val = get.incoherent_dims(beam)
-      val = strcmpi('incoherent', beam.combine_rules);
     end
   end
 end

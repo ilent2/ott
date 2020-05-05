@@ -1,7 +1,8 @@
-classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
+classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
+    & ott.beam.utils.ArrayType
 % Class representing beam shape coefficients.
-% Inherits from :class:`ott.optics.beam.Beam` and
-% :class:`ott.utils.RotateHelper`.
+% Inherits from :class:`ott.beam.Beam`,
+% :class:`ott.utils.RotateHelper` and :class:`ott.beam.utils.ArrayType`.
 %
 % Any units can be used for the properties as long as they are
 % consistent in all specified properties.  Calculated quantities
@@ -18,12 +19,10 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
 % Dependent properties
 %   - Nmax        --  Truncation number for VSWF coefficients
 %   - power       --  Power of the beam [M*L^2/S^3]
-%   - Nbeams      --  Number of beams in this Bsc object
 %   - wavenumber  --  Wavenumber in the medium [2*pi/L]
 %   - speed       --  Speed of beam in medium [L/T]
 %
 % Methods
-%   - append      --  Joins two beam objects together
 %   - sum         --  Merge the BSCs for the beams contained in this object
 %   - translateZ  --  Translates the beam along the z axis
 %   - translateXyz -- Translation to xyz using rotations and z translations
@@ -41,6 +40,7 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
 %   - force       --  Calculate change in linear momentum between beams
 %   - torque      --  Calculate change in angular momentum between beams
 %   - spin        --  Calculate change in spin between beams
+%   - size        -- Get the size of the beam array
 %
 % Static methods:
 %   - make_beam_vector -- Convert output of bsc_* functions to beam coefficients
@@ -63,14 +63,10 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
 
   properties
     basis       % VSWF beam basis (incoming, outgoing or regular)
-    omega       % Angular frequency of beam
   end
 
   properties (Dependent)
     Nmax        % Truncation number for VSWF coefficients
-    Nbeams      % Number of beams in this Bsc object
-
-    speed       % Speed of beam in medium
   end
 
   methods (Static)
@@ -192,7 +188,6 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
         @(x) any(strcmpi(x, {'incoming', 'outgoing', 'regular'})));
       p.addParameter('like', []);
       p.addParameter('k_medium', 2.0*pi);
-      p.addParameter('omega', 2*pi);
       p.addParameter('dz', 0.0);
       p.parse(varargin{:});
 
@@ -201,7 +196,7 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       like = p.Results.like;
 
       % Copy all data from an existing BSC
-      if isa(a, 'ott.optics.vswf.bsc.Bsc')
+      if isa(a, 'ott.beam.vswf.Bsc')
         assert(isempty(b), 'Too many arguments supplied');
 
         like = a;
@@ -213,12 +208,10 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       if ~isempty(like)
         beam.dz = like.dz;
         beam.wavenumber = like.wavenumber;
-        beam.omega = like.omega;
         beam.basis = like.basis;
       else
         beam.dz = p.Results.dz;
         beam.wavenumber = p.Results.k_medium;
-        beam.omega = p.Results.omega;
         beam.basis = p.Results.basis;
       end
 
@@ -232,31 +225,60 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       beam.b = b;
     end
 
-    function beam = append(beam, other)
-      % APPEND joins two beam objects together
+    function sz = size(beam, varargin)
+      % Get the number of beams contained in this object
       %
-      % Usaage
-      %   beam = beam.append(other)
-      %   beam = beam.append([beam1, beam2, ...])
-      
-      % Append array of beams
-      if numel(other) > 1
-        for ii = 1:numel(other)
-          beam = beam.append(other(ii));
-        end
-        return;
+      % Usage
+      %   sz = size(beam)   or    sz = beam.size()
+      %   For help on arguments, see builtin ``size``.
+      %
+      % The leading dimension is always 1.  May change in future.
+
+      sz = size(beam.a(1, :), varargin{:});
+    end
+
+    function beam = catInternal(dim, beam, varargin)
+      % Concatenate beams
+
+      assert(dim == 2, 'Only horzcat (dim=2) supported for now');
+
+      other_a = {};
+      other_b = {};
+      for ii = 1:length(varargin)
+        other_a{ii} = varargin{ii}.a;
+        other_b{ii} = varargin{ii}.b;
       end
 
-      % Append single beam
-      if beam.Nbeams == 0
-        % Copy the other beam, preserves properties
-        beam = other;
-      else
-        beam.Nmax = max(beam.Nmax, other.Nmax);
-        other.Nmax = beam.Nmax;
-        beam.a = [beam.a, other.a];
-        beam.b = [beam.b, other.b];
+      beam.a = cat(dim, beam.a, other_a{:});
+      beam.b = cat(dim, beam.b, other_b{:});
+    end
+
+    function beam = plusInternal(beam1, beam2)
+      %PLUS add two beams together
+
+      if beam1.Nmax > beam2.Nmax
+        beam2.Nmax = beam1.Nmax;
+      elseif beam2.Nmax > beam1.Nmax
+        beam1.Nmax = beam2.Nmax;
       end
+
+      beam = beam1;
+      beam.a = beam.a + beam2.a;
+      beam.b = beam.b + beam2.b;
+    end
+
+    function beam = subsrefInternal(beam, subs)
+      % Get the subscripted beam
+
+      if numel(subs) > 1
+        if subs(1) == 1
+          subs = subs(2:end);
+        end
+        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
+      end
+
+      beam.a = beam.a(:, subs);
+      beam.b = beam.b(:, subs);
     end
 
     function [E, H, data] = ehfarfield(beam, rtp, varargin)
@@ -455,9 +477,6 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       % component of D is continuous at the boundary.
       %
       % This function is based on the emField function from OTTv1.
-      
-      assert(numel(beam) == 1, ...
-        'Function only supports single beam operations');
 
       p = inputParser;
       p.addParameter('calcE', true);
@@ -470,7 +489,7 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       rtp(1, :) = rtp(1, :) * abs(beam.wavenumber);
 
       % Get the indices required for the calculation
-      [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
+      [n,m]=ott.utils.combined_index(find(any(abs(beam.a)|abs(beam.b), 2)));
 
       ci = ott.utils.combined_index(n, m);
       [a, b] = beam.getCoefficients(ci);
@@ -622,19 +641,6 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       [E, H, data] = beam.ehfieldRtp(rtp, varargin{:});
     end
 
-    function beam = toArray(beam)
-      % Convert the beam set to an array of beams
-
-      if numel(beam) > 1
-        beam = num2cell(beam);
-        for ii = 1:numel(beam)
-          beam{ii} = beam{ii}.toArray();
-        end
-      else
-        beam = arrayfun(@(ii) beam.beam(ii), 1:beam.Nbeams);
-      end
-    end
-
     function varargout = visualise(beam, varargin)
       % Create a visualisation of the beam
       %
@@ -688,34 +694,17 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       p.parse(varargin{:});
 
       unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
-      [varargout{1:nargout}] = visualise@ott.optics.beam.Beam(...
+      [varargout{1:nargout}] = visualise@ott.beam.Beam(...
           beam, unmatched{:}, 'range', p.Results.range);
-    end
-
-    function speed = get.speed(beam)
-      % Get the speed of the beam in medium
-      speed = beam.omega / beam.wavenumber;
     end
 
     function beam = set.basis(beam, basis)
       % Set the beam type, checking it is a valid type first
       if ~any(strcmpi(basis, {'incoming', 'outgoing', 'regular'}))
-        error('OTT:Bsc:set_basis:invalid_value', 'Invalid beam basis');
+        error('ott:beam:vswf:Bsc:set_basis:invalid_value', ...
+            'Invalid beam basis');
       end
       beam.basis = basis;
-    end
-
-    function nbeams = get.Nbeams(beam)
-      % get.beams get the number of beams in this object
-      nbeams = size(beam.a, 2);
-    end
-
-    function bsc = beam(bsc, idx)
-      % BEAM get beams from a beam array object
-      %
-      % BEAM(idx) idx can be a linear index or a logical array.
-      bsc.a = bsc.a(:, idx);
-      bsc.b = bsc.b(:, idx);
     end
 
     function nmax = get.Nmax(beam)
@@ -794,15 +783,15 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
           if aapparent_error > p.Results.tolerance || ...
               bapparent_error > p.Results.tolerance
             if strcmpi(p.Results.powerloss, 'warn')
-              warning('ott:Bsc:setNmax:truncation', ...
+              warning('ott:beam:vswf:Bsc:setNmax:truncation', ...
                   ['Apparent errors of ' num2str(aapparent_error) ...
                       ', ' num2str(bapparent_error) ]);
             elseif strcmpi(p.Results.powerloss, 'error')
-              error('ott:Bsc:setNmax:truncation', ...
+              error('ott:beam:vswf:Bsc:setNmax:truncation', ...
                   ['Apparent errors of ' num2str(aapparent_error) ...
                       ', ' num2str(bapparent_error) ]);
             else
-              error('ott:Bsc:setNmax:truncation', ...
+              error('ott:beam:vswf:Bsc:setNmax:truncation', ...
                 'powerloss should be one of ignore, warn or error');
             end
           end
@@ -810,8 +799,8 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       elseif size(beam.a, 1) < total_orders
         [arow_index,acol_index,aa] = find(beam.a);
         [brow_index,bcol_index,ba] = find(beam.b);
-        beam.a = sparse(arow_index,acol_index,aa,total_orders,beam.Nbeams);
-        beam.b = sparse(brow_index,bcol_index,ba,total_orders,beam.Nbeams);
+        beam.a = sparse(arow_index,acol_index,aa,total_orders,numel(beam));
+        beam.b = sparse(brow_index,bcol_index,ba,total_orders,numel(beam));
       end
     end
 
@@ -861,7 +850,7 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
         % The first time may be OK, the second time does not have enough
         % information.
         if any(beam.dz > ott.utils.nmax2ka(beam.Nmax)./beam.wavenumber)
-          warning('ott:Bsc:translateZ:outside_nmax', ...
+          warning('ott:beam:vswf:Bsc:translateZ:outside_nmax', ...
               'Repeated translation of beam outside Nmax region');
         end
         beam.dz = beam.dz + abs(z);
@@ -870,7 +859,7 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
         z = z * beam.wavenumber / 2 / pi;
 
         ibeam = beam;
-        beam = ott.optics.vswf.bsc.Bsc();
+        beam = ott.beam.vswf.Bsc();
 
         for ii = 1:numel(z)
           [A, B] = ibeam.translateZ_type_helper(z(ii), [p.Results.Nmax, ibeam.Nmax]);
@@ -1005,7 +994,7 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       if any((theta ~= 0 & abs(theta) ~= pi) | phi ~= 0)
 
         ibeam = beam;
-        beam = ott.optics.vswf.bsc.Bsc();
+        beam = ott.beam.vswf.Bsc();
 
         for ii = 1:numel(r)
           [tbeam, D] = ibeam.rotateYz(theta(ii), phi(ii), ...
@@ -1090,7 +1079,7 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
         if iscell(p.Results.wigner)
           
           ibeam = beam;
-          beam = ott.Bsc();
+          beam = ott.beam.vswf.Bsc();
 
           for ii = 1:numel(p.Results.wigner)
             sz = size(ibeam.a, 1);
@@ -1415,7 +1404,7 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
       %    - Matrix multiplication of a and b vectors: A*a, a*A
       %    - Matrix multiplication of [a;b] vector: T*[a;b]
 
-      if isa(a, 'ott.Bsc')
+      if isa(a, 'ott.beam.vswf.Bsc')
         beam = a;
         beam.a = beam.a * b;
         beam.b = beam.b * b;
@@ -1430,20 +1419,6 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
           beam.b = a * beam.b;
         end
       end
-    end
-
-    function beam = plus(beam1, beam2)
-      %PLUS add two beams together
-
-      if beam1.Nmax > beam2.Nmax
-        beam2.Nmax = beam1.Nmax;
-      elseif beam2.Nmax > beam1.Nmax
-        beam1.Nmax = beam2.Nmax;
-      end
-
-      beam = beam1;
-      beam.a = beam.a + beam2.a;
-      beam.b = beam.b + beam2.b;
     end
 
     function beam = minus(beam1, beam2)
@@ -1640,7 +1615,7 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
         
         % Get the number of beams (for combination)
         % If coherent, combine before scattering
-        Nbeams = ibeam.Nbeams;
+        Nbeams = numel(ibeam);
         if strcmpi(ip.Results.combine, 'coherent')
           ibeam = sum(ibeam);
           Nbeams = 1;
@@ -1653,9 +1628,9 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
         sbeam = other;
         
         % Get the number of beams (for combination)
-        assert(ibeam.Nbeams == 1 || ibeam.Nbeams == sbeam.Nbeams, ...
+        assert(numel(ibeam) == 1 || numel(ibeam) == numel(sbeam), ...
             'Number of incident and scattered beams must be 1 or matching');
-        Nbeams = max(ibeam.Nbeams, sbeam.Nbeams);
+        Nbeams = max(numel(ibeam), numel(sbeam));
       end
 
       % Handle the combine argument
@@ -1670,8 +1645,8 @@ classdef Bsc < ott.optics.beam.Beam & ott.utils.RotateHelper
         
       elseif strcmpi(ip.Results.combine, 'incoherent')
         % Return how many terms need to be combined later
-        assert(numel(ibeam.Nbeams) == 1 ...
-            || numel(ibeam.Nbeams) == numel(sbeam.Nbeams), ...
+        assert(numel(ibeam) == 1 ...
+            || numel(ibeam) == numel(sbeam), ...
             'Number of incident and scattered beams must be 1 or match');
         incN = Nbeams;
         

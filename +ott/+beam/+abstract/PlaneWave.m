@@ -1,5 +1,8 @@
-classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector
-% Abstract representation of a plane wave beam
+classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
+    & ott.beam.utils.ArrayType
+% Abstract representation of a plane wave beam.
+% Inherits from :class:`Beam`, :class:`ott.utils.Vector` and
+% :class:`ott.beam.utils.ArrayType`.
 %
 % Properties
 %   - origin        -- Ray origins, 3xN array (default [0;0;0])
@@ -54,10 +57,12 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector
       p.addParameter('polarisation', [0;0;1]);
       p.addParameter('origin', [0;0;0]);
       p.addParameter('field', 1.0);
+      p.addParameter('array_type', 'coherent');
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
       % Get Vector to store most
+      beam = beam@ott.beam.utils.ArrayType('array_type', p.Results.array_type);
       beam = beam@ott.utils.Vector(p.Results.origin, p.Results.direction);
       beam = beam@ott.beam.abstract.Beam(unmatched{:});
 
@@ -94,12 +99,119 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector
 
       sz = size(vec.data(1, :), varargin{:});
     end
+
+    function beam = plus(a, b)
+      % Implementation of the addition operator for adding coherent beams.
+      %
+      % Beam inputs must be regular beams, beam arrays or coherent.
+      % If beams are incoherent beam arrays, raises an error.
+      %
+      % If the beam types differ or the arrays have different array types,
+      % creates a new coherent beam array.  Otherwise, calls ``plusInternal``
+      % with the beams.
+      %
+      % Usage
+      %   beam = beam1 + beam2
+
+      % Disambiguate plus operator
+      beam = plus@ott.beam.utils.ArrayType(a, b);
+    end
+
+    function beam = cat(varargin)
+      % Concatenate beam objects.
+      %
+      % When concatenating arrays, incoherent arrays can contain
+      % coherent arrays, but coherent arrays can't contain incoherent arrays.
+      %
+      % If the classes are the same and the array types match, calls
+      % catInternal, otherwise creates a new beam array.
+      %
+      % Usage
+      %   beam = cat(dim, beam1, beam2, beam3, ...)
+
+      % Disambiguate
+      beam = cat@ott.beam.utils.ArrayType(varargin{:});
+    end
+
+    function beam = horzcat(varargin)
+      % Concatenate beam objects.
+      %
+      % Usage
+      %   beam = [beam1, beam2, ...]
+      %   Defers to cat(2, ...).
+
+      % Disambiguate
+      beam = cat(2, varargin{:});
+    end
+
+    function beam = vertcat(varargin)
+      % Concatenate beam objects.
+      %
+      % Usage
+      %   beam = [beam1; beam2; ...]
+      %   Defers to cat(1, ...).
+
+      % Disambiguate
+      beam = cat(1, varargin{:});
+    end
+
+    function num = numel(beam)
+      % Get the number of elements in the beam
+      %
+      % Usage
+      %   num = numel(beam) or   num = beam.numel()
+      %
+      % Default behaviour: ``prod(size(beam))``
+
+      % Disambiguate
+      num = numel@ott.beam.utils.ArrayType(beam);
+    end
   end
 
   methods (Hidden)
     function p = getBeamPower(beam)
       % Returns infinite plane wave power
       p = Inf;
+    end
+
+    function beam = catInternal(dim, beam, varargin)
+      % Concatenate beams
+
+      assert(dim >= 2, 'Dimension must be greater than 1');
+
+      other_data = {};
+      other_field = {};
+      other_pol = {};
+      for ii = 1:length(varargin)
+        other_data{ii} = varargin{ii}.data;
+        other_field{ii} = varargin{ii}.field;
+        other_pol{ii} = varargin{ii}.polarisation;
+      end
+
+      beam.data = cat(dim, beam.data, other_data{:});
+      beam.field = cat(dim, beam.field, other_field{:});
+      beam.polarisation = cat(dim, beam.polarisation, other_pol{:});
+    end
+
+    function beam = plusInternal(beam1, beam2)
+      % Concatenate two coherent beams together
+
+      beam = cat(2, beam1, beam2);
+    end
+
+    function beam = subsrefInternal(beam, subs)
+      % Get the subscripted beam
+
+      if numel(subs) > ndims(beam.data)
+        if subs(1) == 1
+          subs = subs(2:end);
+        end
+        assert(numel(subs) > ndims(beam.data), 'Too many subscript indices');
+      end
+
+      beam.field = beam.field(:, subs{:});
+      beam.data = beam.data(:, subs{:});
+      beam.polarisation = beam.polarisation(:, subs{:});
     end
   end
 
