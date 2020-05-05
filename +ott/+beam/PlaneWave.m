@@ -1,4 +1,4 @@
-classdef PlaneWave < ott.beam.abstract.PlaneWave
+classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
 % Description of a plane wave beam.
 % Inherits from :class:`abstract.PlaneWave`.
 %
@@ -57,7 +57,7 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave
       if strcmpi(E.basis, 'spherical')
         xyz = ott.utils.rtp2xyz(E.locations);
       elseif strcmpi(E.basis, 'cartesian')
-        % Nothing to do
+        xyz = E.locations;
       else
         error('Unsupported field vector type');
       end
@@ -94,14 +94,14 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave
       % Construct beam object
       % TODO: Should use use a 2xN field instead of a 1xN field?
       %       This was leftover from when it was in the Ray class
-      beam = ott.optics.beam.PlaneWave('origin', xyz, ...
+      beam = ott.beam.PlaneWave('origin', xyz, ...
         'direction', S, 'field', Snorm, 'polarisation', pol);
     end
 
     function beam = FromFarfield(oldbeam)
       % Constructs a new Ray instance from the beam far-field
       %
-      % Uses the ``ehfarfield()`` methods from a :class:`ott.optics.beam.Beam`
+      % Uses the ``ehfarfield()`` methods from a :class:`ott.beam.Beam`
       % to sample a slice of the near-field.  The beam direction and intensity
       % is set from the cross product of the E and H fields.
       %
@@ -119,13 +119,13 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave
       [E, H] = oldbeam.ehfarfield(rtp);
 
       % Generate from field vectors
-      beam = ott.optics.beam.PlaneWave.FromFieldVectors(E, H);
+      beam = ott.beam.PlaneWave.FromFieldVectors(E, H);
     end
 
     function beam = FromNearfield(oldbeam)
       % Constructs a new Ray instance from a near-field beam slice
       %
-      % Uses the ``ehfield()`` methods from a :class:`ott.optics.beam.Beam`
+      % Uses the ``ehfield()`` methods from a :class:`ott.beam.Beam`
       % to sample a slice of the near-field.  The ray direction and intensity
       % is set from the cross product of the E and H fields.
       %
@@ -142,13 +142,13 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave
       [E, H] = oldbeam.ehfield(xyz);
 
       % Generate from field vectors
-      beam = ott.optics.beam.PlaneWave.FromFieldVectors(E, H);
+      beam = ott.beam.PlaneWave.FromFieldVectors(E, H);
     end
 
     function beam = FromParaxial(oldbeam)
       % Constructs a new Ray instance from the beam paraxial far-field
       %
-      % Uses the ``ehparaxial()`` methods from a :class:`ott.optics.beam.Beam`
+      % Uses the ``ehparaxial()`` methods from a :class:`ott.beam.Beam`
       % to sample a slice of the near-field.  The ray direction and intensity
       % is set from the cross product of the E and H fields.
       %
@@ -165,7 +165,7 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave
       [E, H] = oldbeam.ehparaxial(xyz);
 
       % Generate from field vectors
-      beam = ott.optics.beam.PlaneWave.FromFieldVectors(E, H);
+      beam = ott.beam.PlaneWave.FromFieldVectors(E, H);
     end
   end
 

@@ -1,4 +1,4 @@
-classdef LaguerreGaussian < ott.optics.beam.Gaussian
+classdef LaguerreGaussian < ott.beam.abstract.Gaussian
 % Abstract representation of a Laguerre-Gaussian beam.
 % Inherits from :class:`Gaussian`.
 %
@@ -40,7 +40,7 @@ classdef LaguerreGaussian < ott.optics.beam.Gaussian
       %
       % For optional parameters, see :class:`Properties`.
 
-      beam = beam@ott.optics.beam.Gaussian(waist, varargin{:});
+      beam = beam@ott.beam.abstract.Gaussian(waist, varargin{:});
       beam.lmode = lmode;
       beam.pmode = pmode;
     end

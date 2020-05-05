@@ -88,7 +88,7 @@ classdef Ray < ott.beam.PlaneWave
       p.addParameter('method', 'ray_invr');
       p.parse(varargin{:});
 
-      E = efieldInternal@ott.optics.beam.PlaneWave(beam, xyz, ...
+      E = efieldInternal@ott.beam.PlaneWave(beam, xyz, ...
           'method', p.results.method);
     end
   end

@@ -1,4 +1,4 @@
-classdef HermiteGaussian < ott.optics.beam.Gaussian
+classdef HermiteGaussian < ott.beam.abstract.Gaussian
 % Abstract representation of a Hermite-Gaussian beam
 % Inherits from :class:`Gaussian`.
 %
@@ -40,7 +40,7 @@ classdef HermiteGaussian < ott.optics.beam.Gaussian
       %
       % For optional parameters, see :class:`Properties`.
 
-      beam = beam@ott.optics.beam.Gaussian(waist, varargin{:});
+      beam = beam@ott.beam.abstract.Gaussian(waist, varargin{:});
       beam.mmode = mmode;
       beam.nmode = nmode;
     end

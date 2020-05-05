@@ -1,4 +1,4 @@
-classdef GaussianDavis5 < ott.optics.beam.Beam & ott.optics.beam.Gaussian
+classdef GaussianDavis5 < ott.beam.Beam & ott.beam.abstract.Gaussian
 % Fifth-order Davis approximation of a Gaussian beam
 % Inherits from :class:`Beam` and :class:`Gaussian`.
 %
@@ -141,7 +141,7 @@ classdef GaussianDavis5 < ott.optics.beam.Beam & ott.optics.beam.Gaussian
 
       % Call base constructor
       unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
-      beam = beam@ott.optics.beam.Gaussian(waist, varargin{:});
+      beam = beam@ott.beam.abstract.Gaussian(waist, varargin{:});
 
       beam.power = p.Results.power;
       beam.polarisation = p.Results.polarisation;

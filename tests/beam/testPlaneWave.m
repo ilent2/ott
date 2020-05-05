@@ -3,14 +3,14 @@ function tests = testPlaneWave
 end
 
 function setupOnce(testCase)
-  addpath('../../../');
+  addpath('../../');
 end
 
 function testConstructor(testCase)
 
   direction = [0; 0; 1];
   polarisation = [1; 0; 0];
-  beam = ott.optics.beam.PlaneWave('direction', direction, ...
+  beam = ott.beam.PlaneWave('direction', direction, ...
     'polarisation', polarisation);
   
   testCase.verifyEqual(beam.direction, direction, 'dir');
@@ -21,7 +21,7 @@ function testConstructorArray(testCase)
 
   direction = [0, 0; 0, 0; 1, -1];
   polarisation = [1; 0; 0];
-  beam = ott.optics.beam.PlaneWave('direction', direction, ...
+  beam = ott.beam.PlaneWave('direction', direction, ...
     'polarisation', polarisation);
   
   testCase.verifyEqual(beam.direction, direction, 'dir');
@@ -29,25 +29,25 @@ function testConstructorArray(testCase)
 end
 
 function testFromFarfield(testCase)
-  beam = ott.optics.beam.GaussianParaxial(1.0);
-  beam = ott.optics.beam.PlaneWave.FromFarfield(beam);
+  beam = ott.beam.paraxial.Gaussian(1.0);
+  beam = ott.beam.PlaneWave.FromFarfield(beam);
 end
 
 function testFromNearfield(testCase)
-  beam = ott.optics.beam.GaussianParaxial(1.0);
-  beam = ott.optics.beam.PlaneWave.FromNearfield(beam);
+  beam = ott.beam.paraxial.Gaussian(1.0);
+  beam = ott.beam.PlaneWave.FromNearfield(beam);
 end
 
 function testFromParaxial(testCase)
-  beam = ott.optics.beam.GaussianParaxial(1.0);
-  beam = ott.optics.beam.PlaneWave.FromParaxial(beam);
+  beam = ott.beam.paraxial.Gaussian(1.0);
+  beam = ott.beam.PlaneWave.FromParaxial(beam);
 end
 
 function testVisualise(tsetCase)
 
   direction = [0, 0; 0, 0; 1, -1];
   polarisation = [1; 0; 0];
-  beam = ott.optics.beam.PlaneWave('direction', direction, ...
+  beam = ott.beam.PlaneWave('direction', direction, ...
     'polarisation', polarisation);
   
   h = figure();
@@ -63,14 +63,14 @@ function testFarfield(testCase)
 
   direction = [0; 0; 1];
   polarisation = [1; 0; 0];
-  beam = ott.optics.beam.PlaneWave('direction', direction, ...
+  beam = ott.beam.PlaneWave('direction', direction, ...
     'polarisation', polarisation);
   
   h = figure();
   beam.visualiseFarfieldSphere();
-%   close(h);
+  close(h);
 
   h = figure();
   beam.visualiseFarfieldSphere('method', 'delta');
-%   close(h);
+  close(h);
 end

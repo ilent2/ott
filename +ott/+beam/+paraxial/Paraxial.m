@@ -1,4 +1,4 @@
-classdef (Abstract) Paraxial < ott.optics.beam.Beam
+classdef (Abstract) Paraxial < ott.beam.Beam
 % A abstract beam class for Paraxial beams.
 % Inherits from :class:`Beam`.
 %

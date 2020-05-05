@@ -1,6 +1,6 @@
-classdef (Abstract) Beam < ott.optics.beam.BeamProperties
+classdef (Abstract) Beam < ott.beam.Properties
 % Abstract base class for beam approximations.
-% Inherits from :class:`BeamProperties`.
+% Inherits from :class:`Properties`.
 %
 % Field calculation methods
 %   - efield     -- Calculate electric field around the origin
@@ -445,7 +445,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
         unmatched{:}));
 
       % Display the visualisation
-      ott.optics.beam.Beam.visualiseShowPlot(...
+      ott.beam.Beam.visualiseShowPlot(...
           nargout, p.Results.plot_axes, imout, ...
           {xrange, yrange}, labels);
 
@@ -550,7 +550,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
         @(sub) sub.visualiseImoutRtp(sz, rtp, p.Results.field, unmatched{:}));
 
       % Display the visualisation
-      ott.optics.beam.Beam.visualiseShowPlot(...
+      ott.beam.Beam.visualiseShowPlot(...
           nargout, p.Results.plot_axes, imout, ...
           {xrange, yrange}, {'Direction 1', 'Direction 2'});
 
@@ -625,7 +625,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 
         % Check that we only have one visualisation to show
         if ~ismatrix(imout)
-          warning('ott:optics:beam:Beam:non_matrix_plot', ...
+          warning('ott:beam:Beam:non_matrix_plot', ...
               'Multiple beams generated, only showing first');
         end
 
@@ -726,7 +726,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 
         % Check that we only have one visualisation to show
         if ~ismatrix(imout)
-          warning('ott:optics:beam:Beam:non_matrix_plot', ...
+          warning('ott:beam:Beam:non_matrix_plot', ...
               'Multiple beams generated, only showing first');
         end
 
@@ -1100,7 +1100,7 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 
         % Check that we only have one visualisation to show
         if ~ismatrix(imout)
-          warning('ott:optics:beam:Beam:non_matrix_plot', ...
+          warning('ott:beam:Beam:non_matrix_plot', ...
               'Multiple beams generated, only showing first');
         end
 
@@ -1154,6 +1154,11 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
         otherwise
           error('Unknown mapping argument value, must be sin, tan or theta');
       end
+      
+      % Filter out non-real theta
+      mask = imag(theta) ~= 0;
+      theta(mask) = nan;
+      phi(mask) = nan;
 
       % Flip direction if needed
       switch p.Results.direction

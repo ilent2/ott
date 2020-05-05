@@ -1,5 +1,6 @@
-classdef (Abstract) Vector2Polarisation < ott.optics.beam.BeamProperties
-% Adds a 2-vector polarisation property to a beam
+classdef (Abstract) Vector2Polarisation < ott.beam.Properties
+% Adds a 2-vector polarisation property to a beam.
+% Inherits from :class:`ott.beam.Properties`.
 %
 % Properties
 %   - polarisation        -- Polarisation 2-vector [x, y]
@@ -18,7 +19,7 @@ classdef (Abstract) Vector2Polarisation < ott.optics.beam.BeamProperties
       % Usage
       %   beam = Vector2Polarisation(pol, ...)
 
-      beam = beam@ott.optics.beam.BeamProperties(varargin{:});
+      beam = beam@ott.beam.Properties(varargin{:});
       beam.polarisation = pol;
     end
   end

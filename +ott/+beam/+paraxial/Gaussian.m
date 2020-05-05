@@ -1,5 +1,5 @@
-classdef Gaussian < ott.optics.beam.paraxial.Paraxial ...
-    & ott.optics.beam.Gaussian & ott.optics.beam.utils.Vector2Polarisation
+classdef Gaussian < ott.beam.paraxial.Paraxial ...
+    & ott.beam.abstract.Gaussian & ott.beam.utils.Vector2Polarisation
 % Paraxial approximation of a Gaussian beam
 % Inherits from :class:`Paraxial` and :class:`Gaussian`.
 %
@@ -102,9 +102,9 @@ classdef Gaussian < ott.optics.beam.paraxial.Paraxial ...
       unmatched = ott.utils.unmatchedArgs(p);
 
       % Call base constructor
-      beam = beam@ott.optics.beam.utils.Vector2Polarisation(...
+      beam = beam@ott.beam.utils.Vector2Polarisation(...
           p.Results.polarisation);
-      beam = beam@ott.optics.beam.Gaussian(waist, unmatched{:});
+      beam = beam@ott.beam.abstract.Gaussian(waist, unmatched{:});
     end
   end
 end

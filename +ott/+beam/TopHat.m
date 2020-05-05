@@ -1,4 +1,4 @@
-classdef TopHat < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
+classdef TopHat < ott.beam.Beam & ott.beam.paraxial.Paraxial ...
     & ott.utils.Vector
 % Representation of a diffraction-free beam with a Top-Hat profile.
 % Inherits from :class:`Beam`, :class:`Paraxial`
@@ -202,7 +202,7 @@ classdef TopHat < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
 
       % Parse inputs
       p = inputParser;
-      p.addParameter('profile', ott.optics.beam.TopHat.ProfileCircle(1.0));
+      p.addParameter('profile', ott.beam.TopHat.ProfileCircle(1.0));
       p.addParameter('direction', [0;0;1]);
       p.addParameter('polarisation', [1;0;0]);
       p.addParameter('field', 1.0);
@@ -221,14 +221,14 @@ classdef TopHat < ott.optics.beam.Beam & ott.optics.beam.Paraxial ...
       bm.powerInternal = p.Results.power;
     end
 
-    function beam = ott.optics.beam.PlaneWave(beam)
+    function beam = ott.beam.PlaneWave(beam)
       % Cast the object to a PlaneWave instance
       %
       % This requires the polarisation profile to be uniform.
 
       assert(isnumeric(beam.field), 'Field profile must be numeric');
 
-      beam = ott.optics.beam.PlaneWave(...
+      beam = ott.beam.PlaneWave(...
           'direction', beam.direction, ...
           'polarisation', beam.polarisation, ...
           'origin', beam.origin, ...

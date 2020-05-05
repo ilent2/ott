@@ -1,5 +1,6 @@
-classdef (Abstract) VariablePower < ott.optics.beam.BeamProperties
-% Adds a variable power property to a Beam
+classdef (Abstract) VariablePower < ott.beam.Properties
+% Adds a variable power property to a Beam.
+% Inherits from :class:`ott.beam.Properties`.
 %
 % Properties (Hidden)
 %   - powerInternal       -- The power property
@@ -19,9 +20,9 @@ classdef (Abstract) VariablePower < ott.optics.beam.BeamProperties
       % Usage
       %   beam = VariablePower(power, ...)
       %
-      % For optional arguments, see :class:`BeamProperties`.
+      % For optional arguments, see :class:`Properties`.
 
-      beam = beam@ott.optics.beam.BeamProperties(varargin{:});
+      beam = beam@ott.beam.Properties(varargin{:});
       beam.powerInternal = power;
     end
   end
