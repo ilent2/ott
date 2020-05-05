@@ -1,6 +1,6 @@
-classdef Scattered < ott.beam.abstract.Abstract
+classdef Scattered < ott.beam.abstract.Beam
 % Represents a scattered beam.
-% Inherits from :class:`Abstract`.
+% Inherits from :class:`abstract.Beam`.
 %
 % The scattered beam class has an additional property for the incident
 % beam, which may be set to empty or a Abstract beam instance.
@@ -44,9 +44,9 @@ classdef Scattered < ott.beam.abstract.Abstract
       %   - type (enum) -- Type of scattered beam.
       %     Either 'scattered', 'total' or 'internal'.
       %
-      % Other parameters are passed to :class:`Abstract`.
+      % Other parameters are passed to :class:`abstract.Beam`.
 
-      beam = beam@ott.beam.abstract.Abstract(varargin{:});
+      beam = beam@ott.beam.abstract.Beam(varargin{:});
       beam.incident_beam = incident_beam;
       beam.type = type;
     end
@@ -116,7 +116,7 @@ classdef Scattered < ott.beam.abstract.Abstract
 
   methods % Getters/setters
     function beam = set.incident_beam(beam, val)
-      assert(isempty(val) || isa(val, 'ott.beam.abstract.Abstract'), ...
+      assert(isempty(val) || isa(val, 'ott.beam.abstract.Beam'), ...
         'Incident beam must be empty or a Ray object');
       beam.incident_beam = val;
     end

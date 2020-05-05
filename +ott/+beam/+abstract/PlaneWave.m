@@ -1,4 +1,4 @@
-classdef PlaneWave < ott.beam.abstract.Abstract & ott.utils.Vector
+classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector
 % Abstract representation of a plane wave beam
 %
 % Properties
@@ -59,7 +59,7 @@ classdef PlaneWave < ott.beam.abstract.Abstract & ott.utils.Vector
 
       % Get Vector to store most
       beam = beam@ott.utils.Vector(p.Results.origin, p.Results.direction);
-      beam = beam@ott.beam.abstract.Abstract(unmatched{:});
+      beam = beam@ott.beam.abstract.Beam(unmatched{:});
 
       % Store remaining parameters
       beam.field = p.Results.field;

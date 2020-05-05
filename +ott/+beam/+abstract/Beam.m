@@ -1,4 +1,4 @@
-classdef (Abstract) Abstract < ott.beam.Properties
+classdef (Abstract) Beam < ott.beam.Properties
 % Base class for beam descriptions (no fields).
 % Inherits from :class:`ott.beam.Properties`.
 %
@@ -13,10 +13,10 @@ classdef (Abstract) Abstract < ott.beam.Properties
 % using/distributing this file.
 
   methods
-    function beam = Abstract(varargin)
+    function beam = Beam(varargin)
       % Construct an abstract beam instance
       %
-      % beam = AbstractBeam(...)
+      % beam = Beam(...)
       %
       % For optional parameters, see :class:`Properties`.
 

@@ -1,7 +1,7 @@
-classdef Gaussian < ott.beam.abstract.Abstract ...
+classdef Gaussian < ott.beam.abstract.Beam ...
     & ott.beam.utils.VariablePower
 % Abstract description of a Gaussian beam.
-% Inherits from :class:`AbstractBeam` and :class:`utils.VariablePower`.
+% Inherits from :class:`abstract.Beam` and :class:`utils.VariablePower`.
 %
 % Units of the fields depend on units used for the properties.
 %
@@ -49,7 +49,7 @@ classdef Gaussian < ott.beam.abstract.Abstract ...
       unmatched = ott.utils.unmatchedArgs(p);
 
       beam = beam@ott.beam.utils.VariablePower(p.Results.power);
-      beam = beam@ott.beam.abstract.Abstract(unmatched{:});
+      beam = beam@ott.beam.abstract.Beam(unmatched{:});
       beam.waist = waist;
     end
   end

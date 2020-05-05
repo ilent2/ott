@@ -8,7 +8,7 @@
 % beam.Beam class.
 %
 % Base class
-%   Abstract          -- Base class for abstract beam representations.
+%   Beam              -- Base class for abstract beam representations.
 %
 % Beam representations
 %   Gaussian          -- Gaussian beam.
