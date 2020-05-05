@@ -16,8 +16,7 @@
 % In the future, specific shapes might get specialised implementations.
 %
 % Particles
-%   Plane         -- Describes scattering by a plane
-%   Shape         -- Describes scattering by an arbitrary geometric shape
+%   Shape         -- Describes scattering by a ott.shapes.Shape instance
 %
 % Lenses
 %   ThinLens      -- Thin lens approximation

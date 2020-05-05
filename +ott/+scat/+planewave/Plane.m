@@ -1,5 +1,22 @@
-classdef Plane
-% Describes how a infinite plane scatters a plane wave
+classdef Plane < ott.shapes.Plane
+% Describes how a infinite plane scatters a plane wave.
+% Inherits from :class:`ott.shapes.Plane`.
+%
+% Properties
+%   - normal          -- Vector normal to the plane surface
+%   - index_relative  -- Relative refractive index of plane to medium
+%
+% Methods
+%   - scatter         -- Calculate scattered plane wave beams
+%
+% Static methods
+%   - fresnelS        -- Calculate S-direction Fresnel coefficient
+%   - fresnelP        -- Calculate P-direction Fresnel coefficient
+
+% Copyright 2020 Isaac Lenton
+% This file is part of OTT, see LICENSE.md for information about
+% using/distributing this file
+
 
 % TODO: Ensure testScatterIndexMatched runs
 % TODO: Inherit from another class for index_relative and geometry
@@ -14,7 +31,6 @@ classdef Plane
 %   * Still, what about beams?  We also have annuarl, Top-hat and Davis?
 
   properties
-    normal          % Vector perpendicular to plane
     index_relative  % Relative refractive index
   end
 
