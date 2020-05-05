@@ -1,4 +1,4 @@
-classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
+classdef PmGauss < ott.beam.vswf.Pointmatch
 %BscPmGauss provides HG, LG and IG beams using point matching method
 %
 % Properties
@@ -89,13 +89,13 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       %        lenses ONLY. Does not preserve high order mode shape
       %        at large angles.
 
-      beam = beam@ott.optics.vswf.bsc.Pointmatch(varargin{:});
+      beam = beam@ott.beam.vswf.Pointmatch(varargin{:});
       beam.basis = 'regular';
 
       % Parse inputs
       p = inputParser;
       p.addOptional('type', 'lg', ...
-        @ott.optics.vswf.bsc.PmGauss.supported_beam_type);
+        @ott.beam.vswf.PmGauss.supported_beam_type);
       p.addOptional('mode', [ 0 0 ]);
 
       p.addParameter('Nmax', []);
@@ -105,9 +105,8 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       p.addParameter('power', []);
       p.addParameter('progress_callback', []);
       p.addParameter('translation_method', 'Default', ...
-        @ott.optics.vswf.bsc.PmGauss.validate_translation_method);
+        @ott.beam.vswf.PmGauss.validate_translation_method);
 
-      p.addParameter('omega', 2*pi);
       p.addParameter('k_medium', []);
       p.addParameter('index_medium', []);
       p.addParameter('wavelength_medium', []);
@@ -127,8 +126,7 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       beam.mode = p.Results.mode;
       beam.polarisation = p.Results.polarisation;
       beam.offset = p.Results.offset;
-      beam.wavenumber = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
-      beam.omega = p.Results.omega;
+      beam.wavenumber = ott.beam.vswf.Bsc.parser_k_medium(p, 2*pi);
       
       % Ensure beam offset is not empty
       if isempty(beam.offset)
@@ -429,7 +427,8 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       if strcmpi(beam.translation_method, 'Default')
         
         % Use translation matrix method
-        [varargout{1:nargout}] = translateZ@ott.optics.vswf.bsc.Pointmatch(beam, varargin{:});
+        [varargout{1:nargout}] = translateZ@ott.beam.vswf.Pointmatch(...
+            beam, varargin{:});
         
       elseif strcmpi(beam.translation_method, 'NewBeamOffset')
         
@@ -441,7 +440,7 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
         % Generate the new beam
         varargout{1} = ott.BscPmGauss(beam.gtype, beam.mode, ...
           'offset', beam.offset + [0;0;p.Results.z], ...
-          'omega', beam.omega, 'power', beam.power, ...
+          'power', beam.power, ...
           'wavelength_medium', beam.wavelength, ...
           'polarisation', beam.polarisation, ...
           'truncation_angle', beam.truncation_angle, ...
@@ -477,7 +476,8 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       if strcmpi(beam.translation_method, 'Default')
         
         % Use translation matrix method
-        [varargout{1:nargout}] = translateXyz@ott.optics.vswf.bsc.Pointmatch(beam, varargin{:});
+        [varargout{1:nargout}] = translateXyz@ott.beam.vswf.Pointmatch(...
+            beam, varargin{:});
         
       elseif strcmpi(beam.translation_method, 'NewBeamOffset')
         
@@ -494,7 +494,7 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
         % Generate the new beam
         varargout{1} = ott.BscPmGauss(beam.gtype, beam.mode, ...
           'offset', beam.offset + p.Results.opt1, ...
-          'omega', beam.omega, 'power', beam.power, ...
+          'power', beam.power, ...
           'wavelength_medium', beam.wavelength, ...
           'polarisation', beam.polarisation, ...
           'truncation_angle', beam.truncation_angle, ...
@@ -528,7 +528,8 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
       if strcmpi(beam.translation_method, 'Default')
         
         % Use translation matrix method
-        [varargout{1:nargout}] = translateRtp@ott.optics.vswf.bsc.Pointmatch(beam, varargin{:});
+        [varargout{1:nargout}] = translateRtp@ott.beam.vswf.Pointmatch(...
+            beam, varargin{:});
         
       elseif strcmpi(beam.translation_method, 'NewBeamOffset')
         
@@ -546,7 +547,7 @@ classdef PmGauss < ott.optics.vswf.bsc.Pointmatch
         xyz = ott.utils.rtp2xyz(p.Results.opt1);
         varargout{1} = ott.BscPmGauss(beam.gtype, beam.mode, ...
           'offset', beam.offset + xyz(:), ...
-          'omega', beam.omega, 'power', beam.power, ...
+          'power', beam.power, ...
           'wavelength_medium', beam.wavelength, ...
           'polarisation', beam.polarisation, ...
           'truncation_angle', beam.truncation_angle, ...

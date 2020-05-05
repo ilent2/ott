@@ -1,4 +1,4 @@
-classdef Pointmatch < ott.optics.vswf.bsc.Bsc
+classdef Pointmatch < ott.beam.vswf.Bsc
 %BscPointmatch base class for BSC generated using point matching
 % Provides support for both far-field and focal plane point matching.
 %
@@ -110,7 +110,7 @@ classdef Pointmatch < ott.optics.vswf.bsc.Bsc
       end
 
       % Make the beam vector and store the coefficients
-      [a, b] = ott.optics.vswf.bsc.Bsc.make_beam_vector(fa, fb, nn, mm);
+      [a, b] = ott.beam.vswf.Bsc.make_beam_vector(fa, fb, nn, mm);
     end
 
     function [a, b, cm] = bsc_focalplane(nn, mm, e_field, kr, theta, phi, ...
@@ -222,7 +222,7 @@ classdef Pointmatch < ott.optics.vswf.bsc.Bsc
       % Protected constructor for BscPointmatch object
       %
       % See also ott.BscPmGauss and ott.BscPmParaxial
-      beam = beam@ott.optics.vswf.bsc.Bsc();
+      beam = beam@ott.beam.vswf.Bsc();
     end
   end
 

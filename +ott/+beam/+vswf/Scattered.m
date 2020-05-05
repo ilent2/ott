@@ -1,4 +1,4 @@
-classdef Scattered < ott.optics.vswf.bsc.Bsc
+classdef Scattered < ott.beam.vswf.Bsc
 % A Bsc instance describing a scattered beam.
 % Inherits from :class:`Bsc`.
 %
@@ -108,7 +108,7 @@ classdef Scattered < ott.optics.vswf.bsc.Bsc
         tmatrix = [];
         incident_beam = [];
 
-      elseif nargin >= 2 && isa(varargin{1}, 'ott.optics.vswf.bsc.Bsc') && ...
+      elseif nargin >= 2 && isa(varargin{1}, 'ott.beam.vswf.Bsc') && ...
           isa(varargin{2}, 'ott.optics.vswf.tmatrix.Tmatrix')
 
         % Parse arguments
@@ -120,7 +120,7 @@ classdef Scattered < ott.optics.vswf.bsc.Bsc
         basearg = {incident_beam};
         type = [];
 
-      elseif nargin >= 2 && isa(varargin{1}, 'ott.optics.vswf.bsc.Bsc')
+      elseif nargin >= 2 && isa(varargin{1}, 'ott.beam.vswf.Bsc')
 
         % Convert Bsc to Scattered
         basearg = varargin(1);
@@ -151,7 +151,7 @@ classdef Scattered < ott.optics.vswf.bsc.Bsc
       end
 
       % Call base constructor
-      beam = beam@ott.optics.vswf.bsc.Bsc(basearg{:});
+      beam = beam@ott.beam.vswf.Bsc(basearg{:});
 
       % If type is set, we are done, otherwise other calculations to do
       if isempty(type)
@@ -195,7 +195,7 @@ classdef Scattered < ott.optics.vswf.bsc.Bsc
         ibeam = beam.incident_beam;
       end
 
-      assert(isa(ibeam, 'ott.optics.vswf.bsc.Bsc'), ...
+      assert(isa(ibeam, 'ott.beam.vswf.Bsc'), ...
           'incident_beam must be an vswf.bsc.Bsc object');
 
       switch beam.typeInternal
@@ -227,7 +227,7 @@ classdef Scattered < ott.optics.vswf.bsc.Bsc
         ibeam = beam.incident_beam;
       end
 
-      assert(isa(ibeam, 'ott.optics.vswf.bsc.Bsc'), ...
+      assert(isa(ibeam, 'ott.beam.vswf.Bsc'), ...
           'incident_beam must be an vswf.bsc.Bsc object');
 
       switch beam.typeInternal
@@ -345,7 +345,7 @@ classdef Scattered < ott.optics.vswf.bsc.Bsc
       end
 
       % Calculate the resulting beams
-      sbeam = ott.optics.vswf.bsc.Bsc();
+      sbeam = ott.beam.vswf.Bsc();
       for ii = 1:numel(tmatrix)
         sbeam = sbeam.append(tmatrix(ii).data * rbeam);
       end
@@ -420,7 +420,7 @@ classdef Scattered < ott.optics.vswf.bsc.Bsc
     end
 
     function beam = set.incident_beam(beam, val)
-      assert(isempty(val) || isa(val, 'ott.optics.vswf.bsc.Bsc'), ...
+      assert(isempty(val) || isa(val, 'ott.beam.vswf.Bsc'), ...
           'incident_beam must be a vswf.bsc.Bsc');
       beam.incident_beam = val;
     end

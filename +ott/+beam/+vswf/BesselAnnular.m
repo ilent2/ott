@@ -1,5 +1,5 @@
-classdef BscBesselAnnular < ott.Bsc
-%BscBesselAnnular gennerate a beam with an annular far-field profile
+classdef BesselAnnular < ott.beam.vswf.Bsc
+% Generate a beam with an annular far-field profile
 % This code uses annular beams and may be significantly faster than PM.
 %
 % Properties:
@@ -19,7 +19,7 @@ classdef BscBesselAnnular < ott.Bsc
 %   getModeIndices  (Bsc) Get the mode indices [n, m]
 %   power           (Bsc) Calculate the power of the beam
 %
-% See also BscBesselAnnular, and ott.BscPmAnnular
+% See also BesselAnnular, and ott.PmAnnular
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -29,10 +29,10 @@ classdef BscBesselAnnular < ott.Bsc
   end
   
   methods
-    function beam = BscBesselAnnular(NA, varargin);
-      % BscPmAnnular gennerate BSC with an annular far-field profile
+    function beam = BesselAnnular(NA, varargin);
+      % Generate BSC with an annular far-field profile
       %
-      % beam = BscPmParaxial(NA, ...) generates beam with an annular
+      % beam = PmParaxial(NA, ...) generates beam with an annular
       % far-field profile with minimum and maximum annular edge angles
       % specified as a numerical aperture range NA [min, max].
       % Default is a uniform intensity, flat phase profile.
@@ -55,14 +55,13 @@ classdef BscBesselAnnular < ott.Bsc
       %     index_medium num Refractive index of medium (default: [])
       %     wavelength_medium num Wavelength of beam in medium (default: [])
 
-      % Based on BscPmParaxial
+      % Based on PmParaxial
       
       p = inputParser;
       p.addParameter('verbose', false);
       p.addParameter('progress_callback', @(x) []);
       p.addParameter('Nmax', 30);
 
-      p.addParameter('omega', 2*pi);
       p.addParameter('wavelength0', 1);
       p.addParameter('k_medium', []);
       p.addParameter('index_medium', []);
@@ -76,8 +75,7 @@ classdef BscBesselAnnular < ott.Bsc
 
       verbose = p.Results.verbose;
       Nmax = p.Results.Nmax;
-      beam.wavenumber = ott.Bsc.parser_k_medium(p, 2*pi);
-      beam.omega = p.Results.omega;
+      beam.wavenumber = ott.beam.vswf.Bsc.parser_k_medium(p, 2*pi);
 
       if isempty(p.Results.index_medium)
         nMedium = 1.0;
@@ -112,7 +110,7 @@ classdef BscBesselAnnular < ott.Bsc
       theta = linspace(min(anglez), max(anglez), p.Results.ntheta);
       
       % Generate bessel beams
-      beams = ott.BscBessel(Nmax, theta, ...
+      beams = ott.beam.vswf.Bessel(Nmax, theta, ...
           'k_medium', beam.wavenumber, ...
           'polarisation', polarisation, ...
           'lmode', p.Results.oam);

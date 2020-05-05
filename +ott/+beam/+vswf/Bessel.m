@@ -1,5 +1,5 @@
-classdef Bessel < ott.optics.vswf.bsc.Bsc
-%BscBessel representation of a Bessel beam and Bessel-like beams with OAM
+classdef Bessel < ott.beam.vswf.Bsc
+% Representation of a Bessel beam and Bessel-like beams with OAM
 %
 % BscBessel properties:
 %   theta        Bessel beam angle in far-field
@@ -47,7 +47,7 @@ classdef Bessel < ott.optics.vswf.bsc.Bsc
       %
       % See also beam, mergeBeams, ott.BscPlane
 
-      beam = beam@ott.optics.vswf.bsc.Bsc();
+      beam = beam@ott.beam.vswf.Bsc();
 
       % Parse optional inputs
       p = inputParser;
@@ -63,7 +63,7 @@ classdef Bessel < ott.optics.vswf.bsc.Bsc
 
       % Check theta
       if any(abs(theta) < 1e-6)
-        warning('OTT:BscBessel:theta_zero', ...
+        warning('ott:beam:vswf:Bessel:theta_zero', ...
           'theta = 0 is not a bessel beam, may have unexpected results');
       end
 
@@ -81,7 +81,8 @@ classdef Bessel < ott.optics.vswf.bsc.Bsc
               theta, lmode, Etheta, Ephi);
         catch ME
           error(['Number of elements in theta, lmode, Etheta, ' ...
-              'Ephi should be equal or 1'], 'OTT:BscBessel:size_mismatch');
+              'Ephi should be equal or 1'], ...
+              'ott:beam:vswf:Bessel:size_mismatch');
         end
 
         indexes=[1:length(theta)].';
@@ -102,7 +103,8 @@ classdef Bessel < ott.optics.vswf.bsc.Bsc
               theta, lmode, polarisation);
         catch ME
           error(['Number of elements in theta, lmode, polarisation ' ...
-              'should be equal or 1'], 'OTT:BscBessel:size_mismatch');
+              'should be equal or 1'], ...
+              'ott:beam:vswf:Bessel:size_mismatch');
         end
 
         lmode=lmode+[-1,1]; %left is -1i for Ephi, right is +1i for Ephi;
@@ -118,7 +120,7 @@ classdef Bessel < ott.optics.vswf.bsc.Bsc
                 ones(size(polarisation,1),1)] ...
                 .*polarisation_weights(:).*sign(cos(theta(indexes)));
       else
-        error('OTT:BscBessel:too_many_polarisations', ...
+        error('ott:beam:vswf:Bessel:too_many_polarisations', ...
             'Only polarisation or both Etheta and Ephi should be supplied');
       end
 
@@ -171,7 +173,7 @@ classdef Bessel < ott.optics.vswf.bsc.Bsc
       b=b(ci,:);
 
       % Make the beam vector and store the coefficients
-      [beam.a, beam.b] = ott.optics.vswf.bsc.Bsc.make_beam_vector(a, b, nn, mm);
+      [beam.a, beam.b] = ott.beam.vswf.Bsc.make_beam_vector(a, b, nn, mm);
     end
   end
 end

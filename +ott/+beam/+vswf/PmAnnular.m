@@ -1,4 +1,4 @@
-classdef PmAnnular < ott.optics.vswf.bsc.Pointmatch
+classdef PmAnnular < ott.beam.vswf.Pointmatch
 %BscPmAnnular gennerate a beam with an annular far-field profile
 %
 % Properties:
@@ -70,7 +70,6 @@ classdef PmAnnular < ott.optics.vswf.bsc.Pointmatch
       p.addParameter('invert_coefficient_matrix', []);    % Default arg bellow
       p.addParameter('Nmax', 30);
 
-      p.addParameter('omega', 2*pi);
       p.addParameter('wavelength0', 1);
       p.addParameter('k_medium', []);
       p.addParameter('index_medium', []);
@@ -84,8 +83,7 @@ classdef PmAnnular < ott.optics.vswf.bsc.Pointmatch
 
       verbose = p.Results.verbose;
       Nmax = p.Results.Nmax;
-      beam.wavenumber = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
-      beam.omega = p.Results.omega;
+      beam.wavenumber = ott.beam.vswf.Bsc.parser_k_medium(p, 2*pi);
 
       % Handle default argument for invert_coefficient_matrix
       invert_coefficient_matrix = p.Results.invert_coefficient_matrix;
@@ -148,7 +146,7 @@ classdef PmAnnular < ott.optics.vswf.bsc.Pointmatch
         % Generate e_field for point matching
         e_field=[Et(:);Ep(:)];
         
-      elseif isa(p.Results.profile, 'ott.optics.vswf.bsc.Bsc')
+      elseif isa(p.Results.profile, 'ott.beam.vswf.Bsc')
         
         % Beam object supplied (no oam)
         e_field = p.Results.profile.efarfield([ones(size(theta(:))), theta(:), phi(:)].');

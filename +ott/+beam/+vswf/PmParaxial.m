@@ -1,4 +1,4 @@
-classdef PmParaxial < ott.optics.vswf.bsc.Pointmatch
+classdef PmParaxial < ott.beam.vswf.Pointmatch
 %BscPmParaxial calculate representation from farfield/paraxial beam
 %
 % Properties:
@@ -79,7 +79,6 @@ classdef PmParaxial < ott.optics.vswf.bsc.Pointmatch
       p.addParameter('invert_coefficient_matrix', []);    % Default arg bellow
       p.addParameter('Nmax', 30);
 
-      p.addParameter('omega', 2*pi);
       p.addParameter('wavelength0', 1);
       p.addParameter('k_medium', []);
       p.addParameter('index_medium', []);
@@ -93,8 +92,7 @@ classdef PmParaxial < ott.optics.vswf.bsc.Pointmatch
 
       verbose = p.Results.verbose;
       Nmax = p.Results.Nmax;
-      beam.wavenumber = ott.optics.vswf.bsc.Bsc.parser_k_medium(p, 2*pi);
-      beam.omega = p.Results.omega;
+      beam.wavenumber = ott.beam.vswf.Bsc.parser_k_medium(p, 2*pi);
 
       % Handle default argument for invert_coefficient_matrix
       invert_coefficient_matrix = p.Results.invert_coefficient_matrix;
@@ -237,7 +235,7 @@ classdef PmParaxial < ott.optics.vswf.bsc.Pointmatch
 
       % Get a previous coefficient matrix
       if ~isempty(p.Results.beamData)
-        if isa(p.Results.beamData, 'ott.optics.vswf.bsc.PmParaxial')
+        if isa(p.Results.beamData, 'ott.beam.vswf.PmParaxial')
 
           % Check properties of beams match
           % TODO: Check e_field/theta/phi locations
