@@ -24,6 +24,8 @@ classdef Scattered < ott.optics.vswf.bsc.Bsc
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+% TODO: This should be re-written to inherit from ott.beam.Scattered
+
   properties (Hidden)
     typeInternal       % Value of type parameter
   end

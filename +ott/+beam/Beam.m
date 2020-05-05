@@ -14,7 +14,12 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 %   - eparaxial  -- Calculate electric fields in the paraxial far-field
 %   - hparaxial  -- Calculate magnetic fields in the paraxial far-field
 %   - ehparaxial -- Calculate electric and magnetic paraxial far-fields
+%
+% Force and torque related methods
 %   - intensityMoment -- Calculate moment of beam intensity in the far-field
+%   - force           -- Calculate the change in momentum between two beams
+%   - torque          -- Calculate change in angular momentum between beams
+%   - forcetorque     -- Calculate the force and the torque between beams
 %
 % Field visualisation methods
 %   - visualise -- Generate a visualisation around the origin
@@ -38,6 +43,11 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
 %   - efarfieldInternal -- Called by efarfield
 %   - hfarfieldInternal -- Called by hfarfield
 %   - getBeamPower      -- get method called by dependent property power
+%
+% Hidden methods
+%   - forceInternal       -- Force calculation method (to be overridden)
+%   - torqueInternal      -- Torque calculation method (to be overridden)
+%   - forcetorqueInternal -- Force/Torque calculation method (to be overridden)
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -787,6 +797,51 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       moments = imout(1:3, :);
       ints = imout(4, :);
     end
+
+    function varargout = force(ibeam, other, varargin)
+      % Calculate change in linear momentum between beams.
+      % For details on usage/arguments see :meth:`forcetorque`.
+      %
+      % Usage
+      %   force = ibeam.force(other, ...)
+
+      [varargout{1:nargout}] = ibeam.forceInternal(other, varargin{:});
+    end
+
+    function varargout = torque(ibeam, other, varargin)
+      % Calculate change in angular momentum between beams.
+      % For details on usage/arguments see :meth:`forcetorque`.
+      %
+      % Usage
+      %   torque = ibeam.torque(other, ...)
+
+      [varargout{1:nargout}] = ibeam.torqueInternal(other, varargin{:});
+    end
+
+    function varargout = forcetorque(ibeam, other, varargin)
+      % Calculate change in momentum between beams.
+      %
+      % Usage
+      %   [force, torque] = ibeam.forcetorque(other, ...)
+      %   Returns 3xN matrices for the force and torque in Cartesian
+      %   coordinates.
+      %
+      % Parameters
+      %   - other (Beam|scat.Scatter) -- A beam to compare the force
+      %     with or a particle with a scatter method.
+      %
+      %   - position (3xN numeric) -- Distance to translate beam before
+      %     calculating the scattered beam using the T-matrix.
+      %     Default: ``[]``.
+      %
+      %   - rotation (3x3N numeric) -- Angle to rotate beam before
+      %     calculating the scattered beam using the T-matrix.
+      %     Inverse rotation is applied to scattered beam, effectively
+      %     rotating the particle.
+      %     Default: ``[]``.
+
+      [varargout{1:nargout}] = ibeam.forcetorqueInternal(other, varargin{:});
+    end
   end
 
   methods (Hidden)
@@ -893,6 +948,41 @@ classdef (Abstract) Beam < ott.optics.beam.BeamProperties
       E = beam.efarfield(rtp, varargin{:});
       visdata = beam.VisualisationData(field_type, E);
       imout = reshape(visdata, [sz, 1]);
+    end
+
+    function force = forceInternal(beam, other, varargin)
+      % Calculate the force using the intensityMoment method
+      %
+      % This function should be overridden in sub-classes which
+      % support other (possibly more efficient) force calculation methods.
+
+      fbeam = beam.intensityMoment();
+      obeam = other.intensityMoment();
+
+      force = fbeam - obeam;
+    end
+
+    function torque = torqueInternal(beam, other, varargin)
+      % Calculate the torque
+      %
+      % This function should be overridden in sub-classes which
+      % support other (possibly more efficient) torque calculation methods.
+
+      % TODO: Implement this
+      warning('Not yet implemented');
+      torque = [0;0;0];
+    end
+
+    function [force, torque] = forcetorqueInternal(beam, other, varargin)
+      % Calculate the force and the torque.
+      %
+      % This function uses the forceInternal and torqueInternal methods.
+      %
+      % This function should be overridden in sub-classes which
+      % support other (possibly more efficient) torque calculation methods.
+
+      force = beam.forceInternal(other, varargin{:});
+      torque = beam.torqueInternal(other, varargin{:});
     end
   end
 
