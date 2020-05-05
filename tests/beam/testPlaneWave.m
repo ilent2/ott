@@ -52,7 +52,7 @@ function testVisualise(tsetCase)
   
   h = figure();
   beam.visualise();
-%   close(h);
+  close(h);
   
 end
 
