@@ -1,6 +1,6 @@
-classdef ScatteredRay < ott.beam.Ray
+classdef ScatteredRay < ott.beam.Ray & ott.beam.abstract.Scattered
 % Represents scattered ray objects
-% Inherits from :class:`Ray`.
+% Inherits from :class:`Ray` and :class:`abstract.Scattered`.
 %
 % This class contains information about the incident and scattered ray.
 % This makes it easier to produce visualisations.
@@ -15,10 +15,6 @@ classdef ScatteredRay < ott.beam.Ray
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
-
-  properties
-    incident_beam       % The incident ray object (can be set to [])
-  end
 
   methods
     function beam = ScatteredRay(incident_beam, varargin)
@@ -72,14 +68,6 @@ classdef ScatteredRay < ott.beam.Ray
       if nargout == 1
         varargout{1} = h;
       end
-    end
-  end
-
-  methods % Getters/setters
-    function beam = set.incident_beam(beam, val)
-      assert(isempty(val) || isa(val, 'ott.beam.Ray'), ...
-        'Incident beam must be empty or a Ray object');
-      beam.incident_beam = val;
     end
   end
 end
