@@ -173,7 +173,7 @@ classdef Vector < ott.utils.RotateHelper
       %   - dim (numeric) -- Dimension to concatenate along, starting from
       %     1 for horizontal concatenation.
 
-      vec = varargin{1};
+      vec = vec1;
       for ii = 1:length(varargin)
         ovec = varargin{ii};
         vec.data = cat(dim+1, vec.data, ovec.data);

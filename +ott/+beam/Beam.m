@@ -170,7 +170,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       %   Calculates the fields at the specified locations (3xN matrix).
       %   Returns a :class:`ott.utils.FieldVector`.
 
-      E = beam.hfieldInternal(xyz, varargin{:});
+      E = beam.efieldInternal(xyz, varargin{:});
     end
 
     function H = hfield(beam, xyz, varargin)
@@ -181,7 +181,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       %   Calculates the fields at the specified locations (3xN matrix).
       %   Returns a :class:`ott.utils.FieldVector`.
 
-      H = beam.efieldInternal(xyz, varargin{:});
+      H = beam.hfieldInternal(xyz, varargin{:});
     end
 
     function [E, H] = ehfield(beam, xyz, varargin)
