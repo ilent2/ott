@@ -117,6 +117,15 @@ classdef (Abstract) Properties
       [beam.permittivity, beam.wavelength, beam.speed0] = ...
           beam.parseInputs(varargin{:});
     end
+    
+    function data = arrayApply(beam, data, func)
+      % Apply function to each array in the beam array output.
+      %
+      % This function is overloaded by Array types in order to
+      % implement incoherent combination.
+      
+      data = func(data);
+    end
   end
 
   methods (Hidden)

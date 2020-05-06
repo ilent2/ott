@@ -17,6 +17,7 @@ classdef Array < ott.beam.Beam & ott.beam.abstract.Array
 %   - vertcat       -- Vertical concatenation of beams and arrays
 %   - horzcat       -- Horizontal concatenation of beams and arrays
 %   - subsref       -- For direct indexing of the beams array
+%   - combineIncoherentArray  -- Combine cell array of beam data
 %
 % Static methods
 %   - CombineCoherent   -- Combine coherent data from cell arrays
@@ -49,7 +50,7 @@ classdef Array < ott.beam.Beam & ott.beam.abstract.Array
 
       % Evaluate each beam
       for ii = 1:numel(beam)
-        E{ii} = func(beam(ii));
+        E{ii} = func(beam.beams{ii});
       end
 
       % Combine if requested
@@ -80,7 +81,7 @@ classdef Array < ott.beam.Beam & ott.beam.abstract.Array
 
       % Evaluate each beam
       for ii = 1:numel(beam)
-        E{ii} = beam(ii).getBeamPower();
+        E{ii} = beam.beams{ii}.getBeamPower();
       end
 
       % Combine if requested

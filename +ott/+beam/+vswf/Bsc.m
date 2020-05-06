@@ -189,7 +189,10 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       p.addParameter('like', []);
       p.addParameter('k_medium', 2.0*pi);
       p.addParameter('dz', 0.0);
+      p.addParameter('array_type', 'array');
       p.parse(varargin{:});
+      
+      beam = beam@ott.beam.utils.ArrayType('array_type', p.Results.array_type);
 
       a = p.Results.a;
       b = p.Results.b;
@@ -277,8 +280,8 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
         assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
       end
 
-      beam.a = beam.a(:, subs);
-      beam.b = beam.b(:, subs);
+      beam.a = beam.a(:, subs{:});
+      beam.b = beam.b(:, subs{:});
     end
 
     function [E, H, data] = ehfarfield(beam, rtp, varargin)
@@ -493,6 +496,12 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
 
       ci = ott.utils.combined_index(n, m);
       [a, b] = beam.getCoefficients(ci);
+      
+      % Coherently combine coefficients before calculation
+      if strcmpi(beam.array_type, 'coherent')
+        a = sum(a, 2);
+        b = sum(b, 2);
+      end
 
       % Get unique rtp for faster calculation
       [r_new,~,indR]=unique(rtp(1, :).');
@@ -503,8 +512,13 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       r_new(r_new == 0) = 1e-15;
 
       % Allocate memory for outputs
-      E = zeros(size(rtp)).';
-      H = zeros(size(rtp)).';
+      E = {zeros(size(rtp)).'};
+      H = {zeros(size(rtp)).'};
+      
+      if numel(beam) > 1
+        E = repmat(E, size(beam));
+        H = repmat(H, size(beam));
+      end
 
       un = unique(n);
 
@@ -592,36 +606,46 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
 
           end
 
-          pidx = full(a(vv));
-          qidx = full(b(vv));
+          for ii = 1:size(a, 2)
+            pidx = full(a(vv, ii));
+            qidx = full(b(vv, ii));
 
-          % Now we use full matrices, we can use matmul (opt, R2018a)
-          if p.Results.calcE
-            E(:,1)=E(:,1)+Nn*nn*(nn+1)./kr.*hnU.*YExpf*qidx(:);
-            E(:,2)=E(:,2)+Nn*(hnU.*YphiExpf*pidx(:) ...
-                + dhnU.*YthetaExpf*qidx(:));
-            E(:,3)=E(:,3)+Nn*(-hnU.*YthetaExpf*pidx(:) ...
-                + dhnU.*YphiExpf*qidx(:));
-          end
+            % Now we use full matrices, we can use matmul (opt, R2018a)
+            if p.Results.calcE
+              E{ii}(:,1)=E{ii}(:,1)+Nn*nn*(nn+1)./kr.*hnU.*YExpf*qidx(:);
+              E{ii}(:,2)=E{ii}(:,2)+Nn*(hnU.*YphiExpf*pidx(:) ...
+                  + dhnU.*YthetaExpf*qidx(:));
+              E{ii}(:,3)=E{ii}(:,3)+Nn*(-hnU.*YthetaExpf*pidx(:) ...
+                  + dhnU.*YphiExpf*qidx(:));
+            end
 
-          if p.Results.calcH
-            H(:,1)=H(:,1)+Nn*nn*(nn+1)./kr.*hnU.*YExpf*pidx(:);
-            H(:,2)=H(:,2)+Nn*((hnU(:).*YphiExpf)*qidx(:) ...
-                +(dhnU(:).*YthetaExpf)*pidx(:));
-            H(:,3)=H(:,3)+Nn*((-hnU(:).*YthetaExpf)*qidx(:) ...
-                +(dhnU(:).*YphiExpf)*pidx(:));
+            if p.Results.calcH
+              H{ii}(:,1)=H{ii}(:,1)+Nn*nn*(nn+1)./kr.*hnU.*YExpf*pidx(:);
+              H{ii}(:,2)=H{ii}(:,2)+Nn*((hnU(:).*YphiExpf)*qidx(:) ...
+                  +(dhnU(:).*YthetaExpf)*pidx(:));
+              H{ii}(:,3)=H{ii}(:,3)+Nn*((-hnU(:).*YthetaExpf)*qidx(:) ...
+                  +(dhnU(:).*YphiExpf)*pidx(:));
+            end
           end
         end
       end
 
-      H = H.';
-      E = E.';
+      for ii = 1:size(a, 2)
+        H{ii} = H{ii}.';
+        E{ii} = E{ii}.';
 
-      H=-1i*H; %LOOK HERE TO FIX STUFF
+        H{ii}=-1i*H{ii}; %LOOK HERE TO FIX STUFF
 
-      % Package output
-      E = ott.utils.FieldVector(rtp, E, 'spherical');
-      H = ott.utils.FieldVector(rtp, H, 'spherical');
+        % Package output
+        E{ii} = ott.utils.FieldVector(rtp, E{ii}, 'spherical');
+        H{ii} = ott.utils.FieldVector(rtp, H{ii}, 'spherical');
+      end
+      
+      % Discard cell array if we don't need it
+      if size(a, 2) == 1
+        E = E{1};
+        H = H{1};
+      end
     end
 
     function [E, H, data] = ehfield(beam, xyz, varargin)

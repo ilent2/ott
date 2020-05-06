@@ -13,11 +13,16 @@ classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
 %   - vertcat       -- Vertical concatenation of beams and arrays
 %   - horzcat       -- Horizontal concatenation of beams and arrays
 %   - subsref       -- For direct indexing of the beams array
+%   - combineIncoherentArray  -- Combine cell array of beam data
 
 % TODO: Should arrays have beam properties?
 
   properties
     beams         % Beams contained in the array
+  end
+
+  properties (Dependent)
+    contains_incoherent     % True if the beam contains incoherent beams
   end
 
   methods (Hidden)
@@ -92,8 +97,78 @@ classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
 
       sz = size(beam.beams, varargin{:});
     end
+
+    function arr = combineIncoherentArray(beam, arr, dim)
+      % Combine incoherent layers as required
+
+      % Check if we have work to do
+      if strcmpi(beam.array_type, 'coherent')
+        return;
+      end
+
+      assert(numel(arr) == numel(beam), ...
+          'Number of elements in beam must match number of elements in array');
+
+      % Combine child beams
+      for ii = 1:numel(beam)
+        arr{ii} = beam.beams{ii}.combineIncoherentArray(arr{ii}, dim);
+      end
+      
+      % Combine this array
+      arr = combineIncoherentArray@ott.beam.utils.ArrayType(beam, arr, dim);
+    end
+    
+    function data = arrayApply(beam, data, func)
+      % Apply function to each array in the beam array output.
+      %
+      % This function is overloaded by Array types in order to
+      % implement incoherent combination.
+      
+      % Apply visualisatio funtion to sub-beams
+      for ii = 1:numel(beam)
+        data{ii} = beam.beams{ii}.arrayApply(data{ii}, func);
+      end
+    end
   end
 
   methods % Getters/setters
+    function val = get.contains_incoherent(beam)
+
+      val = false;
+
+      for ii = 1:numel(beam)
+        if isa(beam.beams{ii}, 'ott.beam.utils.ArrayType')
+          val = val | strcmpi(beam.beams{ii}, 'incoherent');
+          if isa(beam.beams{ii}, 'ott.beam.abstract.Array')
+            val = val | beam.beams{ii}.contains_incoherent;
+          end
+        end
+      end
+    end
+
+    function beam = set.beams(beam, val)
+
+      assert(iscell(val), 'beams property be cell array');
+
+      % Cann't have coherent arrays of incoherent beams
+      if strcmpi(beam.array_type, 'coherent')
+        for ii = 1:numel(val)
+          if isa(val{ii}, 'ott.beam.utils.ArrayType')
+
+            assert(~strcmpi(val{ii}.array_type, 'incoherent'), ...
+              'ott:beam:utils:ArrayType:coherent_with_incoherent', ...
+              'Cannot have coherent array of incoherent beams');
+
+            if isa(val{ii}, 'ott.beam.abstract.Array')
+              assert(~val{ii}.contains_incoherent, ...
+                'ott:beam:utils:ArrayType:coherent_with_incoherent', ...
+                'Cannot have coherent array of incoherent beams');
+            end
+          end
+        end
+      end
+
+      beam.beams = val;
+    end
   end
 end

@@ -3,12 +3,12 @@ function tests = testVisualise
 end
 
 function setupOnce(testCase)
-  addpath('../../../../');
+  addpath('../../../');
 end
 
 function testVisualiseFunction(testCase)
 
-  beam = ott.optics.vswf.bsc.PmGauss();
+  beam = ott.beam.vswf.PmGauss();
   beam.basis = 'regular';
   
   h = figure();
@@ -19,7 +19,7 @@ end
 
 function testVisualiseFarfield(testCase)
 
-  beam = ott.optics.vswf.bsc.PmGauss();
+  beam = ott.beam.vswf.PmGauss();
   beam.basis = 'incoming';
   
   h = figure();
@@ -30,7 +30,7 @@ end
 
 function testVisualiseFarfieldSlice(testCase)
 
-  beam = ott.optics.vswf.bsc.PmGauss();
+  beam = ott.beam.vswf.PmGauss();
   beam.basis = 'incoming';
   phi = 0.0;
   
@@ -42,7 +42,7 @@ end
 
 function testVisualiseFarfieldSphere(testCase)
 
-  beam = ott.optics.vswf.bsc.PmGauss();
+  beam = ott.beam.vswf.PmGauss();
   beam.basis = 'incoming';
   
   h = figure();
@@ -53,42 +53,26 @@ end
 
 function testVisualiseArray(testCase)
 
-  beam = ott.optics.vswf.bsc.PmGauss();
-  beam(2) = beam;
+  beam = ott.beam.vswf.PmGauss();
+  beam = [beam, beam];
   
   im = beam.visualise();
-  testCase.verifyEqual(size(im), [80, 80, 2], 'default');
+  testCase.verifyEqual(size(im), [1, 2], 'default');
+  testCase.verifyEqual(size(im{1}), [80, 80], 'default cell');
 
-  im = beam.visualise('combine', 'coherent');
+  beam.array_type = 'coherent';
+  im = beam.visualise();
   testCase.verifyEqual(size(im), [80, 80], 'coherent');
   
-  im = beam.visualise('combine', 'incoherent');
+  beam.array_type = 'incoherent';
+  im = beam.visualise();
   testCase.verifyEqual(size(im), [80, 80], 'incoherent');
   
-  beam(3) = beam(1);
-  beam = [beam; beam];
+  beam = [beam, beam(1)];
+  beam = ott.beam.Array('array', [1, 2], beam, beam);
   
   im = beam.visualise();
-  testCase.verifyEqual(size(im), [80, 80, 2, 3], 'matrix');
+  testCase.verifyEqual(size(im), [1, 2], 'matrix');
+  testCase.verifyEqual(size(im{1}), [80, 80], 'matrix cell');
 end
 
-function testVisualiseAppend(testCase)
-
-  beam = ott.optics.vswf.bsc.PmGauss();
-  beam = beam.append(beam);
-  
-  im = beam.visualise();
-  testCase.verifyEqual(size(im), [80, 80, 2], 'default');
-
-  im = beam.visualise('combine', 'coherent');
-  testCase.verifyEqual(size(im), [80, 80], 'coherent');
-  
-  im = beam.visualise('combine', 'incoherent');
-  testCase.verifyEqual(size(im), [80, 80], 'incoherent');
-  
-  beam = [beam, beam, beam];
-  beam = [beam; beam];
-  
-  im = beam.visualise();
-  testCase.verifyEqual(size(im), [80, 80, 2, 2, 3], 'matrix');
-end

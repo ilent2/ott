@@ -797,6 +797,21 @@ classdef (Abstract) Beam < ott.beam.Properties
   end
 
   methods (Hidden)
+    
+    function data = calculateVisualisationData(beam, field_type, data)
+      % Apply the VisualisationData function to a data array
+      %
+      % This function is overloaded by Array types in order to
+      % implement incoherent combination.
+      
+      data = beam.arrayApply(data, ...
+        @(x) beam.VisualisationData(field_type, x));
+      
+      % Combine incoherent components
+      if isa(beam, 'ott.beam.utils.ArrayType')
+        data = beam.combineIncoherentArray(data, 3);
+      end
+    end
 
     function imout = intensityMomentImout(beam, ~, rtp, uxyz, varargin)
       % Calculate the imout data for the intensityMoment function
@@ -804,10 +819,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       % Calculate fields
       % TODO: Should this use poyntingFarfield?
       E = beam.efarfield(rtp, varargin{:});
-
-      % Calculate the irradiance and combine incoherent parts
-      Eirr = sum(abs(E.vrtp).^2, 1);
-      Eirr = beam.combineArray(Eirr, 2, 'incoherent');
+      Eirr = beam.calculateVisualisationData('E2', E);
 
       ints = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
 
@@ -817,28 +829,35 @@ classdef (Abstract) Beam < ott.beam.Properties
 
       imout = [moments(:); ints];
     end
+    
+    function arr = applyMask(~, arr, mask)
+      arr(~mask) = nan;
+    end
 
     function imout = visualiseImoutXyzMasked(beam, sz, xyz, field_type, mask, varargin)
       % Calculate the imout data for the visualise function
 
       % Calculate field and visualisation data
       E = beam.efield(xyz, varargin{:});
-      visdata = beam.VisualisationData(field_type, E);
-      visdata = beam.combineArray(visdata, 2, 'incoherent');
+      imout = beam.calculateVisualisationData(field_type, E);
+      
+      % Reshape output to match required size
+      imout = beam.arrayApply(imout, @(x) reshape(x, sz));
 
       % Create layer from masked data
-      imout = zeros(sz);
-      imout(mask) = visdata;
-      imout(~mask) = nan;
+      if ~all(mask(:))
+        imout = beam.arrayApply(imout, @(x) beam.applyMask(x, mask));
+      end
     end
 
-    function imout = visualiseImoutRtp(beam, sz, rtp, field_type, varargin)
+    function visdata = visualiseImoutRtp(beam, sz, rtp, field_type, varargin)
       % Calculate the imout data for farfield visualisation functions
 
       E = beam.efarfield(rtp, varargin{:});
-      visdata = beam.VisualisationData(field_type, E);
-      visdata = beam.combineArray(visdata, 2, 'incoherent');
-      imout = reshape(visdata, [sz, 1]);
+      visdata = beam.calculateVisualisationData(field_type, E);
+      
+      % Reshape output to match required size
+      visdata = beam.arrayApply(visdata, @(x) reshape(x, [sz, 1]));
     end
 
     function force = forceInternal(beam, other, varargin)

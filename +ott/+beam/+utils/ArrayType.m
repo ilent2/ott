@@ -10,6 +10,8 @@ classdef ArrayType < ott.beam.abstract.Beam
 %   - vertcat       -- Vertical concatenation of beams and arrays
 %   - horzcat       -- Horizontal concatenation of beams and arrays
 %   - subsref       -- For direct indexing of the beams array
+%   - arrayApply    -- Apply function to beam array output
+%   - combineIncoherentArray  -- Combine cell array of beam data
 %
 % Static methods
 %   - AutoArray     -- Automatically deduce array type from inputs.
@@ -161,10 +163,6 @@ classdef ArrayType < ott.beam.abstract.Beam
 
         if isa(varargin{ii}, 'ott.beam.utils.ArrayType')
 
-          % Check they are not incoherent
-          assert(~strcmpi(varargin{ii}.array_type, 'incoherent'), ...
-            'beam1 must not be incoherent');
-
           if isempty(array_type)
             array_type = varargin{ii}.array_type;
           else
@@ -236,12 +234,56 @@ classdef ArrayType < ott.beam.abstract.Beam
           error('Not a valid indexing expression')
       end
     end
+    
+    function data = arrayApply(beam, data, func)
+      % Apply function to each array in the beam array output.
+      %
+      % This default implemenataion applies the function to
+      % each cell in data if the beam is not coherent.
+      
+      if iscell(data)
+        % Apply visualisatio funtion to sub-beams
+        for ii = 1:numel(data)
+          data{ii} = func(data{ii});
+        end
+      else
+        data = func(data);
+      end
+    end
+
+    function arr = combineIncoherentArray(beam, arr, dim)
+      % Combine incoherent layers of an array
+
+      % Check if we have work to do
+      if strcmpi(beam.array_type, 'coherent') || ~iscell(arr)
+        return;
+      end
+
+      % Combine this layer incoherently
+      if strcmpi(beam.array_type, 'incoherent')
+        oldArr = arr;
+        arr = arr{1};
+        for ii = 2:numel(oldArr)
+          arr = sum(cat(dim, arr, oldArr{ii}), dim);
+        end
+      end
+    end
   end
 
   methods % Getters/setters
     function beam = set.array_type(beam, val)
+      
+      % Check valid value
       assert(any(strcmpi(val, {'coherent', 'array', 'incoherent'})), ...
         'array_type must be one of ''cohereht'', ''array'', ''incohereht''');
+      
+      % Check array contains no incoherent values
+      if strcmpi(val, 'coherent') && isa(beam, 'ott.beam.abstract.Array')
+        assert(~beam.contains_incoherent, ...
+          'ott:beam:utils:ArrayType:coherent_with_incoherent', ...
+          'Cannot have coherent array of incoherent beams');
+      end
+      
       beam.array_type = val;
     end
   end

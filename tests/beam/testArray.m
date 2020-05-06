@@ -55,3 +55,15 @@ function testArrayCat(testCase)
   
 end
 
+function testArrayCatIncoherentError(testCase)
+
+  beam1 = ott.beam.PlaneWave();
+  beam2 = ott.beam.paraxial.Gaussian(1.0);
+  beam = [beam1, beam2];
+  
+  beam.array_type = 'incoherent';
+  
+  testCase.verifyError(@() ott.beam.utils.ArrayType.AutoArray('coherent', [1, 2], beam, beam), ...
+    'ott:beam:utils:ArrayType:coherent_with_incoherent');
+
+end
