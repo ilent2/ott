@@ -1,4 +1,4 @@
-classdef TmatrixSmarties < ott.Tmatrix
+classdef Smarties < ott.Tmatrix
 % Constructs a T-matrix using SMARTIES.
 % Inherits from :class:`+ott.Tmatrix`
 %
@@ -10,7 +10,7 @@ classdef TmatrixSmarties < ott.Tmatrix
 %   Somerville, Auguié, Le Ru.  JQSRT, Volume 174, May 2016, Pages 39-55.
 %   https://doi.org/10.1016/j.jqsrt.2016.01.005
 %
-% See also TmatrixSmarties
+% See also Smarties
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -55,10 +55,10 @@ classdef TmatrixSmarties < ott.Tmatrix
 
       % Construct the T-matrix
       if isa(shape, 'ott.shapes.Sphere')
-        tmatrix = ott.TmatrixSmarties(shape.radius, ...
+        tmatrix = ott.scat.vswf.Smarties(shape.radius, ...
             shape.radius, varargin{:});
       elseif isa(shape, 'ott.shapes.Ellipsoid')
-        tmatrix = ott.TmatrixSmarties(shape.a, ...
+        tmatrix = ott.scat.vswf.Smarties(shape.a, ...
             shape.c, varargin{:});
       else
         error('Only supports sphere and ellipsoid shapes for now');
@@ -67,11 +67,12 @@ classdef TmatrixSmarties < ott.Tmatrix
   end
 
   methods
-    function tmatrix = TmatrixSmarties(a, c, varargin)
+    function tmatrix = Smarties(a, c, varargin)
       % Construct a T-matrix using SMARTIES/EBCM for spheroids
       %
-      % TmatrixSmarties(a, c, ...) constructs the T-matrix for a
-      % spheroid with ordinary radius a and extraordinary radius c.
+      % Usage
+      %   tmatrix = Smarties(a, c, ...) constructs the T-matrix for a
+      %   spheroid with ordinary radius a and extraordinary radius c.
       %
       % Optional named parameters:
       %     internal             bool    Calculate internal T-matrix
@@ -164,10 +165,10 @@ classdef TmatrixSmarties < ott.Tmatrix
       % Store the result
       if p.Results.internal
         tmatrix.type = 'internal';
-        tmatrix.data = ott.TmatrixSmarties.getTmatrixData(CstTRa, 'st4MR');
+        tmatrix.data = ott.scat.vswf.Smarties.getTmatrixData(CstTRa, 'st4MR');
       else
         tmatrix.type = 'scattered';
-        tmatrix.data = ott.TmatrixSmarties.getTmatrixData(CstTRa, 'st4MT');
+        tmatrix.data = ott.scat.vswf.Smarties.getTmatrixData(CstTRa, 'st4MT');
       end
     end
   end

@@ -1,12 +1,12 @@
-classdef TmatrixDda < ott.Tmatrix
+classdef Dda < ott.scat.vswf.scat.Tmatrix
 % Constructs a T-matrix using discrete dipole approximation.
 % Inherits from :class:`+ott.Tmatrix`.
 %
 % To construct a T-matrix with DDA, either the simple interface or
 % the class constructor can be used.  Using the simple interface, the
-% following should produce something similar to ``TmatrixMie``::
+% following should produce something similar to ``Mie``::
 %
-%   Tmatrix = ott.TmatrixDda.simple('sphere', 0.1, 'index_relative', 1.2);
+%   Tmatrix = ott.Dda.simple('sphere', 0.1, 'index_relative', 1.2);
 %
 % The DDA method requires a lot of memory to calculate the T-matrix.
 % Most small desktop computers will be unable to calculate T-matrices
@@ -15,7 +15,7 @@ classdef TmatrixDda < ott.Tmatrix
 % For these particles, consider using Geometric Optics
 % or Finite Difference Time Domain method.
 %
-% See also TmatrixDda, simple.
+% See also Dda, simple.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -27,7 +27,7 @@ classdef TmatrixDda < ott.Tmatrix
       p = inputParser;
 
       p.addParameter('progress_callback', ...
-        @ott.TmatrixDda.DefaultProgressCallback);
+        @ott.scat.vswf.Dda.DefaultProgressCallback);
       p.addParameter('Nmax', []);
       p.addParameter('wavelength0', []);
       p.addParameter('spacing', []);
@@ -79,7 +79,7 @@ classdef TmatrixDda < ott.Tmatrix
       %   - spacing (numeric)         -- Spacing between dipoles.
       %     Default: ``wavelength_particle/20``
       %
-      % For other named parameters, see :meth:`TmatrixDda`.
+      % For other named parameters, see :meth:`Dda`.
 
       p = inputParser;
       p.KeepUnmatched = true;
@@ -94,11 +94,11 @@ classdef TmatrixDda < ott.Tmatrix
         error('Must input either Shape object or string and parameters');
       end
 
-      import ott.TmatrixDda;
-      import ott.Tmatrix;
+      import ott.scat.vswf.Dda;
+      import ott.scat.vswf.Tmatrix;
 
       % Parse remaining parameters
-      p = TmatrixDda.input_parser(varargin{:});
+      p = Dda.input_parser(varargin{:});
 
       % Get or estimate Nmax from the inputs
       [~, k_particle] = Tmatrix.parser_wavenumber(p, 2*pi);
@@ -125,7 +125,7 @@ classdef TmatrixDda < ott.Tmatrix
       voxels = shape.voxels(spacing, 'even', use_even);
 
       % Calculate the T-matrix using DDA
-      tmatrix = TmatrixDda(voxels, varargin{:}, ...
+      tmatrix = Dda(voxels, varargin{:}, ...
         'spacing', spacing, ...
         'z_rotational_symmetry', z_rotational_symmetry, ...
         'z_mirror_symmetry', z_mirror_symmetry);
@@ -133,11 +133,11 @@ classdef TmatrixDda < ott.Tmatrix
   end
 
   methods
-    function tmatrix = TmatrixDda(xyz, varargin)
+    function tmatrix = Dda(xyz, varargin)
       % Calculates T-matrix using discrete dipole approximation.
       %
       % Usage
-      %   TmatrixDda(xyz, ...) calculates the T-matrix for the particle
+      %   Dda(xyz, ...) calculates the T-matrix for the particle
       %   described by voxels xyz.  xyz is a 3xN matrix of coordinates
       %   for each voxel.
       %
@@ -195,13 +195,13 @@ classdef TmatrixDda < ott.Tmatrix
       %     Doesn't affect the display of the progress callback.
       %     Default: false.
 
-      import ott.TmatrixDda;
-      import ott.Tmatrix;
+      import ott.scat.vswf.Dda;
+      import ott.scat.vswf.Tmatrix;
 
-      tmatrix = tmatrix@ott.Tmatrix();
+      tmatrix = tmatrix@ott.scat.vswf.Tmatrix();
 
       % Parse inputs
-      pa = TmatrixDda.input_parser(varargin{:});
+      pa = Dda.input_parser(varargin{:});
       
       % Check for work
       if isempty(xyz)
@@ -249,7 +249,7 @@ classdef TmatrixDda < ott.Tmatrix
       % Check we can allocate sufficient memory
       uV = memory;
       if ~pa.Results.low_memory && uV.MaxPossibleArrayBytes < (size(xyz, 2)*3)^2*8
-        error('OTT:TmatrixDda:too_many_dipoles', ...
+        error('OTT:Dda:too_many_dipoles', ...
           ['May have too many voxels for calculation, ', ...
           'consider reducing particle size or voxel spacing']);
       end
@@ -458,13 +458,13 @@ classdef TmatrixDda < ott.Tmatrix
       for ii = 1:n_dipoles        % Loop over each dipole
         
         % Calculate cartesian to spherical conversion for each dipole
-        M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
+        M_cart2sph = ott.scat.vswf.Dda.cart2sph_mat(...
             rtp(ii, 2), rtp(ii, 3));
             
         for jj = 1:z_rotation     % duplicates for z mirror symmetry
           
           % Calculate spherical to cartesian for each mirror version
-          M_sph2cart = ott.TmatrixDda.sph2cart_mat(...
+          M_sph2cart = ott.scat.vswf.Dda.sph2cart_mat(...
               rtp(ii, 2), rtp(ii, 3) + 2*pi*(jj-1)/z_rotation);
             
           dipole_xyz = ott.utils.rtp2xyz(rtp(ii, 1), ...
@@ -482,7 +482,7 @@ classdef TmatrixDda < ott.Tmatrix
             
             % Calculate columns of F
             F(:, :, kk, ii) = F(:, :, kk, ii) + ...
-                ott.TmatrixDda.dipole_contribution(...
+                ott.scat.vswf.Dda.dipole_contribution(...
                 dipole_xyz, targets_xyz, M_dipole, k_medium) .* phase_factor(jj);
           end
         end
@@ -516,13 +516,13 @@ classdef TmatrixDda < ott.Tmatrix
       for ii = 1:n_dipoles        % Loop over each dipole
         
         % Calculate cartesian to spherical conversion for each dipole
-        M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
+        M_cart2sph = ott.scat.vswf.Dda.cart2sph_mat(...
             rtp(ii, 2), rtp(ii, 3));
             
         for jj = 1:z_rotation     % duplicates for z mirror symmetry
           
           % Calculate spherical to cartesian for each mirror version
-          M_sph2cart = ott.TmatrixDda.sph2cart_mat(...
+          M_sph2cart = ott.scat.vswf.Dda.sph2cart_mat(...
               rtp(ii, 2), rtp(ii, 3) + 2*pi*(jj-1)/z_rotation);
             
           dipole_xyz = ott.utils.rtp2xyz(rtp(ii, 1), ...
@@ -539,7 +539,7 @@ classdef TmatrixDda < ott.Tmatrix
             end
             
             % Calculate columns of F
-            F(:, :, kk, jj, ii) = ott.TmatrixDda.dipole_contribution(...
+            F(:, :, kk, jj, ii) = ott.scat.vswf.Dda.dipole_contribution(...
                 dipole_xyz, targets_xyz, M_dipole, k_medium);
           end
         end
@@ -574,13 +574,13 @@ classdef TmatrixDda < ott.Tmatrix
       for ii = 1:n_dipoles        % Loop over each dipole
         
         % Calculate cartesian to spherical conversion for each dipole
-        M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
+        M_cart2sph = ott.scat.vswf.Dda.cart2sph_mat(...
             rtp(ii, 2), rtp(ii, 3));
             
         for jj = 1:z_rotation     % duplicates for z mirror symmetry
           
           % Calculate spherical to cartesian for each mirror version
-          M_sph2cart = ott.TmatrixDda.sph2cart_mat(...
+          M_sph2cart = ott.scat.vswf.Dda.sph2cart_mat(...
               rtp(ii, 2), rtp(ii, 3) + 2*pi*(jj-1)/z_rotation);
             
           dipole_xyz = ott.utils.rtp2xyz(rtp(ii, 1), ...
@@ -598,7 +598,7 @@ classdef TmatrixDda < ott.Tmatrix
             
             % Calculate columns of A
             A(:, :, kk, ii) = A(:, :, kk, ii) + ...
-                ott.TmatrixDda.dipole_contribution(...
+                ott.scat.vswf.Dda.dipole_contribution(...
                 dipole_xyz, xyz.', M_dipole, k_medium) .* phase_factor(jj);
               
             % Remove self-interaction terms
@@ -638,13 +638,13 @@ classdef TmatrixDda < ott.Tmatrix
       for ii = 1:n_dipoles        % Loop over each dipole
         
         % Calculate cartesian to spherical conversion for each dipole
-        M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
+        M_cart2sph = ott.scat.vswf.Dda.cart2sph_mat(...
             rtp(ii, 2), rtp(ii, 3));
             
         for jj = 1:z_rotation     % duplicates for z mirror symmetry
           
           % Calculate spherical to cartesian for each mirror version
-          M_sph2cart = ott.TmatrixDda.sph2cart_mat(...
+          M_sph2cart = ott.scat.vswf.Dda.sph2cart_mat(...
               rtp(ii, 2), rtp(ii, 3) + 2*pi*(jj-1)/z_rotation);
             
           dipole_xyz = ott.utils.rtp2xyz(rtp(ii, 1), ...
@@ -661,7 +661,7 @@ classdef TmatrixDda < ott.Tmatrix
             end
             
             % Calculate columns of A
-            A(:, :, kk, jj, ii) = ott.TmatrixDda.dipole_contribution(...
+            A(:, :, kk, jj, ii) = ott.scat.vswf.Dda.dipole_contribution(...
                 dipole_xyz, xyz.', M_dipole, k_medium);
               
             % Remove self-interaction terms
@@ -749,9 +749,9 @@ classdef TmatrixDda < ott.Tmatrix
             M = 1;
           else
             % Calculate z rotation coordinate transformation matrix
-            M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
+            M_cart2sph = ott.scat.vswf.Dda.cart2sph_mat(...
                 rtp(n, 2), rtp(n, 3));
-            M_sph2cart = ott.TmatrixDda.sph2cart_mat(...
+            M_sph2cart = ott.scat.vswf.Dda.sph2cart_mat(...
                 rtp(n, 2), rtp(n, 3) + 2*pi*(m-1)/z_rotation);
             M = M_sph2cart * M_cart2sph;
           end
@@ -876,7 +876,7 @@ classdef TmatrixDda < ott.Tmatrix
       assert(r_near > max(rtp(1, :)), 'Particle radius too large');
       
       % Pre-calculate inv-alpha
-      inv_alpha = ott.TmatrixDda.alpha_to_full_inv_alpha(alpha, size(rtp, 1));
+      inv_alpha = ott.scat.vswf.Dda.alpha_to_full_inv_alpha(alpha, size(rtp, 1));
       assert(all(isfinite(inv_alpha(:))), 'singular polarizability not yet supported');
       
       if ~low_memory
@@ -884,22 +884,22 @@ classdef TmatrixDda < ott.Tmatrix
         % This maybe produces a speed optimisation but uses lots of memory
 
         % Pre-calculate A
-        A_total = ott.TmatrixDda.interaction_A_total(k, rtp, inv_alpha, ...
+        A_total = ott.scat.vswf.Dda.interaction_A_total(k, rtp, inv_alpha, ...
             z_mirror, z_rotation);
 
         % Pre-calculate F
-        F_total = ott.TmatrixDda.nearfield_matrix_total(...
+        F_total = ott.scat.vswf.Dda.nearfield_matrix_total(...
             theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation);
           
       end
 
-      MN = ott.TmatrixDda.calculate_nearfield_modes(...
+      MN = ott.scat.vswf.Dda.calculate_nearfield_modes(...
         k*r_near, theta, phi, Nmax);
       
       % Pre-compute near-field Cartesian to Spherical transform
       cart2sph = zeros(3, 3*length(theta));
       for ii = 1:length(theta)
-        cart2sph(:, (1:3) + (ii-1)*3) = ott.TmatrixDda.cart2sph_mat(...
+        cart2sph(:, (1:3) + (ii-1)*3) = ott.scat.vswf.Dda.cart2sph_mat(...
             theta(ii), phi(ii));
       end
 
@@ -915,18 +915,18 @@ classdef TmatrixDda < ott.Tmatrix
         if low_memory
 
           % Pre-calculate A
-          A_total = ott.TmatrixDda.interaction_A_lowmem(k, rtp, inv_alpha, ...
+          A_total = ott.scat.vswf.Dda.interaction_A_lowmem(k, rtp, inv_alpha, ...
               z_mirror, z_rotation, m);
 
           % Pre-calculate F
-          F_total = ott.TmatrixDda.nearfield_matrix_lowmem(...
+          F_total = ott.scat.vswf.Dda.nearfield_matrix_lowmem(...
               theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation, m);
 
         end
 
-        [Feven, Fodd] = ott.TmatrixDda.combine_rotsym_matrix(F_total, ...
+        [Feven, Fodd] = ott.scat.vswf.Dda.combine_rotsym_matrix(F_total, ...
             m, z_rotation);
-        [Aeven, Aodd] = ott.TmatrixDda.combine_rotsym_matrix(A_total, ...
+        [Aeven, Aodd] = ott.scat.vswf.Dda.combine_rotsym_matrix(A_total, ...
             m, z_rotation);
           
         % Find which modes we should calculate
@@ -993,8 +993,8 @@ classdef TmatrixDda < ott.Tmatrix
           % This could also be pre-computed and applied to F
           % but this would be O(Ndipoles) compared to O(2*Nmax),
           % assuming no rotational or mirror symmetry.
-          Es_TE = ott.TmatrixDda.apply_cart2sph(E_TE, cart2sph);
-          Es_TM = ott.TmatrixDda.apply_cart2sph(E_TM, cart2sph);
+          Es_TE = ott.scat.vswf.Dda.apply_cart2sph(E_TE, cart2sph);
+          Es_TM = ott.scat.vswf.Dda.apply_cart2sph(E_TM, cart2sph);
 
           ci = combined_index(n,m);
 

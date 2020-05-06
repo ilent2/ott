@@ -1,14 +1,14 @@
-classdef TmatrixEbcm < ott.Tmatrix
+classdef Ebcm < ott.Tmatrix
 % Constructs a T-matrix using extended boundary conditions method.
 % Inherits from :class:`+ott.Tmatrix`.
 %
-% TmatrixEbcm properties:
+% Ebcm properties:
 %   k_medium          Wavenumber in the surrounding medium
 %   k_particle        Wavenumber of the particle
 %
 % This class is based on tmatrix_ebcm_axisym.m from ottv1.
 %
-% See also TmatrixEbcm
+% See also Ebcm
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -119,7 +119,7 @@ classdef TmatrixEbcm < ott.Tmatrix
       [~, ~, z_mirror_symmetry] = shape.mirrorSymmetry();
 
       % Calculate the T-matrix using EBCM
-      tmatrix = ott.TmatrixEbcm(rtp, n, ds, 'Nmax', Nmax, ...
+      tmatrix = ott.scat.vswf.Ebcm(rtp, n, ds, 'Nmax', Nmax, ...
           'k_medium', k_medium, 'k_particle', k_particle, ...
           'rotational_symmetry', z_rotational_symmetry, ...
           'z_mirror_symmetry', z_mirror_symmetry, ...
@@ -133,7 +133,7 @@ classdef TmatrixEbcm < ott.Tmatrix
   end
 
   methods
-    function tmatrix = TmatrixEbcm(rtp, normals, ds, varargin)
+    function tmatrix = Ebcm(rtp, normals, ds, varargin)
       %TMATRIXEBCM calculates T-matrix using extended boundary condition method
       %
       % TMATRIXEBCM(rtp, normals, ds) uses points at r [ r theta phi ]

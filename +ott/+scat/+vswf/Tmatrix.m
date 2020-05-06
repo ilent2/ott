@@ -1,4 +1,5 @@
-classdef Tmatrix
+classdef Tmatrix < ott.scat.utils.Particle ...
+    & ott.scat.utils.BeamForce
 % Class representing the T-matrix of a scattering particle or lens.
 % This class can either be instantiated directly or used as a base
 % class for defining custom T-matrix types.
@@ -12,7 +13,7 @@ classdef Tmatrix
 % This class is not a handle class, therefore, when using the class
 % methods you need to store the resulting T-matrix output, for example::
 %
-%   tmatrix = ott.Tmatrix();
+%   tmatrix = ott.scat.vswf.Tmatrix();
 %   new_tmatrix = tmatrix.scattered();
 %
 % Properties
@@ -28,10 +29,13 @@ classdef Tmatrix
 % Static methods
 %   - simple()    -- Construct a simple particle T-matrix
 %
-% See also Tmatrix, simple, :class:`+ott.TmatrixMie`.
+% See also Tmatrix, simple, :class:`+ott.scat.vswf.Mie`.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+  % TODO: Disallow hozcat and vertcat?
+  %   Do we still want to allow cat for dimensions > 2?  Yes!
 
   properties (SetAccess=protected)
     data          % The matrix this class encapsulates
@@ -44,6 +48,26 @@ classdef Tmatrix
   properties (Dependent)
     Nmax          % Current size of T-matrix
     type          % Type of T-matrix (total or scattered)
+  end
+
+  % TODO: Should these be constant or setable?
+  %   i.e., should we allow rotating T-matrices or should we
+  %   store these properties and apply them to the beam before
+  %   calculating properties of interest?
+  %
+  %   If we store and apply them, we could have a
+  %   VirtualPosition and/or VirtualRotation class which combines with
+  %   BeamForce to implement the desired functionality.
+  properties
+    position
+    rotation
+  end
+
+  methods
+    function tmatrix = rotate(tmatrix, rotation)
+      % TODO: This method may move/change soon
+      tmatrix.rotation = rotation * tmatrix.rotation;
+    end
   end
 
   methods (Static)
@@ -112,7 +136,7 @@ classdef Tmatrix
           parameters = [ max(shape.rho), max(shape.z) - min(shape.z) ];
         end
 
-        method = ott.Tmatrix.cylinder_preferred_method(...
+        method = ott.scat.vswf.Tmatrix.cylinder_preferred_method(...
             parameters, k_medium, p.Results.method_tol);
 
         if strcmp(method, 'other')
@@ -162,7 +186,7 @@ classdef Tmatrix
       %   length of 1 micron using a guess at the best available method.
       %   Illumination wavelength is 1064 nm, relative index 1.5/1.33::
       %
-      %     tmatrix = ott.Tmatrix.simple('cube', 1.0e-6, ...
+      %     tmatrix = ott.scat.vswf.Tmatrix.simple('cube', 1.0e-6, ...
       %       'wavelength0', 1064e-9, ...
       %       'index_medium', 1.33, 'index_particle', 1.5);
 
@@ -384,7 +408,7 @@ classdef Tmatrix
     %   represents a particle which doesn't scatter light::
     %
     %     data = eye(16);
-    %     tmatrix = ott.Tmatrix(data, 'total');
+    %     tmatrix = ott.scat.vswf.Tmatrix(data, 'total');
 
     if nargin >= 1
       tmatrix.data = data;
@@ -581,6 +605,17 @@ classdef Tmatrix
     function tmatrix = scattered(tmatrix)
       % SCATTERED convert T-matrix to scattered
       tmatrix.type = 'scattered';
+    end
+
+    function sbeam = scatter(tmatrix, beam)
+      % Scatter the beam
+      %
+      % Usage
+      %   sbeam = tmatrix.scatter(beam)
+      %
+      % See also mtimes
+
+      sbeam = tmatrix * beam;
     end
 
     function sbeam = mtimes(tmatrix,ibeam)

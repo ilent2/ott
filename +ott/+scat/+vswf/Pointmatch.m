@@ -1,12 +1,12 @@
-classdef TmatrixPm < ott.Tmatrix
-%TmatrixPm constructs a T-matrix using the point matching method
+classdef Pointmatch < ott.Tmatrix
+% Constructs a T-matrix using the point matching method
 %
-% TmatrixPm properties:
-%   k_medium          Wavenumber in the surrounding medium
-%   k_particle        Wavenumber of the particle
+% Properties
+%   - k_medium       -- Wavenumber in the surrounding medium
+%   - k_particle     -- Wavenumber of the particle
 %
-% TmatrixPm methods:
-%   getInternal       Get the internal T-matrix
+% Methods
+%   - getInternal    -- Get the internal T-matrix
 %
 % This class is based on tmatrix_pm.m from ottv1.
 
@@ -127,7 +127,7 @@ classdef TmatrixPm < ott.Tmatrix
       end
 
       % Parse parameters
-      p = ott.TmatrixPm.input_parser(varargin{:});
+      p = ott.scat.vswf.Pointmatch.input_parser(varargin{:});
 
       % Get or estimate Nmax from the inputs
       [k_medium, k_particle] = ott.Tmatrix.parser_wavenumber(p, 2*pi);
@@ -157,7 +157,7 @@ classdef TmatrixPm < ott.Tmatrix
 
       % inputParser will take the last parameter, so varargin just needs to
       % be before the replacements for varargin.
-      tmatrix = ott.TmatrixPm(rtp, normals, varargin{:}, ...
+      tmatrix = ott.scat.vswf.Pointmatch(rtp, normals, varargin{:}, ...
           'Nmax', Nmax, ...
           'z_mirror_symmetry', z_mirror_symmetry, ...
           'z_rotational_symmetry', z_rotational_symmetry);
@@ -228,7 +228,7 @@ classdef TmatrixPm < ott.Tmatrix
   end
 
   methods
-    function tmatrix = TmatrixPm(rtp, normals, varargin)
+    function tmatrix = Pointmatch(rtp, normals, varargin)
       %TMATRIXPM calculates T-matrix using the point matching method
       %
       % TMATRIXPM(r, theta, phi, normals) uses points at r, theta, phi
@@ -276,7 +276,7 @@ classdef TmatrixPm < ott.Tmatrix
       % TODO: Different row/column Nmax
 
       % Parse inputs
-      p = ott.TmatrixPm.input_parser(varargin{:});
+      p = ott.scat.vswf.Pointmatch.input_parser(varargin{:});
 
       % Store inputs k_medium and k_particle
       [tmatrix.k_medium, tmatrix.k_particle] = ...
@@ -303,7 +303,7 @@ classdef TmatrixPm < ott.Tmatrix
       progress_callback = p.Results.progress_callback;
       if isempty(progress_callback)
         if Nmax > 20
-          progress_callback = @ott.TmatrixPm.DefaultProgressCallback;
+          progress_callback = @ott.scat.vswf.Pointmatch.DefaultProgressCallback;
         else
           progress_callback = @(x) [];
         end

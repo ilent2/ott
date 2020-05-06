@@ -1,4 +1,4 @@
-classdef Mie < ott.optics.vswf.tmatrix.Tmatrix
+classdef Mie < ott.scat.vswf.Tmatrix
 % Construct T-matrix with Mie scattering coefficients
 %
 % The Mie coefficients describe the scattering of a sphere.
@@ -301,12 +301,12 @@ classdef Mie < ott.optics.vswf.tmatrix.Tmatrix
       % Construct a T-matrix using Mie solution for a sphere.
       %
       % Usage
-      %   ott.optics.vswf.tmatrix.simple(shape)
+      %   ott.scat.vswf.tmatrix.simple(shape)
       %   Constructs a new simple T-matrix for the given
       %   ott.shapes.Shape object.  Shape must implement a maxRadius
       %   method, the result of which is used as the sphere radius.
       %
-      %   ott.optics.vswf.tmatrix.simple(name, parameters)
+      %   ott.scat.vswf.tmatrix.simple(name, parameters)
       %   Constructs a new T-matrix for the
       %   shape described by the name and parameters.  The name must
       %   be 'sphere' and the parameters must be the radius.
@@ -331,7 +331,7 @@ classdef Mie < ott.optics.vswf.tmatrix.Tmatrix
       end
 
       % Genreate an instance of this object
-      tmatrix = ott.optics.vswf.tmatrix.Mie(radius, varargin{:});
+      tmatrix = ott.scat.vswf.tmatrix.Mie(radius, varargin{:});
     end
   end
 
@@ -390,7 +390,12 @@ classdef Mie < ott.optics.vswf.tmatrix.Tmatrix
       %   - progress_callback (function_handle) -- Function to call
       %     to report progress of the method.  Not yet implemented.
 
-      tmatrix = tmatrix@ott.optics.vswf.tmatrix.Tmatrix();
+      tmatrix = tmatrix@ott.scat.vswf.Tmatrix();
+
+      % Get radius from shape
+      if isa(radius, 'ott.shapes.Shape')
+        radius = radius.maxRadius;
+      end
 
       % Store positional arguments
       tmatrix.radius = radius;
@@ -402,7 +407,7 @@ classdef Mie < ott.optics.vswf.tmatrix.Tmatrix
       p.addParameter('internal', false);
       p.addParameter('shrink', numel(radius)>1);
       p.addParameter('progress_callback', ...
-        @ott.optics.vswf.tmatrix.Mie.DefaultProgressCallback);
+        @ott.scat.vswf.tmatrix.Mie.DefaultProgressCallback);
       p.parse(varargin{:});
 
       % Parse dependent arguments

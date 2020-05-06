@@ -77,7 +77,7 @@ classdef Shape < ott.scat.utils.ShapeProperty ...
           'max_iterations must be positive integer');
 
       int_ray = ray;
-      out_ray = ott.beam.ScatteredRay(iray);
+      out_ray = ott.beam.ScatteredRay(ray);
 
       for ii = 1:Niter
 

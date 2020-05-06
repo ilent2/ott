@@ -42,9 +42,43 @@ classdef (Abstract) Particle < ott.utils.RotateHelper
   end
 
   methods
-    force
-    torque
-    forcetorque
+    function varargout = force(particle, beam, varargin)
+      % Calculate the force from a beam on a particle.
+      % For details on usage/arguments see :meth:`forcetorque`.
+      %
+      % Usage
+      %   force = particle.force(beam, ...)
+
+      [varargout{1:nargout}] = particle.forceInternal(beam, varargin{:});
+    end
+
+    function varargout = torque(particle, beam, varargin)
+      % Calculate the torque from a beam on a particle.
+      % For details on usage/arguments see :meth:`forcetorque`.
+      %
+      % Usage
+      %   torque = particle.torque(beam, ...)
+
+      [varargout{1:nargout}] = particle.torqueInternal(beam, varargin{:});
+    end
+
+    function varargout = forcetorque(particle, beam, varargin)
+      % Calculate force and torque from a beam on a particle.
+      %
+      % Usage
+      %   [force, torque] = particle.forcetorque(beam, ...)
+      %
+      % Optional named arguments
+      %   - position (3xN numeric) -- Positions of the particle to
+      %     calculate properties for.
+      %     Default: ``[]``.
+      %
+      %   - rotation (3x3N numeric) -- Orientations of the particle
+      %     to calculate properties for.
+      %     Default: ``[]``.
+
+      [varargout{1:nargout}] = particle.forcetorqueInternal(beam, varargin{:});
+    end
   end
 
   methods (Hidden)
