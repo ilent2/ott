@@ -348,6 +348,18 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
     function H = hfarfieldInternal(beam, rtp, varargin)
       [~, H] = beam.ehfarfieldInternal(rtp, varargin{:});
     end
+    
+    function force = forceInternal(beam, incident, varargin)
+      % Calculate the from the change in poynting vectors
+      
+      [E1, H1] = beam.ehfieldInternal([0;0;0]);
+      S1 = real(sum(cross(E1.vxyz, conj(H1.vxyz)), 2));
+      
+      [E2, H2] = incident.ehfieldInternal([0;0;0]);
+      S2 = real(sum(cross(E2.vxyz, conj(H2.vxyz)), 2));
+
+      force = S2 - S1;
+    end
 
     function [E, H] = ehfarfieldInternal(beam, rtp, varargin)
       % Calculate the E-field in the far-field

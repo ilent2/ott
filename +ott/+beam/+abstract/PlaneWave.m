@@ -54,7 +54,7 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
       p = inputParser;
       p.KeepUnmatched = true;
       p.addParameter('direction', [0;0;1]);
-      p.addParameter('polarisation', [0;0;1]);
+      p.addParameter('polarisation', [1;0;0]);
       p.addParameter('origin', [0;0;0]);
       p.addParameter('field', 1.0);
       p.addParameter('array_type', 'coherent');

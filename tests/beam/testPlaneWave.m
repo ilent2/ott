@@ -74,3 +74,23 @@ function testFarfield(testCase)
   beam.visualiseFarfieldSphere('method', 'delta');
   close(h);
 end
+
+function testForce(testCase)
+
+  P1 = ott.beam.PlaneWave('direction', [0;0;1]);
+  P2 = ott.beam.PlaneWave('direction', [0;0;-1]);
+  
+  f = P1.force(P2);
+  testCase.verifyEqual(f, [0;0;-2], 'reflected wave');
+  
+  P2.field = 0.0;
+  f = P1.force(P2);
+  testCase.verifyEqual(f, [0;0;-1], 'reflected wave');
+
+  P1 = ott.beam.PlaneWave('direction', [0;0;1], 'polarisation', [0;1;0]);
+  P2 = ott.beam.PlaneWave('direction', [1;0;0], 'polarisation', [0;1;0]);
+  
+  f = P1.force(P2);
+  testCase.verifyEqual(f, [1;0;-1.0], 'perpendicular wave');
+  
+end

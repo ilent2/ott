@@ -732,9 +732,11 @@ classdef (Abstract) Beam < ott.beam.Properties
 
       % Setup grid
       [theta, phi] = ott.utils.angulargrid(p.Results.ntheta, p.Results.nphi);
+      dtheta = diff(theta(1:2));
+      dphi = diff(phi(1:2));
 
       % Truncate the theta range
-      keep = theta > p.Results.thetaRange(1) & theta < p.Results.thetaRange(2);
+      keep = theta > p.Results.theta_range(1) & theta < p.Results.theta_range(2);
       theta = theta(keep);
       phi = phi(keep);
 
@@ -744,7 +746,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       uxyz = ott.utils.rtp2xyz(rtp);
       uxyz(3, :) = -uxyz(3, :);
 
-      imout = beam.intensityMomentImout(4, rtp, uxyz, unmatched{:});
+      imout = beam.intensityMomentImout(4, rtp, uxyz, theta, phi, dtheta, dphi, unmatched{:});
 
       moments = imout(1:3, :);
       ints = imout(4, :);
@@ -813,7 +815,8 @@ classdef (Abstract) Beam < ott.beam.Properties
       end
     end
 
-    function imout = intensityMomentImout(beam, ~, rtp, uxyz, varargin)
+    function imout = intensityMomentImout(beam, ~, rtp, uxyz, ...
+        theta, ~, dtheta, dphi, varargin)
       % Calculate the imout data for the intensityMoment function
 
       % Calculate fields
