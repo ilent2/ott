@@ -1,4 +1,6 @@
-classdef Plane < ott.shapes.Plane
+classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
+    & ott.scat.utils.HomogeneousRelative ...
+    & ott.scat.utils.BeamForce
 % Describes how a infinite plane scatters a plane wave.
 % Inherits from :class:`ott.shapes.Plane`.
 %
@@ -16,23 +18,6 @@ classdef Plane < ott.shapes.Plane
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file
-
-
-% TODO: Ensure testScatterIndexMatched runs
-% TODO: Inherit from another class for index_relative and geometry
-% TODO: Move somewhere else (this isn't geometric optics) (where?)
-% TODO: Inherit a geometric optics class from this class (how? why?)
-% TODO: Other particles?  Other shapes?
-% TODO: Implement a abstract plane wave class (use that instead? why?)
-%   * Do we need an analytic beam and analytic scat sub-package?
-%   * Mie is a analytic method for spheres, so why put it in T-matrix?
-%   * Maybe we should have a ``+planewave`` sub-package for plane wave
-%     basis scattering and solutions (different from geometric)
-%   * Still, what about beams?  We also have annuarl, Top-hat and Davis?
-
-  properties
-    index_relative  % Relative refractive index
-  end
 
   methods (Static)
     function [Sr, St] = fresnelS(kix, ktx, n1, n2)
