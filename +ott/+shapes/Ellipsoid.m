@@ -94,16 +94,11 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
           (sin(phi).*sin(theta)/shape.b).^2 + (cos(theta)/shape.c).^2 );
     end
 
-    function n = normals(shape, theta, phi)
-      % NORMALS calcualtes the normals for each requested point
-      %
-      % Usage
-      %   n = shape.normals(theta, phi)
-      %   Calculates the normals and returns a 3xN matrix.
+    function n = normalsRtpInternal(shape, rtp)
+      % calculates the normals for each requested point
 
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
+      theta = rtp(2, :).';
+      phi = rtp(3, :).';
 
       % r = 1/sqrt( cos(phi)^2 sin(theta)^2 / a^2 +
       %     sin(phi)^2 sin(theta)^2 / b2 + cos(theta)^2 / c^2 )
@@ -124,6 +119,8 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
       
       n = [ sigma_r./sigma_mag, sigma_theta./sigma_mag, ...
           sigma_phi./sigma_mag ].';
+
+      n = ott.utils.rtpv2xyzv(n, rtp);
     end
 
     function varargout = axialSymmetry(shape)

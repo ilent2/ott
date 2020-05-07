@@ -12,7 +12,7 @@ function testConstruction(testCase)
   offset = 0.0;
   depth = 0.5;
 
-  plane = ott.shapes.Slab(normal, offset, depth);
+  plane = ott.shapes.Slab(normal, depth, 'offset', offset);
   
   % Check properties
   testCase.verifyEqual(plane.normal, normal);
@@ -33,7 +33,7 @@ function testSurf(testCase)
   offset = 0.0;
   depth = 0.5;
 
-  plane = ott.shapes.Slab(normal, offset, depth);
+  plane = ott.shapes.Slab(normal, depth, 'offset', offset);
   
   h = figure();
   plane.surf('scale', 2.0);

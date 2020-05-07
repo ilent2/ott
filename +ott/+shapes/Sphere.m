@@ -1,5 +1,6 @@
 classdef Sphere < ott.shapes.StarShape & ott.shapes.AxisymShape
-%Sphere a simple sphere shape
+% Spherical particle shape.
+% Inherits from :class:`StartShape` and :class:`AxisymShape`.
 %
 % properties:
 %   radius        % Radius of the sphere
@@ -12,35 +13,39 @@ classdef Sphere < ott.shapes.StarShape & ott.shapes.AxisymShape
   end
 
   methods
-    function sphere = Sphere(radius, position)
+    function sphere = Sphere(radius, varargin)
       % SPHERE construct a new sphere
       %
-      % SPHERE(radius) specifies the radius of the sphere
+      % Usage
+      %   shape = Sphere(radius, ...)
       %
-      % SPHERE(radius, position) specifies the radius and position
-      % of the sphere.
+      % Optional named arguments
+      %   - position (3xN numeric) -- Position of the plane.
+      %     Default: ``[0;0;0]``.
+      %
+      %   - rotation (3x3N numeric) -- Plane orientations.
+      %     Default: ``eye(3)``.
 
-      sphere = sphere@ott.shapes.StarShape();
-      sphere.radius = radius;
+      sphere = sphere@ott.shapes.StarShape(varargin{:});
+      sphere = sphere@ott.shapes.AxisymShape();
 
-      if nargin == 2
-        sphere.position = position;
+      Nradius = numel(radius);
+      assert(numel(sphere) == 1 || Nradius == 1 ...
+          || Nradius == numel(sphere), ...
+          'length of radius must match length of position');
+
+      if numel(sphere) == 1 && Nradius ~= 1
+        sphere = repelem(sphere, 1, Nradius);
       end
-    end
 
-    function r = get_maxRadius(shape)
-      % Calculate the maximum particle radius
-      r = shape.radius;
-    end
-
-    function v = get_volume(shape)
-      % Calculate the volume
-      v = 4./3.*pi.*shape.radius.^3;
-    end
-
-    function p = get_perimiter(shape)
-      % Calculate the perimiter of the object
-      p = 2.0 * pi * shape.radius;
+      % Assign radius
+      if Nradius > 1
+        for ii = 1:Nradius
+          sphere(ii).radius = radius(ii);
+        end
+      else
+        [sphere.radius] = deal(radius);
+      end
     end
 
     function r = radii(shape, theta, phi)
@@ -51,16 +56,6 @@ classdef Sphere < ott.shapes.StarShape & ott.shapes.AxisymShape
       [theta,phi] = ott.utils.matchsize(theta,phi);
 
       r = ones(size(theta)) * shape.radius;
-    end
-
-    function n = normals(shape, theta, phi)
-      % NORMALS calculate the normals for the specified points.
-
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
-
-      n = ones(size(theta)) * [ 1, 0, 0 ];
     end
 
     function [rtp, n, ds] = boundarypoints(shape, varargin)
@@ -101,6 +96,37 @@ classdef Sphere < ott.shapes.StarShape & ott.shapes.AxisymShape
         varargout{2} = 0;
         varargout{3} = 0;
       end
+    end
+  end
+
+  methods (Hidden)
+    function nxyz = normalsRtpInternal(shape, rtp)
+      % Calculate normals at the specified surface locations
+
+      nxyz = ott.utils.rtpv2xyzv(repmat([1;0;0], 1, size(rtp, 2)), rtp);
+    end
+
+    function r = get_maxRadius(shape)
+      % Calculate the maximum particle radius
+      r = shape.radius;
+    end
+
+    function v = get_volume(shape)
+      % Calculate the volume
+      v = 4./3.*pi.*shape.radius.^3;
+    end
+
+    function p = get_perimiter(shape)
+      % Calculate the perimiter of the object
+      p = 2.0 * pi * shape.radius;
+    end
+  end
+
+  methods % Setters/getters
+    function shape = set.radius(shape, val)
+      assert(isnumeric(val) && isscalar(val), ...
+          'radius must be numeric scalar');
+      shape.radius = val;
     end
   end
 end

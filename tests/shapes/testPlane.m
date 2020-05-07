@@ -11,7 +11,7 @@ function testConstruction(testCase)
   normal = [0;0;1];
   offset = 0.0;
 
-  plane = ott.shapes.Plane(normal, offset);
+  plane = ott.shapes.Plane(normal, 'offset', offset);
   
   % Check properties
   testCase.verifyEqual(plane.normal, normal);
@@ -30,7 +30,7 @@ function testSurf(testCase)
   normal = rand(3, 1);
   offset = 0.0;
 
-  plane = ott.shapes.Plane(normal, offset);
+  plane = ott.shapes.Plane(normal, 'offset', offset);
   
   h = figure();
   plane.surf('scale', 2.0);
@@ -43,7 +43,7 @@ function testIntersect(testCase)
   normal = [0;0;1];
   offset = 0.0;
 
-  plane = ott.shapes.Plane(normal, offset);
+  plane = ott.shapes.Plane(normal, 'offset', offset);
   
   ray = ott.utils.Vector([0;0;-1], [1;0;0]);
   locs = plane.intersect(ray);

@@ -1,6 +1,6 @@
-classdef Plane < ott.shapes.ShapeCart
+classdef Plane < ott.shapes.Shape & ott.shapes.utils.CoordsCart
 % Shape describing a plane with infinite extent
-% Inherits from :class:`ott.shapes.ShapeCart`.
+% Inherits from :class:`ott.shapes.Shape`.
 %
 % Properties
 %   - normal      -- Vector representing surface normal
@@ -40,7 +40,7 @@ classdef Plane < ott.shapes.ShapeCart
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      shape = shape@ott.shapes.ShapeCart(unmatched{:});
+      shape = shape@ott.shapes.Shape(unmatched{:});
 
       Nnormal = size(normal, 2);
       Noffset = numel(p.Results.offset);
@@ -106,26 +106,6 @@ classdef Plane < ott.shapes.ShapeCart
     function v = get_volume(shape)
       % Infinite plane has infinite volume
       v = Inf;
-    end
-
-    function b = insideXyz(shape, varargin)
-      % Determine if a point is on one side of the plane or the other
-      %
-      % Usage
-      %   b = shape.insideXyz(x, y, z, ...) determine if the point
-      %   is above or bellow the plane surface.
-      %
-      %   b = shape.insideXyz(xyz, ...) as above but with a 3xN matrix.
-      %
-      % Optional arguments
-      %   - origin (enum) -- Coordinate system origin.  Either 'world'
-      %     or 'shape' for world coordinates or shape coordinates.
-
-      % Get xyz coordinates from inputs and translated to origin
-      xyz = shape.insideXyzParseArgs(shape.position, varargin{:});
-
-      % Determine if points are above plane
-      b = (sum(xyz .* shape.normal, 1) - shape.offset) > 0;
     end
 
     function [locs, norms] = intersect(shape, vecs)
@@ -196,10 +176,21 @@ classdef Plane < ott.shapes.ShapeCart
   end
 
   methods (Hidden)
+    function b = insideXyzInternal(shape, xyz)
+      % Determine if a point is on one side of the plane or the other
+
+      % Determine if points are above plane
+      b = (sum(xyz .* shape.normal, 1) - shape.offset) > 0;
+    end
+
+    function nxyz = normalsXyzInternal(shape, xyz)
+      nxyz = repmat(shape.normal, 1, size(xyz, 2));
+    end
+
     function surfAddArgs(beam, p)
       % Add surface drawing args to the input parser for surf
       p.addParameter('scale', 1.0);
-      surfAddArgs@ott.shapes.ShapeCart(beam, p);
+      surfAddArgs@ott.shapes.Shape(beam, p);
     end
     
     function [X, Y, Z] = calculateSurface(shape, p)

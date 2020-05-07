@@ -1,5 +1,5 @@
 classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
-%AxisymLerp a axisymmetric particle with lerping between points
+% A axis-symmetric particle with lerping between points
 % Inherits from ott.shapes.StarShape and ott.shapes.AxisymShape.
 %
 % properties:
@@ -121,12 +121,11 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
       end
     end
 
-    function n = normals(shape, theta, phi)
+    function n = normalsRtpInternal(shape, rtp)
       % NORMALS calculate the normals for the specified points.
 
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
+      theta = rtp(2, :).';
+      phi = rtp(3, :).';
 
       % Corner angles should be in range [0, pi]
       corner_angles = atan2(shape.z, shape.rho) + pi/2;
@@ -156,6 +155,8 @@ classdef AxisymLerp < ott.shapes.StarShape & ott.shapes.AxisymShape
         n(1, pts) = cos(psi);
         n(2, pts) = sin(psi);
       end
+
+      n = ott.utils.rtpv2xyzv(n, rtp);
     end
 
     function varargout = axialSymmetry(shape)

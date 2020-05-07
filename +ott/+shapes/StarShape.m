@@ -1,9 +1,9 @@
-classdef StarShape < ott.shapes.ShapeSph
-%StarShape abstract class for star shaped particles
+classdef StarShape < ott.shapes.Shape & ott.shapes.utils.CoordsSph
+% Abstract class for star shaped particles.
+% Inherits from :class:`ott.shapes.Shape`.
 %
 % Abstract methods:
 %   radii           Calculates the particle radii for angular coordinates
-%   normals         Calculates the particle normals for angular coorindates
 %   axialSymmetry   Returns x, y, z rotational symmetry (0 for infinite)
 %   mirrorSymmetry  Returns x, y, z mirror symmetry
 
@@ -12,16 +12,10 @@ classdef StarShape < ott.shapes.ShapeSph
 
   methods (Abstract)
     radii(shape, theta, phi);
-    normals(shape, theta, phi);
     axialSymmetry(shape);
   end
 
   methods
-
-    function nxyz = normalsRtp(shape, rtp)
-      % TODO: Consider removing ``normals(shape, theta, phi)``.
-      nxyz = shape.normals(rtp(2, :), rtp(3, :));
-    end
 
     function varargout = mirrorSymmetry(shape)
       % Return the mirror symmetry for the particle
@@ -163,10 +157,11 @@ classdef StarShape < ott.shapes.ShapeSph
 
       % Generate the voxel grid
       [xx, yy, zz] = meshgrid(rrange, rrange, rrange);
+      xyz = [xx(:) yy(:) zz(:)].';
 
       % Determine which points are inside
-      mask = shape.insideXyz(xx, yy, zz, 'origin', 'shape');
-      xyz = [xx(mask).'; yy(mask).'; zz(mask).'];
+      mask = shape.insideXyz(xyz, 'origin', 'shape');
+      xyz(:, ~mask) = [];
 
       % Translate to world origin
       if strcmpi(p.Results.origin, 'world')
@@ -188,44 +183,6 @@ classdef StarShape < ott.shapes.ShapeSph
       if nargout ~= 0
         varargout = {xyz};
       end
-    end
-
-    function n = normalsXyz(shape, theta, phi)
-      % NORMALSXYZ calculates Cartessian normals
-      %
-      % n = normalsXyz(theta, phi) calculates the normals to the
-      % surface in Cartesian coordinates and returns a Nx3 matrix.
-
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
-
-      % Convert the normals to cartesian
-      n = ott.utils.rtpv2xyzv(shape.normals(theta, phi), ...
-          [ zeros(size(theta)), theta, phi ]);
-    end
-
-    function b = insideRtp(shape, varargin)
-      % Determine if point is inside the shape (Spherical coordinates)
-      %
-      % Usage
-      %   b = shape.insideRtp(radius, theta, phi, ...) determine if the
-      %   point described by radius, theta (polar), phi (azimuthal)
-      %   is inside the shape.
-      %
-      %   b = shape.insideRtp(rtp, ...) as above, but uses a 3xN input.
-      %
-      % Optional arguments
-      %   - origin (enum) -- Coordinate system origin.  Either 'world'
-      %     or 'shape' for world coordinates or shape coordinates.
-
-      % Get xyz coordinates from inputs and translated to origin
-      rtp = shape.insideRtpParseArgs(shape.position, varargin{:});
-
-      % Determine if points are less than shape radii
-      r = shape.radii(rtp(2, :), rtp(3, :));
-      b = rtp(1, :).' < r;
-
     end
 
     function varargout = angulargrid(shape, varargin)
@@ -320,6 +277,15 @@ classdef StarShape < ott.shapes.ShapeSph
   end
   
   methods (Hidden)
+    function b = insideRtpInternal(shape, rtp, varargin)
+      % Determine if point is inside the shape (Spherical coordinates)
+
+      % Determine if points are less than shape radii
+      r = shape.radii(rtp(2, :), rtp(3, :));
+      b = rtp(1, :).' < r;
+
+    end
+
     function surfAddArgs(beam, p)
       % Add surface drawing args to the input parser for surf
       p.addParameter('points', []);

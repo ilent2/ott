@@ -10,11 +10,17 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
 %   - position   -- Location of shape ``[x, y, z]``
 %   - rotation   -- Orientation of the particle (3x3 rotation matrix)
 %
-% Methods (abstract)
+% Methods
 %   insideRtp       -- Determine if Spherical point is inside shape
 %   insideXyz       -- Determine if Cartesian point is inside shape
 %   normalsRtp      -- Calculate normals at surface location
 %   normalsXyz      -- Calculate normals at surface location
+%
+% Methods (abstract)
+%   insideRtpInternal       -- Determine if Spherical point is inside shape
+%   insideXyzInternal       -- Determine if Cartesian point is inside shape
+%   normalsRtpInternal      -- Calculate normals at surface location
+%   normalsXyzInternal      -- Calculate normals at surface location
 %   get_maxRadius   -- Get max distance from origin
 %   get_volume      -- Get shape volume
 %
@@ -89,93 +95,17 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
     end
   end
 
-  methods (Static, Hidden)
-    function xyz = insideXyzParseArgs(origin, varargin)
-      % Helper for parsing arguments for insideXyz functions
-
-      % Collect arguments
-      p = inputParser;
-      p.addRequired('x');
-      p.addOptional('y', [], @isnumeric);
-      p.addOptional('z', [], @isnumeric);
-      p.addParameter('origin', 'world');
-      p.parse(varargin{:});
-
-      % Handle xyz or [x, y, z] arguments
-      if isempty(p.Results.x)
-        error('Must supply either xyz or x, y and z');
-      elseif isempty(p.Results.y) && isempty(p.Results.z)
-        xyz = p.Results.x;
-      else
-        x = p.Results.x(:);
-        y = p.Results.y(:);
-        z = p.Results.z(:);
-        [x, y, z] = ott.utils.matchsize(x, y, z);
-        xyz = [x y z].';
-      end
-
-      % Translate to shape origin
-      if strcmpi(p.Results.origin, 'world')
-        xyz = xyz - origin(:);
-      elseif strcmpi(p.Results.origin, 'shape')
-        % Nothing to do
-      else
-        error('origin must be ''world'' or ''shape''');
-      end
-    end
-
-    function rtp = insideRtpParseArgs(origin, varargin)
-      % Argument parser helper for insideRtp function
-
-      % Collect arguments
-      p = inputParser;
-      p.addRequired('r');
-      p.addOptional('t', [], @isnumeric);
-      p.addOptional('p', [], @isnumeric);
-      p.addParameter('origin', 'world');
-      p.parse(varargin{:});
-
-      % Handle rtp or [r, t, p] arguments
-      if isempty(p.Results.r)
-        error('Must supply either rtp or r, t and p');
-      elseif isempty(p.Results.t) && isempty(p.Results.p)
-        rtp = p.Results.r;
-      else
-        r = p.Results.r(:);
-        theta = p.Results.t(:);
-        phi = p.Results.p(:);
-        [r, theta, phi] = ott.utils.matchsize(r, theta, phi);
-        rtp = [r theta phi].';
-      end
-
-      % Translate to shape origin
-      if strcmpi(p.Results.origin, 'world')
-
-        % Only do work if we need to
-        if vecnorm(origin) ~= 0
-          xyz = ott.utils.rtp2xyz(rtp);
-          xyz = xyz - origin(:);
-          rtp = ott.utils.xyz2rtp(xyz);
-        end
-
-      elseif strcmpi(p.Results.origin, 'shape')
-        % Nothing to do
-      else
-        error('origin must be ''world'' or ''shape''');
-      end
-
-      assert(all(rtp(1, :) >= 0), 'Radii must be positive');
-    end
-  end
-
   properties (Dependent)
     maxRadius       % Maximum particle radius (useful for Nmax calculation)
     volume          % Volume of the particle
   end
 
-  methods (Abstract)
-    insideRtp(shape, varargin)   % Determine if point is inside shape
-    insideXyz(shape, varargin)   % Determine if point is inside shape
+  methods (Abstract, Hidden)
+    insideRtpInternal(shape, varargin)   % Determine if point is inside shape
+    insideXyzInternal(shape, varargin)   % Determine if point is inside shape
+
+    normalsRtpInternal(shape, varargin)   % Calculate normals
+    normalsXyzInternal(shape, varargin)   % Calculate normals
 
     get_maxRadius(shape, varargin)    % Get max distance from origin
     get_volume(shape, varargin);      % Get shape volume
@@ -461,9 +391,141 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
         varargout = {xyz};
       end
     end
+
+    function b = insideRtp(shape, varargin)
+      % Determine if point is inside the shape (Spherical coordinates)
+      %
+      % Usage
+      %   b = shape.insideRtp(rtp, ...)
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Spherical coordinates.
+      %
+      % Optional arguments
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
+
+      % Parse inputs
+      rtp = shape.insideRtpParseArgs(varargin{:});
+
+      b = shape.insideRtpInternal(rtp);
+    end
+
+    function nxyz = normalsRtp(shape, varargin)
+      % Calculate normals at the specified surface locations
+      %
+      % Usage
+      %   nxyz = shape.normalsRtp(rtp, ...)
+      %   Result is in Cartesian coordinates.
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Spherical coordinates.
+      %
+      % Optional arguments
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
+
+      % Parse inputs
+      rtp = shape.insideRtpParseArgs(varargin{:});
+
+      nxyz = shape.normalsRtpInternal(rtp);
+    end
+
+    function b = insideXyz(shape, varargin)
+      % Determine if point is inside the shape (Cartesian coordinates)
+      %
+      % Usage
+      %   b = shape.insideXyz(xyz, ...)
+      %
+      % Parameters
+      %   - xyz (3xN numeric) -- Cartesian coordinates.
+      %
+      % Optional arguments
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
+
+      % Get xyz coordinates from inputs and translated to origin
+      xyz = shape.insideXyzParseArgs(varargin{:});
+
+      b = shape.insideXyzInternal(xyz);
+    end
+
+    function nxyz = normalsXyz(shape, varargin)
+      % Calculate normals at the specified surface locations
+      %
+      % Usage
+      %   nxyz = shape.normalsXyz(xyz, ...)
+      %   Result is in Cartesian coordinates.
+      %
+      % Parameters
+      %   - xyz (3xN numeric) -- Cartesian coordinates.
+      %
+      % Optional arguments
+      %   - origin (enum) -- Coordinate system origin.  Either 'world'
+      %     or 'shape' for world coordinates or shape coordinates.
+
+      % Get xyz coordinates from inputs and translated to origin
+      xyz = shape.insideXyzParseArgs(varargin{:});
+
+      nxyz = shape.normalsXyzInternal(xyz);
+    end
   end
 
   methods (Hidden)
+    function xyz = insideXyzParseArgs(shape, xyz, varargin)
+      % Helper for parsing arguments for insideXyz functions
+
+      % Collect arguments
+      p = inputParser;
+      p.addParameter('origin', 'world');
+      p.parse(varargin{:});
+
+      assert(isnumeric(xyz) && size(xyz, 1) == 3, ...
+          'xyz must be 3xN numeric matrix');
+
+      % Translate to shape origin
+      if strcmpi(p.Results.origin, 'world')
+        xyz = xyz - shape.position;
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
+      end
+
+      % TODO: Apply rotation to coordinates
+    end
+
+    function rtp = insideRtpParseArgs(shape, rtp, varargin)
+      % Argument parser helper for insideRtp function
+
+      % Collect arguments
+      p = inputParser;
+      p.addParameter('origin', 'world');
+      p.parse(varargin{:});
+
+      assert(isnumeric(rtp) && size(rtp, 1) == 3, ...
+          'rtp must be 3xN numeric matrix');
+      assert(all(rtp(1, :) >= 0), 'Radii must be positive');
+
+      % Translate to shape origin
+      if strcmpi(p.Results.origin, 'world')
+
+        % Only do work if we need to
+        if vecnorm(shape.position) ~= 0
+          xyz = ott.utils.rtp2xyz(rtp);
+          xyz = xyz - shape.position;
+          rtp = ott.utils.xyz2rtp(xyz);
+        end
+
+      elseif strcmpi(p.Results.origin, 'shape')
+        % Nothing to do
+      else
+        error('origin must be ''world'' or ''shape''');
+      end
+
+      % TODO: Apply rotation to coordinates
+    end
+
     function surfAddArgs(beam, p)
       % Add surface drawing args to the input parser for surf
       % These arguments are needed by surfCommon

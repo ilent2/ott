@@ -1,6 +1,6 @@
-classdef AxisymShape < ott.shapes.Shape
-% Abstract class for axis-symmetric particles.
-% Inherits from :class:`Shape`.
+classdef (Abstract) AxisymShape
+% Abstract class for identifying axis-symmetric particles.
+% This is a mix-in class that should be used with Shape.
 %
 % Methods
 %   - boundarypoints  calculate boudary points for surface integral

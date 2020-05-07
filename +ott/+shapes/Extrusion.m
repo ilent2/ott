@@ -1,6 +1,7 @@
-classdef (Abstract) Extrusion < ott.shapes.ShapeCart
+classdef (Abstract) Extrusion < ott.shapes.Shape ...
+    & ott.shapes.utils.CoordsCart
 % Abstract class for shapes described by a height function.
-% Inherits from :class:`ShapeCart`, is aware of :class:`AxisymShape`.
+% Inherits from :class:`utils.CoordsCart`, is aware of :class:`AxisymShape`.
 %
 % This class provides methods to help creating functions of the shapes
 % where the height can be described as either::
@@ -46,33 +47,6 @@ classdef (Abstract) Extrusion < ott.shapes.ShapeCart
   end
 
   methods
-    function b = insideXyz(shape, varargin)
-      % Determine if a point is within the shape
-      %
-      % Usage
-      %   b = shape.insideXyz(x, y, z, ...) determine if the point
-      %   is inside the shape.
-      %
-      %   b = shape.insideXyz(xyz, ...) as above but with a 3xN matrix.
-      %
-      % Optional arguments
-      %   - origin (enum) -- Coordinate system origin.  Either 'world'
-      %     or 'shape' for world coordinates or shape coordinates.
-
-      % Get xyz coordinates from inputs and translated to origin
-      xyz = shape.insideXyzParseArgs(shape.position, varargin{:});
-
-      % Get the shape profile
-      zshape = shape.getExtrudeProfile(xyz(1:2, :));
-
-      % Handle mirror symmetry
-      if numel(zshape) == 2
-        b = xyz(3, :) < zshape{2} & xyz(3, :) > zshape{1};
-      else
-        b = abs(xyz(3, :)) < zshape{1};
-      end
-    end
-
     function varargout = surf(shape, varargin)
       % Generate a visualisation of the shape
       %
@@ -154,7 +128,7 @@ classdef (Abstract) Extrusion < ott.shapes.ShapeCart
       [varargout{1:nargout}] = shape.surfCommon(p, sz, xx, yy, zz);
     end
 
-    function nxyz = normalsXyz(shape, xyz, varargin)
+    function nxyz = normalsXyzInternal(shape, xyz, varargin)
       % Calculate normals at the specified surface locations
       %
       % This method estimates the normal numerically.  If the normal
@@ -243,6 +217,20 @@ classdef (Abstract) Extrusion < ott.shapes.ShapeCart
   end
 
   methods (Hidden)
+    function b = insideXyzInternal(shape, xyz, varargin)
+      % Determine if a point is within the shape
+
+      % Get the shape profile
+      zshape = shape.getExtrudeProfile(xyz(1:2, :));
+
+      % Handle mirror symmetry
+      if numel(zshape) == 2
+        b = xyz(3, :) < zshape{2} & xyz(3, :) > zshape{1};
+      else
+        b = abs(xyz(3, :)) < zshape{1};
+      end
+    end
+
     function zshape = getExtrudeProfile(shape, xy)
       % Calculate shape profile
       %

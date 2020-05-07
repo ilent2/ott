@@ -85,16 +85,11 @@ classdef Superellipsoid < ott.shapes.StarShape
           + (act/shape.c).^(2/shape.ns) ).^(-shape.ns/2);
     end
 
-    function n = normals(shape, theta, phi)
-      % NORMALS calcualtes the normals for each requested point
-      %
-      % Usage
-      %   n = shape.normals(theta, phi)
-      %   Calculates the normals and returns a 3xN matrix.
+    function n = normalsRtpInternal(shape, rtp)
+      % Calculate the normals for each requested point
 
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
+      theta = rtp(2, :).';
+      phi = rtp(3, :).';
 
       % Converting to spherical coordinates,
       % r = [ sin(theta)^(2/n) { (cos(phi)/a)^(2/e)
@@ -131,6 +126,8 @@ classdef Superellipsoid < ott.shapes.StarShape
 
       n = [ sigma_r./sigma_mag, sigma_theta./sigma_mag, ...
          sigma_phi./sigma_mag ].';
+
+      n = ott.utils.rtpv2xyzv(n, rtp);
     end
 
     function varargout = axialSymmetry(shape)

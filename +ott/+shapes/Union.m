@@ -1,4 +1,4 @@
-classdef Union < ott.shapes.ShapeSph
+classdef Union < ott.shapes.Shape
 % Represents union between two shapes.
 % Inherits from :class:`+ott.+shapes.+Shape`.
 %
@@ -18,53 +18,55 @@ classdef Union < ott.shapes.ShapeSph
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% TODO: Normal calculation method
+
   properties
     shapes      % Shapes contained in this union
   end
 
   methods
-    function shape = Union(shapes)
+    function shape = Union(shapes, varargin)
       % Construct a new union of shapes.
       %
       % Usage
-      %   shape = Union([shape1, shape2, ...])
+      %   shape = Union(shape_array, ...)
+      %
+      % Parameters
+      %   shape_array -- Array of :class:`ott.shapes.Shapes`.
+      %
+      % Optional named arguments
+      %   - position (3 numeric) -- Position of the shape.
+      %     Default: ``[0;0;0]``.
+      %
+      %   - rotation (3x3 numeric) -- Orientation of the shape.
+      %     Default: ``eye(3)``.
 
-      % Construct base class
-      shape = shape@ott.shapes.ShapeSph();
+      shape = shape@ott.shapes.Shape(varargin{:});
 
       % Store shapes
-      shape.shapes = shapes;
+      [shape.shapes] = deal(shapes);
     end
+  end
 
-    function shape = set.shapes(shape, value)
-      assert(numel(value) >= 1, 'Number of shapes must be >= 1');
-      assert(all(isa(value, 'ott.shapes.Shape')), ...
-          'Shapes must all inherit from ott.shapes.Shape');
-      shape.shapes = value;
-    end
+  methods (Hidden)
 
-    function b = insideRtp(shape, varargin)
+    function b = insideRtpInternal(shape, rtp, varargin)
       % Determine if point is inside union of shapes
-      %
-      % Usage
-      %   b = shape.insideRtp(radius, theta, phi, ...) determine if the
-      %   point described by radius, theta (polar), phi (azimuthal)
-      %   is inside the shape.
-      %
-      %   b = shape.insideRtp(rtp, ...) as above but with a 3xN matrix.
-      %
-      % Optional parameters
-      %   - origin (enum) -- Coordinate system origin.  Either 'world'
-      %     or 'shape' for world coordinates or shape coordinates.
-      %     Default: 'world'.
 
-      % Get xyz coordinates from inputs and translated to origin
-      rtp = shape.insideRtpParseArgs(shape.position, varargin{:});
-
-      b = shape.shapes(1).insideRtp(rtp, 'origin', 'world');
+      b = shape.shapes(1).insideRtpInternal(rtp, 'origin', 'world');
       for ii = 2:numel(shape.shapes)
         % TODO: We only need to check points that are not inside
-        b = b | shape.shapes(ii).insideRtp(rtp, 'origin', 'world');
+        b = b | shape.shapes(ii).insideRtpInternal(rtp, 'origin', 'world');
+      end
+    end
+
+    function b = insideXyzInternal(shape, xyz, varargin)
+      % Determine if point is inside union of shapes
+
+      b = shape.shapes(1).insideXyzInternal(rtp, 'origin', 'world');
+      for ii = 2:numel(shape.shapes)
+        % TODO: We only need to check points that are not inside
+        b = b | shape.shapes(ii).insideXyzInternal(rtp, 'origin', 'world');
       end
     end
 
@@ -92,6 +94,15 @@ classdef Union < ott.shapes.ShapeSph
       for ii = 2:numel(shape.shapes)
         volume = volume + shape.shapes(ii).volume;
       end
+    end
+  end
+
+  methods % Getters/setters
+    function shape = set.shapes(shape, value)
+      assert(numel(value) >= 1, 'Number of shapes must be >= 1');
+      assert(all(isa(value, 'ott.shapes.Shape')), ...
+          'Shapes must all inherit from ott.shapes.Shape');
+      shape.shapes = value;
     end
   end
 end

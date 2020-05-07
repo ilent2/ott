@@ -1,4 +1,5 @@
-classdef TriangularMesh < ott.shapes.ShapeCart
+classdef TriangularMesh < ott.shapes.Shape ...
+    & ott.shapes.utils.CoordsCart
 % TriangularMesh base class for triangular mesh objects (such as file loaders)
 %
 % Properties (read-only):
@@ -11,13 +12,16 @@ classdef TriangularMesh < ott.shapes.ShapeCart
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% TODO: Intersection method
+% TODO: Normals method
+
   properties (SetAccess=protected)
     verts           % Matrix of vertices in the object
     faces           % Matrix of faces in the object
   end
 
   methods
-    function shape = TriangularMesh(verts, faces)
+    function shape = TriangularMesh(verts, faces, varargin)
       % Construct a new triangular mesh representation
       %
       % TriangularMesh(verts, faces)
@@ -27,7 +31,7 @@ classdef TriangularMesh < ott.shapes.ShapeCart
       % Faces vertices should be ordered so normals face outwards for
       % volume and inside functions to work correctly.
 
-      shape = shape@ott.shapes.ShapeCart();
+      shape = shape@ott.shapes.Shape(varargin{:});
 
       % Verify size of inputs
       assert(size(verts, 1) == 3, 'Verts must be matrix of 3xN');
@@ -77,29 +81,6 @@ classdef TriangularMesh < ott.shapes.ShapeCart
       volume = area.*zMean.*nz; % contribution of each triangle
       totalVolume = sum(volume);%divergence theorem
 
-    end
-
-    function b = insideXyz(shape, varargin)
-      % Determine if Cartesian point is inside the shape
-      %
-      % Usage
-      %   b = shape.insideXyz(x, y, z) determine if the Cartesian point
-      %   [x, y, z] is inside the star shaped object.
-      %
-      %   b = shape.insideXyz(xyz) as above, but using a 3xN matrix of
-      %   [x; y; z] positions.
-      %
-      % Optional arguments
-      %   - origin (enum) -- Coordinate system origin.  Either 'world'
-      %     or 'shape' for world coordinates or shape coordinates.
-      %
-      % See also :meth:`insideRtp`.
-
-      % Get xyz coordinates from inputs and translated to origin
-      xyz = shape.insideXyzParseArgs(shape.position, varargin{:});
-
-      % Using a third-party function for insidexyz
-      b = ott.utils.inpolyhedron(shape.faces.', shape.verts.', xyz.');
     end
 
     function surf(shape, varargin)
@@ -163,6 +144,15 @@ classdef TriangularMesh < ott.shapes.ShapeCart
       %
       % writeWavefrontObj(filename) writes the shape to the given file.
       shape.writeWavefrontObj_helper(filename, shape.verts, shape.faces);
+    end
+  end
+
+  methods (Hidden)
+    function b = insideXyzInternal(shape, xyz)
+      % Determine if Cartesian point is inside the shape
+
+      % Using a third-party function for insidexyz
+      b = ott.utils.inpolyhedron(shape.faces.', shape.verts.', xyz.');
     end
   end
 end

@@ -27,6 +27,9 @@
 % Collections of shapes
 %   Union          - Represents union between two shapes
 %
+% Sub-packages
+%   +utils        - Contains helpers classes for declaring shapes
+%
 % Copyright 2018-2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.

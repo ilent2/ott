@@ -47,7 +47,7 @@ function testVoxelPositionsWithOffset(testCase)
   offset = [1;0;0];
   radius = 1.0;
   shape1 = ott.shapes.Sphere(radius);
-  shape2 = ott.shapes.Sphere(radius, offset);
+  shape2 = ott.shapes.Sphere(radius, 'position', offset);
 
   spacing = 0.1;
   voxels1 = shape1.voxels(spacing, 'origin', 'world') + offset;
@@ -65,10 +65,12 @@ function testInsideXyz(testCase)
   radius = 1.0;
   offset1 = [0;0;2];
   
-  shape1 = ott.shapes.Sphere(radius, offset1);
+  shape1 = ott.shapes.Sphere(radius, 'position', offset1);
 
   z = linspace(-10, 10, 100);
-  mask = shape1.insideXyz(0, 0, z.', 'origin', 'world');
+  [xx, yy, zz] = meshgrid(0, 0, z);
+  xyz = [xx(:) yy(:) zz(:)].';
+  mask = shape1.insideXyz(xyz, 'origin', 'world');
   
   testCase.verifyThat(size(mask), IsEqualTo(size(z.')), ...
     'Incorrect size of mask');

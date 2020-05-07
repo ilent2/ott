@@ -15,29 +15,27 @@ classdef Slab < ott.shapes.Plane
   end
 
   methods
-    function shape = Slab(normal, offset, depth)
+    function shape = Slab(normal, depth, varargin)
       % Construct a new infinite slab
       %
       % Usage
-      %   shape = Slab(normal, depth)
-      %
-      %   shape = Slab(normal, offset, depth)
+      %   shape = Slab(normal, depth, ...)
       %
       % Parameters
-      %   - normal (3x1 numeric) -- Surface normal
-      %   - depth (numeric) -- Depth of surface
-      %   - offset (numeric) -- Offset of first surface to origin.
+      %   - normal (3xN numeric) -- Surface normal
+      %   - depth (N numeric) -- Depth of surface
+      %
+      % Optional named arguments
+      %   - offset (N numeric) -- Offset of first surface to origin.
+      %     Default: ``0``.
+      %
+      %   - position (3 numeric) -- Position of the shape.
+      %     Default: ``[0;0;0]``.
+      %
+      %   - rotation (3x3 numeric) -- Orientation of the shape.
+      %     Default: ``eye(3)``.
 
-      if nargin == 2
-        shapeArgs = {normal};
-        depth = offset;
-      elseif nargin == 3
-        shapeArgs = {normal, offset};
-      else
-        error('Must supply 2 or 3 inputs arguments');
-      end
-
-      shape = shape@ott.shapes.Plane(shapeArgs{:});
+      shape = shape@ott.shapes.Plane(normal, varargin{:});
       shape.depth = depth;
     end
 
@@ -46,27 +44,6 @@ classdef Slab < ott.shapes.Plane
 
       shape = ott.shapes.Strata(oldshape.normal, oldshape.offset, ...
           oldshape.depth);
-    end
-
-    function b = insideXyz(shape, varargin)
-      % Determine if a point is on one side of the plane or the other
-      %
-      % Usage
-      %   b = shape.insideXyz(x, y, z, ...) determine if the point
-      %   is above or bellow the plane surface.
-      %
-      %   b = shape.insideXyz(xyz, ...) as above but with a 3xN matrix.
-      %
-      % Optional arguments
-      %   - origin (enum) -- Coordinate system origin.  Either 'world'
-      %     or 'shape' for world coordinates or shape coordinates.
-
-      % Get xyz coordinates from inputs and translated to origin
-      xyz = shape.insideXyzParseArgs(shape.position, varargin{:});
-
-      % Determine if points are inside slab
-      dist = sum(xyz .* shape.normal, 1) - shape.offset;
-      b = dist > 0 & (dist - shape.depth < 0);
     end
 
     function varargout = surf(shape, varargin)
@@ -88,13 +65,11 @@ classdef Slab < ott.shapes.Plane
       %     Default: ``{}``.
 
       p = inputParser;
-      p.addParameter('scale', 1.0);
-      p.addParameter('surfoptions', {});
-      p.addParameter('axes', []);
+      shape.surfAddArgs(p);
       p.parse(varargin{:});
 
       % Calculate the X, Y, Z coordinates for a plane surface
-      [X, Y, Z] = shape.calculateSurface(p)
+      [X, Y, Z] = shape.calculateSurface(p);
 
       % Duplicate plane for second surface
       offset = shape.normal*(shape.offset+shape.depth);
@@ -103,7 +78,17 @@ classdef Slab < ott.shapes.Plane
       Z = [Z, nan(size(X, 1), 1), Z + offset(3)];
 
       % Draw the figure and handle rotations/translations
-      [varargout{1:nargout}] = shape.surfCommon(p, sz, X, Y, Z);
+      [varargout{1:nargout}] = shape.surfCommon(p, size(X), X, Y, Z);
+    end
+  end
+
+  methods (Hidden)
+    function b = insideXyzInternal(shape, xyz)
+      % Determine if a point is on one side of the plane or the other
+
+      % Determine if points are inside slab
+      dist = sum(xyz .* shape.normal, 1) - shape.offset;
+      b = dist > 0 & (dist - shape.depth < 0);
     end
   end
 end

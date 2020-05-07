@@ -23,12 +23,14 @@ function testValues(testCase)
   % Test a sphere with radius 1
   shape = ott.shapes.Shape.simple('sphere', 1.0);
   r = shape.radii(theta, phi);
-  n = shape.normals(theta, phi);
+  rtp = [ones(size(theta(:))), theta(:), phi(:)].';
+  nxyz = shape.normalsRtp(rtp);
+  n = ott.utils.xyzv2rtpv(nxyz, ott.utils.rtp2xyz(rtp));
   [~, ~, rotsym] = shape.axialSymmetry();
-  testCase.verifyThat(r, IsEqualTo(repmat(1.0, sz, 1), ...
+  testCase.verifyThat(r, IsEqualTo(ones(sz, 1), ...
       'Within', AbsoluteTolerance(tol)), ...
       'Sphere radius should be 1.0');
-  testCase.verifyThat(n, IsEqualTo(repmat([1.0, 0, 0], sz, 1), ...
+  testCase.verifyThat(n, IsEqualTo(repmat([1.0; 0; 0], 1, sz), ...
       'Within', AbsoluteTolerance(tol)), ...
       'Sphere normals should be [1 0 0]');
   testCase.verifyThat(rotsym, IsEqualTo(0), ...
@@ -37,7 +39,9 @@ function testValues(testCase)
   % Test a ellipsoid
   shape = ott.shapes.Shape.simple('ellipsoid', [ 1, 2, 3 ]);
   r = shape.radii(theta, phi);
-  n = shape.normals(theta, phi);
+  rtp = [ones(size(theta(:))), theta(:), phi(:)].';
+  nxyz = shape.normalsRtp(rtp);
+  n = ott.utils.xyzv2rtpv(nxyz, ott.utils.rtp2xyz(rtp));
   [~, ~, rotsym] = shape.axialSymmetry();
   rTarget = [ 1.7321    1.0000    1.7321    2.2780    1.5119, ...
       2.2780    2.2780    1.5119    2.2780 ].';
@@ -63,7 +67,9 @@ function testValues(testCase)
   % Test a cylinder
   shape = ott.shapes.Shape.simple('cylinder', [ 1, 1 ]);
   r = shape.radii(theta, phi);
-  n = shape.normals(theta, phi);
+  rtp = [ones(size(theta(:))), theta(:), phi(:)].';
+  nxyz = shape.normalsRtp(rtp);
+  n = ott.utils.xyzv2rtpv(nxyz, ott.utils.rtp2xyz(rtp));
   [~, ~, rotsym] = shape.axialSymmetry();
   rTarget = [ 0.5774    1.0000    0.5774    0.5774    1.0000, ...
       0.5774    0.5774    1.0000    0.5774 ].';
@@ -96,7 +102,9 @@ function testValues(testCase)
   % Test a superellipsoid
   shape = ott.shapes.Shape.simple('superellipsoid', [ 0.2, 0.5, 1, 1, 1 ]);
   r = shape.radii(theta, phi);
-  n = shape.normals(theta, phi);
+  rtp = [ones(size(theta(:))), theta(:), phi(:)].';
+  nxyz = shape.normalsRtp(rtp);
+  n = ott.utils.xyzv2rtpv(nxyz, ott.utils.rtp2xyz(rtp));
   [~, ~, rotsym] = shape.axialSymmetry();
   rTarget = [0.3780    0.2000    0.3780    0.5714    0.3288, ...
       0.5714    0.5714    0.3288    0.5714 ].';
@@ -122,7 +130,9 @@ function testValues(testCase)
   % Test a cone-tipped cylinder
   shape = ott.shapes.Shape.simple('cone-tipped-cylinder', [ 1, 1, 1 ]);
   r = shape.radii(theta, phi);
-  n = shape.normals(theta, phi);
+  rtp = [ones(size(theta(:))), theta(:), phi(:)].';
+  nxyz = shape.normalsRtp(rtp);
+  n = ott.utils.xyzv2rtpv(nxyz, ott.utils.rtp2xyz(rtp));
   [~, ~, rotsym] = shape.axialSymmetry();
   rTarget = [1.0981    1.0000    1.0981    1.0981    1.0000, ...
       1.0981    1.0981    1.0000    1.0981 ].';
@@ -148,7 +158,9 @@ function testValues(testCase)
   % Test a cube
   shape = ott.shapes.Shape.simple('cube', 1);
   r = shape.radii(theta, phi);
-  n = shape.normals(theta, phi);
+  rtp = [ones(size(theta(:))), theta(:), phi(:)].';
+  nxyz = shape.normalsRtp(rtp);
+  n = ott.utils.xyzv2rtpv(nxyz, ott.utils.rtp2xyz(rtp));
   [~, ~, rotsym] = shape.axialSymmetry();
   rTarget = [0.5774; 0.5000; 0.5774; 0.5774; 0.5774; ...
       0.5774; 0.5774; 0.5774; 0.5774];

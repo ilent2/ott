@@ -67,16 +67,11 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
       r(ends) = (shape.height/2) ./ abs(cos(theta(ends)));
     end
 
-    function n = normals(shape, theta, phi)
-      % NORMALS calculate the normals for the specified points.
-      %
-      % Usage
-      %   n = shape.normals(theta, phi)
-      %   Calculates the normals and returns a 3xN matrix.
+    function n = normalsRtpInternal(shape, rtp)
+      % Calculate the normals for the specified points.
 
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
+      theta = rtp(2, :);
+      phi = rtp(3, :);
 
       % Find angle of edges from xy plane
       edge_angle = atan(shape.height/(2*shape.radius));
@@ -92,6 +87,8 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
       n(2, sides) = cos(theta(sides));
       n(1, ends) = abs(cos(theta(ends)));
       n(2, ends) = - sin(theta(ends)) .* sign(cos(theta(ends)));
+
+      n = ott.utils.rtpv2xyzv(n, rtp);
     end
 
     function [rtp, n, ds] = boundarypoints(shape, varargin)

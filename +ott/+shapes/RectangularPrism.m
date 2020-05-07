@@ -78,12 +78,11 @@ classdef RectangularPrism < ott.shapes.StarShape
       f(corners, :) = sign(xyz(corners, :));
     end
 
-    function nxyz = normalsXyz(shape, theta, phi)
+    function nxyz = normalsRtpInternal(shape, rtp)
       % NORMALSXYZ calculates Cartessian normals
 
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
+      theta = rtp(2, :)
+      phi = rtp(3, :);
 
       % Determine which face we are on (i.e. the Cartesian normals)
       nxyz = shape.faces(theta, phi);

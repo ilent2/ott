@@ -27,29 +27,29 @@ classdef Empty < ott.shapes.Shape
 
       shape = shape@ott.shapes.Shape(varargin{:});
     end
+  end
 
-    function b = insideRtp(shape, rtp)
+  methods (Hidden)
+    function b = insideRtpInternal(shape, rtp)
       % No point are inside empty shapes
       b = false(size(rtp(1, :)));
     end
 
-    function b = insideXyz(shape, xyz)
+    function b = insideXyzInternal(shape, xyz)
       % No point are inside empty shapes
       b = false(size(xyz(1, :)));
     end
 
-    function nxyz = normalsXyz(shape, xyz)
+    function nxyz = normalsXyzInternal(shape, xyz)
       % Normals are nan (no normals for empty shapes)
       nxyz = nan(size(xyz));
     end
 
-    function nxyz = normalsRtp(shape, rtp)
+    function nxyz = normalsRtpInternal(shape, rtp)
       % Normals are nan (no normals for empty shapes)
       nxyz = nan(size(rtp));
     end
-  end
 
-  methods (Hidden)
     function r = get_maxRadius(shape)
       % Shape has no radius
       r = 0.0;
