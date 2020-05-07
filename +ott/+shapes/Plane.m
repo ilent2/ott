@@ -15,22 +15,62 @@ classdef Plane < ott.shapes.ShapeCart
   end
 
   methods
-    function shape = Plane(normal, offset)
+    function shape = Plane(normal, varargin)
       % Construct a new infinite plane
       %
       % Usage
-      %   shape = Plane(normal)
+      %   shape = Plane(normal, ...)
       %
-      %   shape = Plane(normal, offset)
+      % Parameters
+      %   - normal (3xN numeric) -- Normals to planes.
+      %
+      % Optional named arguments
+      %   - position (3xN numeric) -- Position of the plane.
+      %     Default: ``[0;0;0]``.
+      %
+      %   - rotation (3x3N numeric) -- Plane orientations.
+      %     Default: ``eye(3)``.
+      %
+      %   - offset (1xN numeric) -- Offset of the plane from the position.
+      %     Default: ``0.0``.
 
-      shape = shape@ott.shapes.ShapeCart();
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addParameter('offset', 0.0);
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      if nargin == 1
-        offset = 0.0;
+      shape = shape@ott.shapes.ShapeCart(unmatched{:});
+
+      Nnormal = size(normal, 2);
+      Noffset = numel(p.Results.offset);
+
+      assert(Nnormal == 1 || numel(shape) == 1 || Nnormal == numel(shape), ...
+          'length of normal must match length of position');
+      assert(Noffset == 1 || numel(shape) == 1 || Noffset == numel(shape), ...
+          'length of offset must match length of position');
+
+      if numel(shape) == 1 && (Nnormal ~= 1 || Noffset ~= 1)
+        shape = repelem(shape, 1, max([Nnormal, Noffset]));
       end
 
-      shape.normal = normal;
-      shape.offset = offset;
+      % Assign normal
+      if Nnormal > 1
+        for ii = 1:Nnormal
+          shape(ii).normal = normal(:, ii);
+        end
+      else
+        [shape.normal] = deal(normal);
+      end
+
+      % Assign offset
+      if Noffset > 1
+        for ii = 1:Noffset
+          shape(ii).offset = p.Results.offset(ii);
+        end
+      else
+        [shape.offset] = deal(p.Results.offset);
+      end
     end
 
     function shape = ott.shapes.Strata(planearray)
@@ -190,6 +230,20 @@ classdef Plane < ott.shapes.ShapeCart
       X = reshape(data(1, :), [2, 2]) + shape.position(1);
       Y = reshape(data(2, :), [2, 2]) + shape.position(2);
       Z = reshape(data(3, :), [2, 2]) + shape.position(3);
+    end
+  end
+
+  methods % Getters/setters
+    function plane = set.normal(plane, val)
+      assert(isnumeric(val) && numel(val) == 3, ...
+          'Normal must be 3 element numeric vector');
+      plane.normal = val(:);
+    end
+
+    function plane = set.offset(plane, val)
+      assert(isnumeric(val) && isscalar(val), ...
+          'offset must be numeric scalar');
+      plane.offset = val;
     end
   end
 end

@@ -1,6 +1,8 @@
-classdef (Abstract) Shape < ott.utils.RotateHelper
+classdef (Abstract) Shape < ott.utils.RotateHelper ...
+    & matlab.mixin.Heterogeneous
 % Shape abstract class for optical tweezers toolbox shapes.
-% Inherits from :class:`ott.utils.RotateHelper`.
+% Inherits from :class:`ott.utils.RotateHelper` and
+% `matlab.mixin.Hetrogeneous`.
 %
 % Properties
 %   - maxRadius  -- maximum distance from shape origin
@@ -211,6 +213,13 @@ classdef (Abstract) Shape < ott.utils.RotateHelper
     end
   end
 
+  methods (Static, Sealed, Access = protected)
+    function default_object = getDefaultScalarElement
+      % Default object for a Shape array is an empty shape
+      default_object = ott.shapes.Empty
+    end
+  end
+
   methods
     function shape = Shape(varargin)
       % Construct a new shape instance.
@@ -233,9 +242,36 @@ classdef (Abstract) Shape < ott.utils.RotateHelper
       p.addParameter('rotation', eye(3));
       p.parse(varargin{:});
 
-      % Store initial position and rotation
-      shape.position = p.Results.position;
-      shape.rotation = p.Results.rotation;
+      Nposition = size(p.Results.position, 2);
+      Nrotation = size(p.Results.rotation, 2);
+      assert(mod(Nrotation, 3) == 0, ...
+        'rotation must be a 3x3N matrix');
+      Nrotation = Nrotation ./ 3;
+
+      % Create array if required
+      if Nposition ~= 1 || Nrotation ~= 1
+        assert(Nposition == 1 || Nrotation == 1 || Nposition == Nrotation, ...
+            'length of position and rotation must be same length');
+        shape = repelem(shape, 1, max([Nposition, Nrotation]));
+      end
+
+      % Store initial position
+      if Nposition > 1
+        for ii = 1:Nposition
+          shape(ii).position = p.Results.position(:, ii);
+        end
+      else
+        [shape.position] = deal(p.Results.position);
+      end
+
+      % Store initial rotation
+      if Nrotation > 1
+        for ii = 1:Nrotation
+          shape(ii).rotation = p.Results.rotation(:, (1:3) + (ii-1)*3);
+        end
+      else
+        [shape.rotation] = deal(p.Results.rotation);
+      end
     end
 
     function shape = rotate(shape, R)
@@ -340,7 +376,7 @@ classdef (Abstract) Shape < ott.utils.RotateHelper
       locs = ints(1:3, :) + locs .* dirs;
 
       if nargout > 1
-        norms = shape.normalXyz(locs);
+        norms = shape.normalsXyz(locs);
       end
     end
 

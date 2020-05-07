@@ -23,6 +23,25 @@ function testSimple(testCase)
 
 end
 
+function testArray(testCase)
+
+  num_planes = 5;
+
+  normals = randn(3, num_planes);
+  planes = ott.shapes.Plane(normals);
+  
+  testCase.verifyEqual(size(planes), [1, num_planes], 'size');
+  testCase.verifyEqual([planes.normal], normals, 'normals');
+  
+end
+
+function testEmpty(testCase)
+
+  sz = [0, 5];
+  shape = ott.shapes.Shape.empty(sz);
+  testCase.verifyEqual(size(shape), sz);
+end
+
 function testInsideXyzHelper(testCase)
 
   radius = 1.0;
