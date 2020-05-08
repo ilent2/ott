@@ -5,5 +5,5 @@ function unmatched = unmatchedArgs(p)
 %   unmatched = unmatchedArgs(p)
 %   To use the result: ``another_function(unmatched{:});``.
 
-unmatched = [fieldnames(p.Unmatched).', struct2cell(p.Unmatched).'];
+unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
 
