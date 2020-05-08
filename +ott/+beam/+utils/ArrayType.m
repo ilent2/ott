@@ -27,6 +27,8 @@ classdef ArrayType < ott.beam.abstract.Beam
   end
 
   methods (Abstract, Hidden)
+    subsasgnInternal  % Called by subsasgn for beam subscripting
+    subsrefInternal   % Called by subsref for beam subscripting
     plusInternal      % Called by plus when combination is needed
     catInternal       % Called by horzcat when combination is needed
     size              % Get the size of the beam array
@@ -230,6 +232,29 @@ classdef ArrayType < ott.beam.abstract.Beam
         case '{}'
           % Default behaviour
           [varargout{1:nargout}] = builtin('subsref',obj,s);
+        otherwise
+          error('Not a valid indexing expression')
+      end
+    end
+    
+    function obj = subsasgn(obj,s,varargin)
+      
+      switch s(1).type
+        case '.'
+          % Call built-in for any case
+          obj = builtin('subsasgn',obj,s,varargin{:});
+        case '()'
+          if length(s) >= 1 % obj(indices)
+            % obj(indices) -> obj.beams(indices)
+            obj = obj.subsasgnInternal(s(1).subs, s(2:end), varargin{:});
+            
+          else
+            % Call built-in for any other case
+            obj = builtin('subsasgn',obj,s,varargin{:});
+          end
+        case '{}'
+          % Call built-in for any case
+          obj = builtin('subsasgn',obj,s,varargin{:});
         otherwise
           error('Not a valid indexing expression')
       end

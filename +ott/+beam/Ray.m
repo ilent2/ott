@@ -39,9 +39,29 @@ classdef Ray < ott.beam.PlaneWave
       %
       %   - origin (3xN numeric) -- Origin of plane waves.
       %     Default: ``[0;0;0]``.
+      %
+      %   - vector (ott.utils.Vector) -- Vector describing origin and
+      %     direction of the Ray.  Incompatible with `direction` and
+      %     `origin`.  Default: ``[]``.
 
       % Call the base constructor (must be outside if statement)
       beam = beam@ott.beam.PlaneWave(varargin{:});
+    end
+
+    function ray = ott.beam.ScatteredRay(oldray)
+      % Converts the ray to a scattered ray object.
+      %
+      % The incident beam is set to empty and the type is set to
+      % scattered.
+      %
+      % Usage
+      %   ray = ott.beam.ScatteredRay(oldray)
+      %
+      %   scattered_ray(2) = oldRay;
+      
+      ray = ott.beam.ScatteredRay([], 'scattered', ...
+        'origin', oldray.origin, 'direction', oldray.direction, ...
+        'polarisation', oldray.polarisation, 'field', oldray.field);
     end
 
     function ray = focus(ray, location)
@@ -66,7 +86,7 @@ classdef Ray < ott.beam.PlaneWave
   methods (Hidden)
     function p = getBeamPower(beam)
       % Returns finite power of the ray set
-      p = sum(abs(beam.fields(:)));
+      p = sum(abs(beam.field(:)));
     end
 
     function E = efieldInternal(beam, xyz, varargin)

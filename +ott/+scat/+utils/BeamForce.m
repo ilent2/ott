@@ -36,7 +36,7 @@ classdef BeamForce < ott.scat.utils.Particle
       % Calculate the torque using the beam method
 
       scattered = particle.scatter(ibeam);
-      force = scattered.torque();
+      torque = scattered.torque();
     end
 
     function varargout = forcetorqueInternal(particle, ibeam, varargin)

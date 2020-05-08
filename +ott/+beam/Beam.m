@@ -757,7 +757,15 @@ classdef (Abstract) Beam < ott.beam.Properties
       % For details on usage/arguments see :meth:`forcetorque`.
       %
       % Usage
-      %   force = ibeam.force(other, ...)
+      %   force = beam.force(other_beam, ...)
+      %
+      %   force = beam.force(particle, ...)
+      %   Use the particle's scattere method to calculte a scattered beam.
+      
+      % Convert from particle to beam
+      if isa(other, 'ott.scat.utils.Particle')
+        other = other.scatter(ibeam);
+      end
 
       [varargout{1:nargout}] = ibeam.forceInternal(other, varargin{:});
     end
@@ -767,7 +775,15 @@ classdef (Abstract) Beam < ott.beam.Properties
       % For details on usage/arguments see :meth:`forcetorque`.
       %
       % Usage
-      %   torque = ibeam.torque(other, ...)
+      %   torque = beam.torque(other_beam, ...)
+      %
+      %   torque = beam.torque(particle, ...)
+      %   Use the particle's scattere method to calculte a scattered beam.
+      
+      % Convert from particle to beam
+      if isa(other, 'ott.scat.utils.Particle')
+        other = other.scatter(ibeam);
+      end
 
       [varargout{1:nargout}] = ibeam.torqueInternal(other, varargin{:});
     end
@@ -776,9 +792,12 @@ classdef (Abstract) Beam < ott.beam.Properties
       % Calculate change in momentum between beams.
       %
       % Usage
-      %   [force, torque] = ibeam.forcetorque(other, ...)
+      %   [force, torque] = beam.forcetorque(other_beam, ...)
       %   Returns 3xN matrices for the force and torque in Cartesian
       %   coordinates.
+      %
+      %   [force, torque] = beam.forcetorque(particle, ...)
+      %   Use the particle's scattere method to calculte a scattered beam.
       %
       % Parameters
       %   - other (Beam|scat.Scatter) -- A beam to compare the force
@@ -793,6 +812,11 @@ classdef (Abstract) Beam < ott.beam.Properties
       %     Inverse rotation is applied to scattered beam, effectively
       %     rotating the particle.
       %     Default: ``[]``.
+      
+      % Convert from particle to beam
+      if isa(other, 'ott.scat.utils.Particle')
+        other = other.scatter(ibeam);
+      end
 
       [varargout{1:nargout}] = ibeam.forcetorqueInternal(other, varargin{:});
     end

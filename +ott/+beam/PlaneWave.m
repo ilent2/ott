@@ -190,6 +190,10 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
       %
       %   - origin (3xN numeric) -- Origin of plane waves.
       %     Default: ``[0;0;0]``.
+      %
+      %   - vector (ott.utils.Vector) -- Vector describing origin and
+      %     direction of the Ray.  Incompatible with `direction` and
+      %     `origin`.  Default: ``[]``.
 
       % No additional properties needed
       beam = beam@ott.beam.abstract.PlaneWave(varargin{:});

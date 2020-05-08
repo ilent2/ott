@@ -36,7 +36,7 @@ classdef LaguerreGaussian < ott.beam.paraxial.Paraxial ...
       % Based on Wikipedia page
       % https://en.wikipedia.org/wiki/Gaussian_beam
 
-      zR = pi .* beam.waist.^2 .* beam.index_medium ./ beam.wavelength;
+      zR = pi .* beam.waist.^2 .* beam.medium.index ./ beam.wavelength;
       waistz = beam.waist .* sqrt(1 + (z./zR).^2);
 
       invRz = z ./ (z.^2 + zR.^2);
@@ -72,8 +72,8 @@ classdef LaguerreGaussian < ott.beam.paraxial.Paraxial ...
       Clp = sqrt(2*factorial(beam.pmode) ...
           ./(pi*factorial(beam.pmode + abs(beam.lmode))));
 
-      E0 = sqrt(2 .* beam.power .* beam.speed0 ...
-          ./ (beam.index_medium .* beam.waist.^2));
+      E0 = sqrt(2 .* beam.power .* beam.vacuum.speed ...
+          ./ (beam.medium.index .* beam.waist.^2));
 
       E = Clp .* E0 .* ul .* up .* exp(-1i*beam.wavenumber.*xyz(3, :));
 

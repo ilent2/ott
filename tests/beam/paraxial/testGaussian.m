@@ -3,13 +3,13 @@ function tests = testGaussianParaxial
 end
 
 function setupOnce(testCase)
-  addpath('../../../../');
+  addpath('../../../');
 end
 
 function testConstructor(testCase)
 
   waist = 1.0;
-  beam = ott.optics.beam.paraxial.Gaussian(waist);
+  beam = ott.beam.paraxial.Gaussian(waist);
   
   testCase.verifyEqual(beam.waist, waist, 'waist');
   testCase.verifyEqual(beam.power, 1.0, 'power');
@@ -20,8 +20,8 @@ end
 function testAgainstDavis5(testCase)
 
   waist = 5.0;
-  beam0 = ott.optics.beam.paraxial.Gaussian(waist);
-  beam5 = ott.optics.beam.GaussianDavis5(waist);
+  beam0 = ott.beam.paraxial.Gaussian(waist);
+  beam5 = ott.beam.GaussianDavis5(waist);
   
   xyz = randn(3, 5);
   [E0, H0] = beam0.ehfield(xyz);
@@ -36,7 +36,7 @@ end
 function testPoynting(testCase)
 
   waist = 1.0;
-  beam = ott.optics.beam.paraxial.Gaussian(waist);
+  beam = ott.beam.paraxial.Gaussian(waist);
   
   xyz = randn(3, 5);
   S = beam.poynting(xyz);
@@ -49,7 +49,7 @@ end
 function testVisualise(testCase)
 
   waist = 1.0;
-  beam = ott.optics.beam.paraxial.Gaussian(waist);
+  beam = ott.beam.paraxial.Gaussian(waist);
   
   h = figure();
   beam.visualise();
@@ -60,7 +60,7 @@ end
 function testVisualiseFarfieldSphere(testCase)
 
   waist = 0.5;
-  beam = ott.optics.beam.paraxial.Gaussian(waist);
+  beam = ott.beam.paraxial.Gaussian(waist);
   
   h = figure();
   beam.visualiseFarfieldSphere();

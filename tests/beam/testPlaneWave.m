@@ -17,6 +17,16 @@ function testConstructor(testCase)
   testCase.verifyEqual(beam.polarisation, polarisation, 'pol');
 end
 
+function testConstructorIndexMedium(testCase)
+
+  index_medium = 1.33;
+  beam = ott.beam.PlaneWave('index', index_medium);
+  testCase.verifyEqual(beam.medium.index, index_medium, 'index');
+  testCase.verifyEqual(beam.medium.speed0, 1.0, 'speed0');
+  testCase.verifyEqual(beam.wavelength0, 1.0, 'lambda0');
+
+end
+
 function testConstructorArray(testCase)
 
   direction = [0, 0; 0, 0; 1, -1];

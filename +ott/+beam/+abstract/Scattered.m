@@ -76,7 +76,9 @@ classdef Scattered < ott.beam.abstract.Beam
         tbeam.type = 'total';
       elseif strcmpi(beam.type, 'total')
         tbeam = beam;
-        warning('Beam is already scattered');
+        if nargin == 2
+          warning('Beam is already total');
+        end
       else
         error('Unable to convert to specified type');
       end
@@ -104,7 +106,9 @@ classdef Scattered < ott.beam.abstract.Beam
 
       if strcmpi(beam.type, 'scattered')
         sbeam = beam;
-        warning('Beam is already scattered');
+        if nargin == 2
+          warning('Beam is already scattered');
+        end
       elseif strcmpi(beam.type, 'total')
         sbeam = 0.5*(beam - ibeam);
         sbeam.type = 'scattered';
@@ -131,7 +135,7 @@ classdef Scattered < ott.beam.abstract.Beam
       if strcmpi(beam.type, 'scattered')
         assert(~isempty(beam.incident_beam), ...
             'Need incident beam for conversion');
-        tbeam = beam.scatteredField(beam.incident_beam);
+        tbeam = beam.scatteredField();
       elseif strcmpi(beam.type, 'total')
         tbeam = beam;
       else
@@ -145,7 +149,7 @@ classdef Scattered < ott.beam.abstract.Beam
       elseif strcmpi(beam.type, 'total')
         assert(~isempty(beam.incident_beam), ...
             'Need incident beam for conversion');
-        tbeam = beam.totalField(beam.incident_beam);
+        tbeam = beam.totalField();
       else
         error('Unable to convert to specified type');
       end

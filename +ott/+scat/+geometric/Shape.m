@@ -75,9 +75,13 @@ classdef Shape < ott.scat.utils.ShapeProperty ...
       Niter = p.Results.max_iterations;
       assert(Niter > 0 && isscalar(Niter) && round(Niter) == Niter, ...
           'max_iterations must be positive integer');
+        
+      if ~isa(ray, 'ott.beam.Ray')
+        ray = ott.beam.Ray(ray);
+      end
 
       int_ray = ray;
-      out_ray = ott.beam.ScatteredRay(ray);
+      out_ray = ott.beam.ScatteredRay.empty(ray, 'total');
 
       for ii = 1:Niter
 
@@ -86,24 +90,32 @@ classdef Shape < ott.scat.utils.ShapeProperty ...
 
         % Split rays into interacting and non-interacting
         no_intersect = any(isnan(locs), 1);
-        out_ray = [out_ray; int_ray(no_intersect)];
-        int_ray = int_ray(~no_intersect);
+        if any(no_intersect)
+          out_ray(end+(1:sum(no_intersect))) = int_ray(no_intersect); %#ok<AGROW>
+          int_ray = int_ray(~no_intersect);
+          
+          locs(:, no_intersect) = [];
+          norms(:, no_intersect) = [];
+        end
+
+        % Check we have work to do
+        if isempty(int_ray)
+          break;
+        end
 
         % Construct planes for interacting rays
-        locs(:, no_intersect) = [];
-        norms(:, no_intersect) = [];
-        plane = ott.scat.planewave.Plane('location', locs, ...
-            'normal', norms, 'index_relative', part.index_relative);
+        plane = ott.scat.planewave.Plane(norms, part.index_relative, ...
+            'position', locs);
 
         % Calculate scattered ray directions
         [rplane, tplane] = plane.scatter(ray);
 
         % Form new ray object
-        int_ray = [rplane, tplane];
+        int_ray = ott.beam.Ray([rplane, tplane]);
 
         % Prune rays bellow threshold power
         if ~isempty(p.Results.prune_threshold)
-          discard = int_ray.ray_power < p.Results.prune_threshold;
+          discard = int_ray.intensity < p.Results.prune_threshold;
           int_ray(discard) = [];
         end
 

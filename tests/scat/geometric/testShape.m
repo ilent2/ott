@@ -39,7 +39,8 @@ function testForceTorque(testCase)
 
   force1 = particle.force(beam);
   testCase.verifyEqual(size(force1), [3, 1], 'size');
-  testCase.verifyEqual(force1(1:2), [0;0], 'off-axis terms');
+  testCase.verifyEqual(force1(1:2), [0;0], ...
+    'AbsTol', 1e-15, 'off-axis terms');
   
   force2 = beam.force(particle);
   testCase.verifyEqual(force2, -force1, 'oposite sign');

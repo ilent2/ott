@@ -7,6 +7,12 @@ classdef (Abstract) Medium
 %   - speed         -- Wave speed in medium
 %   - index         -- Refractive index of medium
 %
+% Dependent properties
+%   - impedance     -- Impedance of medium
+%
+% Methods
+%   - rdivide       -- Create a relative material
+%
 % See also :class:`ott.beam.medium.Vacuum`, :class:`ott.beam.medium.Material`
 
 % Copyright 2020 Isaac Lenton
@@ -18,5 +24,28 @@ classdef (Abstract) Medium
     permeability
     speed
     index
+  end
+
+  properties (Dependent)
+    impedance
+  end
+
+  methods
+    function rmat = rdivide(material1, material2)
+      % Construct a relative material from two mediums
+      %
+      % Usage
+      %   rmat = material1 ./ material2
+
+      rmat = ott.beam.medium.Relative(material1, material2);
+    end
+  end
+
+  methods % Getters/setters
+    function val = get.impedance(mat)
+      % TODO: Should this really be a dependent property
+      % TODO: Should this be matrix multiplication/sqrt?
+      val = sqrt(mat.permeability ./ mat.permittivity);
+    end
   end
 end

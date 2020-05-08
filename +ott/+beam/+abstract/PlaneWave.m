@@ -25,7 +25,8 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
   end
 
   properties (Dependent)
-    wavevector
+    wavevector        % Wave-vectors of plane wave components
+    intensity         % Intensity of plane wave components
   end
 
   methods
@@ -49,26 +50,70 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
       %
       %   - origin (3xN numeric) -- Origin of plane waves.
       %     Default: ``[0;0;0]``.
+      %
+      %   - vector (ott.utils.Vector) -- Vector describing origin and
+      %     direction of the Ray.  Incompatible with `direction` and
+      %     `origin`.  Default: ``[]``.
 
       % Parse parameters
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addParameter('direction', [0;0;1]);
+      p.addParameter('direction', []);
       p.addParameter('polarisation', [1;0;0]);
-      p.addParameter('origin', [0;0;0]);
+      p.addParameter('origin', []);
       p.addParameter('field', 1.0);
+      p.addParameter('vector', []);
       p.addParameter('array_type', 'coherent');
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
+      % Handle default types for origin/direction
+      default_direction = [0;0;1];
+      default_origin = [0;0;0];
+      assert(isempty(p.Results.vector) ...
+        || (isempty(p.Results.direction) && isempty(p.Results.origin)), ...
+        'vector parameter incompatible with direction/origin');
+      if ~isempty(p.Results.vector)
+        origin = p.Results.vector.origin;
+        direction = p.Results.vector.direction;
+      else
+        if isempty(p.Results.origin)
+          origin = default_origin;
+        else
+          origin = p.Results.origin;
+        end
+        if isempty(p.Results.direction)
+          direction = default_direction;
+        else
+          direction = p.Results.direction;
+        end
+      end
+
       % Get Vector to store most
       beam = beam@ott.beam.utils.ArrayType('array_type', p.Results.array_type);
-      beam = beam@ott.utils.Vector(p.Results.origin, p.Results.direction);
+      beam = beam@ott.utils.Vector(origin, direction);
       beam = beam@ott.beam.abstract.Beam(unmatched{:});
 
       % Store remaining parameters
       beam.field = p.Results.field;
       beam.polarisation = p.Results.polarisation;
+    end
+
+    function ray = ott.beam.Ray(plane)
+      % Type conversion from plane wave to ray
+      ray = ott.beam.Ray('origin', plane.origin, ...
+        'polarisation', plane.polarisation, ...
+        'field', plane.field, ...
+        'direction', plane.direction);
+    end
+    
+    function bsc = ott.beam.vswf.Bsc(plane)
+      
+      % TODO: Get theta/phi from direction
+      theta = 0.0;
+      phi = 0.0;
+      bsc = ott.beam.vswf.Plane(theta, phi);
+      
     end
 
     function beam = rotate(beam, varargin)
@@ -92,12 +137,25 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
 
     end
 
-    function sz = size(vec, varargin)
+    function varargout = size(vec, varargin)
       % Get the number of beams contained in this object
       %
       % The leading dimension is always 1.  May change in future.
 
-      sz = size(vec.data(1, :), varargin{:});
+      sz = size(vec.data);
+      sz(1) = 1;
+      
+      [varargout{1:nargout}] = ott.utils.size_helper(sz, varargin{:});
+    end
+    
+    function b = isempty(vec)
+      % Determine if the beam is empty
+      %
+      % Usage
+      %   b = isempty(beam) or   num = beam.isempty()
+      %
+      % Default behaviour: ``prod(size(beam)) == 0``
+      b = numel(vec) == 0;
     end
 
     function beam = plus(a, b)
@@ -188,6 +246,7 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
         other_pol{ii} = varargin{ii}.polarisation;
       end
 
+      % Must set data first!
       beam.data = cat(dim, beam.data, other_data{:});
       beam.field = cat(dim, beam.field, other_field{:});
       beam.polarisation = cat(dim, beam.polarisation, other_pol{:});
@@ -209,9 +268,41 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
         assert(numel(subs) > ndims(beam.data), 'Too many subscript indices');
       end
 
-      beam.field = beam.field(:, subs{:});
+      % Must set data first!
       beam.data = beam.data(:, subs{:});
+      beam.field = beam.field(:, subs{:});
       beam.polarisation = beam.polarisation(:, subs{:});
+    end
+    
+    function beam = subsasgnInternal(beam, subs, rem, other)
+      % Assign to the subscripted beam
+
+      if numel(subs) > ndims(beam.data)
+        if subs(1) == 1
+          subs = subs(2:end);
+        end
+        assert(numel(subs) > ndims(beam.data), 'Too many subscript indices');
+      end
+      
+      assert(isempty(rem), 'Assignment to parts of beams not supported');
+      
+      if isempty(other)
+        % Delete data
+        beam.data(:, subs{:}) = other;
+        beam.field(:, subs{:}) = other;
+        beam.polarisation(:, subs{:}) = other;
+        
+      else
+        % Ensure we have a plane wave
+        if ~isa(other, 'ott.beam.abstract.PlaneWave')
+          other = ott.beam.abstract.PlaneWave(other);
+        end
+        
+        % Must set data first!
+        beam.data(:, subs{:}) = other.data;
+        beam.field(:, subs{:}) = other.field;
+        beam.polarisation(:, subs{:}) = other.polarisation;
+      end
     end
   end
 
@@ -223,6 +314,10 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
     function wv = get.wavevector(beam)
       % Get the plane wave wave-vector
       wv = beam.direction .* beam.wavenumber;
+    end
+    
+    function intensity = get.intensity(beam)
+      intensity = sum(abs(beam.field), 1);
     end
 
     function beam = set.field(beam, val)

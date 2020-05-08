@@ -9,6 +9,6 @@ end
 function testConstructor(testCase)
 
   waist = 1.0;
-  beam = ott.optics.beam.Gaussian(waist);
+  beam = ott.beam.abstract.Gaussian(waist);
   testCase.verifyEqual(beam.waist, waist);
 end

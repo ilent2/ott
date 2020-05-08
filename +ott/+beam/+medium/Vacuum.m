@@ -56,6 +56,69 @@ classdef Vacuum < ott.beam.medium.Medium
       vac = ott.beam.medium.Vacuum('permittivity', 1.0, ...
           'permeability', 1.0);
     end
+
+    function vac = Simple(varargin)
+      % Construct a new vacuum medium from a list of properties
+      %
+      % Usage
+      %   vacuum = Vacuum.Simple(...)
+      %
+      % Named parameters
+      %   - permittivity0 -- Vacuum permittivity
+      %   - permeability0 -- Vacuum permeability
+      %   - speed0 -- Wave speed in vacuum.
+      %
+      %   - like (ott.beam.medium.Medium) -- Medium to use for default
+      %     property values.  Default: ``Unitary``.
+      %
+      % Supports partial name matching.
+      %
+      % Maximum two of permittivity, permeability and speed can be supplied.
+
+      p = inputParser;
+      p.addParameter('permittivity0', []);
+      p.addParameter('permeability0', []);
+      p.addParameter('speed0', []);
+      p.addParameter('like', ott.beam.medium.Vacuum.Unitary);
+      p.parse(varargin{:});
+
+      non_args = isempty(p.Results.permittivity0) ...
+          + isempty(p.Results.permeability0) ...
+          + isempty(p.Results.speed0);
+      assert(non_args ~= 0, 'Maximum two property arguments supported');
+
+      if non_args == 1
+        % No defaults
+        if isempty(p.Results.permittivity0)
+          vac = ott.beam.medium.Vacuum('speed', p.Results.speed0, ...
+              'permeability', p.Results.permeability0);
+        elseif isempty(p.Results.permeability0)
+          vac = ott.beam.medium.Vacuum('speed', p.Results.speed0, ...
+              'permittivity', p.Results.permittivity0);
+        else
+          vac = ott.beam.medium.Vacuum(...
+              'permeability', p.Results.permeability0, ...
+              'permittivity', p.Results.permittivity0);
+        end
+      else
+        % One or two defaults
+        if ~isempty(p.Results.permittivity0)
+          vac = ott.beam.medium.Vacuum('speed', p.Results.like.speed0, ...
+              'permittivity', p.Results.permittivity0);
+        elseif ~isempty(p.Results.permeability0)
+          vac = ott.beam.medium.Vacuum('speed', p.Results.like.speed0, ...
+              'permeability', p.Results.permeability0);
+        elseif ~isempty(p.Results.speed0)
+          vac = ott.beam.medium.Vacuum('speed', p.Results.speed0, ...
+              'permittivity', p.Results.like.permittivity0);
+        else
+          % Two defaults
+          vac = ott.beam.medium.Vacuum(...
+              'permeability', p.Results.like.permeability, ...
+              'permittivity', p.Results.like.permittivity);
+        end
+      end
+    end
   end
 
   methods
@@ -75,7 +138,7 @@ classdef Vacuum < ott.beam.medium.Medium
       %   - speed (numeric) -- Speed of wave in vacuum.
       %     Default: ``[]`` (computed from permittivity/permeability).
       %
-      % Too parameters must be supplied.
+      % Two parameters must be supplied.
 
       p = inputParser;
       p.addParameter('permittivity', []);

@@ -110,12 +110,12 @@ classdef Dielectric < ott.beam.medium.Material
       % Assign refractive index
       if ~isempty(p.Results.index)
         mat.index = p.Results.index;
-      elseif ~isempty(p.Results.index_relative)
-        mat.index_relative = p.Results.index_relative;
+      elseif ~isempty(p.Results.relative_index)
+        mat.relative_index = p.Results.relative_index;
       elseif ~isempty(p.Results.permittivity)
         mat.permittivity = p.Results.permittivity;
-      elseif ~isempty(p.Results.permittivity_relative)
-        mat.permittivity_relative = p.Results.permittivity_relative;
+      elseif ~isempty(p.Results.relative_permittivity)
+        mat.relative_permittivity = p.Results.relative_permittivity;
       elseif ~isempty(p.Results.speed)
         mat.speed = p.Results.speed;
       end

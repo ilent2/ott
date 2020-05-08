@@ -1,4 +1,4 @@
-classdef ScatteredRay < ott.beam.Ray & ott.beam.abstract.Scattered
+classdef ScatteredRay < ott.beam.Ray & ott.beam.Scattered
 % Represents scattered ray objects
 % Inherits from :class:`Ray` and :class:`abstract.Scattered`.
 %
@@ -11,26 +11,49 @@ classdef ScatteredRay < ott.beam.Ray & ott.beam.abstract.Scattered
 % Methods
 %   - visualiseRays     -- Plot only scattered beam rays
 %   - visualiseAllRays  -- Plot incident beam and scattered beam rays
+%
+% Static methods
+%   - empty             -- Construct an empty ScatteredRay array
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+  methods (Static)
+    function beam = empty(incident_beam, type, varargin)
+      % Construct an empty Scattered ray array
+      %
+      % Usage
+      %   beam = ScatteredRay.empty(incident_beam, type, ...)
+      %
+      % Calls the class constructor with empty arrays.
+      
+      empt = zeros(3, 0);
+      
+      beam = ott.beam.ScatteredRay([], type, ...
+        'origin', empt, 'direction', empt, ...
+        'polarisation', empt, 'field', empt(1, :), varargin{:});
+      beam.incident_beam = incident_beam;
+    end
+  end
+
   methods
-    function beam = ScatteredRay(incident_beam, varargin)
+    function beam = ScatteredRay(incident_beam, type, varargin)
       % Construct a new scattered ray representation
       %
       % Usage
-      %   ray = ScatteredRay(incident_beam, ...)
+      %   ray = ScatteredRay(incident_beam, type, ...)
       %
       % Parameters
       %   - incident_beam (Ray|empty) -- The incident beam or empty.
       %     Some functions require an incident beam.
       %
+      %   - type (enum) -- Type of scattered ray.
+      %
       % All other parameters are passed to :class:`Ray`.
 
+      beam = beam@ott.beam.Scattered(incident_beam, type);
       beam = beam@ott.beam.Ray(varargin{:});
-      beam.incident_beam = incident_beam;
     end
 
     function varargout = visualiseAllRays(beam, varargin)

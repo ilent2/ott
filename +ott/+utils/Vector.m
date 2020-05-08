@@ -10,6 +10,7 @@ classdef Vector < ott.utils.RotateHelper
 %   - cat       -- Concatenate two vector objects
 %   - rotate    -- Rotate the vectors (and optionally, their origins)
 %   - rotate*   -- Rotate the vectors around the X,Y,Z axis
+%   - isnumeric -- Returns true if class is Vector
 %
 % Loosely based on Shapes.Vector from OTGO
 
@@ -85,24 +86,26 @@ classdef Vector < ott.utils.RotateHelper
       assert(size(origin, 1) == 3, 'origin must have 3 rows');
       assert(size(direction, 1) == 3, 'direction must have 3 rows');
       
-      if size(origin, 2) ~= size(direction, 2)
-        if size(origin, 2) == 1
-          origin = repmat(origin, 1, size(direction, 2));
-        elseif size(direction, 2) == 1
-          direction = repmat(direction, 1, size(origin, 2));
-        else
-          error('origin and direction must have same size or length 1');
-        end
-      end
+      assert((ndims(origin) == ndims(direction) ...
+        && all(size(origin) == size(direction))) ...
+        || numel(origin) == 3 || numel(direction) == 3, ...
+        'origin and direction must have same size or length 1');
       
-      assert(all(size(origin) == size(direction)), ...
-          'origin and direction must have same size');
       assert(isnumeric(origin) && isreal(origin), ...
           'origin must be real numeric matrix');
       assert(isnumeric(direction) && isreal(direction), ...
           'origin must be real numeric matrix');
+      
+      % Duplicate elements as required
+      if numel(origin) == 3 && numel(direction) ~= 3
+        sz = size(direction);
+        origin = repmat(origin, [1, sz(2:end)]);
+      elseif numel(direction) == 3 && numel(origin) ~= 3
+        sz = size(origin);
+        direction = repmat(direction, [1, sz(2:end)]);
+      end
 
-      vec.data = [origin; direction];
+      vec.data = [double(origin); double(direction)];
     end
 
     function varargout = plot(vec, varargin)
@@ -125,7 +128,7 @@ classdef Vector < ott.utils.RotateHelper
 
       % Parse inputs
       p = inputParser;
-      p.keepUnmatched;
+      p.KeepUnmatched = true;
       p.addParameter('Scale', [1, 1]);
       p.parse(varargin{:});
 
@@ -138,8 +141,10 @@ classdef Vector < ott.utils.RotateHelper
           S2*vec.direction(2, :), S2*vec.direction(3, :), 0);
 
       % Apply unmatched arguments to plot handle
-      unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
-      set(h, unmatched{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+      if ~isempty(unmatched)
+        set(h, unmatched{:});
+      end
 
       % Assign outputs
       if nargout > 0
@@ -147,7 +152,21 @@ classdef Vector < ott.utils.RotateHelper
       end
     end
 
-    function sz = size(vec, varargin)
+    function b = isnumeric(vec)
+      % Returns true (only if class is ott.utils.Vector
+      %
+      % If you derive a class from Vector and the type should be
+      % numeric, overload this function.
+
+      b = strcmpi(class(vec), 'ott.utils.Vector');
+    end
+    
+    function direction = double(vec)
+      % Cast to double discards origin information
+      direction = vec.direction;
+    end
+
+    function varargout = size(vec, varargin)
       % Get the number of vectors contained in this object.
       %
       % The leading dimension size is always 3 to make the class
@@ -158,9 +177,58 @@ classdef Vector < ott.utils.RotateHelper
       %
       %   sz = size(vec, dim) Returns the size of the specified dimension.
       %
-      %   Supports other arguments that can be passed to builtin size.
+      % Supports other arguments that can be passed to builtin size.
 
-      sz = size(vec.data(1:3, :), varargin{:});
+      sz = size(vec.data);
+      sz(1) = 3;
+      
+      [varargout{1:nargout}] = ott.utils.size_helper(sz, varargin{:});
+    end
+
+    function n = ndims(vec)
+      % Calculate the number of dimensions
+      %
+      % Usage
+      %   n = ndims(vec)   or   n = vec.ndims()
+
+      n = length(size(vec));
+    end
+
+    function out = sum(vec, dim)
+      % Calculate the sum of the vector along the specified dimension
+      %
+      % Usage
+      %   d = sum(vec) Calculates the sum along the first dimension.
+      %   Returns a double.
+      %
+      %   d = sum(vec, dim) Calculates the sum along the specified
+      %   dimension.  Return a double.
+
+      if nargin == 1
+        dim = 1;
+      end
+
+      out = sum(vec.direction, dim);
+    end
+    
+    function out = vecnorm(vec, type, dim)
+      % Calculate the vecnorm of the vector
+      %
+      % Usage
+      %   out = vecnorm(vec) Calculates the 2-norm along the first
+      %   dimension.  Returns a double.
+      %
+      %   out = vecnorm(vec, type, dim) Specifies the dimension to
+      %   operate over and the type.  Returns a double.
+      
+      if nargin < 3
+        dim = 1;
+        if nargin < 2
+          type = 2;
+        end
+      end
+      
+      out = vecnorm(vec.direction, type, dim);
     end
 
     function vec = cat(dim, vec1, varargin)
@@ -189,7 +257,7 @@ classdef Vector < ott.utils.RotateHelper
       vec = cat(1, varargin{:});
     end
 
-    function vec = vertcat(varargin)
+    function vertcat(varargin)
       % Disallow vertcat on Vectors (ambiguous)
       error('Vector only supports hozcat, use cat for other dimensions');
     end

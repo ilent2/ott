@@ -62,8 +62,8 @@ classdef GaussianDavis5 < ott.beam.Beam & ott.beam.abstract.Gaussian
       polarisation = [beam.polarisation(:); 0];
       A0 = psi0 .* exp(-1i .* z ./ s.^2);
 
-      E0 = sqrt(4 .* beam.power .* beam.speed0 ./ (pi ...
-          .* beam.index_medium .* beam.waist.^2 .* (1 + s.^2 + 1.5.*s.^4)));
+      E0 = sqrt(4 .* beam.power .* beam.vacuum.speed ./ (pi ...
+          .* beam.medium.index .* beam.waist.^2 .* (1 + s.^2 + 1.5.*s.^4)));
 
       Ax = @(x) (1 ...
         + s.^2 .* (-rho2.*Q.^2 + 1i.*rho2.^2.*Q.^3 - 2.*Q.^2.*x.^2) ...
@@ -80,9 +80,9 @@ classdef GaussianDavis5 < ott.beam.Beam & ott.beam.abstract.Gaussian
       Ex = Ax(x);
       Ez = Az(x);
 
-      Hx = beam.index_medium .* Ey;
-      Hy = beam.index_medium .* Ax(y);
-      Hz = beam.index_medium .* Az(y);
+      Hx = beam.medium.index .* Ey;
+      Hy = beam.medium.index .* Ax(y);
+      Hz = beam.medium.index .* Az(y);
 
       E = [Ex; Ey; Ez];
       H = [Hx; Hy; Hz];

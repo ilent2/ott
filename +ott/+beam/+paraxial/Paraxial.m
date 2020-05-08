@@ -33,7 +33,7 @@ classdef (Abstract) Paraxial < ott.beam.Beam
 
       % Construct H-field (
       H = zeros(size(E));
-      H([2, 1], :) = E.vxyz([1, 2], :) ./ beam.impedance;
+      H([2, 1], :) = E.vxyz([1, 2], :) ./ beam.medium.impedance;
 
       % Package output
       H = ott.utils.FieldVector(xyz, H, 'cartesian');
@@ -113,7 +113,7 @@ classdef (Abstract) Paraxial < ott.beam.Beam
       % Construct H-field (might have 2 or three rows)
       H = zeros(size(E));
       swprows = [size(H, 1)-1, size(H, 1)];
-      H(flip(swprows), :) = E.vrtp(swprows, :) ./ beam.impedance;
+      H(flip(swprows), :) = E.vrtp(swprows, :) ./ beam.medium.impedance;
 
       % Package output
       H = ott.utils.FieldVector(rtp, H, 'spherical');

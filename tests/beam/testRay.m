@@ -4,7 +4,7 @@ function tests = testRay
 end
 
 function setupOnce(testCase)
-  addpath('../../../');
+  addpath('../../');
 end
 
 function test1dArray(testCase)
@@ -17,9 +17,9 @@ function test1dArray(testCase)
   power = ones(1, num_rays);
   polarisation = cross(vectors, ott.utils.Vector(origin, ones(size(origin))));
 
-  rays = ott.optics.geometric.Ray(vectors, power, polarisation);
+  rays = ott.beam.Ray('vector', vectors, 'field', power, 'polarisation', polarisation);
 
-  testCase.verifyEqual(size(rays), [num_rays, 1], ...
+  testCase.verifyEqual(size(rays), [1, num_rays], ...
     'Size of rays incorrect');
 
 end
@@ -36,9 +36,9 @@ function test2dArray(testCase)
   power = ones(1, yrays, xrays);
   polarisation = cross(vectors, ott.utils.Vector(origin, ones(size(origin))));
 
-  rays = ott.optics.geometric.Ray(vectors, power, polarisation);
+  rays = ott.beam.Ray('vector', vectors, 'field', power, 'polarisation', polarisation);
 
-  testCase.verifyEqual(size(rays), [yrays, xrays], ...
+  testCase.verifyEqual(size(rays), [1, yrays, xrays], ...
     'Size of rays incorrect');
 
 end
@@ -55,7 +55,7 @@ function testPlot(testCase)
   power = ones(1, yrays, xrays);
   polarisation = cross(vectors, ott.utils.Vector(origin, ones(size(origin))));
   
-  rays = ott.optics.geometric.Ray(vectors, power, polarisation);
+  rays = ott.beam.Ray('vector', vectors, 'field', power, 'polarisation', polarisation);
   
   h = figure();
   plot(rays);
@@ -68,7 +68,9 @@ function testScatterPlane(testCase)
   % Generate a plane to scatter rays off
   normal = [1;1;1];
   offset = sqrt(3);
-  plane = ott.shapes.Plane(normal, offset);
+  index_relative = 1.33;
+  plane = ott.scat.planewave.Plane(normal, index_relative, ...
+      'offset', offset);
   
   % Setup some rays
   xrays = 5;
@@ -81,17 +83,17 @@ function testScatterPlane(testCase)
   power = ones(1, yrays, xrays);
   polarisation = cross(vectors, ott.utils.Vector(origin, ones(size(origin))));
   
-  rays = ott.optics.geometric.Ray(vectors, power, polarisation);
+  rays = ott.beam.Ray('vector', vectors, ...
+    'field', power, 'polarisation', polarisation);
   
-  [rrays, trays, perp] = rays.scatter(plane.normal, n1, n2);
+  [rrays, trays] = plane.scatter(rays);
   
   h = figure();
-  plot(plane);
+  plane.surf();
   hold on;
-  plot(rays, 'k');
-  plot(rrays, 'r');
-  plot(trays, 'b');
-  plot(perp, 'k');
+  plot(rays, 'Color', 'k');
+  plot(rrays, 'Color', 'r');
+  plot(trays, 'Color', 'b');
   hold off;
   close(h);
 end

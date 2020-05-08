@@ -3,18 +3,18 @@ function tests = testTopHat
 end
 
 function setupOnce(testCase)
-  addpath('../../../');
+  addpath('../../');
 end
 
 function testConstruct(testCase)
 
-  profile = ott.optics.beam.TopHat.ProfileSquare(1.0, [1;0]);
+  profile = ott.beam.TopHat.ProfileSquare(1.0, [1;0]);
   direction = randn(3, 1);
   polarisation = randn(3, 1);
   field = 1.0;
   origin = [0;0;0];
   power = 1.0;
-  beam = ott.optics.beam.TopHat('profile', profile, ...
+  beam = ott.beam.TopHat('profile', profile, ...
     'direction', direction, 'field', field, 'origin', origin, ...
     'polarisation', polarisation, 'power', power);
   
@@ -31,10 +31,10 @@ function testPowerEstimationSymbolic(testCase)
 
   field = 1.5;
   width = 2.0;
-  profile = ott.optics.beam.TopHat.ProfileSquare(width, [1;0]);
+  profile = ott.beam.TopHat.ProfileSquare(width, [1;0]);
   targetPower = field * width.^2;
   
-  beam = ott.optics.beam.TopHat('profile', profile, ...
+  beam = ott.beam.TopHat('profile', profile, ...
     'field', field, 'power', 'symbolic');
   
   testCase.verifyEqual(beam.power, targetPower, 'power');
@@ -45,10 +45,10 @@ function testPowerEstimationNumeric(testCase)
 
   field = 1.5;
   width = 2.0;
-  profile = ott.optics.beam.TopHat.ProfileSquare(width, [1;0]);
+  profile = ott.beam.TopHat.ProfileSquare(width, [1;0]);
   targetPower = field * width.^2;
   
-  beam = ott.optics.beam.TopHat('profile', profile, ...
+  beam = ott.beam.TopHat('profile', profile, ...
     'field', field, 'power', 'numeric');
   
   testCase.verifyEqual(beam.power, targetPower, 'AbsTol', 1.0e-2, 'power');
@@ -68,7 +68,7 @@ end
 function testProfileSquare(testCase)
 
   width = 1.0;
-  fcn = ott.optics.beam.TopHat.ProfileSquare(width, [1; 0]);
+  fcn = ott.beam.TopHat.ProfileSquare(width, [1; 0]);
   
   xrange = linspace(-2, 2, 50);
   yrange = linspace(-2, 2, 50);
@@ -86,7 +86,7 @@ function testProfileSquare(testCase)
     'AbsTol', 1.0e-2, 'area');
   
   width = 1.0;
-  fcn = ott.optics.beam.TopHat.ProfileSquare(width, [1; 1]);
+  fcn = ott.beam.TopHat.ProfileSquare(width, [1; 1]);
   
   xy = [1.1, 1.1, -1.1, -1.1, 0.0; 1.1, -1.1, 1.1, -1.1, 0.0];
   target = [false, false, false, false, true];
@@ -105,7 +105,7 @@ end
 function testProfileCircle(testCase)
 
   radius = 1.0;
-  fcn = ott.optics.beam.TopHat.ProfileCircle(radius);
+  fcn = ott.beam.TopHat.ProfileCircle(radius);
   
   xrange = linspace(-2, 2, 50);
   yrange = linspace(-2, 2, 50);
@@ -127,7 +127,7 @@ end
 function testProfileEllipse(testCase)
 
   radii = [0.5, 1.0];
-  fcn = ott.optics.beam.TopHat.ProfileEllipse(radii, [1; 0]);
+  fcn = ott.beam.TopHat.ProfileEllipse(radii, [1; 0]);
   
   xrange = linspace(-2, 2, 50);
   yrange = linspace(-2, 2, 50);
@@ -148,7 +148,7 @@ end
 function testProfileRectangle(testCase)
 
   widths = [0.5, 1.0];
-  fcn = ott.optics.beam.TopHat.ProfileRectangle(widths, [1; 0]);
+  fcn = ott.beam.TopHat.ProfileRectangle(widths, [1; 0]);
   
   xrange = linspace(-2, 2, 50);
   yrange = linspace(-2, 2, 50);
@@ -168,15 +168,15 @@ end
 
 function testCastPlane(testCase)
 
-  beam = ott.optics.beam.TopHat();
-  beam2 = ott.optics.beam.PlaneWave(beam);
+  beam = ott.beam.TopHat();
+  beam2 = ott.beam.PlaneWave(beam);
 
 end
 
 function testVisualise(testCase)
 
   field = @(x, y) exp(-x.^2 - y.^2);
-  beam = ott.optics.beam.TopHat('field', field);
+  beam = ott.beam.TopHat('field', field);
   
   h = figure();
   beam.visualise();

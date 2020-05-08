@@ -71,25 +71,6 @@ classdef Array < ott.beam.Beam & ott.beam.abstract.Array
     function E = hfarfieldInternal(beam, varargin)
       E = beam.deferWithCoherent(@(b) b.hfarfieldInternal(varargin{:}));
     end
-
-    function E = getBeamPower(beam)
-      % Calculate the sum of beam power for each beam
-      %
-      % Combine as long as array_type is not 'array'.
-
-      E = {};
-
-      % Evaluate each beam
-      for ii = 1:numel(beam)
-        E{ii} = beam.beams{ii}.getBeamPower();
-      end
-
-      % Combine if requested
-      if strcmpi(beam.array_type, 'coherent') ...
-          || strcmpi(beam.array_type, 'incoherent')
-        E = beam.CombineCoherent(E);
-      end
-    end
   end
 
   methods (Static)

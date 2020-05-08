@@ -62,8 +62,8 @@ classdef Gaussian < ott.beam.paraxial.Paraxial ...
       polarisation = [beam.polarisation(:); 0];
       A = polarisation .* psi0 .* exp(-1i .* z ./ s.^2);
 
-      E0 = sqrt(4 .* beam.power .* beam.speed0 ...
-          ./ (pi .* beam.index_medium .* beam.waist.^2));
+      E0 = sqrt(4 .* beam.power .* beam.vacuum.speed ...
+          ./ (pi .* beam.medium.index .* beam.waist.^2));
 
       E = E0 .* A;
 

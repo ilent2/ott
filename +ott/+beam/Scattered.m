@@ -13,6 +13,24 @@ classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
 % using/distributing this file.
 
   methods
+    function beam = Scattered(incident_beam, type, varargin)
+      % Constructor for scattered beams
+      %
+      % Usage
+      %   beam = Scattered(incident_beam, type, ...)
+      %
+      % Parameters
+      %   - incident_beam ([]|Beam) -- Incident beam or emtpy.
+      %
+      %   - type (enum) -- Type of scattered beam.
+      %     Either 'scattered', 'total' or 'internal'.
+      %
+      % Other parameters are passed to :class:`Beam`.
+
+      beam = beam@ott.beam.abstract.Scattered(incident_beam, type);
+      beam = beam@ott.beam.Beam(varargin{:});
+    end
+    
     function varargout = force(ibeam, varargin)
       % Calculate change in linear momentum between beams.
       % For details on usage/arguments see :meth:`forcetorque`.

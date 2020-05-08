@@ -182,7 +182,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
 
       p = inputParser;
       p.addOptional('a', [], ...
-        @(x) isnumeric(x) || isa(x, 'ott.optics.vswf.bsc.Bsc'));
+        @(x) isnumeric(x) || isa(x, 'ott.beam.vswf.Bsc'));
       p.addOptional('b', [], @isnumeric);
       p.addOptional('basis', 'regular', ...
         @(x) any(strcmpi(x, {'incoming', 'outgoing', 'regular'})));
@@ -282,6 +282,33 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
 
       beam.a = beam.a(:, subs{:});
       beam.b = beam.b(:, subs{:});
+    end
+
+    function beam = subsasgnInternal(beam, subs, rem, other)
+      % Assign to the subscripted beam
+
+      if numel(subs) > 1
+        if subs(1) == 1
+          subs = subs(2:end);
+        end
+        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
+      end
+
+      assert(isempty(rem), 'Assignment to parts of beams not supported');
+      if isempty(other)
+        % Delete data
+        beam.a(:, subs{:}) = [];
+        beam.b(:, subs{:}) = [];
+        
+      else
+        % Ensure we have a plane wave
+        if ~isa(other, 'ott.beam.vswf.Bsc')
+          other = ott.beam.vswf.Bsc(other);
+        end
+        
+        beam.a(:, subs{:}) = other.a;
+        beam.b(:, subs{:}) = other.b;
+      end
     end
 
     function [E, H, data] = ehfarfield(beam, rtp, varargin)
@@ -1416,7 +1443,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       % number of locations.
 
       dummy_type = 'total';
-      tbeam = ott.optics.vswf.bsc.Scattered(beam, dummy_type);
+      tbeam = ott.vswf.bsc.Scattered(beam, dummy_type);
       [sbeam, tbeam] = tbeam.calculateScatteredBeam(tmatrix, varargin{:});
     end
 

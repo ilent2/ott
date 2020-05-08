@@ -34,14 +34,23 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
   end
 
   methods
-    function plane = Plane(index_relative, normal)
+    function plane = Plane(normal, index_relative, varargin)
       % Construct a new plane instance
-      plane.index_relative = index_relative;
-      plane.normal = normal;
+      %
+      % Usage
+      %   plane = Plane(normal, index_relative, ...)
+      %
+      % Optional named arguments are passed to :class:`ott.shapes.Plane`.
+      
+      plane = plane@ott.shapes.Plane(normal, varargin{:});
+      plane = plane@ott.scat.utils.HomogeneousRelative(index_relative);
     end
 
     function [rbeam, tbeam] = scatter(plane, beam)
       % Calculate reflected and transmitted beams
+      
+      import ott.utils.cross;
+      import ott.utils.dot;
 
       % Cast the beam to a plane wave
       if ~isa(beam, 'ott.beam.abstract.PlaneWave')
@@ -74,8 +83,8 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
       Es = dot(polarisation, svec);
       Ep = vecnorm(polarisation - Es .* svec);
 
-      n1 = beam.index_medium;
-      n2 = beam.index_medium .* plane.index_relative;
+      n1 = beam.medium.index;
+      n2 = beam.medium.index .* plane.index_relative;
 
       % Calculate the Fresnel coefficients
       kix = dot(plane.normal, ki);
@@ -90,11 +99,11 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
       % Generate the reflected and transmitted vectors
       rbeam = ott.beam.abstract.PlaneWave('direction', kr./vecnorm(kr), ...
           'polarisation', Sr .* Es .* svec + Pr .* Ep .* pvecr, ...
-          'index_medium', n1, ...
+          'index', n1, ...
           'origin', beam.origin);
       tbeam = ott.beam.abstract.PlaneWave('direction', kt./vecnorm(kt), ...
           'polarisation', St .* Es .* svec + Pt .* Ep .* pvect, ...
-          'index_medium', n2, ...
+          'index', n2, ...
           'origin', beam.origin);
     end
   end

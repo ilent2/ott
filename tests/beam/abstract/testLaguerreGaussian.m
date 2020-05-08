@@ -11,7 +11,7 @@ function testConstructor(testCase)
   waist = 1.0;
   lmode = 1;
   pmode = 2;
-  beam = ott.optics.beam.LaguerreGaussian(waist, lmode, pmode);
+  beam = ott.beam.abstract.LaguerreGaussian(waist, lmode, pmode);
   testCase.verifyEqual(beam.waist, waist);
   testCase.verifyEqual(beam.lmode, lmode);
   testCase.verifyEqual(beam.pmode, pmode);

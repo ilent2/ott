@@ -23,7 +23,7 @@ classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
       % From the wikipedia page
       % https://en.wikipedia.org/wiki/Gaussian_beam
 
-      zR = pi .* beam.waist.^2 .* beam.index_medium ./ beam.wavelength;
+      zR = pi .* beam.waist.^2 .* beam.medium.index ./ beam.wavelength;
 
       q0 = 1i .* zR;
       qz = z + q0;
@@ -45,8 +45,8 @@ classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
 
       E = um .* un .* exp(-1i*beam.wavenumber.*xyz(3, :));
 
-      E0 = sqrt(4 .* beam.power .* beam.speed0 ...
-          ./ (pi .* beam.index_medium .* beam.waist.^2));
+      E0 = sqrt(4 .* beam.power .* beam.vacuum.speed ...
+          ./ (pi .* beam.medium.index .* beam.waist.^2));
 
       % Add in power and polarisation
       E = E .* E0 .* [beam.polarisation(:); 0];

@@ -620,7 +620,13 @@ classdef Tmatrix < ott.scat.utils.Particle ...
 
     function sbeam = mtimes(tmatrix,ibeam)
       %MTIMES provide T-matrix multiplication overload
-      if isa(ibeam, 'ott.optics.vswf.bsc.Bsc')
+      if isa(ibeam, 'ott.beam.abstract.Beam')
+        
+        % Check and convert to Bsc if required
+        if ~isa(ibeam, 'ott.beam.vswf.Bsc')
+          ibeam = ott.beam.vswf.Bsc(ibeam);
+        end
+        
         sbeam = ibeam.scatter(tmatrix);
       else
         % Provide default matrix multiplication

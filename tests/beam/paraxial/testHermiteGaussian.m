@@ -3,7 +3,7 @@ function tests = testHermiteGaussian
 end
 
 function setupOnce(testCase)
-  addpath('../../../../');
+  addpath('../../../');
 end
 
 function testConstructor(testCase)
@@ -11,7 +11,7 @@ function testConstructor(testCase)
   waist = 1.0;
   mmode = 2;
   nmode = 3;
-  beam = ott.optics.beam.paraxial.HermiteGaussian(waist, mmode, nmode);
+  beam = ott.beam.paraxial.HermiteGaussian(waist, mmode, nmode);
   testCase.verifyEqual(beam.waist, waist, 'w');
   testCase.verifyEqual(beam.mmode, mmode, 'm');
   testCase.verifyEqual(beam.nmode, nmode, 'n');
@@ -20,8 +20,8 @@ end
 function testZerothOrder(testCase)
 
   waist = 1.0;
-  beam0 = ott.optics.beam.paraxial.HermiteGaussian(waist, 0, 0);
-  beamG = ott.optics.beam.paraxial.Gaussian(waist);
+  beam0 = ott.beam.paraxial.HermiteGaussian(waist, 0, 0);
+  beamG = ott.beam.paraxial.Gaussian(waist);
   
   xyz = [randn(2, 5); zeros(1, 5)];
 %   xyz = randn(3, 5);
@@ -37,7 +37,7 @@ function testVisualise(testCase)
   waist = 1.0;
   mmode = 2;
   nmode = 5;
-  beam = ott.optics.beam.paraxial.HermiteGaussian(waist, mmode, nmode);
+  beam = ott.beam.paraxial.HermiteGaussian(waist, mmode, nmode);
   
   h = figure();
   beam.visualise('range', [3, 3].*beam.waist);
