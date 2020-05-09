@@ -44,6 +44,20 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
 % using/distributing this file.
 
   methods (Static)
+    function beam = empty(varargin)
+      % Construct an emtpy beam array
+      %
+      % Usage
+      %   beam = ott.beam.PlaneWave.empty(...)
+      %
+      % Additional parameters are passed to the constructor.
+      
+      empt = zeros(3, 0);
+      beam = ott.beam.PlaneWave('direction', empt, ...
+        'polarisation', empt, ...
+        'field', empt(1, :), 'origin', empt, varargin{:});
+    end
+    
     function beam = FromFieldVectors(E, H)
       % Construct a new Ray from E and H field vectors
       %

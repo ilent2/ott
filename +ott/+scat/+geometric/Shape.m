@@ -80,48 +80,79 @@ classdef Shape < ott.scat.utils.ShapeProperty ...
         ray = ott.beam.Ray(ray);
       end
 
+      inside = part.shape.insideXyz(ray.origin);
+      assert(all(inside(:)) || all(~inside(:)), ...
+        'Rays must be all inside or all outside shape');
+      
       int_ray = ray;
-      out_ray = ott.beam.ScatteredRay.empty(ray, 'total');
+      out_ray = ott.beam.ScatteredRay.empty('total', 'incident_beam', ray);
+      
+      empty = ott.beam.Ray.empty();
+      if all(inside(:))
+        int_ray = ott.beam.abstract.Array('array', [1, 2], empty, int_ray);
+      else
+        int_ray = ott.beam.abstract.Array('array', [1, 2], int_ray, empty);
+      end
 
       for ii = 1:Niter
 
-        % Calculate intersections
-        [locs, norms] = part.shape.intersect(int_ray);
-
-        % Split rays into interacting and non-interacting
-        no_intersect = any(isnan(locs), 1);
-        if any(no_intersect)
-          out_ray(end+(1:sum(no_intersect))) = int_ray(no_intersect); %#ok<AGROW>
-          int_ray = int_ray(~no_intersect);
+        new_int_ray = ott.beam.abstract.Array('array', size(int_ray));
+        for jj = 1:2
           
-          locs(:, no_intersect) = [];
-          norms(:, no_intersect) = [];
+          % Calculate intersections
+          [locs, norms] = part.shape.intersect(int_ray(jj));
+
+          % Split rays into interacting and non-interacting
+          no_intersect = any(isnan(locs), 1);
+          if any(no_intersect)
+            out_ray(end+(1:sum(no_intersect))) = int_ray.beams{jj}(no_intersect); %#ok<AGROW>
+            int_ray.beams{jj} = int_ray.beams{jj}(~no_intersect);
+
+            locs(:, no_intersect) = [];
+            norms(:, no_intersect) = [];
+          end
+          
+          if isempty(int_ray(jj))
+            continue;
+          end
+          
+          % Construct planes for interacting rays
+          plane = ott.scat.geometric.Plane(norms, part.index_relative, ...
+              'position', locs);
+
+          % Calculate scattered ray directions
+          [rplane, tplane] = plane.scatter(int_ray(jj));
+          
+          % Form new ray object
+          if jj == 1
+            % Rays were exterior, rplane -> exterior(1), tplane -> interior(2)
+            new_int_ray(1) = rplane;
+            new_int_ray(2) = tplane;
+          else
+            % Rays were interior, tplane -> exterior(1), rplane -> interior(2)
+            new_int_ray(1) = [new_int_ray(1), tplane];
+            new_int_ray(2) = [new_int_ray(2), rplane];
+          end
+        end
+        
+        int_ray = new_int_ray;
+        
+        % Prune rays bellow threshold power
+        if ~isempty(p.Results.prune_threshold)
+          for jj = 1:numel(int_ray)
+            discard = int_ray(jj).intensity < p.Results.prune_threshold;
+            int_ray.beams{jj}(discard) = [];
+          end
         end
 
-        % Check we have work to do
-        if isempty(int_ray)
+        % Check we have any rays left
+        if isempty(new_int_ray(1)) && isempty(new_int_ray(2))
           break;
         end
 
-        % Construct planes for interacting rays
-        plane = ott.scat.planewave.Plane(norms, part.index_relative, ...
-            'position', locs);
-
-        % Calculate scattered ray directions
-        [rplane, tplane] = plane.scatter(ray);
-
-        % Form new ray object
-        int_ray = ott.beam.Ray([rplane, tplane]);
-
-        % Prune rays bellow threshold power
-        if ~isempty(p.Results.prune_threshold)
-          discard = int_ray.intensity < p.Results.prune_threshold;
-          int_ray(discard) = [];
-        end
-
         % Check early stopping threshold
-        if int_ray.power < p.Results.stop_threshold
-          int_ray(:) = [];
+        if sum([int_ray.power{:}]) < p.Results.stop_threshold
+          int_ray.beams = {};
           break;
         end
       end

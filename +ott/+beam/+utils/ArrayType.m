@@ -95,6 +95,10 @@ classdef ArrayType < ott.beam.abstract.Beam
       % Check we have beams
       assert(isa(b1, 'ott.beam.abstract.Beam'), 'beam1 must be a beam');
       assert(isa(b2, 'ott.beam.abstract.Beam'), 'beam2 must be a beam');
+      
+      % Check mediums match
+      assert(b1.medium == b2.medium, ...
+        'mediums must match for coherent addition');
 
       % Check they are not incoherent
       if isa(b1, 'ott.beam.utils.ArrayType')
@@ -151,12 +155,20 @@ classdef ArrayType < ott.beam.abstract.Beam
       %
       % Usage
       %   beam = cat(dim, beam1, beam2, beam3, ...)
+      
+      % Remove all inputs that are ott.beam.abstract.Empty
+      mask = false(size(varargin));
+      for ii = 1:length(varargin)
+        mask(ii) = isa(varargin{ii}, 'ott.beam.abstract.Empty');
+      end
+      varargin(mask) = [];
 
       allSameType = true;
       dim_size = size(varargin{1});   % Compare all dimensions except dim
       dim_size(dim) = 0;
       class_type = class(varargin{1});
       array_type = [];
+      medium = varargin{1}.medium;
 
       % Check we have beams
       for ii = 1:length(varargin)
@@ -176,6 +188,10 @@ classdef ArrayType < ott.beam.abstract.Beam
         % Check same type
         allSameType = allSameType ...
             & strcmpi(class_type, class(varargin{ii}));
+          
+        % Check same medium
+        allSameType = allSameType ...
+            & varargin{ii}.medium == medium;
 
         % Check same size in dimension
         allSameType = allSameType ...
@@ -205,7 +221,11 @@ classdef ArrayType < ott.beam.abstract.Beam
     
     function n = numArgumentsFromSubscript(obj,s,indexingContext)
       % Specify the number of output arguments
-      n = 1;
+      if indexingContext == matlab.mixin.util.IndexingContext.Assignment
+        n = length(s(1).subs{:});
+      else
+        n = 1;
+      end
     end
 
     function varargout = subsref(obj, s)
@@ -213,8 +233,21 @@ classdef ArrayType < ott.beam.abstract.Beam
 
       switch s(1).type
         case '.'
-          % Default behaviour
-          [varargout{1:nargout}] = builtin('subsref',obj,s);
+          % Seems that we need to apply subsref to parts one at a time,
+          % we can't just dispatch to a built-in subsref (for example,
+          % for cell indexing).  Can't do subsref(obj.(s(1).subs), s(2:end))
+          if length(s) > 1
+            part = obj.(s(1).subs);
+            for ii = 2:length(s)-1
+              % This should call subsref on array beams as intended
+              % Assumes single outputs of intermediate (is this ok?)
+              part = subsref(part, s(ii));
+            end
+            [varargout{1:nargout}] = subsref(part, s(end));
+          else
+            % Default behaviour (for imediate properties)
+            [varargout{1:nargout}] = builtin('subsref',obj,s);
+          end
         case '()'
           if length(s) >= 1 % obj(indices)
             % obj(indices) -> obj.beams(indices)
@@ -241,8 +274,13 @@ classdef ArrayType < ott.beam.abstract.Beam
       
       switch s(1).type
         case '.'
-          % Call built-in for any case
-          obj = builtin('subsasgn',obj,s,varargin{:});
+          if length(s) > 1
+            % Use child subsref (in case child has its own)
+            obj.(s(1).subs) = subsasgn(obj.(s(1).subs), s(2:end), varargin{:});
+          else
+            % Default behaviour
+            obj = builtin('subsasgn',obj,s,varargin{:});
+          end
         case '()'
           if length(s) >= 1 % obj(indices)
             % obj(indices) -> obj.beams(indices)

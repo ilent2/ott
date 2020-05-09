@@ -4,6 +4,12 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
 % Describes how a infinite plane scatters a plane wave.
 % Inherits from :class:`ott.shapes.Plane`.
 %
+% The refractive index of the medium above the surface (in the position
+% direction of the normal vector) is related to the index inside the
+% surface (negative to the noraml) by:
+%
+%   index_relative = (negative) ./ (posative)
+%
 % Properties
 %   - normal          -- Vector normal to the plane surface
 %   - index_relative  -- Relative refractive index of plane to medium
@@ -51,6 +57,18 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
       
       import ott.utils.cross;
       import ott.utils.dot;
+      
+      % Handle arrays of beams
+      % TODO: We may be able to do this more efficiently by creating
+      % a array with pre-scaled values
+      if isa(beam, 'ott.beam.abstract.Array')
+        rbeam = ott.beam.Array(beam.array_type, size(beam));
+        tbeam = ott.beam.Array(beam.array_type, size(beam));
+        for ii = 1:numel(beam)
+          [rbeam(ii), tbeam(ii)] = plane.scatter(beam(ii));
+        end
+        return;
+      end
 
       % Cast the beam to a plane wave
       if ~isa(beam, 'ott.beam.abstract.PlaneWave')
@@ -64,27 +82,54 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
       % wavenumber is the same since the medium is the same
       % Direction of the normal component changes (reflected)
       kr = ki - 2.*dot(plane.normal, ki).*plane.normal;
+      
+      % Get the relative index (flipping if inside)
+      index_relative = plane.index_relative;
+      mask = sign(dot(plane.normal, ki)) > 0;
+      index_relative(mask) = 1.0./index_relative(mask);
 
       % Calculate transmitted wave-vector (direction)
       % Orthogonal components are unchanged
       % Normal component is scaled by relative index
       ko = ki - dot(plane.normal, ki).*plane.normal;  % orthogonal
-      kn2 = plane.index_relative.^2 .* dot(ki, ki) - dot(ko, ko); % normal
-      kt = ko + sqrt(kn2) .* plane.normal;
+      kn2 = index_relative.^2 .* dot(ki, ki) - dot(ko, ko); % normal
+      kt = ko + sqrt(kn2) .* plane.normal .* sign(dot(plane.normal, ki));
 
-      % Calculate polarisation (phase-shifted by distance from beam
-      % origin to plane)
+      % Calculate polarisation
       polarisation = beam.polarisation;
-
-      % TODO: Use field vector
+      
+      % Calculate vector perpendicular to plane
+      % If ki normal to plane, use polarisation direction
+      svec = cross(beam.direction, plane.normal);
+      tol = 1.0e-6;
+      svecmask = vecnorm(svec) < tol;
+      svec(:, svecmask) = polarisation(:, svecmask);
+      svec = svec ./ vecnorm(svec);
 
       % Split the field (polarisation) into s and p vectors
-      svec = cross(beam.direction, plane.normal);
       Es = dot(polarisation, svec);
       Ep = vecnorm(polarisation - Es .* svec);
+      
+      % Multiple by the field value
+      if size(beam.field, 1) == 1
+        Es = Es .* beam.field;
+        Ep = Ep .* beam.field;
+      else
+        sz = size(beam.field);
+        Es = Es .* reshape(beam.field(1, :), [1, sz(2:end)]);
+        Ep = Ep .* reshape(beam.field(1, :), [1, sz(2:end)]);
+        
+        % Do the same again for the orthogonal polarisation
+        orth_pol = cross(polarisation, beam.direction);
+        Es2 = dot(orth_pol, svec);
+        Ep2 = vecnorm(orth_pol - Es .* svec);
+        Es = Es + Es2 .* reshape(beam.field(2, :), [1, sz(2:end)]);
+        Ep = Ep + Ep2 .* reshape(beam.field(2, :), [1, sz(2:end)]);
+      end
 
+      % Calculate refractive index
       n1 = beam.medium.index;
-      n2 = beam.medium.index .* plane.index_relative;
+      n2 = beam.medium.index .* index_relative;
 
       % Calculate the Fresnel coefficients
       kix = dot(plane.normal, ki);
@@ -98,13 +143,16 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
 
       % Generate the reflected and transmitted vectors
       rbeam = ott.beam.abstract.PlaneWave('direction', kr./vecnorm(kr), ...
-          'polarisation', Sr .* Es .* svec + Pr .* Ep .* pvecr, ...
-          'index', n1, ...
-          'origin', beam.origin);
+          'polarisation', pvecr, ...
+          'field', [Pr .* Ep; Sr .* Es], ...
+          'origin', beam.origin, ...
+          'like', beam);
       tbeam = ott.beam.abstract.PlaneWave('direction', kt./vecnorm(kt), ...
-          'polarisation', St .* Es .* svec + Pt .* Ep .* pvect, ...
+          'polarisation', pvect, ...
+          'field', [Pt .* Ep; St .* Es], ...
           'index', n2, ...
-          'origin', beam.origin);
+          'origin', beam.origin, ...
+          'like', beam);
     end
   end
 end

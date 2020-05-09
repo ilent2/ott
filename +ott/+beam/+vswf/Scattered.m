@@ -347,7 +347,7 @@ classdef Scattered < ott.beam.vswf.Bsc
       % Calculate the resulting beams
       sbeam = ott.beam.vswf.Bsc();
       for ii = 1:numel(tmatrix)
-        sbeam = sbeam.append(tmatrix(ii).data * rbeam);
+        sbeam = [sbeam, tmatrix(ii).data * rbeam];
       end
 
       % Apply the inverse rotation

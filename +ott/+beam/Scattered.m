@@ -13,22 +13,30 @@ classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
 % using/distributing this file.
 
   methods
-    function beam = Scattered(incident_beam, type, varargin)
+    function beam = Scattered(type, varargin)
       % Constructor for scattered beams
       %
       % Usage
-      %   beam = Scattered(incident_beam, type, ...)
+      %   beam = Scattered(type, ...)
       %
       % Parameters
       %   - incident_beam ([]|Beam) -- Incident beam or emtpy.
+      %     Default: ``[]``.
       %
       %   - type (enum) -- Type of scattered beam.
       %     Either 'scattered', 'total' or 'internal'.
       %
       % Other parameters are passed to :class:`Beam`.
+      
+      p = inputParser;
+      p.addParameter('incident_beam', []);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.abstract.Scattered(incident_beam, type);
-      beam = beam@ott.beam.Beam(varargin{:});
+      beam = beam@ott.beam.abstract.Scattered(type, ...
+          'incident_beam', p.Results.incident_beam);
+      beam = beam@ott.beam.Beam(unmatched{:});
     end
     
     function varargout = force(ibeam, varargin)

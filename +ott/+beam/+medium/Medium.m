@@ -39,6 +39,15 @@ classdef (Abstract) Medium
 
       rmat = ott.beam.medium.Relative(material1, material2);
     end
+    
+    function b = eq(a, b)
+      % Compare two mediums
+      %
+      % Usage
+      %   b = medium1 == medium2
+      
+      b = isequaln(a, b);
+    end
   end
 
   methods % Getters/setters

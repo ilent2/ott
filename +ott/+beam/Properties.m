@@ -96,13 +96,14 @@ classdef (Abstract) Properties
       end
 
       % Check number of omega related arguments
+      % TODO: We often want to supply two of these (to specify medium)
       num_omega = isempty(p.Results.omega) ...
           + isempty(p.Results.wavelength) ...
           + isempty(p.Results.wavenumber) ...
           + isempty(p.Results.wavelength0) ...
           + isempty(p.Results.wavenumber0);
       assert(num_omega >= 4, ...
-        'Must only provide one of omega|wavelength|wavenumber');
+        'Must only provide one or two of omega|wavelength|wavenumber');
 
       % Get default values for medium construction
       medium = p.Results.medium;
@@ -131,15 +132,15 @@ classdef (Abstract) Properties
       if ~isempty(p.Results.omega)
         beam.omega = p.Results.omega;
       elseif ~isempty(p.Results.wavelength)
-        beam.setFrequency('wavelength', p.Results.wavelength);
+        beam = beam.setFrequency('wavelength', p.Results.wavelength);
       elseif ~isempty(p.Results.wavelength0)
-        beam.setFrequency('wavelength0', p.Results.wavelength0);
+        beam = beam.setFrequency('wavelength0', p.Results.wavelength0);
       elseif ~isempty(p.Results.wavenumber)
-        beam.setFrequency('wavenumber', p.Results.wavenumber);
+        beam = beam.setFrequency('wavenumber', p.Results.wavenumber);
       elseif ~isempty(p.Results.wavenumber0)
-        beam.setFrequency('wavenumber0', p.Results.wavenumber0);
+        beam = beam.setFrequency('wavenumber0', p.Results.wavenumber0);
       else
-        beam.omega = 2*pi;
+        beam.omega = default_omega;
       end
     end
 

@@ -57,8 +57,27 @@ classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
 
     function beams = subsrefInternal(beam, subs)
       % Get the subscripted beam
-
-      beams = beam.beams{subs{:}};
+      
+      % Check if single index
+      all_single = true;
+      for ii = 1:numel(subs)
+        all_single = all_single & numel(subs{ii}) == 1;
+      end
+      
+      % TODO: Should we have () and {} indexing?  Would remove need for
+      % all_single and make things a bit more 'natural'.
+      if all_single
+        % Return the individual beam (this would be {})
+        beams = beam.beams{subs{:}};
+      else
+        % Form an array with the selection of new beams (behaviour of ())
+        beams = [beam.beams{subs{:}}];
+        
+        % Ensure output type is not double (is this a good idea?)
+        if isequaln(beams, [])
+          beams = ott.beam.Array(beam.array_type, [0, 0]);
+        end
+      end
     end
     
     function beam = subsasgnInternal(beam, subs, ~, other)
@@ -95,7 +114,12 @@ classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
       % Construct a new abstract beam array
       %
       % Usage
-      %   beam = Array(array_type, dim, beam1, beam2, ...)
+      %   beam = Array(array_type, dim)
+      %   Creates an empty beam array.
+      %
+      %   beam = Array(array_type, dim, varargin)
+      %   Creates a beam array.  Setting the initial beams to the
+      %   contents of varargin.
       %
       % Parameters
       %   - array_type (enum) -- Type of beam array.  Either
@@ -109,8 +133,8 @@ classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
       beam = beam@ott.beam.utils.ArrayType('array_type', array_type);
 
       % Store beam array and reshape
-      if length(varargin) == 0
-        beam.beams = {};
+      if numel(varargin) == 0
+        beam.beams = repmat({ott.beam.abstract.Empty()}, sz);
       else
         beam.beams = reshape(varargin, sz);
       end

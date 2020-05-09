@@ -18,6 +18,21 @@ classdef Ray < ott.beam.PlaneWave
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+  methods (Static)
+    function beam = empty(varargin)
+      % Construct an emtpy beam array
+      %
+      % Usage
+      %   beam = ott.beam.Ray.empty(...)
+      %
+      % Additional parameters are passed to the constructor.
+      
+      empt = zeros(3, 0);
+      beam = ott.beam.Ray('direction', empt, 'polarisation', empt, ...
+        'field', empt(1, :), 'origin', empt, varargin{:});
+    end
+  end
+
   methods
     function beam = Ray(varargin)
       % Construct a new geometric optics ray instance
@@ -48,22 +63,6 @@ classdef Ray < ott.beam.PlaneWave
       beam = beam@ott.beam.PlaneWave(varargin{:});
     end
 
-    function ray = ott.beam.ScatteredRay(oldray)
-      % Converts the ray to a scattered ray object.
-      %
-      % The incident beam is set to empty and the type is set to
-      % scattered.
-      %
-      % Usage
-      %   ray = ott.beam.ScatteredRay(oldray)
-      %
-      %   scattered_ray(2) = oldRay;
-      
-      ray = ott.beam.ScatteredRay([], 'scattered', ...
-        'origin', oldray.origin, 'direction', oldray.direction, ...
-        'polarisation', oldray.polarisation, 'field', oldray.field);
-    end
-
     function ray = focus(ray, location)
       % Focus rays to a point
       %
@@ -86,7 +85,7 @@ classdef Ray < ott.beam.PlaneWave
   methods (Hidden)
     function p = getBeamPower(beam)
       % Returns finite power of the ray set
-      p = sum(abs(beam.field(:)));
+      p = sum(beam.field(:).^2);
     end
 
     function E = efieldInternal(beam, xyz, varargin)

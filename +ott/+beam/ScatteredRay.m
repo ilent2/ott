@@ -20,40 +20,52 @@ classdef ScatteredRay < ott.beam.Ray & ott.beam.Scattered
 % using/distributing this file.
 
   methods (Static)
-    function beam = empty(incident_beam, type, varargin)
+    function beam = empty(type, varargin)
       % Construct an empty Scattered ray array
       %
       % Usage
-      %   beam = ScatteredRay.empty(incident_beam, type, ...)
+      %   beam = ScatteredRay.empty(type, ...)
       %
       % Calls the class constructor with empty arrays.
+      % Additional arguments are passed to the constructor.
       
       empt = zeros(3, 0);
       
-      beam = ott.beam.ScatteredRay([], type, ...
+      beam = ott.beam.ScatteredRay(type, ...
         'origin', empt, 'direction', empt, ...
         'polarisation', empt, 'field', empt(1, :), varargin{:});
-      beam.incident_beam = incident_beam;
     end
   end
 
   methods
-    function beam = ScatteredRay(incident_beam, type, varargin)
+    function beam = ScatteredRay(type, varargin)
       % Construct a new scattered ray representation
       %
       % Usage
-      %   ray = ScatteredRay(incident_beam, type, ...)
+      %   ray = ScatteredRay(type, ...)
       %
       % Parameters
       %   - incident_beam (Ray|empty) -- The incident beam or empty.
       %     Some functions require an incident beam.
+      %     Default: ``[]``.
       %
       %   - type (enum) -- Type of scattered ray.
       %
+      %   - like (Beam) -- Another Beam object to use for default
+      %     properties.  If the object is a Ray object, copies the
+      %     Ray properties (direction/field/...) too.
+      %
       % All other parameters are passed to :class:`Ray`.
+      
+      p = inputParser;
+      p.addParameter('incident_beam', []);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.Scattered(incident_beam, type);
-      beam = beam@ott.beam.Ray(varargin{:});
+      beam = beam@ott.beam.Scattered(type, ...
+          'incident_beam', p.Results.incident_beam);
+      beam = beam@ott.beam.Ray(unmatched{:});
     end
 
     function varargout = visualiseAllRays(beam, varargin)
@@ -70,6 +82,12 @@ classdef ScatteredRay < ott.beam.Ray & ott.beam.Scattered
 
       % Visualise our rays
       h = beam.visualiseRays(varargin{:});
+      
+      % Setup hold
+      washoldon = ishold();
+      if ~washoldon
+        hold('on');
+      end
 
       % Loop over remaining beams
       last_beam = beam;
@@ -87,8 +105,13 @@ classdef ScatteredRay < ott.beam.Ray & ott.beam.Scattered
           next_beam = last_beam.incident_beam;
         end
       end
+      
+      % Return hold to previous state
+      if ~washoldon
+        hold('off');
+      end
 
-      if nargout == 1
+      if nargout > 0
         varargout{1} = h;
       end
     end

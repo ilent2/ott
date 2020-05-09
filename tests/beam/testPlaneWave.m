@@ -104,3 +104,17 @@ function testForce(testCase)
   testCase.verifyEqual(f, [1;0;-1.0], 'perpendicular wave');
   
 end
+
+function testLogicalSelection(testCase)
+
+  P1 = ott.beam.PlaneWave('direction', [0;0;1], 'polarisation', [0;1;0]);
+  P2 = ott.beam.PlaneWave('direction', [1;0;0], 'polarisation', [0;1;0]);
+  
+  array = [P1, P2];
+  empty = ott.beam.PlaneWave.empty();
+  
+  testCase.verifyEqual(array([true, false]), P1, 'P1');
+  testCase.verifyEqual(array([true, true]), array, 'P1');
+  testCase.verifyEqual(array([false, false]), empty, 'P1');
+
+end

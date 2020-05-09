@@ -258,10 +258,15 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
       % rays are inside the shape.  For some shapes there may be
       % faster methods.  Normals are calculated with the normalsXyz method.
 
+      % Minimum distance before intersection
+      % TODO: This should be a parameter
+      min_distance = 1.0e-2;
+
       if ~isa(vecs, 'ott.utils.Vector')
         vecs = ott.utils.Vector(vecs);
       end
 
+      % TODO: This should be a parameter
       dx = shape.maxRadius ./ 100;
       if ~isfinite(dx)
         dx = 1.0e-3;
@@ -269,7 +274,12 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
 
       % Start by calculating intersects with bounding box
       ints = shape.intersectBoundingBox(vecs);
-      ints(1:3, isnan(ints(1, :))) = vecs.origin(:, isnan(ints(1, :)));
+
+      % Handle point inside (or on the edge)
+      mask = isnan(ints(1, :));
+      ints(1:3, mask) = vecs.origin(:, mask) ...
+          + vecs.direction(:, mask) .* min_distance ...
+          ./ vecnorm(vecs.direction(:, mask));
 
       % Calculate distance we want to search for each vector
       search_distance = vecnorm(ints(4:6, :) - ints(1:3, :));

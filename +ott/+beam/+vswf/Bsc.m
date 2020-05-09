@@ -181,18 +181,21 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       %   - like   beam -- Construct this beam to be like another beam
 
       p = inputParser;
+      p.KeepUnmatched = true;
       p.addOptional('a', [], ...
         @(x) isnumeric(x) || isa(x, 'ott.beam.vswf.Bsc'));
       p.addOptional('b', [], @isnumeric);
       p.addOptional('basis', 'regular', ...
         @(x) any(strcmpi(x, {'incoming', 'outgoing', 'regular'})));
       p.addParameter('like', []);
-      p.addParameter('k_medium', 2.0*pi);
+      p.addParameter('wavenumber', 2.0*pi);
       p.addParameter('dz', 0.0);
       p.addParameter('array_type', 'array');
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
       
-      beam = beam@ott.beam.utils.ArrayType('array_type', p.Results.array_type);
+      beam = beam@ott.beam.utils.ArrayType(...
+        'array_type', p.Results.array_type, unmatched{:});
 
       a = p.Results.a;
       b = p.Results.b;
@@ -210,11 +213,9 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       % Copy all beam data (except coefficients) from like
       if ~isempty(like)
         beam.dz = like.dz;
-        beam.wavenumber = like.wavenumber;
         beam.basis = like.basis;
       else
         beam.dz = p.Results.dz;
-        beam.wavenumber = p.Results.k_medium;
         beam.basis = p.Results.basis;
       end
 
@@ -228,7 +229,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       beam.b = b;
     end
 
-    function sz = size(beam, varargin)
+    function varargout = size(beam, varargin)
       % Get the number of beams contained in this object
       %
       % Usage
@@ -237,7 +238,10 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       %
       % The leading dimension is always 1.  May change in future.
 
-      sz = size(beam.a(1, :), varargin{:});
+      sz = size(beam.a);
+      sz(1) = 1;
+      
+      [varargout{1:nargout}] = ott.utils.size_helper(sz, varargin{:});
     end
 
     function beam = catInternal(dim, beam, varargin)
@@ -1443,7 +1447,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       % number of locations.
 
       dummy_type = 'total';
-      tbeam = ott.vswf.bsc.Scattered(beam, dummy_type);
+      tbeam = ott.beam.vswf.Scattered(beam, dummy_type);
       [sbeam, tbeam] = tbeam.calculateScatteredBeam(tmatrix, varargin{:});
     end
 

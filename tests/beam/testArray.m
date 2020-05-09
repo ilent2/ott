@@ -67,3 +67,46 @@ function testArrayCatIncoherentError(testCase)
     'ott:beam:utils:ArrayType:coherent_with_incoherent');
 
 end
+
+function testLogicalSelection(testCase)
+
+  beam1 = ott.beam.PlaneWave();
+  beam2 = ott.beam.paraxial.Gaussian(1.0);
+  beam = [beam1, beam2];
+  
+  target1 = ott.beam.Array('array', [1, 1], beam2);
+  target3 = ott.beam.Array('array', [0, 0]);
+
+  testCase.verifyEqual(beam([false, true]), target1, 'beam2');
+  testCase.verifyEqual(beam([true, true]), beam, 'beam');
+  testCase.verifyEqual(beam([false, false]), target3, 'empty');
+
+end
+
+function testLogicalSubSelection(testCase)
+
+  plane = ott.beam.PlaneWave('origin', randn(3, 5));
+  beam = ott.beam.Array('array', [1, 2], plane, plane);
+  larray = [false, true, false, false, true];
+  farray = false(1, 5);
+  
+  testCase.verifyEqual(beam(1), plane, '()');
+  testCase.verifyEqual(beam.beams{1}, plane, '.beams{}');
+  testCase.verifyEqual(beam.beams{1}(larray), plane(larray), 'larray');
+  testCase.verifyEqual(beam.beams{1}(farray), plane(farray), 'farray');
+
+end
+
+function testEmptyCat(testCase)
+
+  empty = ott.beam.abstract.Empty();
+  plane = ott.beam.PlaneWave('origin', randn(3, 5));
+  
+  beam = [empty, plane];
+  testCase.verifyEqual(beam, plane, 'empty cat');
+  
+  array = ott.beam.Array('array', [1, 3]);
+  testCase.verifyEqual(array(1), empty, 'empty array');
+  testCase.verifyEqual([array(1), plane], plane, 'more empty cat');
+end
+

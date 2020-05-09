@@ -28,6 +28,22 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
     wavevector        % Wave-vectors of plane wave components
     intensity         % Intensity of plane wave components
   end
+  
+  methods (Static)
+    function beam = empty(varargin)
+      % Construct an emtpy beam array
+      %
+      % Usage
+      %   beam = ott.beam.abstract.PlaneWave.empty(...)
+      %
+      % Additional parameters are passed to the constructor.
+      
+      empt = zeros(3, 0);
+      beam = ott.beam.abstract.PlaneWave('direction', empt, ...
+        'polarisation', empt, ...
+        'field', empt(1, :), 'origin', empt, varargin{:});
+    end
+  end
 
   methods
     function beam = PlaneWave(varargin)
@@ -59,30 +75,49 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
       p = inputParser;
       p.KeepUnmatched = true;
       p.addParameter('direction', []);
-      p.addParameter('polarisation', [1;0;0]);
+      p.addParameter('polarisation', []);
       p.addParameter('origin', []);
-      p.addParameter('field', 1.0);
+      p.addParameter('field', []);
       p.addParameter('vector', []);
       p.addParameter('array_type', 'coherent');
+      p.addParameter('like', []);
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
-
-      % Handle default types for origin/direction
+      
+      % Handle defaults from like
       default_direction = [0;0;1];
       default_origin = [0;0;0];
-      assert(isempty(p.Results.vector) ...
-        || (isempty(p.Results.direction) && isempty(p.Results.origin)), ...
+      default_field = 1.0;
+      default_polarisation = [1;0;0];
+      if ~isempty(p.Results.like)
+        if isa(p.Results.like, 'ott.beam.abstract.PlaneWave')
+          default_direction = p.Results.like.direction;
+          default_origin = p.Results.like.origin;
+          default_field = p.Results.like.field;
+          default_polarisation = p.Results.like.polarisation;
+        end
+      end
+      
+      % Get which parameters are using defaults (i.e. unset)
+      udef_origin = any(strcmpi('origin', p.UsingDefaults));
+      udef_direction = any(strcmpi('direction', p.UsingDefaults));
+      udef_field = any(strcmpi('field', p.UsingDefaults));
+      udef_polarisation = any(strcmpi('polarisation', p.UsingDefaults));
+      udef_vector = any(strcmpi('vector', p.UsingDefaults));
+
+      % Get values from origin/direction or vector
+      assert(udef_vector || (udef_direction && udef_origin), ...
         'vector parameter incompatible with direction/origin');
-      if ~isempty(p.Results.vector)
+      if ~udef_vector
         origin = p.Results.vector.origin;
         direction = p.Results.vector.direction;
       else
-        if isempty(p.Results.origin)
+        if udef_origin
           origin = default_origin;
         else
           origin = p.Results.origin;
         end
-        if isempty(p.Results.direction)
+        if udef_direction
           direction = default_direction;
         else
           direction = p.Results.direction;
@@ -92,11 +127,20 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
       % Get Vector to store most
       beam = beam@ott.beam.utils.ArrayType('array_type', p.Results.array_type);
       beam = beam@ott.utils.Vector(origin, direction);
-      beam = beam@ott.beam.abstract.Beam(unmatched{:});
+      beam = beam@ott.beam.abstract.Beam(unmatched{:}, ...
+          'like', p.Results.like);
 
       % Store remaining parameters
-      beam.field = p.Results.field;
-      beam.polarisation = p.Results.polarisation;
+      if udef_field
+        beam.field = default_field;
+      else
+        beam.field = p.Results.field;
+      end
+      if udef_polarisation
+        beam.polarisation = default_polarisation;
+      else
+        beam.polarisation = p.Results.polarisation;
+      end
     end
 
     function ray = ott.beam.Ray(plane)
@@ -156,6 +200,23 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
       %
       % Default behaviour: ``prod(size(beam)) == 0``
       b = numel(vec) == 0;
+    end
+    
+    function idx = end(vec, k, n)
+      % Get the last index of a specific dimension
+      %
+      % Usage
+      %    vec(end+1) = something_else
+      
+      % Shift indices up by 1 for linear indexing
+      if n == 1
+        n = 2;
+        k = 2;
+      end
+      
+      sz = size(vec);
+      assert(n <= numel(sz), 'Too many dimensions');
+      idx = sz(k);
     end
 
     function beam = plus(a, b)
@@ -298,10 +359,15 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
           other = ott.beam.abstract.PlaneWave(other);
         end
         
+        % Ensure field sizes match
+        if size(beam.field, 1) == 1 && size(other.field, 1) == 2
+          beam.field = [beam.field; zeros(size(beam.field))];
+        end
+        
         % Must set data first!
         beam.data(:, subs{:}) = other.data;
-        beam.field(:, subs{:}) = other.field;
         beam.polarisation(:, subs{:}) = other.polarisation;
+        beam.field(:, subs{:}) = other.field;
       end
     end
   end

@@ -23,10 +23,11 @@ function testScatter(testCase)
   particle = ott.scat.geometric.Shape(shape, index_relative);
   beam = ott.beam.Ray('direction', [0;0;1], 'origin', [0;0;-3]);
   
-  [sbeam, ibeam] = particle.scatter(beam);
+  [sbeam, ibeam] = particle.scatter(beam, 'max_iterations', 20);
   
-  testCase.verifyEqual(sbeam.power + ibeam.power, beam.power, ...
-    'AbsTol', 1.0e-15, 'power prserved');
+  testCase.verifyEqual(sbeam.power, beam.power, ...
+    'AbsTol', 2.0e-2, 'power prserved');
+  testCase.verifyEqual(size(ibeam), [0, 0], 'no internal rays');
   
 end
 
@@ -43,14 +44,18 @@ function testForceTorque(testCase)
     'AbsTol', 1e-15, 'off-axis terms');
   
   force2 = beam.force(particle);
-  testCase.verifyEqual(force2, -force1, 'oposite sign');
+  testCase.verifyEqual(force2, -force1, ...
+    'AbsTol', 1e-15, 'oposite sign');
   
   torque = particle.torque(beam);
-  testCase.verifyEqual(torque, zeros(3, 1), 'torque');
+  testCase.verifyEqual(torque, zeros(3, 1), ...
+    'AbsTol', 1e-15, 'torque');
   
   [force3, torque3] = particle.forcetorque(beam);
-  testCase.verifyEqual(force3, force1, 'ft force');
-  testCase.verifyEqual(torque3, zeros(3, 1), 'ft torque');
+  testCase.verifyEqual(force3, force1, ...
+    'AbsTol', 1e-15, 'ft force');
+  testCase.verifyEqual(torque3, zeros(3, 1), ...
+    'AbsTol', 1e-15, 'ft torque');
 end
 
 function testForceMie(testCase)

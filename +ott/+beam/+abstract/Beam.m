@@ -53,6 +53,8 @@ classdef (Abstract) Beam < ott.beam.Properties
       % If you class has a different behaviour, either overload this
       % function or use the :class:`ott.beam.utils.ArrayType` class.
       %
+      % ott.beam.abstract.Empty beams are removed from the array.
+      %
       % Usage
       %   beam = cat(dim, beam1, beam2, beam3, ...)
 

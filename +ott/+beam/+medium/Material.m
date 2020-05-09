@@ -87,7 +87,7 @@ classdef (Abstract) Material < ott.beam.medium.Medium
       default_vacuum = ott.beam.medium.Vacuum.Unitary;
       if ~isempty(p.Results.like)
         if isa(p.Results.like, 'ott.beam.medium.Material')
-          default_vacuum = p.Resuts.like.vacuum;
+          default_vacuum = p.Results.like.vacuum;
         end
       end
 

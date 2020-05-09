@@ -43,24 +43,19 @@ classdef Plane < ott.beam.vswf.Bsc
       %  BSCPLANE(..., 'polarisation', [ Etheta Ephi ]) specifies
       %  the polarisation in the theta and phi directions.
 
-      beam = beam@ott.beam.vswf.Bsc();
 
       % Parse inputs
       p = inputParser;
+      p.KeepUnmatched = true;
       p.addParameter('polarisation', [ 1 1i ]);
       p.addParameter('Nmax', []);
       p.addParameter('radius', []);
-      p.addParameter('wavelength0', 1);
       p.addParameter('power', []);
-
-      p.addParameter('k_medium', []);
-      p.addParameter('index_medium', []);
-      p.addParameter('wavelength_medium', []);
-
       p.parse(varargin{:});
-
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      beam = beam@ott.beam.vswf.Bsc(unmatched{:});
       beam.basis = 'regular';
-      beam.wavenumber = ott.beam.vswf.Bsc.parser_k_medium(p, 2*pi);
 
       % If points aren't specified explicitly, use meshgrid
       if length(theta) ~= length(phi)
