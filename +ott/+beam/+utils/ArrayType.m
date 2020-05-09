@@ -236,14 +236,31 @@ classdef ArrayType < ott.beam.abstract.Beam
           % Seems that we need to apply subsref to parts one at a time,
           % we can't just dispatch to a built-in subsref (for example,
           % for cell indexing).  Can't do subsref(obj.(s(1).subs), s(2:end))
-          if length(s) > 1
+          if length(s) > 1 && ~ismethod(obj, s(1).subs)
+            
+            % Get field of array
             part = obj.(s(1).subs);
+            
+            % Iterate over remaining terms
             for ii = 2:length(s)-1
+              
+              % Methods consume two arguments
+              if ismethod(part, s(ii).subs)
+                break;
+              end
+              
               % This should call subsref on array beams as intended
               % Assumes single outputs of intermediate (is this ok?)
               part = subsref(part, s(ii));
             end
-            [varargout{1:nargout}] = subsref(part, s(end));
+            
+            if length(s) >= 3 && ismethod(part, s(ii).subs)
+              % Call method using default subsref
+              [varargout{1:nargout}] = builtin('subsref',obj,s(ii:end));
+            else
+              % Access final argument (with all outputs)
+              [varargout{1:nargout}] = subsref(part, s(end));
+            end
           else
             % Default behaviour (for imediate properties)
             [varargout{1:nargout}] = builtin('subsref',obj,s);
