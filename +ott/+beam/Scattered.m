@@ -53,18 +53,20 @@ classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
+      
+      other = p.Results.other;
 
       if isempty(p.Results.other)
         if isempty(ibeam.incident_beam)
           error('Must supply other or have valid incident_beam');
         end
-
-        [varargout{1:nargout}] = ibeam.incident_beam.force(...
-            ibeam.total_beam, unmatched{:});
-      else
-        [varargout{1:nargout}] = force@ott.beam.Beam(ibeam, ...
-            p.Results.other, unmatched{:});
+        
+        other = ibeam.incident_beam;
+        ibeam = ibeam.total_beam;
       end
+      
+      [varargout{1:nargout}] = force@ott.beam.Beam(ibeam, ...
+          other, unmatched{:});
     end
 
     function varargout = torque(ibeam, varargin)
@@ -81,18 +83,20 @@ classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
+      
+      other = p.Results.other;
 
       if isempty(p.Results.other)
         if isempty(ibeam.incident_beam)
           error('Must supply other or have valid incident_beam');
         end
-
-        [varargout{1:nargout}] = ibeam.incident_beam.torque(...
-            ibeam.total_beam, unmatched{:});
-      else
-        [varargout{1:nargout}] = torque@ott.beam.Beam(ibeam, ...
-            p.Results.other, unmatched{:});
+        
+        other = ibeam.incident_beam;
+        ibeam = ibeam.total_beam;
       end
+      
+      [varargout{1:nargout}] = torque@ott.beam.Beam(ibeam, ...
+          other, unmatched{:});
     end
 
     function varargout = forcetorque(ibeam, varargin)
@@ -124,18 +128,20 @@ classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
+      
+      other = p.Results.other;
 
       if isempty(p.Results.other)
         if isempty(ibeam.incident_beam)
           error('Must supply other or have valid incident_beam');
         end
-
-        [varargout{1:nargout}] = ibeam.incident_beam.forcetorque(...
-            ibeam.total_beam, unmatched{:});
-      else
-        [varargout{1:nargout}] = forcetorque@ott.beam.Beam(ibeam, ...
-            p.Results.other, unmatched{:});
+        
+        other = ibeam.incident_beam;
+        ibeam = ibeam.total_beam;
       end
+      
+      [varargout{1:nargout}] = forcetorque@ott.beam.Beam(ibeam, ...
+          other, unmatched{:});
     end
   end
 end

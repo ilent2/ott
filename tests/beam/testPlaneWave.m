@@ -103,6 +103,9 @@ function testForce(testCase)
   f = P1.force(P2);
   testCase.verifyEqual(f, [1;0;-1.0], 'perpendicular wave');
   
+  f2 = P2.force(P1);
+  testCase.verifyEqual(f2, -f, 'oposite sign');
+  
 end
 
 function testLogicalSelection(testCase)
