@@ -126,7 +126,6 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       beam.mode = p.Results.mode;
       beam.polarisation = p.Results.polarisation;
       beam.offset = p.Results.offset;
-      beam.wavenumber = ott.beam.vswf.Bsc.parser_k_medium(p, 2*pi);
       
       % Ensure beam offset is not empty
       if isempty(beam.offset)
@@ -400,7 +399,7 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       % If no Nmax supplied, shrink the beam to the smallest size that
       % preserves the beam power
       if isempty(p.Results.Nmax)
-        beam = beam.shrink_Nmax();
+        beam = beam.shrinkNmax();
       end
 
       % Normalize the beam power

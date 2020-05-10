@@ -103,7 +103,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       p.parse(varargin{:});
 
       % Parse k_medium
-      k_medium = ott.optics.vswf.tmatrix.Tmatrix.parser_k_medium(p, 2.0*pi);
+      k_medium = ott.scat.vswf.Tmatrix.parser_k_medium(p, 2.0*pi);
       
       % Get a shape object from the inputs
       if ischar(shape) && ~isempty(p.Results.parameters)
@@ -206,7 +206,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       p.parse(varargin{:});
 
       % Parse k_medium
-      k_medium = ott.optics.vswf.tmatrix.Tmatrix.parser_k_medium(p, 2.0*pi);
+      k_medium = ott.scat.vswf.Tmatrix.parser_k_medium(p, 2.0*pi);
 
       % Get a shape object from the inputs
       if ischar(shape) && ~isempty(p.Results.parameters)
@@ -219,21 +219,21 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       % Call the appropriate class to do the work
       method = p.Results.method;
       if isempty(method)
-        method = ott.optics.vswf.tmatrix.Tmatrix.defaultMethod(shape, ...
+        method = ott.scat.vswf.Tmatrix.defaultMethod(shape, ...
           'method_tol', p.Results.method_tol, ...
           'k_medium', k_medium);
       end
       switch method
         case 'mie'
-          tmatrix = ott.optics.vswf.tmatrix.Mie.simple(shape, varargin{:});
+          tmatrix = ott.scat.vswf.Mie.simple(shape, varargin{:});
         case 'smarties'
-          tmatrix = ott.optics.vswf.tmatrix.Smarties.simple(shape, varargin{:});
+          tmatrix = ott.scat.vswf.Smarties.simple(shape, varargin{:});
         case 'pm'
-          tmatrix = ott.optics.vswf.tmatrix.Pm.simple(shape, varargin{:});
+          tmatrix = ott.scat.vswf.Pm.simple(shape, varargin{:});
         case 'dda'
-          tmatrix = ott.optics.vswf.tmatrix.Dda.simple(shape, varargin{:});
+          tmatrix = ott.scat.vswf.Dda.simple(shape, varargin{:});
         case 'ebcm'
-          tmatrix = ott.optics.vswf.tmatrix.Ebcm.simple(shape, varargin{:});
+          tmatrix = ott.scat.vswf.Ebcm.simple(shape, varargin{:});
         otherwise
           error('Unsupported method specified');
       end
@@ -425,22 +425,23 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       nmax = [nmax1 nmax2];
     end
 
-    function tmatrix = set.Nmax(tmatrix, nmax)
-      %set.Nmax resizes the T-matrix
-      tmatrix = tmatrix.set_Nmax(nmax);
-    end
-
-    function tmatrix = set_Nmax(tmatrix, nmax, varargin)
-      % SET_NMAX resize the T-matrix, with additional options
+    function tmatrix = setNmax(tmatrix, nmax, varargin)
+      % Resize the T-matrix, with additional options.
       %
-      % SET_NMAX(nmax) sets the T-matrix Nmax.  nmax should be a
-      % scarar or 2 element vector with row/column Nmax.
+      % Usage
+      %   tmatrix = tmatrix.setNmax(nmax, ...)  or  tmatrix.Nmax = nmax
+      %   Change the size of the T-matrix.
       %
-      % SET_NMAX(..., 'tolerance', tol) use tol as the warning error
-      % level tolerance for resizing the beam.
+      % Parameters
+      %   - Nmax (numeric) -- Nmax should be a scalar or 2-element vector
+      %     with row/column Nmax values.
       %
-      % SET_NMAX(..., 'powerloss', mode) action to take if a power
-      % loss is detected.  Can be 'ignore', 'warn' or 'error'.
+      % Optional named arguments
+      %   - tolerance (numeric) -- Tolerance to use for power warnings.
+      %     Default: ``1.0e-6``.
+      %
+      % 	- powerloss (enum) -- behaviour for when power loss is detected.
+      %     Can be 'ignore', 'warn' or 'error'.  Default: ``'warn'``.
 
       p = inputParser;
       p.addParameter('tolerance', 1.0e-6);
@@ -558,16 +559,6 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       tmatrix.type = old_type;
     end
 
-    function type = get.type(tmatrix)
-      % Get the T-matrix type
-      type = tmatrix.type_;
-    end
-
-    function tmatrix = set.type(tmatrix, type)
-      % Set the T-matrix type, converting if needed
-      tmatrix = tmatrix.set_type(type);
-    end
-
     function tmatrix = set_type(tmatrix, type, varargin)
       % SET_TYPE set T-matrix type with additional options
 
@@ -607,34 +598,62 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       tmatrix.type = 'scattered';
     end
 
-    function sbeam = scatter(tmatrix, beam)
-      % Scatter the beam
+    function [sbeam, tbeam] = scatter(tmatrix, beam, varargin)
+      % Calculate the beam scattered by a T-matrix
       %
       % Usage
-      %   sbeam = tmatrix.scatter(beam)
+      %   [sbeam, tbeam] = beam.scatter(tmatrix) scatters the beam
+      %   returning the scattered beam ``sbeam`` and the unscattered
+      %   but possibly translated beam ``tbeam`` truncated to
+      %   ``tmatrix.Nmax + 1``.
       %
-      % See also mtimes
+      % Optional named arguments
+      %   - position (3xN numeric) translation applied to the beam
+      %     before the beam is scattered by the particle.  Default: ``[]``.
+      %
+      %   - rotation (3x3N numeric) rotation spplied to the beam,
+      %     calculates the scattered beam and applies the inverse rotation,
+      %     effectively rotating the particle.  Default: ``[]``.
+      %
+      %   - combine (enum|empty) -- Beam combination method.  Can be
+      %     'incoherent' (ignored), 'coherent', or empty (ignored).
+      %
+      % If both position and rotation are present, the translation is
+      % applied first, followed by the rotation.
+      % If both position and rotation are arrays, they must have the same
+      % number of locations.
 
-      sbeam = tmatrix * beam;
+      [sbeam, tbeam] = ott.beam.vswf.Scattered.FromTmatrix(beam, ...
+          tmatrix, varargin{:});
     end
 
-    function sbeam = mtimes(tmatrix,ibeam)
-      %MTIMES provide T-matrix multiplication overload
+    function sbeam = mtimes(tmatrix, ibeam)
+      % Provide T-matrix multiplication overload
+      %
+      % Usage
+      %   sbeam = tmatrix * ibeam
+      %   Scatters an incident beam by a T-matrix.  The scattered beam
+      %   is a instance of :class:`ott.beam.vswf.Scattered`.
+      %
+      %   beam = M * beam
+      %   Normal matrix multiplication.  The scattered object is
+      %   typically a T-matrix or numeric vector.
+
       if isa(ibeam, 'ott.beam.abstract.Beam')
-        
+
         % Check and convert to Bsc if required
         if ~isa(ibeam, 'ott.beam.vswf.Bsc')
           ibeam = ott.beam.vswf.Bsc(ibeam);
         end
-        
-        sbeam = ibeam.scatter(tmatrix);
+
+        sbeam = tmatrix.scatter(ibeam);
       else
         % Provide default matrix multiplication
         sbeam = tmatrix;
         sbeam.data = sbeam.data * ibeam;
       end
     end
-    
+
     function tmatrixs = uminus(tmatrix)
       %UMINUS unary minus for T-matrix
       tmatrixs = tmatrix;
@@ -662,6 +681,22 @@ classdef Tmatrix < ott.scat.utils.Particle ...
         check = sum(abs(tmatrix.data).^2, 1);
       end
       
+    end
+ end
+
+  methods % Getters/setters
+    function type = get.type(tmatrix)
+      % Get the T-matrix type
+      type = tmatrix.type_;
+    end
+    function tmatrix = set.type(tmatrix, type)
+      % Set the T-matrix type, converting if needed
+      tmatrix = tmatrix.set_type(type);
+    end
+    
+    function tmatrix = set.Nmax(tmatrix, nmax)
+      %set.Nmax resizes the T-matrix
+      tmatrix = tmatrix.setNmax(nmax);
     end
   end
 end

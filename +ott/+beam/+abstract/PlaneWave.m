@@ -14,6 +14,7 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
 %   - rotate      -- Rotate the direction and polarisation
 %   - rotate*     -- Rotate the particle around the X,Y,Z axis
 %   - size        -- Get size of beam array
+%   - sum         -- Raises an error
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -151,12 +152,27 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
         'direction', plane.direction);
     end
     
-    function bsc = ott.beam.vswf.Bsc(plane)
+    function bsc = ott.beam.vswf.Bsc(plane, varargin)
+      % Convert from a PlaneWave to a Bsc
+      %
+      % Usage
+      %   bsc = ott.beam.vswf.Bsc(planewave, ...)
+      %
+      % Optional named arguments
+      %   - suggestedNmax (numeric) -- Suggested Nmax for the Bsc.
+      %     For plane waves, this is the Nmax used for the beam.
       
-      % TODO: Get theta/phi from direction
-      theta = 0.0;
-      phi = 0.0;
-      bsc = ott.beam.vswf.Plane(theta, phi);
+      p = inputParser;
+      p.addParameter('suggestedNmax', []);
+      p.parse(varargin{:});
+      
+      % Calculate wave directions
+      rtp = ott.utils.xyz2rtp(plane.direction);
+      theta = rtp(2, :);
+      phi = rtp(3, :);
+      
+      % Construct BSC
+      bsc = ott.beam.vswf.Plane(theta, phi, 'Nmax', p.Results.suggestedNmax);
       
     end
 
@@ -190,6 +206,15 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
       sz(1) = 1;
       
       [varargout{1:nargout}] = ott.utils.size_helper(sz, varargin{:});
+    end
+    
+    function sum(varargin)
+      % Raises an error
+      %
+      % Overload for Vector.sum to disallow addition of vector elements.
+      % If you need this functionality, access the data elements.
+      
+      error('Sum not supported for PlaneWaves');
     end
     
     function b = isempty(vec)

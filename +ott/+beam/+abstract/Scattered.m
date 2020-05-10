@@ -133,7 +133,7 @@ classdef Scattered < ott.beam.abstract.Beam
     end
 
     function beam = set.type(beam, val)
-      assert(any(strcmpi(val, {'scattered', 'total'})), ...
+      assert(any(strcmpi(val, {'scattered', 'total', 'internal'})), ...
           'type must be ''scattered'', ''total'' or ''internal''');
       beam.type = val;
     end

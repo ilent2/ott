@@ -70,7 +70,7 @@ classdef ArrayType < ott.beam.abstract.Beam
       %     Default: ``'array'``.
 
       p = inputParser;
-      p.KeepUnmatched;
+      p.KeepUnmatched = true;
       p.addParameter('array_type', 'array');
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);

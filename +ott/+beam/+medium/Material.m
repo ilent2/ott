@@ -200,7 +200,7 @@ classdef (Abstract) Material < ott.beam.medium.Medium
     function val = get.speed(mat)
       val = mat.speed0 ./ mat.index;
     end
-    function val = set.speed(mat, val)
+    function mat = set.speed(mat, val)
       mat.index = mat.speed0 ./ val;
     end
     function val = get.permittivity(mat)

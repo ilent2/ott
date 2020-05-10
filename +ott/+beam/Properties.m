@@ -143,6 +143,41 @@ classdef (Abstract) Properties
         beam.omega = default_omega;
       end
     end
+    
+    function beam = setWavelength(beam, val, mode)
+      % Change the wavelength of the beam
+      %
+      % Usage
+      %   beam = beam.setWavelength(val, mode)
+      %
+      % Parameters
+      %   - mode (enum) -- Variable to change.  Either 'frequency' or
+      %     'medium' to change the optical frequency or medium properties.
+      
+      switch mode
+        case 'frequency'
+          beam = beam.setFrequency('wavelength', val);
+        case 'medium'
+          beam.medium.speed = beam.omega ./ (2*pi) .* val;
+        otherwise
+          error('Unknown mode selection');
+      end
+      
+      assert(nargout == 1, 'Expected one output argument');
+    end
+    
+    function varargout = setWavenumber(beam, val, mode)
+      % Change the wavelength of the beam
+      %
+      % Usage
+      %   beam = beam.setWavenumber(val, mode)
+      %
+      % Parameters
+      %   - mode (enum) -- Variable to change.  Either 'frequency' or
+      %     'medium' to change the optical frequency or medium properties.
+      
+      [varargout{1:nargout}] = beam.setWavelength(2*pi./val, mode);
+    end
 
     function beam = setFrequency(beam, name, val)
       % Set the optical frequency from another named parameter
@@ -168,6 +203,8 @@ classdef (Abstract) Properties
         otherwise
           error('Unknown parameter name');
       end
+      
+      assert(nargout == 1, 'Expected one output argument');
     end
 
     function data = arrayApply(beam, data, func)
@@ -206,18 +243,28 @@ classdef (Abstract) Properties
       beam.omega = val;
     end
 
-    function val = get.wavenumber(beam)
-      val = beam.omega ./ beam.medium.speed;
-    end
-    function val = get.wavenumber0(beam)
-      val = beam.omega ./ beam.vecuum.speed;
-    end
-
+    % Wavelength and wavenumber only have getters (setters are ambiguous)
     function val = get.wavelength(beam)
       val = 2*pi.*beam.medium.speed ./ beam.omega;
     end
+    function val = get.wavenumber(beam)
+      val = beam.omega ./ beam.medium.speed;
+    end
+    
+    % Wavenumber is dependent on frequency
+    function val = get.wavenumber0(beam)
+      val = beam.omega ./ beam.vecuum.speed;
+    end
+    function beam = set.wavenumber0(beam, val)
+      beam = beam.setFrequency('wavenumber0', val);
+    end
+
+    % Wavenumber is dependent on frequency
     function val = get.wavelength0(beam)
       val = 2*pi.*beam.vacuum.speed ./ beam.omega;
+    end
+    function beam = set.wavelength0(beam, val)
+      beam = beam.setFrequency('wavelength0', val);
     end
   end
 end

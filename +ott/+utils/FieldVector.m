@@ -12,6 +12,10 @@ classdef FieldVector < double
 % Properties (possibly computed)
 %   - vxyz   -- Data in Cartesian coordinates
 %   - vrtp   -- Data in Spherical coordinates
+%
+% Methods
+%   - plus        -- Add field vectors
+%   - minus       -- Subtract field vectors
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -51,7 +55,52 @@ classdef FieldVector < double
       field.locations = loc;
       field.basis = basis;
     end
+    
+    function vec = plus(v1, v2)
+      % Add field vectors
+      
+      if isa(v1, 'ott.utils.FieldVector') && isa(v2, 'ott.utils.FieldVector')
+        
+        assert(isequaln(v1.locations, v2.locations), ...
+            'Locations must match when adding field vectors');
+            
+        if strcmpi(v1.basis, v2.basis)
+          % Just add data (like normal)
+          vec = ott.utils.FieldVector(v1.locations, builtin('plus', v1, v2), v1.basis);
+        else
+          % Convert to a common basis and add
+          vec = ott.utils.FieldVector(v1.locations, v1.vxyz + v2.vxyz, 'cartesian');
+        end
+        
+      elseif isscalar(v1)
+        % Keep scalar addition
+      	vec = ott.utils.FieldVector(v2.locations, builtin('plus', v1, v2), v2.basis);
+      elseif isscalar(v2)
+        % Keep scalar addition
+      	vec = ott.utils.FieldVector(v1.locations, builtin('plus', v1, v2), v1.basis);
+      else
+        error('Unsupported addition for FieldVector');
+      end
+      
+    end
+    
+    function vec = mtimes(v1, v2)
+      % Add field vectors
+      
+      if isscalar(v1)
+        % Keep scalar mtimes
+      	vec = ott.utils.FieldVector(v2.locations, builtin('mtimes', v1, v2), v2.basis);
+      elseif isscalar(v2)
+        % Keep scalar mtimes
+      	vec = ott.utils.FieldVector(v1.locations, builtin('mtimes', v1, v2), v1.basis);
+      else
+        error('Unsupported addition for FieldVector');
+      end
+      
+    end
+  end
 
+  methods % Getters/setters
     function val = get.vxyz(field)
       if strcmpi(field.basis, 'cartesian')
         val = double(field);

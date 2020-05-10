@@ -6,6 +6,18 @@ classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
 % which operate directly on the internal incident beam and ensure
 % that the beam type is set appropriately before the calculation.
 %
+% Properties
+%   - incident_beam   -- The incident ray object (can be set to [])
+%   - type            -- Type of beam ('scattered', 'total' or 'internal')
+%
+% Dependent properties
+%   - total_beam      -- Instance of the beam with total type
+%   - scattered_beam  -- Instance of the beam with scattered type
+%
+% Methods
+%   - totalField      -- Calculate the total field beam
+%   - scatteredField  -- Calculate the scattered field beam
+%
 % For details on methods, see :class:`Beam`.
 
 % Copyright 2020 Isaac Lenton

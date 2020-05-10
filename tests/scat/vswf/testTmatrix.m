@@ -1,15 +1,15 @@
-function tests = tmatrix
+function tests = testTmatrix
   tests = functiontests(localfunctions);
 end
 
 function setupOnce(testCase)
 
   % Ensure the ott package is in our path
-  addpath('../');
+  addpath('../../../');
 
   % Create a T-matrix for a sphere
-  testCase.TestData.T = ott.Tmatrix.simple(...
-      'sphere', 1.0, 'wavelength0', 1.0, ...
+  testCase.TestData.T = ott.scat.vswf.Tmatrix.simple(...
+      'sphere', 1.0, 'wavelength_medium', 1.0, ...
       'index_medium', 1.0, 'index_particle', 1.2);
 
   % Tolerance for comparisons

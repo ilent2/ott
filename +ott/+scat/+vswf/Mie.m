@@ -331,7 +331,7 @@ classdef Mie < ott.scat.vswf.Tmatrix
       end
 
       % Genreate an instance of this object
-      tmatrix = ott.scat.vswf.tmatrix.Mie(radius, varargin{:});
+      tmatrix = ott.scat.vswf.Mie(radius, varargin{:});
     end
   end
 

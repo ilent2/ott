@@ -3,7 +3,7 @@ function tests = tmatrixmie
 end
 
 function setupOnce(testCase)
-  addpath('../../../../');
+  addpath('../../../');
 end
 
 function testSimple(testCase)
@@ -11,7 +11,7 @@ function testSimple(testCase)
   index_relative = 1.2;
   radius = 1.0;
 
-  T = ott.optics.vswf.tmatrix.Mie(radius, 'index_relative', index_relative);
+  T = ott.scat.vswf.Mie(radius, 'index_relative', index_relative);
   
   % Check all getters
   testCase.verifyEqual(T.radius, 1.0, 'r');
@@ -37,7 +37,7 @@ function testLayered(testCase)
   radii = [0.5, 1.0];
   indexes = [1.4, 1.2];
 
-  T = ott.optics.vswf.tmatrix.Mie(radii, 'index_relative', indexes);
+  T = ott.scat.vswf.Mie(radii, 'index_relative', indexes);
   
   testCase.verifyEqual(T.index_relative, indexes, ...
     'Index_relative not set correctly');
@@ -51,16 +51,16 @@ function testShrink(testCase)
   % constructing the layered sphere produces a similar force/torque
 
   % Generate the layered spheres
-  import ott.optics.vswf.*;
-  T0 = tmatrix.Mie([0.5, 1.0], 'index_relative', [1.4, 1.2], ...
+  import ott.scat.vswf.*;
+  T0 = Mie([0.5, 1.0], 'index_relative', [1.4, 1.2], ...
       'shrink', false);
-  T1 = tmatrix.Mie([0.5, 1.0], 'index_relative', [1.4, 1.2], ...
+  T1 = Mie([0.5, 1.0], 'index_relative', [1.4, 1.2], ...
       'shrink', true);
     
   testCase.verifyNotEqual(T0.Nmax, T1.Nmax, 'Nmaxes are equal');
 
   % Generate a beam for testing
-  beam = bsc.PmGauss('power', 1.0);
+  beam = ott.beam.vswf.PmGauss('power', 1.0);
   
   % Calculate force
   f0 = beam.force(T0);
@@ -72,36 +72,36 @@ end
 function testFields(testCase)
 
   % Test internal fields for non-contrast particle
-  T = ott.optics.vswf.tmatrix.Mie(0.5, 'index_relative', 1.0, 'internal', true);
-  beam = ott.optics.vswf.bsc.PmGauss('power', 1.0);
+  T = ott.scat.vswf.Mie(0.5, 'index_relative', 1.0, 'internal', true);
+  beam = ott.beam.vswf.PmGauss('power', 1.0);
   
   sbeam = T * beam;
   
   xyz = [0.2; 0.0; 0.0];
   
-  E1 = beam.emFieldXyz(xyz);
-  E2 = sbeam.emFieldXyz(xyz);
+  E1 = beam.efield(xyz);
+  E2 = sbeam.efield(xyz);
 
   import matlab.unittest.constraints.IsEqualTo;
   import matlab.unittest.constraints.AbsoluteTolerance;
   tol = 1.0e-6;
 
-  testCase.verifyThat(E1, IsEqualTo(E2, ...
+  testCase.verifyThat(E1.vxyz, IsEqualTo(E2.vxyz, ...
       'Within', AbsoluteTolerance(tol)), ...
       'Internal field has incorrect value');
     
   % Test external fields for non-contrast particle
-  T = ott.optics.vswf.tmatrix.Mie(0.5, 'index_relative', 1.0, 'internal', false);
-  beam = ott.optics.vswf.bsc.PmGauss('power', 1.0);
+  T = ott.scat.vswf.Mie(0.5, 'index_relative', 1.0, 'internal', false);
+  beam = ott.beam.vswf.PmGauss('power', 1.0);
   
   sbeam = T * beam;
   
   xyz = [0.7; 0.0; 0.0];
   
-  E1 = beam.emFieldXyz(xyz);
-  E2 = E1 + 2*sbeam.emFieldXyz(xyz);
+  E1 = beam.efield(xyz);
+  E2 = E1 + 2*sbeam.efield(xyz);
 
-  testCase.verifyThat(E1, IsEqualTo(E2, ...
+  testCase.verifyThat(E1.vxyz, IsEqualTo(E2.vxyz, ...
       'Within', AbsoluteTolerance(tol)), ...
       'External field has incorrect value');
     
@@ -109,9 +109,9 @@ function testFields(testCase)
   % corss(n, Ei - Ee) = 0 and dot(n, Ei.*n_particle^2 - Ee) = 0
   R = 0.5;
   nrel = 1.2;
-  Te = ott.optics.vswf.tmatrix.Mie(R, 'index_relative', nrel, 'internal', false);
-  Ti = ott.optics.vswf.tmatrix.Mie(R, 'index_relative', nrel, 'internal', true);
-  beam = ott.optics.vswf.bsc.PmGauss('power', 1.0);
+  Te = ott.scat.vswf.Mie(R, 'index_relative', nrel, 'internal', false);
+  Ti = ott.scat.vswf.Mie(R, 'index_relative', nrel, 'internal', true);
+  beam = ott.beam.vswf.PmGauss('power', 1.0);
   
   % Scatter the beams
   sbeam = Te * beam;
@@ -122,9 +122,9 @@ function testFields(testCase)
   xyz = xyz ./ sqrt(dot(xyz, xyz));
   
   % Calculate the fields
-  Einc = beam.emFieldXyz(R*xyz);
-  Eint = ibeam.emFieldXyz(R*xyz);
-  Esca = sbeam.emFieldXyz(R*xyz);
+  Einc = beam.efield(R*xyz);
+  Eint = ibeam.efield(R*xyz);
+  Esca = sbeam.efield(R*xyz);
   Eext1 = Esca + Einc;
   
   % Test fields are continous

@@ -14,7 +14,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
 %   - basis       --  VSWF beam basis (incoming, outgoing or regular)
 %   - omega       --  Angular frequency of beam [2*pi/T]
 %   - wavelength  --  Wavelength of beam [L]
-%   - dz          --  Absolute cumulative distance the beam has moved
+%   - absdz       --  Absolute cumulative distance the beam has moved
 %
 % Dependent properties
 %   - Nmax        --  Truncation number for VSWF coefficients
@@ -53,15 +53,10 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
   properties (SetAccess=protected)
     a           % Beam shape coefficients a vector
     b           % Beam shape coefficients b vector
-
-    dz          % Absolute cumulative distance the beam has moved
-
-    % These can't be tracked using Matrix translation/rotations
-    %offset      % Offset applied to beam using translate functions
-    %direction   % Direction of beam applied using rotation functions
   end
 
   properties
+    absdz       % Absolute cumulative distance the beam has moved
     basis       % VSWF beam basis (incoming, outgoing or regular)
   end
 
@@ -72,6 +67,9 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
   methods (Static)
     function [a, b, n, m] = make_beam_vector(a, b, n, m, Nmax)
       %MAKE_BEAM_VECTOR converts output of bsc_* functions to sparse vectors
+
+      % TODO: Should we remove this function?  Or rename it?
+      % Other people might have formats that need this function (from files)
 
       % Check we have some modes
       if isempty(n)
@@ -101,29 +99,10 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       n = n.';
       m = m.';
     end
-
-    function k_medium = parser_k_medium(p, default)
-      %PARSER_K_MEDIUM helper to get k_medium from a parser object
-
-      if ~isempty(p.Results.k_medium)
-        k_medium = p.Results.k_medium;
-      elseif ~isempty(p.Results.wavelength_medium)
-        k_medium = 2.0*pi/p.Results.wavelength_medium;
-      elseif ~isempty(p.Results.index_medium)
-        if isempty(p.Results.wavelength0)
-          error('wavelength0 must be specified to use index_medium');
-        end
-        k_medium = p.Results.index_medium*2.0*pi/p.Results.wavelength0;
-      elseif nargin == 2
-        k_medium = default;
-      else
-        error('Unable to determine k_medium from inputs');
-      end
-    end
   end
 
   methods (Access=protected)
-    
+
     function [A, B] = translateZ_type_helper(beam, z, Nmax)
       % Determine the correct type to use in ott.utils.translate_z
       %
@@ -147,12 +126,12 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
         case 'regular'
           translation_type = 'sbesselj';
       end
-      
+
       % Calculate tranlsation matrices
       [A, B] = ott.utils.translate_z(Nmax, z, 'type', translation_type);
-      
+
     end
-    
+
   end
 
   methods
@@ -160,71 +139,115 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       % Construct a new beam object
       %
       % Usage
-      %   beam = Bsc(a, b, basis, ...) constructs a new beam vector.
-      %   Useful if you have a specific set of a/b coefficients that you
-      %   want to wrap in a beam object.
+      %   beam = Bsc() Constructs an empty Bsc beam.
       %
-      %   beam = Bsc(a, b)  As above, but uses 'regular' as the basis.
+      %   beam = Bsc(a, b, ...) constructs beam from a/b coefficients.
       %
-      %   beam = Bsc()  Constructs an empty beam object.
-      %   beam = Bsc(bsc)  Construct a copy of the existing bsc object.
+      %   beam = Bsc(bsc, ...) construct a copy of the existing Bsc beam.
       %
       % Parameters
       %   - a,b (numeric) -- Vectors of VSWF coefficients
       %   - bsc (vswf.bsc.Bsc) -- An existing BSC object
-      %   - basis (enum) -- VSWF basis: incoming, outgoing or regular
       %
       % Optional named arguments
-      %   - k_medium  n -- Wavenumber in medium (default: 2*pi)
-      %   - omega     n -- Angular frequency (default: 2*pi)
-      %   - dz        n -- Initial displacement of the beam (default: 0)
-      %   - like   beam -- Construct this beam to be like another beam
+      %   - basis (enum) -- VSWF basis: incoming, outgoing or regular.
+      %     Default: ``'regular'``.
+      %
+      %   - like (Bsc) -- Another beam obejct to use for default values.
+      %     Default: ``[]``.
+      %
+      %   - absdz (numeric) -- Initial displacement of the beam.  This is
+      %     used to keep track of when the beam may be displaced too far.
+      %     Default: ``0``.
+      %
+      %   - array_type (enum) -- Type of beam array.  Can be one of
+      %     'coherent', 'array', or 'incoherent'.  Default: ``'array'``.
 
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addOptional('a', [], ...
-        @(x) isnumeric(x) || isa(x, 'ott.beam.vswf.Bsc'));
+      p.addOptional('a', [], @(x) isnumeric(x) || isa(x, 'ott.beam.vswf.Bsc'));
       p.addOptional('b', [], @isnumeric);
-      p.addOptional('basis', 'regular', ...
-        @(x) any(strcmpi(x, {'incoming', 'outgoing', 'regular'})));
+      p.addParameter('basis', []);
+      p.addParameter('absdz', []);
+      p.addParameter('array_type', []);
       p.addParameter('like', []);
-      p.addParameter('wavenumber', 2.0*pi);
-      p.addParameter('dz', 0.0);
-      p.addParameter('array_type', 'array');
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
-      
+
+      % Get default parameters
+      default_a = [];
+      default_b = [];
+      default_array_type = 'array';
+      default_basis = 'regular';
+      default_absdz = 0.0;
+      if ~isempty(p.Results.like)
+        if isa(p.Results.like, 'ott.beam.utils.ArrayType')
+          default_array_type = p.Results.like.array_type;
+        end
+        if isa(p.Results.like, 'ott.beam.vswf.Bsc')
+          default_basis = p.Results.like.basis;
+          default_absdz = p.Results.like.absdz;
+          default_a = p.Results.like.a;
+          default_b = p.Results.like.b;
+        end
+      end
+
+      % If a is a Bsc, update defaults
+      if isa(p.Results.a, 'ott.beam.vswf.Bsc')
+        assert(isempty(p.Results.b), 'Too many arguments supplied');
+
+        default_absdz = p.Results.a.absdz;
+        default_basis = p.Results.a.basis;
+        default_array_type = p.Results.a.array_type;
+      end
+
+      % Get array type
+      array_type = p.Results.array_type;
+      if isempty(array_type)
+        array_type = default_array_type;
+      end
+
+      % Call base class
       beam = beam@ott.beam.utils.ArrayType(...
-        'array_type', p.Results.array_type, unmatched{:});
+        'array_type', array_type, 'like', p.Results.like, unmatched{:});
 
-      a = p.Results.a;
-      b = p.Results.b;
-      like = p.Results.like;
-
-      % Copy all data from an existing BSC
-      if isa(a, 'ott.beam.vswf.Bsc')
-        assert(isempty(b), 'Too many arguments supplied');
-
-        like = a;
-        a = like.a;
-        b = like.b;
-      end
-
-      % Copy all beam data (except coefficients) from like
-      if ~isempty(like)
-        beam.dz = like.dz;
-        beam.basis = like.basis;
+      % Get a,b
+      if isa(p.Results.a, 'ott.beam.vswf.Bsc')
+        beam = beam.setCoefficients(p.Results.a.a, p.Results.a.b);
+      elseif ~isempty(p.Results.a)
+        beam = beam.setCoefficients(p.Results.a, p.Results.b);
       else
-        beam.dz = p.Results.dz;
-        beam.basis = p.Results.basis;
+        beam = beam.setCoefficients(default_a, default_b);
       end
 
-      % Check size of a and b and assign
+      % Store basis
+      if ~isempty(p.Results.basis)
+        beam.basis = p.Results.basis;
+      else
+        beam.basis = default_basis;
+      end
+
+      % Store absdz
+      if ~isempty(p.Results.absdz)
+        beam.absdz = p.Results.absdz;
+      else
+        beam.absdz = default_absdz;
+      end
+    end
+
+    function beam = setCoefficients(beam, a, b)
+      % Set the `a` and `b` coefficients
+      %
+      % Usage
+      %   beam = beam.setCoefficients(a, b)
+
       assert(all(size(a) == size(b)), 'size of a and b must match');
+
       assert(isempty(a) || ...
           (size(a, 1) >= 3 && ...
           sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1))), ...
         'number of multipole terms must be empty, 3, 8, 15, 24, ...');
+
       beam.a = a;
       beam.b = b;
     end
@@ -240,79 +263,8 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
 
       sz = size(beam.a);
       sz(1) = 1;
-      
+
       [varargout{1:nargout}] = ott.utils.size_helper(sz, varargin{:});
-    end
-
-    function beam = catInternal(dim, beam, varargin)
-      % Concatenate beams
-
-      assert(dim == 2, 'Only horzcat (dim=2) supported for now');
-
-      other_a = {};
-      other_b = {};
-      for ii = 1:length(varargin)
-        other_a{ii} = varargin{ii}.a;
-        other_b{ii} = varargin{ii}.b;
-      end
-
-      beam.a = cat(dim, beam.a, other_a{:});
-      beam.b = cat(dim, beam.b, other_b{:});
-    end
-
-    function beam = plusInternal(beam1, beam2)
-      %PLUS add two beams together
-
-      if beam1.Nmax > beam2.Nmax
-        beam2.Nmax = beam1.Nmax;
-      elseif beam2.Nmax > beam1.Nmax
-        beam1.Nmax = beam2.Nmax;
-      end
-
-      beam = beam1;
-      beam.a = beam.a + beam2.a;
-      beam.b = beam.b + beam2.b;
-    end
-
-    function beam = subsrefInternal(beam, subs)
-      % Get the subscripted beam
-
-      if numel(subs) > 1
-        if subs(1) == 1
-          subs = subs(2:end);
-        end
-        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
-      end
-
-      beam.a = beam.a(:, subs{:});
-      beam.b = beam.b(:, subs{:});
-    end
-
-    function beam = subsasgnInternal(beam, subs, rem, other)
-      % Assign to the subscripted beam
-
-      if numel(subs) > 1
-        if subs(1) == 1
-          subs = subs(2:end);
-        end
-        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
-      end
-
-      assert(isempty(rem), 'Assignment to parts of beams not supported');
-      if isempty(other)
-        % Delete data
-        beam.a(:, subs{:}) = [];
-        beam.b(:, subs{:}) = [];
-        
-      else
-        % Ensure we have a plane wave
-        if ~isa(other, 'ott.beam.vswf.Bsc')
-          other = ott.beam.vswf.Bsc(other);
-        end
-        
-        beam.a(:, subs{:}) = other.a;
-        beam.b(:, subs{:}) = other.b;
-      end
     end
 
     function [E, H, data] = ehfarfield(beam, rtp, varargin)
@@ -753,30 +705,17 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
           beam, unmatched{:}, 'range', p.Results.range);
     end
 
-    function beam = set.basis(beam, basis)
-      % Set the beam type, checking it is a valid type first
-      if ~any(strcmpi(basis, {'incoming', 'outgoing', 'regular'}))
-        error('ott:beam:vswf:Bsc:set_basis:invalid_value', ...
-            'Invalid beam basis');
-      end
-      beam.basis = basis;
-    end
-
-    function nmax = get.Nmax(beam)
-      %get.Nmax calculates Nmax from the current size of the beam coefficients
-      nmax = ott.utils.combined_index(size(beam.a, 1));
-    end
-
-    function beam = set.Nmax(beam, nmax)
-      %set.Nmax resizes the beam vectors
-      beam = beam.set_Nmax(nmax);
-    end
-
-    function nbeam = shrink_Nmax(beam, varargin)
-      % SHRINK_NMAX reduces the size of the beam while preserving power
+    function nbeam = shrinkNmax(beam, varargin)
+      % Reduces the size of the beam while preserving power
+      %
+      % Usage
+      %   beam = beam.shrinkNmax(...)
+      %
+      % Optional named arguments
+      %   - tolerance (numeric) -- Tolerance to use for power loss.
 
       p = inputParser;
-      p.addParameter('tolerance', 1.0e-6);
+      p.addParameter('tolerance', 1.0e-6, @isnumeric);
       p.parse(varargin{:});
 
       amagA = full(sum(sum(abs(beam.a).^2)));
@@ -802,16 +741,20 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       end
     end
 
-    function beam = set_Nmax(beam, nmax, varargin)
-      % SET_NMAX resize the beam, with additional options
+    function beam = setNmax(beam, nmax, varargin)
+      % Resize the beam, with additional options
       %
-      % SET_NMAX(nmax) sets the beam nmax.
+      % Usage
+      %   beam = beam.setNmax(nmax, ...)   or    beam.Nmax = nmax
+      %   Set the Nmax, a warning is issued if truncation occurs.
       %
-      % SET_NMAX(..., 'tolerance', tol) use tol as the warning error
-      % level tolerance for resizing the beam.
+      % Optional named arguments
+      %   - tolerance (numeric) -- Specify the tolerance to use for
+      %     power loss warnings.  Default: ``1.0e-6``.
       %
-      % SET_NMAX(..., 'powerloss', mode) action to take if a power
-      % loss is detected.  Can be 'ignore', 'warn' or 'error'.
+      %   - powerloss (enum) -- Action to take when beam power is lost.
+      %     Can be one of 'ignore', 'warn' or 'error'.
+      %     Default: ``'warn'``.
 
       p = inputParser;
       p.addParameter('tolerance', 1.0e-6);
@@ -904,11 +847,11 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
         % Add a warning when the beam is translated outside nmax2ka(Nmax) 
         % The first time may be OK, the second time does not have enough
         % information.
-        if any(beam.dz > ott.utils.nmax2ka(beam.Nmax)./beam.wavenumber)
+        if any(beam.absdz > ott.utils.nmax2ka(beam.Nmax)./beam.wavenumber)
           warning('ott:beam:vswf:Bsc:translateZ:outside_nmax', ...
               'Repeated translation of beam outside Nmax region');
         end
-        beam.dz = beam.dz + abs(z);
+        beam.absdz = beam.absdz + abs(z);
 
         % Convert to beam units
         z = z * beam.wavenumber / 2 / pi;
@@ -1155,17 +1098,18 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       end
     end
 
-    function [a, b] = getCoefficients(beam, ci)
-      %GETCOEFFICIENTS gets the beam coefficients
+    function varargout = getCoefficients(beam, ci)
+      % Gets the beam a/b coefficients
       %
-      % ab = beam.getCoefficients() gets the beam coefficients packed
-      % into a single vector, suitable for multiplying by a T-matrix.
+      % Usage
+      %   ab = beam.getCoefficients() gets the beam coefficients packed
+      %   into a single vector, suitable for multiplying by a T-matrix.
       %
-      % [a, b] = beam.getCoefficients() get the coefficients in two
-      % beam vectors.
+      %   [a, b] = beam.getCoefficients() get the coefficients in two
+      %   beam vectors.
       %
-      % beam.getCoefficients(ci) behaves as above but only returns
-      % the requested beam cofficients a(ci) and b(ci).
+      %   [...] = beam.getCoefficients(ci) behaves as above but only returns
+      %   the requested beam cofficients a(ci) and b(ci).
 
       % If ci omitted, return all a and b
       if nargin == 1
@@ -1176,7 +1120,9 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       b = beam.b(ci, :);
 
       if nargout == 1
-        a = [a; b];
+        varargout{1} = [a; b];
+      else
+        [varargout{1:2}] = deal(a, b);
       end
     end
 
@@ -1194,7 +1140,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       beam.b = beam.b / o;
     end
 
-    function varargout = forcetorque(ibeam, other, varargin)
+    function varargout = forcetorqueInternal(ibeam, other, varargin)
       % Calculate change in momentum between beams
       %
       % Usage
@@ -1259,7 +1205,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       end
     end
 
-    function varargout = force(ibeam, other, varargin)
+    function varargout = forceInternal(ibeam, other, varargin)
       % Calculate change in linear momentum between beams.
       % For details on usage/arguments see :meth:`forcetorque`.
       %
@@ -1318,7 +1264,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       end
     end
 
-    function varargout = torque(ibeam, other, varargin)
+    function varargout = torqueInternal(ibeam, other, varargin)
       % Calculate change in angular momentum between beams
       % For details on usage/arguments see :meth:`forcetorque`.
       %
@@ -1361,7 +1307,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       end
     end
 
-    function varargout = spin(ibeam, other, varargin)
+    function varargout = spinInternal(ibeam, other, varargin)
       % Calculate change in spin between beams
       % For details on usage/arguments see :meth:`forcetorque`.
       %
@@ -1400,12 +1346,12 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       sxy=sum(Cxy+Dxy);
       sy=real(sxy);
       sx=imag(sxy);
-      
+
       % Ensure things are full
       sx = full(sx);
       sy = full(sy);
       sz = full(sz);
-      
+
       % Combine incoherent beams
       if incN > 1
         sx = sum(reshape(sx, incN, []), 1);
@@ -1421,43 +1367,18 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       end
     end
 
-    function [sbeam, tbeam] = scatter(beam, tmatrix, varargin)
-      % Calculate the beam scattered by a T-matrix
+    function beam = mtimes(a,b)
+      % Provides beam matrix and scalar multiplication
       %
       % Usage
-      %   [sbeam, tbeam] = beam.scatter(tmatrix) scatters the beam
-      %   returning the scattered beam ``sbeam`` and the unscattered
-      %   but possibly translated beam ``tbeam`` truncated to
-      %   ``tmatrix.Nmax + 1``.
+      %   beam = scalar * beam   or   beam = beam * scalar
+      %   Scalar multiplication of beam shape coefficients.
       %
-      % Optional named arguments
-      %   - position (3xN numeric) translation applied to the beam
-      %     before the beam is scattered by the particle.  Default: ``[]``.
-      %
-      %   - rotation (3x3N numeric) rotation spplied to the beam,
-      %     calculates the scattered beam and applies the inverse rotation,
-      %     effectively rotating the particle.  Default: ``[]``.
-      %
-      %   - combine (enum|empty) -- Beam combination method.  Can be
-      %     'incoherent' (ignored), 'coherent', or empty (ignored).
-      %
-      % If both position and rotation are present, the translation is
-      % applied first, followed by the rotation.
-      % If both position and rotation are arrays, they must have the same
-      % number of locations.
-
-      dummy_type = 'total';
-      tbeam = ott.beam.vswf.Scattered(beam, dummy_type);
-      [sbeam, tbeam] = tbeam.calculateScatteredBeam(tmatrix, varargin{:});
-    end
-
-    function beam = mtimes(a,b)
-      %MTIMES (op) divide the beam coefficients by a scalar
-      %
-      % Supports:
-      %    - Scalar multiplication
-      %    - Matrix multiplication of a and b vectors: A*a, a*A
-      %    - Matrix multiplication of [a;b] vector: T*[a;b]
+      %   beam = matrix * beam
+      %   Matrix multiplication.  Matrix can either have the same
+      %   number of columns as the `a` and `b` beam shape coefficients
+      %   or half as many rows.  In other words, the resulting beam
+      %   is either `[M*a; M*b]` or `M*[a;b]`.
 
       if isa(a, 'ott.beam.vswf.Bsc')
         beam = a;
@@ -1537,16 +1458,81 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
         beam.b = sum(beam.b, 2);
       end
     end
-    
-    function beam = clearDz(beam)
-      % Clear dz
-      %
-      % Useful when generating beams using translations.
-      beam.dz = 0.0;
-    end
   end
 
   methods (Hidden)
+
+    function beam = catInternal(dim, beam, varargin)
+      % Concatenate beams
+
+      assert(dim == 2, 'Only horzcat (dim=2) supported for now');
+
+      other_a = {};
+      other_b = {};
+      for ii = 1:length(varargin)
+        other_a{ii} = varargin{ii}.a;
+        other_b{ii} = varargin{ii}.b;
+      end
+
+      beam.a = cat(dim, beam.a, other_a{:});
+      beam.b = cat(dim, beam.b, other_b{:});
+    end
+
+    function beam = plusInternal(beam1, beam2)
+      %PLUS add two beams together
+
+      if beam1.Nmax > beam2.Nmax
+        beam2.Nmax = beam1.Nmax;
+      elseif beam2.Nmax > beam1.Nmax
+        beam1.Nmax = beam2.Nmax;
+      end
+
+      beam = beam1;
+      beam.a = beam.a + beam2.a;
+      beam.b = beam.b + beam2.b;
+    end
+
+    function beam = subsrefInternal(beam, subs)
+      % Get the subscripted beam
+
+      if numel(subs) > 1
+        if subs(1) == 1
+          subs = subs(2:end);
+        end
+        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
+      end
+
+      beam.a = beam.a(:, subs{:});
+      beam.b = beam.b(:, subs{:});
+    end
+
+    function beam = subsasgnInternal(beam, subs, rem, other)
+      % Assign to the subscripted beam
+
+      if numel(subs) > 1
+        if subs(1) == 1
+          subs = subs(2:end);
+        end
+        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
+      end
+
+      assert(isempty(rem), 'Assignment to parts of beams not supported');
+      if isempty(other)
+        % Delete data
+        beam.a(:, subs{:}) = [];
+        beam.b(:, subs{:}) = [];
+
+      else
+        % Ensure we have a plane wave
+        if ~isa(other, 'ott.beam.vswf.Bsc')
+          other = ott.beam.vswf.Bsc(other);
+        end
+
+        beam.a(:, subs{:}) = other.a;
+        beam.b(:, subs{:}) = other.b;
+      end
+    end
+
     function p = getBeamPower(beam)
       % get.power calculate the power of the beam
       p = full(sum(abs(beam.a).^2 + abs(beam.b).^2));
@@ -1592,7 +1578,11 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       end
       
       % Ensure the beam is incoming-outgoing
-      sbeam = sbeam.totalField(ibeam);
+      if isa(sbeam, 'ott.beam.abstract.Scattered')
+        if ~strcmpi(sbeam.type, 'total')
+          warning('Scattered beam type should be set to ''total''');
+        end
+      end
 
       % Get the relevent beam coefficients
       [a, b] = ibeam.getCoefficients();
@@ -1706,6 +1696,31 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
         incN = Nbeams;
         
       end
+    end
+  end
+
+  methods % Getters/setters
+    function nmax = get.Nmax(beam)
+      % Calculates Nmax from the current size of the beam coefficients
+      nmax = ott.utils.combined_index(size(beam.a, 1));
+    end
+    function beam = set.Nmax(beam, nmax)
+      % Resizes the beam vectors (a,b)
+      beam = beam.setNmax(nmax);
+    end
+
+    function beam = set.basis(beam, val)
+      assert(any(strcmpi(val, {'incoming', 'outgoing', 'regular'})), ...
+        'ott:beam:vswf:Bsc:set_basis:invalid_value', ...
+        'basis must be one of ''incomming'' ''outgoing'' or ''regular''');
+      
+      beam.basis = val;
+    end
+    
+    function beam = set.absdz(beam, val)
+      assert(isnumeric(val) && isscalar(val), ...
+        'absdz must be numeric scalar');
+      beam.absdz = val;
     end
   end
 end
