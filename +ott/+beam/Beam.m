@@ -830,8 +830,8 @@ classdef (Abstract) Beam < ott.beam.Properties
       % This function is overloaded by Array types in order to
       % implement incoherent combination.
       
-      data = beam.arrayApply(data, ...
-        @(x) beam.VisualisationData(field_type, x));
+      data = beam.arrayApply(...
+        @(x) beam.VisualisationData(field_type, x), data);
       
       % Combine incoherent components
       if isa(beam, 'ott.beam.utils.ArrayType')
@@ -869,11 +869,11 @@ classdef (Abstract) Beam < ott.beam.Properties
       imout = beam.calculateVisualisationData(field_type, E);
       
       % Reshape output to match required size
-      imout = beam.arrayApply(imout, @(x) reshape(x, sz));
+      imout = beam.arrayApply(@(x) reshape(x, sz), imout);
 
       % Create layer from masked data
       if ~all(mask(:))
-        imout = beam.arrayApply(imout, @(x) beam.applyMask(x, mask));
+        imout = beam.arrayApply(@(x) beam.applyMask(x, mask), imout);
       end
     end
 
@@ -884,7 +884,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       visdata = beam.calculateVisualisationData(field_type, E);
       
       % Reshape output to match required size
-      visdata = beam.arrayApply(visdata, @(x) reshape(x, [sz, 1]));
+      visdata = beam.arrayApply(@(x) reshape(x, [sz, 1]), visdata);
     end
 
     function force = forceInternal(beam, other, varargin)

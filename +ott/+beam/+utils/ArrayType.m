@@ -315,24 +315,40 @@ classdef ArrayType < ott.beam.abstract.Beam
       end
     end
     
-    function data = arrayApply(beam, data, func)
+    function data = arrayApply(beam, func, varargin)
       % Apply function to each array in the beam array output.
+      %
+      % Usage
+      %   data = beam.arrayApply(func, ...)
+      %   Additional parameters are passed to the function.
       %
       % This default implemenataion applies the function to
       % each cell in data if the beam is not coherent.
       
-      if iscell(data)
+      % TODO: Shouldn't this use beam?
+      
+      if iscell(varargin{1})
         % Apply visualisatio funtion to sub-beams
-        for ii = 1:numel(data)
-          data{ii} = func(data{ii});
+        data = cell(size(varargin{1}));
+        for ii = 1:numel(varargin{1})
+          sub_data = cellfun(@(x) x{ii}, varargin, 'UniformOutput', false);
+          data{ii} = func(sub_data{:});
         end
       else
-        data = func(data);
+        data = func(varargin{:});
       end
     end
 
     function arr = combineIncoherentArray(beam, arr, dim)
       % Combine incoherent layers of an array
+      %
+      % Usage
+      %   arr = beam.combineIncoherentArray(arr, dim)
+      %
+      % Parametesrs
+      %   - arr -- Cell arary of arrays to combine.
+      %   - dim -- Dimension to combine along.  If the array data is
+      %     3x1 vectors, set dim to 2.
 
       % Check if we have work to do
       if strcmpi(beam.array_type, 'coherent') || ~iscell(arr)

@@ -315,8 +315,11 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
       p.addParameter('method', 'inf');
       p.parse(varargin{:});
       
-      E = zeros(size(xyz));
-      H = zeros(size(xyz));
+      assert(ismatrix(xyz) && size(xyz, 1) == 3 && isnumeric(xyz), ...
+        'xyz must be 3xN numeric matrix');
+      
+      E = zeros([3, numel(beam), size(xyz, 2)]);
+      H = zeros([3, numel(beam), size(xyz, 2)]);
 
       for ii = 1:size(xyz, 2)
 
@@ -350,13 +353,27 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
         end
 
         % Calculate the field at the location
-        E(:, ii) = sum(scale .* P0 .* exp(1i.*beam.wavenumber.*dist), 2);
-        H(:, ii) = sum(scale .* H0 .* exp(1i.*beam.wavenumber.*dist), 2);
+        E(:, :, ii) = scale .* P0 .* exp(1i.*beam.wavenumber.*dist);
+        H(:, :, ii) = scale .* H0 .* exp(1i.*beam.wavenumber.*dist);
       end
-
-      % Package output
-      E = ott.utils.FieldVector(xyz, E, 'cartesian');
-      H = ott.utils.FieldVector(xyz, H, 'cartesian');
+      
+      if strcmpi(beam.array_type, 'coherent') || numel(beam) == 1
+        E = squeeze(sum(E, 2));
+        H = squeeze(sum(H, 2));
+        
+        % Package output
+        E = ott.utils.FieldVector(xyz, E, 'cartesian');
+        H = ott.utils.FieldVector(xyz, H, 'cartesian');
+      else
+        E = mat2cell(E, 3, ones(1, numel(beam)), size(xyz, 2));
+        H = mat2cell(H, 3, ones(1, numel(beam)), size(xyz, 2));
+        
+        % Package output
+        E = cellfun(@(x) ott.utils.FieldVector(xyz, x, 'cartesian'), ...
+            E, 'UniformOutput', false);
+        H = cellfun(@(x) ott.utils.FieldVector(xyz, x, 'cartesian'), ...
+            H, 'UniformOutput', false);
+      end
     end
 
     function E = efarfieldInternal(beam, rtp, varargin)
@@ -371,10 +388,18 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
       % Calculate the from the change in poynting vectors
       
       [E1, H1] = beam.ehfieldInternal([0;0;0]);
-      S1 = real(sum(cross(E1.vxyz, conj(H1.vxyz)), 2));
+      S1 = beam.arrayApply(@(E, H) real(cross(E.vxyz, conj(H.vxyz))), E1, H1);
+      S1 = beam.combineIncoherentArray(S1, 2);
+      if iscell(S1)
+        S1 = cell2mat(S1);
+      end
       
       [E2, H2] = incident.ehfieldInternal([0;0;0]);
-      S2 = real(sum(cross(E2.vxyz, conj(H2.vxyz)), 2));
+      S2 = incident.arrayApply(@(E, H) real(cross(E.vxyz, conj(H.vxyz))), E2, H2);
+      S2 = incident.combineIncoherentArray(S2, 2);
+      if iscell(S2)
+        S2 = cell2mat(S2);
+      end
 
       force = S2 - S1;
     end

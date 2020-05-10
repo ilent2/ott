@@ -108,6 +108,31 @@ function testForce(testCase)
   
 end
 
+function testForceBeamArray(testCase)
+
+  P1 = ott.beam.PlaneWave('direction', [0;0;1]);
+  P2 = ott.beam.PlaneWave('direction', [0;0;-1]);
+  
+  beam1 = [P1, P1, P1];
+  beam2 = [P2, P2, P2];
+  
+  beam1.array_type = 'array';
+  beam2.array_type = 'array';
+  f = beam1.force(beam2);
+  testCase.verifyEqual(f, [0;0;-2].*[1,1,1], 'array');
+  
+  beam1.array_type = 'coherent';
+  beam2.array_type = 'coherent';
+  f = beam1.force(beam2);
+  testCase.verifyEqual(f, [0;0;-2].*numel(beam1).^2, 'coherent');
+  
+  beam1.array_type = 'incoherent';
+  beam2.array_type = 'incoherent';
+  f = beam1.force(beam2);
+  testCase.verifyEqual(f, [0;0;-6], 'incoherent');
+  
+end
+
 function testLogicalSelection(testCase)
 
   P1 = ott.beam.PlaneWave('direction', [0;0;1], 'polarisation', [0;1;0]);

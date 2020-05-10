@@ -207,13 +207,17 @@ classdef (Abstract) Properties
       assert(nargout == 1, 'Expected one output argument');
     end
 
-    function data = arrayApply(beam, data, func)
+    function data = arrayApply(beam, func, varargin)
       % Apply function to each array in the beam array output.
+      %
+      % Usage
+      %   data = beam.arrayApply(func, ...)
+      %   Additional parameters are passed to the function.
       %
       % This function is overloaded by Array types in order to
       % implement incoherent combination.
 
-      data = func(data);
+      data = func(varargin{:});
     end
   end
 
