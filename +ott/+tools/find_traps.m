@@ -36,10 +36,6 @@ p.addParameter('group_stable', false);
 p.addParameter('plot', false);
 p.parse(varargin{:});
 
-% This function is not directly concerned with force/torque calculation
-ott.warning('ott:findEquilibrium:move', ...
-    'This function will move in a future release');
-
 % Check the size of the inputs
 assert(isvector(position), 'position must be a vector not a matrix');
 assert(isvector(force), 'force must be a vector not a matrix');

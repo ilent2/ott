@@ -1,14 +1,10 @@
 function tests = testFindTraps()
-  % Unit tests for ott.find_traps
+  % Unit tests for ott.tools.find_traps
   tests = functiontests(localfunctions);
 end
 
 function setupOnce(testCase)
-  % Ensure the ott package is in our path
-  addpath('../');
-  
-  % Disable warnings during testing
-  ott.change_warnings('off');
+  addpath('../../');
 end
 
 function testOneSinusoid(testCase)
@@ -21,7 +17,7 @@ function testOneSinusoid(testCase)
   x(1) = []; x(end) = [];  % Drop zeros at ends
   y = -2*sin(pi*x);
 
-  traps = ott.find_traps(x, y);
+  traps = ott.tools.find_traps(x, y);
   
   tol1 = 1e-2;
   dy = @(x) -2*pi*cos(pi*x);
@@ -58,7 +54,7 @@ function testTwoSinusoid(testCase)
   x(1) = []; x(end) = [];  % Drop zeros at ends
   y = 2*sin(pi*x);
 
-  traps = ott.find_traps(x, y);
+  traps = ott.tools.find_traps(x, y);
   
   tol1 = 1e-2;
   dy = @(x) 2*pi*cos(pi*x);
@@ -119,7 +115,7 @@ function testOneNegativeSinusoid(testCase)
   x(1) = []; x(end) = [];  % Drop zeros at ends
   y = 2*sin(pi*x);
 
-  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', true);
 
   tol1 = 1e-2;
   dy = @(x) 2*pi*cos(pi*x);
@@ -159,7 +155,7 @@ function testSawTooth(testCase)
   
   eqs = [0.5, 1.5, 2.5, 3.5];
   
-  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', true);
   
   testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
       'Wrong number of stable+unstable traps identified');
@@ -171,7 +167,7 @@ function testSawTooth(testCase)
   
   eqs = [0.5, 2.5];
 
-  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', false);
   
   testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
       'Wrong number of stable traps identified');
@@ -191,14 +187,14 @@ function testFlatCentreTrap(testCase)
   
   eqs = [0.0];
   
-  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', true);
   
   testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
       'Wrong number of traps identified with keep_unstable=true');
   
   % Test stable equilibria
 
-  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', false);
   
   testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
       'Wrong number of traps identified with keep_unstable=false');
@@ -225,14 +221,14 @@ function testFlatCentrePoly3Trap(testCase)
   
   eqs = [0.0];
   
-  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', true);
   
   testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
       'Wrong number of traps identified with keep_unstable=true');
   
   % Test stable equilibria
 
-  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', false);
   
   testCase.verifyThat(numel(traps), IsEqualTo(length(eqs)), ...
       'Wrong number of traps identified with keep_unstable=false');
@@ -252,17 +248,17 @@ function testSingleTrapGroup(testCase)
   y = [0.1, 1, -1, -0.1];
   x = 1:numel(y);
   
-  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', true);
   
   testCase.verifyThat(numel(traps), IsEqualTo(1), ...
       'Wrong number of traps identified with keep_unstable=true');
   
-  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', false);
   
   testCase.verifyThat(numel(traps), IsEqualTo(1), ...
       'Wrong number of traps identified with keep_unstable=false');
   
-  traps = ott.find_traps(x, y, 'keep_unstable', false, 'group_stable', true);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', false, 'group_stable', true);
   
   testCase.verifyThat(numel(traps), IsEqualTo(1), ...
       'Wrong number of traps identified with group_stable=true');
@@ -278,17 +274,17 @@ function testDoubleTrapGroup(testCase)
   y = [0.1, 1, -1, 0.5, -0.5, 0.3, -2, -1];
   x = 1:numel(y);
   
-  traps = ott.find_traps(x, y, 'keep_unstable', true);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', true);
   
   testCase.verifyThat(numel(traps), IsEqualTo(5), ...
       'Wrong number of traps identified with keep_unstable=true');
   
-  traps = ott.find_traps(x, y, 'keep_unstable', false);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', false);
   
   testCase.verifyThat(numel(traps), IsEqualTo(3), ...
       'Wrong number of traps identified with keep_unstable=false');
   
-  traps = ott.find_traps(x, y, 'keep_unstable', false, 'group_stable', true);
+  traps = ott.tools.find_traps(x, y, 'keep_unstable', false, 'group_stable', true);
   
   testCase.verifyThat(numel(traps), IsEqualTo(1), ...
       'Wrong number of traps identified with group_stable=true');
