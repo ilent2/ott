@@ -53,9 +53,14 @@ classdef Plane < ott.shapes.Shape & ott.shapes.utils.CoordsCart
       if numel(shape) == 1 && (Nnormal ~= 1 || Noffset ~= 1)
         shape = repelem(shape, 1, max([Nnormal, Noffset]));
       end
+      
+      % Normalise normals
+      norm_length = vecnorm(normal);
+      assert(~any(norm_length == 0.0), 'Normals must be finite length');
+      normal = normal ./ norm_length;
 
       % Assign normal
-      if Nnormal > 1
+      if Nnormal > 1  
         for ii = 1:Nnormal
           shape(ii).normal = normal(:, ii);
         end
@@ -127,7 +132,8 @@ classdef Plane < ott.shapes.Shape & ott.shapes.utils.CoordsCart
       normal = shape.rotation * shape.normal;
 
       % Duplicate the normals
-      norms = repmat(normal, 1, numel(vecs));
+      sz = size(vecs);
+      norms = repmat(normal, [1, sz(2:end)]);
 
       % Calculate intersection location relative to ray origin
       dirs = vecs.direction ./ vecnorm(vecs.direction);

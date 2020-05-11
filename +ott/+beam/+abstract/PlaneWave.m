@@ -404,7 +404,7 @@ classdef PlaneWave < ott.beam.abstract.Beam & ott.utils.Vector ...
 
     function wv = get.wavevector(beam)
       % Get the plane wave wave-vector
-      wv = beam.direction .* beam.wavenumber;
+      wv = beam.direction .* beam.wavenumber ./ vecnorm(beam.direction);
     end
     
     function intensity = get.intensity(beam)

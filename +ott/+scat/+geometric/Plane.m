@@ -14,6 +14,18 @@ classdef Plane < ott.scat.planewave.Plane
 % using/distributing this file
 
   methods
+    function plane = Plane(varargin)
+      % Construct a new geometric plane scatterer
+      %
+      % Usage
+      %   plane = Plane(normal, index_relative, ...)
+      %
+      % Arguments are passed to ott.scat.planewave.Plane constructor.
+      
+      plane = plane@ott.scat.planewave.Plane(varargin{:});
+      
+    end
+    
     function [rbeam, tbeam] = scatter(plane, beam)
       % Calculate reflected and transmitted beams
 

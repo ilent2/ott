@@ -66,10 +66,10 @@ end
 function testScatterPlane(testCase)
 
   % Generate a plane to scatter rays off
-  normal = [1;1;1];
-  offset = sqrt(3);
+  normal = -[1;1;1];
+  offset = -sqrt(3);
   index_relative = 1.33;
-  plane = ott.scat.planewave.Plane(normal, index_relative, ...
+  plane = ott.scat.geometric.Plane(normal, index_relative, ...
       'offset', offset);
   
   % Setup some rays
