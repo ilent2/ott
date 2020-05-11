@@ -1,4 +1,4 @@
-% ott.scat.interp Interpolation based force/scattering methods
+% ott.scat.interp Interpolation based force/scattering methods.
 %
 % This package contains methods that interpolate scattering and/or
 % force data.  The methods require a data set, either from an experiment

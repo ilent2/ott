@@ -19,6 +19,10 @@ classdef (Abstract) ZeroScattered < ott.scat.utils.Particle
 %   - torqueInternal      -- Method called by `torque`
 %   - forcetorqueInternal -- Method called by `forcetorque`
 
+% Copyright 2020 Isaac Lenton
+% This file is part of OTT, see LICENSE.md for information about
+% using/distributing this file
+
   methods
     function sbeam = scatter(particle, ibeam)
       % Construct a new :class:`ott.beam.ZeroScattered` beam.
