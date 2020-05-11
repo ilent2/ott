@@ -15,6 +15,8 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
 %   insideXyz       -- Determine if Cartesian point is inside shape
 %   normalsRtp      -- Calculate normals at surface location
 %   normalsXyz      -- Calculate normals at surface location
+%   - surf          -- Generate surface visualisation
+%   - surfPoints    -- Calculate points for surface integration
 %
 % Methods (abstract)
 %   insideRtpInternal       -- Determine if Spherical point is inside shape
@@ -239,6 +241,10 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
       % SURF(..., 'surfoptions', {varargin}) specifies the options to
       % pass to the surf function.
       error('Shape does not support surf visualisation');
+    end
+
+    function surfPoints(shape, varargin)
+      error('Shape does not support surfPoints');
     end
 
     function [locs, norms] = intersect(shape, vecs)

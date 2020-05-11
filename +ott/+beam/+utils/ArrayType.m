@@ -230,6 +230,10 @@ classdef ArrayType < ott.beam.abstract.Beam
 
     function varargout = subsref(obj, s)
       % Implement array subscripts for beams in this array
+      
+      % Declare an ismethod function which checks hidden methods
+      methodlist = @(metacls) {metacls.MethodList.Name};
+      ismethod = @(obj, name) any(strcmpi(name, methodlist(metaclass(obj))));
 
       switch s(1).type
         case '.'

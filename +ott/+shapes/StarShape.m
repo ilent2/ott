@@ -185,6 +185,31 @@ classdef StarShape < ott.shapes.Shape & ott.shapes.utils.CoordsSph
       end
     end
 
+    function [xyz, nxyz, dA] = surfPoints(shape, varargin)
+      % Calculate surface points for surface integration
+      %
+      % Usage
+      %   [xyz, nxyz, dA] = shape.surfPoints(...)
+
+      % Get an angular grid for the shape
+      [r, t, p] = shape.angulargrid('full', true);
+      rtp = [r(:), t(:), p(:)].';
+      xyz = ott.utils.rtp2xyz(rtp);
+
+      % Calculate normals at these locations
+      nxyz = shape.normalsRtp(rtp);
+
+      % Calculate surface area for points
+      % Assumption: The surface is close to spherical
+      % Assumption: the angular grid is equally spaced
+      dtheta = sort(unique(rtp(2, :)));
+      dtheta = dtheta(2) - dtheta(1);
+      dphi = sort(unique(rtp(3, :)));
+      dphi = dphi(2) - dphi(1);
+      dA = rtp(1, :).^2 .* sin(rtp(2, :)) .* dphi .* dtheta;
+
+    end
+
     function varargout = angulargrid(shape, varargin)
       % ANGULARGRID calculate the angular grid and radii for the shape
       %

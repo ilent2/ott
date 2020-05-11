@@ -1,4 +1,4 @@
-% ott.beam Package containing descriptions of beams
+% ott.beam Package containing descriptions of beams.
 %
 % This package contains descriptions of optical beams.
 % Sub-packages contain implementations using various approximations.
@@ -19,6 +19,7 @@
 %   ScatteredRay    -- Scattered instance of Ray
 %   TopHat          -- A beam with a Top-Hat profile
 %   GaussianDavis5  -- 5th order approximation for a Gaussian
+%   ZeroScattered   -- Scattered beam produced by zero-scattering methods
 %
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
