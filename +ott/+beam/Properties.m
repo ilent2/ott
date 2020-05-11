@@ -88,6 +88,8 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
       p.addParameter('wavenumber0', []);
       p.addParameter('vacuum', []);
       p.addParameter('medium', []);
+      p.addParameter('position', []);
+      p.addParameter('rotation', []);
       p.addParameter('like', []);
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -96,10 +98,14 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
       default_omega = 2*pi;
       default_vacuum = ott.beam.medium.Vacuum.Unitary();
       default_medium = default_vacuum;
+      default_position = [0;0;0];
+      default_rotation = eye(3);
       if ~isempty(p.Results.like)
         default_omega = p.Results.like.omega;
         default_vacuum = p.Results.like.vacuum;
         default_medium = p.Results.like.medium;
+        default_position = p.Results.like.position;
+        default_rotation = p.Results.like.rotation;
       end
 
       % Check number of omega related arguments
@@ -134,6 +140,18 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
       % Construct medium
       beam.medium = ott.beam.medium.Material.Simple(...
           'vacuum', vacuum, 'like', medium, unmatched{:});
+        
+      % Store position/rotation
+      if ~isempty(p.Results.position)
+        beam.position = p.Results.position;
+      else
+        beam.position = default_position;
+      end
+      if ~isempty(p.Results.rotation)
+        beam.rotation = p.Results.rotation;
+      else
+        beam.rotation = default_rotation;
+      end
 
       % Calculate optical frequency
       if ~isempty(p.Results.omega)

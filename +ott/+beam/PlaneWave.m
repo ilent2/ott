@@ -320,15 +320,25 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
       
       E = zeros([3, numel(beam), size(xyz, 2)]);
       H = zeros([3, numel(beam), size(xyz, 2)]);
+      
+      % Get dependent properties from beam
+      Edir = beam.polarisation;
+      Hdir = cross(beam.direction, beam.polarisation);
+      wavenumber = beam.wavenumber;
+      origin = beam.origin;
+      direction = beam.direction;
+      
+      % Get method from properties outside loop (opt R2018a)
+      method = p.Results.method;
 
       for ii = 1:size(xyz, 2)
 
         % Calculate distance along ray from origin
-        rlocal = xyz(:, ii) - beam.origin;
-        dist = dot(beam, rlocal);
+        rlocal = xyz(:, ii) - origin;
+        dist = dot(direction, rlocal);
 
         % Calculate normalisation factor
-        switch p.Results.method
+        switch method
           case 'inf'
             scale = 1.0;
 
@@ -342,19 +352,18 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
             error('Unknown method specified');
         end
 
-        Hdir = cross(beam.direction, beam.polarisation);
 
         % Calculate the polarisation (possibly in two directions)
-        P0 = beam.polarisation .* beam.field(1, :);
+        P0 = Edir .* beam.field(1, :);
         H0 = Hdir .* beam.field(1, :);
         if size(beam.field, 1) == 2
           P0 = P0 + Hdir .* beam.field(2, :);
-          H0 = H0 + beam.polarisation .* beam.field(2, :);
+          H0 = H0 + Edir .* beam.field(2, :);
         end
 
         % Calculate the field at the location
-        E(:, :, ii) = scale .* P0 .* exp(1i.*beam.wavenumber.*dist);
-        H(:, :, ii) = scale .* H0 .* exp(1i.*beam.wavenumber.*dist);
+        E(:, :, ii) = scale .* P0 .* exp(1i.*wavenumber.*dist);
+        H(:, :, ii) = scale .* H0 .* exp(1i.*wavenumber.*dist);
       end
       
       if strcmpi(beam.array_type, 'coherent') || numel(beam) == 1
@@ -367,6 +376,10 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
       else
         E = mat2cell(E, 3, ones(1, numel(beam)), size(xyz, 2));
         H = mat2cell(H, 3, ones(1, numel(beam)), size(xyz, 2));
+        
+        % Remove single dimension
+        E = cellfun(@(x) squeeze(x), E, 'UniformOutput', false);
+        H = cellfun(@(x) squeeze(x), H, 'UniformOutput', false);
         
         % Package output
         E = cellfun(@(x) ott.utils.FieldVector(xyz, x, 'cartesian'), ...

@@ -53,22 +53,36 @@ classdef Shape < ott.scat.utils.ZeroScattered ...
   end
 
   methods (Hidden)
-    function f = forceInternal(particle, beam, varargin)
+    function force = forceInternal(particle, beam, varargin)
       % Calculate the force using the shape-induced force approximation
       %
       % Implements::
       %
       %     \langle f \rangle = \frac{1}{4} |E|^2 \Delta\epsilon \hat{n}
 
+      % Method can use any type with an efield method
+      if ~isa(beam, 'ott.beam.Beam')
+        beam = ott.beam.Beam(beam);
+      end
+
       % Get surface locations
       [xyz, nxyz, dA] = particle.shape.surfPoints();
 
-      % Calculate field intensity at locations
-      % TODO: Beam-array compatibility
-      E2 = abs(beam.efield(xyz)).^2;
+      % Calculate field at locations
+      E = beam.efield(xyz);
 
-      % Calculate force
-      f = 0.25 .* E2 .* particle.index_relative.^2 .* nxyz .* dA;
+      % Apply function for force calc to each beam in array
+      epsilon = particle.index_relative.^2;
+      func = @(x) sum(0.25 .* sum(abs(x).^2, 1) .* epsilon .* nxyz .* dA, 2);
+      force = beam.arrayApply(func, E);
+
+      % Combine incoherent force
+      if isa(beam, 'ott.beam.utils.ArrayType')
+        force = beam.combineIncoherentArray(force, 2);
+        if iscell(force)
+          force = cell2mat(force);
+        end
+      end
     end
 
     function t = torqueInternal(particle, beam, varargin)

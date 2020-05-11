@@ -15,13 +15,13 @@ classdef (Abstract) Particle < ott.utils.RotateHelper
 %   - force       -- Calculate force on particle in beam
 %   - torque      -- Calculate torque on particle in beam
 %   - forcetorque -- Calculate force and torque on particle in beam
+%   - forcetorqueInternal -- Method called by `forcetorque`
 %
 % Abstract methods
 %   - rotate      -- Apply rotation to particle
 %   - scatter     -- Calculate scattered beam
 %   - forceInternal       -- Method called by `force`
 %   - torqueInternal      -- Method called by `torque`
-%   - forcetorqueInternal -- Method called by `forcetorque`
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -49,7 +49,8 @@ classdef (Abstract) Particle < ott.utils.RotateHelper
       % Usage
       %   force = particle.force(beam, ...)
 
-      [varargout{1:nargout}] = particle.forceInternal(beam, varargin{:});
+      [varargout{1:nargout}] = particle.positionRotationHelper(...
+          @particle.force, @particle.forceInternal, beam, varargin{:});
     end
 
     function varargout = torque(particle, beam, varargin)
@@ -59,7 +60,8 @@ classdef (Abstract) Particle < ott.utils.RotateHelper
       % Usage
       %   torque = particle.torque(beam, ...)
 
-      [varargout{1:nargout}] = particle.torqueInternal(beam, varargin{:});
+      [varargout{1:nargout}] = particle.positionRotationHelper(...
+          @particle.torque, @particle.torqueInternal, beam, varargin{:});
     end
 
     function varargout = forcetorque(particle, beam, varargin)
@@ -77,11 +79,46 @@ classdef (Abstract) Particle < ott.utils.RotateHelper
       %     to calculate properties for.
       %     Default: ``[]``.
 
-      [varargout{1:nargout}] = particle.forcetorqueInternal(beam, varargin{:});
+      [varargout{1:nargout}] = particle.positionRotationHelper(...
+          @particle.forcetorque, @particle.forcetorqueInternal, ...
+          beam, varargin{:});
     end
   end
 
   methods (Hidden)
+    function varargout = positionRotationHelper(particle, ...
+          caller, internalFunc, beam, varargin)
+      % Helper function for handling position/rotation args
+
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addParameter('position', []);
+      p.addParameter('rotation', []);
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Check if we need to operate on multiple beams
+      if size(p.Results.position, 2) > 1 || size(p.Results.rotation, 2) > 3
+        [varargout{1:nargout}] = ott.utils.prxfun(...
+            @(varargin) caller(beam, varargin{:}), 3, ...
+            'position', p.Results.position, ...
+            'rotation', p.Results.rotation, unmatched{:});
+        return;
+      end
+
+      % TODO: Should we transform beams to particle coordinates?
+
+      % Add position/rotation to beam
+      if ~isempty(p.Results.position)
+        beam.position = beam.position - p.Results.position;
+      end
+      if ~isempty(p.Results.rotation)
+        beam.rotation = p.Results.rotation.' * beam.rotation;
+      end
+
+      [varargout{1:nargout}] = internalFunc(beam, varargin{:});
+    end
+
     function [force, torque] = forcetorqueInternal(particle, varargin)
       % Calculate force and torque on particle in beam
       %

@@ -52,6 +52,24 @@ classdef Gaussian < ott.beam.abstract.Beam ...
       beam = beam@ott.beam.abstract.Beam(unmatched{:});
       beam.waist = waist;
     end
+    
+    function beam = ott.beam.Beam(oldbeam, varargin)
+      % Cast the beam to a ott.beam.Beam object
+      %
+      % The default beam is a ott.beam.GaussianDavis5, since it
+      % is a good compromise between speed and accuracy.
+      
+      beam = ott.beam.GaussianDavis5(oldbeam, varargin{:});
+    end
+    
+    function beam = ott.beam.GaussianDavis5(oldbeam, varargin)
+      % Cast beam to a GaussianDavis5
+      
+      beam = ott.beam.GaussianDavis5(oldbeam.waist, ...
+        'omega', oldbeam.omega, 'medium', oldbeam.medium, ...
+        'power', oldbeam.power, 'position', oldbeam.position, ...
+        'rotation', oldbeam.rotation, varargin{:});
+    end
   end
 
   methods % Getters/setters
