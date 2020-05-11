@@ -169,8 +169,17 @@ classdef (Abstract) Beam < ott.beam.Properties
       %   E = beam.efield(xyz)
       %   Calculates the fields at the specified locations (3xN matrix).
       %   Returns a :class:`ott.utils.FieldVector`.
+      %
+      % Optional named arguments
+      %   - origin (enum) -- Specify coordinate origin.  Can be
+      %     'local' or 'world'.  Default: ``'world'``.
+      %
+      % Other arguments are passed to efieldInternal.
 
-      E = beam.efieldInternal(xyz, varargin{:});
+      % Transform coordinates
+      [xyz, unmatched] = beam.transformWorldToLocal(xyz, varargin{:});
+
+      E = beam.efieldInternal(xyz, unmatched{:});
     end
 
     function H = hfield(beam, xyz, varargin)
@@ -180,8 +189,17 @@ classdef (Abstract) Beam < ott.beam.Properties
       %   H = beam.hfield(xyz)
       %   Calculates the fields at the specified locations (3xN matrix).
       %   Returns a :class:`ott.utils.FieldVector`.
+      %
+      % Optional named arguments
+      %   - origin (enum) -- Specify coordinate origin.  Can be
+      %     'local' or 'world'.  Default: ``'world'``.
+      %
+      % Other arguments are passed to hfieldInternal.
 
-      H = beam.hfieldInternal(xyz, varargin{:});
+      % Transform coordinates
+      [xyz, unmatched] = beam.transformWorldToLocal(xyz, varargin{:});
+
+      H = beam.hfieldInternal(xyz, unmatched{:});
     end
 
     function [E, H] = ehfield(beam, xyz, varargin)
@@ -191,12 +209,17 @@ classdef (Abstract) Beam < ott.beam.Properties
       %   [E, H] = beam.ehfield(xyz)
       %   Calculates the fields at the specified locations (3xN matrix).
       %   Returns a :class:`ott.utils.FieldVector`.
+      %
+      % Optional named arguments
+      %   - origin (enum) -- Specify coordinate origin.  Can be
+      %     'local' or 'world'.  Default: ``'world'``.
+      %
+      % Other arguments are passed to ehfieldInternal.
 
-      % Default implementation just calls each part, but for some
-      % beams it may be more efficient to calculate these together,
-      % in which case this method should be over-written.
-      E = beam.efield(xyz, varargin{:});
-      H = beam.hfield(xyz, varargin{:});
+      % Transform coordinates
+      [xyz, unmatched] = beam.transformWorldToLocal(xyz, varargin{:});
+
+      [E, H] = beam.ehfieldInternal(xyz, varargin{:});
     end
 
     function S = poynting(beam, xyz, varargin)
@@ -823,7 +846,41 @@ classdef (Abstract) Beam < ott.beam.Properties
   end
 
   methods (Hidden)
-    
+
+    function [xyz, unmatched] = transformWorldToLocal(beam, xyz, varargin)
+      % Helper for world to local transforms with arguments
+      %
+      % Usage
+      %   xyz = transformWorldToLocal(beam, xyz, ...)
+      %   Parses inputs for origin parameter.  Error on unmatched.
+      %
+      %   [xyz, unmatched] = transformWorldToLocal(beam, xyz, ...)
+      %   Keeps unmatched arguments
+
+      p = inputParser;
+      p.KeepUnmatched = nargout == 2;
+      p.addParameter('origin', 'world');
+      p.parse(varargin{:});
+
+      if nargout == 2
+        unmatched = ott.utils.unmatchedArgs(p);
+      end
+
+      % Translate locations to beam coordinates
+      if strcmpi(p.Results.origin, 'world')
+        xyz = beam.inverseTransform(xyz);
+      end
+    end
+
+    function [E, H] = ehfieldInternal(xyz, varargin)
+      % Default implementation just calls each part, but for some
+      % beams it may be more efficient to calculate these together,
+      % in which case this method should be over-written.
+
+      E = beam.efieldInternal(xyz, varargin{:});
+      H = beam.hfieldInternal(xyz, varargin{:});
+    end
+
     function data = calculateVisualisationData(beam, field_type, data)
       % Apply the VisualisationData function to a data array
       %

@@ -1,7 +1,7 @@
-classdef (Abstract) Shape < ott.utils.RotateHelper ...
+classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
     & matlab.mixin.Heterogeneous
 % Shape abstract class for optical tweezers toolbox shapes.
-% Inherits from :class:`ott.utils.RotateHelper` and
+% Inherits from :class:`ott.utils.RotationPositionProp` and
 % `matlab.mixin.Hetrogeneous`.
 %
 % Properties
@@ -40,11 +40,6 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
 % See LICENSE.md for information about using/distributing this file.
 
 % TODO: Use rotations where appropriate
-
-  properties
-    position       % Location of shape ``[x, y, z]``
-    rotation       % Orientation of the shape (3x3 matrix)
-  end
 
   methods (Static)
 
@@ -204,16 +199,6 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
       else
         [shape.rotation] = deal(p.Results.rotation);
       end
-    end
-
-    function shape = rotate(shape, R)
-      % Apply the rotation matrix to the shapes internal rotation
-
-      % Check at least one output
-      shape.nargoutCheck(nargout);
-
-      % Apply rotation
-      shape = R * shape.rotation;
     end
 
     function r = get.maxRadius(shape)
@@ -722,11 +707,5 @@ classdef (Abstract) Shape < ott.utils.RotateHelper ...
   end
 
   methods % Getters/Setters
-    function shape = set.position(shape, value)
-      % Check position values
-      assert(numel(value) == 3, 'Position must be 3 element vector');
-      assert(isnumeric(value), 'Position must be numeric');
-      shape.position = value(:);
-    end
   end
 end

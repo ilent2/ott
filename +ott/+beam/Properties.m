@@ -1,5 +1,6 @@
-classdef (Abstract) Properties
+classdef (Abstract) Properties < ott.utils.RotationPositionProp
 % A base class for Beam and abstract.Beam representations.
+% Inherits from :class:`ott.utils.RotationPositionProp`.
 %
 % This class defines the common properties and methods to these
 % two classes.
@@ -8,6 +9,8 @@ classdef (Abstract) Properties
 %   - power         -- The power of the beam (may be infinite)
 %   - omega         -- Beam optical frequency
 %   - medium        -- Medium where beam is propagating
+%   - position      -- Position of the beam or array
+%   - rotation      -- Rotation of the beam or array
 %
 % Dependent properties
 %   - vacuum        -- Vacuum material linked to the Medium
@@ -15,6 +18,10 @@ classdef (Abstract) Properties
 %   - wavenumber    -- Wave-number of beam in medium
 %   - wavelength0   -- Wave-length of the beam in vacuum
 %   - wavenumber0   -- Wave-number of beam in vacuum
+%
+% Methods
+%  - rotate      -- Rotate the beam specifying a rotation matrix
+%  - rotate*     -- Rotate the beam around the X,Y,Z axis
 %
 % Abstract methods
 %   - getBeamPower      -- get method called by dependent property power
