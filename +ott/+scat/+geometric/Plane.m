@@ -9,8 +9,6 @@ classdef Plane < ott.scat.planewave.Plane
 % Methods
 %   - scatter         -- Calculate scattered plane wave beams
 
-% Copyright 2020 Isaac Lenton
-% This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file
 
   methods
@@ -21,18 +19,21 @@ classdef Plane < ott.scat.planewave.Plane
       %   plane = Plane(normal, index_relative, ...)
       %
       % Arguments are passed to ott.scat.planewave.Plane constructor.
-      
+
       plane = plane@ott.scat.planewave.Plane(varargin{:});
-      
     end
-    
-    function [rbeam, tbeam] = scatter(plane, beam)
+  end
+
+  methods (Hidden)
+    function [rbeam, tbeam] = scatterInternal(plane, beam)
       % Calculate reflected and transmitted beams
 
       % Call the base method
-      [rbeam, tbeam] = scatter@ott.scat.planewave.Plane(plane, beam);
+      [rbeam, tbeam] = scatterInternal@ott.scat.planewave.Plane(plane, beam);
 
       % Cast the result to rays
+      % TODO: This should just be a simple cast
+      %   (once bug in planewave is fixed)
       rbeam = ott.beam.ScatteredRay('total', ...
           'like', rbeam, 'incident_beam', beam);
       tbeam = ott.beam.ScatteredRay('total', ...

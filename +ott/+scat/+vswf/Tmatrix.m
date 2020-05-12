@@ -39,21 +39,19 @@ classdef Tmatrix < ott.scat.utils.Particle ...
 % See LICENSE.md for information about using/distributing this file.
 
   % TODO: Use position/rotation (should this be in the base class?)
-  % TODO: Should we have a scatterInternal method (move scatter to base)
   % TODO: Review need for simple method.  Should we have shape casts?
   %   Or perhaps we should have a T-matrix/Shape class which stores
   %   the shape data?  Having a shape would make visualisation easier.
   % TODO: Review `defaultMethod`
   % TODO: Remove parse_wavenumber, parser_k_medium, parser_k_particle
-  % TODO: Review `scatter`, check for consistency with other ott.scat.*
   % TODO: Update defaults to use SMARTIES and DDA and others?
   % TODO: Rotation/translatiosn between T-matrices (in mtimes)
-  
+
   properties
     type          % Type of T-matrix (total, scattered or internal)
     data          % The matrix this class encapsulates
   end
-  
+
   properties (Dependent)
     Nmax          % Current size of T-matrix
     total         % Total version of the T-matrix
@@ -79,11 +77,11 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       %   'cone-tipped-cylinder'      [ radius height cone_height ]
       %   'cube'            Cube [ width ]
       %   'axisym'          Axis-symetric particle [ rho(:) z(:) ]
-      
+
       p = inputParser;
       p.addOptional('parameters', []);
       p.addParameter('method_tol', []);
-      
+
       % Things required for k_medium
       p.addParameter('k_medium', []);
       p.addParameter('wavelength_medium', []);
@@ -94,14 +92,14 @@ classdef Tmatrix < ott.scat.utils.Particle ...
 
       % Parse k_medium
       k_medium = ott.scat.vswf.Tmatrix.parser_k_medium(p, 2.0*pi);
-      
+
       % Get a shape object from the inputs
       if ischar(shape) && ~isempty(p.Results.parameters)
         shape = ott.shapes.Shape.simple(shape, p.Results.parameters);
       elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
         error('Must input either Shape object or string and parameters');
       end
-      
+
       if isa(shape, 'ott.shapes.Sphere') ...
           || (isa(shape, 'ott.shapes.Ellipsoid') && shape.isSphere) ...
           || (isa(shape, 'ott.shapes.Superellipsoid') && shape.isSphere)
@@ -132,13 +130,13 @@ classdef Tmatrix < ott.scat.utils.Particle ...
         if strcmp(method, 'other')
           method = 'dda';
         end
-        
+
       else
         error('ott:Tmatrix:simple:no_shape', 'Unsupported particle shape');
       end
-      
+
     end
-    
+
     function tmatrix = simple(shape, varargin)
       % Constructs a T-matrix for different simple particle shapes.
       % This method creates an instance of one of the other T-matrix
@@ -438,7 +436,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       %
       % 	- powerloss (enum) -- behaviour for when power loss is detected.
       %     Can be 'ignore', 'warn' or 'error'.  Default: ``'warn'``.
-      
+
       % TODO: What about internal T-matrices?
 
       p = inputParser;
@@ -514,7 +512,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
 
       % Resize cols
       if total_orders2 > midpoint2
-        
+
         if issparse(tmatrix)
           [row_index,col_index,a] = find(A11);
           A11 = sparse(row_index,col_index,a,total_orders1,total_orders2);
@@ -554,7 +552,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
 
       % Check for change in T-matrix magnitude
       if total_orders1 < midpoint1 || total_orders2 < midpoint2
-        
+
         % TODO: This should be applied to tmatrix.scattered or 'internal'
         magB = full(sum(sum(abs(tmatrix.scattered.data).^2)));
         apparent_error = abs( magA - magB )/magA;
@@ -578,40 +576,6 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       tmatrix = tmatrix.(old_type);
     end
 
-    function [sbeam, tbeam] = scatter(tmatrix, beam, varargin)
-      % Calculate the beam scattered by a T-matrix
-      %
-      % Usage
-      %   [sbeam, tbeam] = beam.scatter(tmatrix) scatters the beam
-      %   returning the scattered beam ``sbeam`` and the unscattered
-      %   but possibly translated beam ``tbeam`` truncated to
-      %   ``tmatrix.Nmax + 1``.
-      %
-      % Optional named arguments
-      %   - position (3xN numeric) translation applied to the beam
-      %     before the beam is scattered by the particle.  Default: ``[]``.
-      %
-      %   - rotation (3x3N numeric) rotation spplied to the beam,
-      %     calculates the scattered beam and applies the inverse rotation,
-      %     effectively rotating the particle.  Default: ``[]``.
-      %
-      %   - combine (enum|empty) -- Beam combination method.  Can be
-      %     'incoherent' (ignored), 'coherent', or empty (ignored).
-      %
-      % If both position and rotation are present, the translation is
-      % applied first, followed by the rotation.
-      % If both position and rotation are arrays, they must have the same
-      % number of locations.
-
-      % Check and convert to Bsc if required
-      if ~isa(beam, 'ott.beam.vswf.Bsc')
-        beam = ott.beam.vswf.Bsc(beam);
-      end
-
-      [sbeam, tbeam] = ott.beam.vswf.Scattered.FromTmatrix(beam, ...
-          tmatrix, varargin{:});
-    end
-
     function S = mtimes(A, B)
       % Provide T-matrix multiplication overload
       %
@@ -627,25 +591,25 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       %   S = tmatrix * M    or    S = M * tmatrix
       %   Normal matrix multiplication.  `S` is numeric if
       %   `M` is non-scalar, otherwise `S` has the same type as `tmatrix`.
-      
+
       if isa(A, 'ott.scat.vswf.Tmatrix') && isa(B, 'ott.scat.vswf.Tmatrix')
-        
+
         % Ensure T-matrices have same size
         ab_Nmax = max(A.Nmax(2), B.Nmax(1));
         A.Nmax = [A.Nmax(1), ab_Nmax];
         B.Nmax = [ab_Nmax, B.Nmax(2)];
-        
+
         S = A;
         S.data = S.data * B.data;
-        
+
       elseif isa(B, 'ott.beam.abstract.Beam')
-        
+
         % Calculate scattered beam
         S = A.scatter(B);
-        
+
       elseif isa(A, 'ott.beam.abstract.Beam')
         error('Cannot multiply beam by T-matrix, check multiplication order');
-        
+
       elseif isa(A, 'ott.scat.vswf.Tmatrix')
         if isscalar(B)
           S = A;
@@ -653,7 +617,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
         else
           S = A.data * B;
         end
-        
+
       elseif isa(B, 'ott.scat.vswf.Tmatrix')
         if isscalar(A)
           S = B;
@@ -661,7 +625,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
         else
           S = A * B.data;
         end
-        
+
       else
         error('Atleast one input must be T-matrix');
       end
@@ -672,7 +636,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       %
       % Usage
       %   tmatrix = -tmatrix;
-      
+
       tmatrix.data = -tmatrix.data;
     end
 
@@ -681,7 +645,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       %
       % Usage
       %   tmatrix = real(tmatrix);
-      
+
       tmatrix.data = real(tmatrix.data);
     end
 
@@ -690,7 +654,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       %
       % Usage
       %   tmatrix = imag(tmatrix);
-      
+
       tmatrix.data = imag(tmatrix.data);
     end
 
@@ -714,7 +678,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       %   - action (enum) -- Action to take if power lost/gained.
       %     Can be 'warn', 'error' or 'none'.  If no outputs present,
       %     the default behaviour is 'warn'.  Otherwise 'none'.
-      
+
       p = inputParser;
       p.addParameter('threshold', 1.0e-3);
       if nargout == 0
@@ -723,10 +687,10 @@ classdef Tmatrix < ott.scat.utils.Particle ...
         p.addParameter('action', 'none');
       end
       p.parse(varargin{:});
-      
+
       % Calculate total T-matrix column power
       column_power = sum(abs(tmatrix.total.data).^2, 1);
-      
+
       % Raise warnings or errors
       if any(abs(1.0 - column_power) > p.Results.threshold)
         switch p.Results.action
@@ -740,58 +704,224 @@ classdef Tmatrix < ott.scat.utils.Particle ...
             error('Unknown action parameter value');
         end
       end
-      
+
       % Assign outputs
       if nargout ~= 0
         varargout{1} = column_power;
       end
     end
-    
+
     function b = issparse(tmatrix)
       % Returns true if the T-matrix data is sparse
       %
       % Usage
       %   b = issparse(tmatrix)
-      
+
       b = issparse(tmatrix.data);
     end
-    
+
     function tmatrix = full(tmatrix)
       % Convert the T-matrix data to a full matrix
       %
       % Usage
       %   tmatrix = full(tmatrix)
-      
+
       tmatrix.data = full(tmatrix.data);
     end
-    
+
     function tmatrix = sparse(tmatrix)
       % Convert the T-matrix data to a sparse matrix
       %
       % Usage
       %   tmatrix = sparse(tmatrix)
-      
+
       tmatrix.data = sparse(tmatrix.data);
     end
-    
+
     function tmatrix = setType(tmatrix, val)
       % Set the T-matrix type paramter (without raising a warning)
       %
       % Usage
       %   tmatrix = tmatrix.setType(val);
-      
+
       % Check output arguments
       tmatrix.nargoutCheck(nargout);
-      
+
       S = warning('off', 'ott:scat:vswf:Tmatrix:type_change');
       tmatrix.type = val;
       warning(S);
     end
- end
+
+    function varargout = scatter(tmatrix, beam, varargin)
+      % Calculate the beam scattered by a T-matrix.
+      %
+      % Usage
+      %   scattered_beam = tmatrix.scatter(incident_beam, ...)
+      %
+      % Parameters and outputs
+      %   - incident_beam (ott.beam.abstract.Beam) -- A beam object
+      %     which is convertible to a VSWF beam.
+      %
+      %   - scattered_beam (ott.beam.vswf.Scattered) -- The scattered beam.
+      %
+      % Optional named arguments
+      %   - position (3xN numeric) -- Translation applied to the beam
+      %     before the beam is scattered by the particle.  Default: ``[]``.
+      %     Only used with T-matrix input.
+      %
+      %   - rotation (3x3N numeric) -- Rotation applied to the beam,
+      %     calculates the scattered beam and applies the inverse rotation,
+      %     effectively rotating the particle.  Default: ``[]``.
+      %     Only used with T-matrix input.
+      %
+      %   - array_type (enum) -- Array type for scattered beam with respect
+      %     to rotation and position arguments.  Default: ``'array'``.
+      %
+      %   - store_tmatrix (logical) -- If false, the T-matrix is not
+      %     stored in the scattered beam. Default: ``true``.
+      %
+      %   - store_beam (logical) -- If false, the incident beam is not
+      %     in the scattered beam. Default: ``true``.
+      %
+      % If both position and rotation are present, the translation is
+      % applied first, followed by the rotation.
+      % The length of position and rotation must match or be scalar.
+
+      % Only add additional documentation
+      [varargout{1:nargout}] = scatter@ott.scat.utils.Particle(...
+          tmatrix, beam, varargin{:});
+    end
+  end
+
+  methods (Hidden)
+    function sbeam = scatterInternal(tmatrix, beam, varargin)
+      % Calculate the beam scattered by a T-matrix.
+      %
+      % Operates on a single T-matrix
+      % TODO: Handling for multiple particles in scatter?
+
+      % Setup input parser
+      p = inputParser;
+      p.addParameter('store_beam', true);
+      p.addParameter('store_tmatrix', true);
+      p.parse(varargin{:});
+
+      % Ensure the beam is a Bsc
+      % TODO: For some beams this could (should?) be done earlier
+      if ~isa(beam, 'ott.beam.vswf.Bsc')
+
+        % Calculate suggested Nmax from T-matrix and translation
+        %
+        % TODO: There are two optimal cases we could implement
+        %   * For beams with an almost exact representation we should
+        %     use the minimum Nmax.
+        %   * For PlaneWave beams, we should pre-calculate the
+        %     rotations and translatiosn and only convert at the end.
+        %     So Nmax matches the T-matrix Nmax.
+        maxPosition = max(vecnorm(beam.position));
+        particleRadius = ott.utils.nmax2ka(tmatrix.Nmax(2));
+        Nmax = ott.utils.ka2nmax(maxPosition*beam.wavenumber + particleRadius);
+
+        beam = ott.beam.vswf.Bsc(beam, 'suggestedNmax', Nmax);
+      end
+
+      % Pre-combine coherent beams
+      % TODO: For some beams this could be done earlier
+      if strcmpi(beam.array_type, 'coherent')
+        beam = sum(beam);
+        beam.array_type = p.Results.array_type;
+      end
+
+      % Determine the maximum tmatrix.Nmax(2) and check type
+      maxNmax1 = tmatrix.Nmax(1);
+      maxNmax2 = tmatrix.Nmax(2);
+
+      % If the T is scattered, we can save time by throwing away columns
+      if strcmpi(tmatrix(1).type, 'scattered')
+        maxNmax2 = min(maxNmax2, beam.Nmax);
+        tmatrix.Nmax = [maxNmax1, maxNmax2];
+      end
+
+      % Apply translation to the beam
+      if beam.position ~= [0;0;0]
+
+        % Requires scattered beam, convert if needed
+        if ~strcmpi(tmatrix.type, 'scattered')
+          tmatrix = tmatrix.scattered;
+          maxNmax2 = min(maxNmax2, beam.Nmax);
+          tmatrix.Nmax = [maxNmax1, maxNmax2];
+        end
+
+        % Apply translation
+        % We need Nmax+1 terms for the force calculation
+        beam = beam.translateXyz(beam.position, 'Nmax', maxNmax2+1);
+      end
+
+      % Apply rotation to the beam
+      rbeam = beam;
+      if beam.rotation ~= eye(3)
+        rbeam = rbeam.rotate(rbeam.rotation, 'Nmax', maxNmax1);
+      end
+
+      % Ensure the Nmax for the inner dimension matches
+      if strcmpi(tmatrix.type, 'scattered')
+        % T-matrix is already done
+        rbeam = rbeam.setNmax(maxNmax2, 'powerloss', 'ignore');
+      else
+        tmatrix = tmatrix.setNmax([maxNmax1, rbeam.Nmax], ...
+            'powerloss', 'ignore');
+
+        if ~strcmpi(tmatrix.type, 'internal')
+          warning('ott:Bsc:scatter', ...
+              'It may be more optimal to use a scattered T-matrix');
+        end
+      end
+
+      % Calculate the resulting beams
+      sbeam = ott.beam.vswf.Scattered(tmatrix.data * rbeam);
+
+      % Store the incident beam and T-matrices if requested
+      if p.Results.store_beam
+        sbeam.incident_beam = beam;
+      end
+      if p.Results.store_tmatrix
+        sbeam.tmatrix = tmatrix;
+      end
+
+      % TODO: Set the sbeam position/rotation
+
+      % Apply the inverse rotation
+      % TODO: Should we just set the beam coordinate rotation?
+      if beam.rotation ~= eye(3)
+        % Faster to recompute rotation than to use wigner-D
+        sbeam = sbeam.rotate(beam.rotation.');
+      end
+
+      % Assign a type to the resulting beam
+      switch tmatrix.type
+        case 'total'
+          sbeam = sbeam.setType('total');
+          sbeam.basis = 'regular';
+        case 'scattered'
+          sbeam = sbeam.setType('scattered');
+          sbeam.basis = 'outgoing';
+        case 'internal'
+          sbeam = sbeam.setType('internal');
+          sbeam.basis = 'regular';
+
+          % Wavelength has changed, update it
+          sbeam = sbeam.setWavenumber(...
+              tmatrix.wavenumber_particle, 'medium');
+
+        otherwise
+          error('Unrecognized T-matrix type');
+      end
+    end
+  end
 
   methods % Getters/setters
     function tmatrix = set.data(tmatrix, val)
-      
+
       % Check data type and size
       assert(isnumeric(val) && ismatrix(val), ...
         'tmatrix.data must be numeric matrix');
@@ -799,27 +929,27 @@ classdef Tmatrix < ott.scat.utils.Particle ...
           (all(mod(size(val), 2) == 0) && all(size(val)./2 >= 3) && ...
           all(sqrt(size(val)./2+1) == floor(sqrt(size(val)./2+1)))), ...
           'tmatrix.data dimensions must be empty, 6, 16, 30, 48, ...');
-        
+
       tmatrix.data = val;
     end
-    
+
     function tmatrix = set.type(tmatrix, val)
-      
+
       % Check type
       assert(any(strcmpi(val, {'internal', 'total', 'scattered'})), ...
           'type must be ''internal'' ''total'' or ''scattered''');
-      
+
       % Warn user they may be doing the wrong thing
       warning('ott:scat:vswf:Tmatrix:type_change', ...
         ['Changing the type property doesnt change the type', newline, ...
         'Use tmatrix.total or tmatrix.scattered instead']);
-      
+
       tmatrix.type = val;
     end
-    
+
     function tmatrix = get.total(tmatrix)
       % Convert to a total T-matrix (if possible)
-      
+
       switch tmatrix.type
         case 'internal'
           error('Cannot convert from internal to total T-matrix');
@@ -832,10 +962,10 @@ classdef Tmatrix < ott.scat.utils.Particle ...
           error('Internal error: T-matrix has invalid type');
       end
     end
-    
+
     function tmatrix = get.scattered(tmatrix)
       % Convert to a scattered T-matrix (if possible)
-      
+
       switch tmatrix.type
         case 'internal'
           error('Cannot convert from internal to total T-matrix');
@@ -848,7 +978,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
           error('Internal error: T-matrix has invalid type');
       end
     end
-    
+
     function nmax = get.Nmax(tmatrix)
       %get.Nmax calculate Nmax from the current T-matrix data
       nmax1 = ott.utils.combined_index(size(tmatrix.data, 1)/2);

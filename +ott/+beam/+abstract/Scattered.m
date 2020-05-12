@@ -55,7 +55,7 @@ classdef Scattered < ott.beam.abstract.Beam
 
       beam = beam@ott.beam.abstract.Beam(unmatched{:});
       beam.incident_beam = p.Results.incident_beam;
-      beam.type = type;
+      beam = beam.setType(type);
     end
 
     function tbeam = totalField(beam, ibeam)
@@ -133,6 +133,8 @@ classdef Scattered < ott.beam.abstract.Beam
       S = warning('off', 'ott:beam:abstract:Scattered:type_change');
       beam.type = val;
       warning(S);
+
+      assert(nargout == 1, 'Too few outputs for setType');
     end
   end
 

@@ -1,13 +1,14 @@
-function varargout = prxfun(func, sz, varargin)
+function varargout = prxfun(func, varargin)
 % Position-rotation expansion function
 %
 % Applies a specified function to each combination of the input
 % positions and rotations.
 %
 % Usage
-%   ret = prxfun(func, sz, ...)
+%   ret = prxfun(func, ...)
+%   Returns a cell array of results.
 %
-%   [ret1, ret2, ...] = prxfun(func, sz, ...)
+%   [ret1, ret2, ...] = prxfun(func, ...)
 %   Returns multiple arguments.  Requires func to return multiple results.
 %
 % Parameters
@@ -15,17 +16,12 @@ function varargout = prxfun(func, sz, varargin)
 %     of the position and rotation parameters.  The function should
 %     take named arguments for position and rotation.
 %
-%   - sz (numeric) -- Size of the output returned by `func`.
-%
 % Optional named arguments
 %   - position (3xN numeric) -- position arguments.  Default: ``[]``.
 %   - rotation (3x3N numeric) -- rotation arguments. Default: ``[]``.
 %   - progress (function_handle) -- a function to call after each step.
 %     Default: ``[]``.  The function handle should take two arguments,
 %     the current step index and the total amount of work.
-%
-%   - zeros (function_handle) -- A function like ``zeros`` to call to
-%     allocate memory for the output.  Default: ``zeros``.
 %
 % Unmatched arguments are passed to func.
 % Number of positions and rotations must be scalar or equal.
@@ -35,7 +31,6 @@ p.KeepUnmatched = true;
 p.addParameter('position', []);
 p.addParameter('rotation', []);
 p.addParameter('progress', []);
-p.addParameter('zeros', @zeros);
 p.parse(varargin{:});
 unmatched = ott.utils.unmatchedArgs(p);
 
@@ -70,15 +65,7 @@ if Nwork == 0
 end
 
 % Allocate memory for output(s)
-if iscell(p.Results.zeros)
-  for ii = 1:length(p.Results.zeros)
-    varargout{ii} = p.Results.zeros{ii}([sz, Nwork]);
-  end
-else
-  varargout = repmat({p.Results.zeros([sz, Nwork])}, 1, nargout);
-end
-
-epw = prod(sz);
+varargout = repmat({cell(1, Nwork)}, 1, nargout);
 
 for ii = 1:Nwork
 
@@ -101,7 +88,7 @@ for ii = 1:Nwork
   [func_outputs{1:nargout}] = func('position', our_position, ...
       'rotation', our_rotation, unmatched{:});
   for jj = 1:length(func_outputs)
-    varargout{jj}((1:epw) + (ii-1)*epw) = func_outputs{jj};
+    varargout{jj}{ii} = func_outputs{jj};
   end
 
   if ~isempty(p.Results.progress)

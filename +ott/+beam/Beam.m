@@ -775,43 +775,47 @@ classdef (Abstract) Beam < ott.beam.Properties
       ints = imout(4, :);
     end
 
-    function varargout = force(ibeam, other, varargin)
+    function varargout = force(beam, other, varargin)
       % Calculate change in linear momentum between beams.
-      % For details on usage/arguments see :meth:`forcetorque`.
       %
       % Usage
       %   force = beam.force(other_beam, ...)
       %
       %   force = beam.force(particle, ...)
-      %   Use the particle's scattere method to calculte a scattered beam.
-      
-      % Convert from particle to beam
-      if isa(other, 'ott.scat.utils.Particle')
-        other = other.scatter(ibeam);
-      end
+      %   Use the particle's force method with flipped position/rotation
+      %   and flipped output.
+      %
+      % For details on usage/arguments see :meth:`forcetorque`.
 
-      [varargout{1:nargout}] = ibeam.forceInternal(other, varargin{:});
+      if isa(other, 'ott.scat.utils.Particle')
+        [varargout{1:nargout}] = other.force(beam, varargin{:})
+      elseif isa(other, 'ott.beam.abstract.Beam')
+        [varargout{1:nargout}] = beam.callParticleMethod(...
+            @beam.forceInternal, other, varargin{:});
+      end
     end
 
-    function varargout = torque(ibeam, other, varargin)
+    function varargout = torque(beam, other, varargin)
       % Calculate change in angular momentum between beams.
-      % For details on usage/arguments see :meth:`forcetorque`.
       %
       % Usage
       %   torque = beam.torque(other_beam, ...)
       %
       %   torque = beam.torque(particle, ...)
-      %   Use the particle's scattere method to calculte a scattered beam.
-      
-      % Convert from particle to beam
-      if isa(other, 'ott.scat.utils.Particle')
-        other = other.scatter(ibeam);
-      end
+      %   Use the particle's torque method with flipped position/rotation
+      %   and flipped output.
+      %
+      % For details on usage/arguments see :meth:`forcetorque`.
 
-      [varargout{1:nargout}] = ibeam.torqueInternal(other, varargin{:});
+      if isa(other, 'ott.scat.utils.Particle')
+        [varargout{1:nargout}] = other.torque(beam, varargin{:})
+      elseif isa(other, 'ott.beam.abstract.Beam')
+        [varargout{1:nargout}] = beam.callParticleMethod(...
+            @beam.torqueInternal, other, varargin{:});
+      end
     end
 
-    function varargout = forcetorque(ibeam, other, varargin)
+    function varargout = forcetorque(beam, other, varargin)
       % Calculate change in momentum between beams.
       %
       % Usage
@@ -820,11 +824,13 @@ classdef (Abstract) Beam < ott.beam.Properties
       %   coordinates.
       %
       %   [force, torque] = beam.forcetorque(particle, ...)
-      %   Use the particle's scattere method to calculte a scattered beam.
+      %   Use the particle's `forcetorque` method.
+      %   Use the particle's `forcetorque` method with flipped
+      %   position/rotation and flipped output.
       %
       % Parameters
-      %   - other (Beam|scat.Scatter) -- A beam to compare the force
-      %     with or a particle with a scatter method.
+      %   - other (Beam|scat.utils.Particle) -- A beam to compare the force
+      %     with or a particle with a forcetorque method.
       %
       %   - position (3xN numeric) -- Distance to translate beam before
       %     calculating the scattered beam using the T-matrix.
@@ -835,17 +841,74 @@ classdef (Abstract) Beam < ott.beam.Properties
       %     Inverse rotation is applied to scattered beam, effectively
       %     rotating the particle.
       %     Default: ``[]``.
-      
-      % Convert from particle to beam
-      if isa(other, 'ott.scat.utils.Particle')
-        other = other.scatter(ibeam);
-      end
 
-      [varargout{1:nargout}] = ibeam.forcetorqueInternal(other, varargin{:});
+      if isa(other, 'ott.scat.utils.Particle')
+        [varargout{1:nargout}] = other.forcetorque(beam, varargin{:})
+      elseif isa(other, 'ott.beam.abstract.Beam')
+        [varargout{1:nargout}] = beam.callParticleMethod(...
+            @beam.forcetorqueInternal, other, varargin{:});
+      end
+    end
+
+    function varargout = scatter(beam, particle, varargin)
+      % Calculate the beam scattered by a particle
+      %
+      % Usage
+      %   sbeam = ibeam.scatter(particle, ...)
+      %
+      % Uses the particle's scatter method.  For details and function
+      % arguments, see the particle scatter method's documentation.
+
+      [position, rotation, unmatched] = beam.flipPositionRotation(varargin{:});
+
+      [varargout{1:nargout}] = particle.scatter(beam, ...
+          'position', position, 'rotation', rotation, unmatched{:});
     end
   end
 
   methods (Hidden)
+
+    function varargout = callParticleMethod(beam, method, other, varargin)
+      % Helper for calling particle methods with position/rotation inputs
+      %
+      % Forces should be flipped when calculated with the beam as the
+      % primary (force on the beam vs force on the particle).
+      %
+      % Position and rotation should be inverted.
+
+      % Flip position/rotation
+      [position, rotation, unmatched] = beam.flipPositionRotation(varargin{:});
+
+      % Call particle method
+      [varargout{1:nargout}] = ...
+        ott.utils.RotationPositionProp.rotationPositionHelper(method, ...
+        other, 'position', position, 'rotation', rotation, ...
+        'prxcat', 2, unmatched{:});
+
+      % Flip outputs
+      for ii = 1:nargout
+        varargout{ii} = -varargout{ii};
+      end
+    end
+
+    function [position, rotation, unmatched] = flipPositionRotation(...
+        beam, varargin)
+      % Flip position and rotation variable arguments
+
+      p = inputParser;
+      p.addParameter('position', []);
+      p.addParameter('rotation', []);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Flip position/rotation
+      position = -p.Results.position;
+      rotation = p.Results.rotation;
+      for ii = 1:size(rotation, 2)./3
+        rotation(:, (1:3) + (ii-1)*3) = rotation(:, (1:3) + (ii-1)*3).';
+      end
+    end
 
     function [xyz, unmatched] = transformWorldToLocal(beam, xyz, varargin)
       % Helper for world to local transforms with arguments
@@ -872,7 +935,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       end
     end
 
-    function [E, H] = ehfieldInternal(xyz, varargin)
+    function [E, H] = ehfieldInternal(beam, xyz, varargin)
       % Default implementation just calls each part, but for some
       % beams it may be more efficient to calculate these together,
       % in which case this method should be over-written.

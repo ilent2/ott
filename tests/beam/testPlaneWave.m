@@ -91,17 +91,17 @@ function testForce(testCase)
   P2 = ott.beam.PlaneWave('direction', [0;0;-1]);
   
   f = P1.force(P2);
-  testCase.verifyEqual(f, [0;0;-2], 'reflected wave');
+  testCase.verifyEqual(f, [0;0;2], 'reflected wave');
   
   P2.field = 0.0;
   f = P1.force(P2);
-  testCase.verifyEqual(f, [0;0;-1], 'reflected wave');
+  testCase.verifyEqual(f, [0;0;1], 'reflected wave');
 
   P1 = ott.beam.PlaneWave('direction', [0;0;1], 'polarisation', [0;1;0]);
   P2 = ott.beam.PlaneWave('direction', [1;0;0], 'polarisation', [0;1;0]);
   
   f = P1.force(P2);
-  testCase.verifyEqual(f, [1;0;-1.0], 'perpendicular wave');
+  testCase.verifyEqual(f, [-1;0;1.0], 'perpendicular wave');
   
   f2 = P2.force(P1);
   testCase.verifyEqual(f2, -f, 'oposite sign');
@@ -119,17 +119,17 @@ function testForceBeamArray(testCase)
   beam1.array_type = 'array';
   beam2.array_type = 'array';
   f = beam1.force(beam2);
-  testCase.verifyEqual(f, [0;0;-2].*[1,1,1], 'array');
+  testCase.verifyEqual(f, [0;0;2].*[1,1,1], 'array');
   
   beam1.array_type = 'coherent';
   beam2.array_type = 'coherent';
   f = beam1.force(beam2);
-  testCase.verifyEqual(f, [0;0;-2].*numel(beam1).^2, 'coherent');
+  testCase.verifyEqual(f, [0;0;2].*numel(beam1).^2, 'coherent');
   
   beam1.array_type = 'incoherent';
   beam2.array_type = 'incoherent';
   f = beam1.force(beam2);
-  testCase.verifyEqual(f, [0;0;-6], 'incoherent');
+  testCase.verifyEqual(f, [0;0;6], 'incoherent');
   
 end
 

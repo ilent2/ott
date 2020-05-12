@@ -144,3 +144,32 @@ function testResizing(testCase)
       && size(Tnew1.data, 2) == size(T.data, 2), ...
       'Tmatrix size not increased correctly (index input)');
 end
+
+function testScatter(testCase)
+
+  tmatrix = ott.scat.vswf.Tmatrix(speye(6), 'type', 'scattered');
+  beam = ott.beam.abstract.PlaneWave();
+  
+  % test with one beam
+  sbeam = tmatrix.scatter(beam);
+  testCase.verifyEqual(sbeam.type, tmatrix.type, 'scat type');
+  testCase.verifyEqual(sbeam.a, sbeam.incident_beam.a, 'a');
+  testCase.verifyEqual(sbeam.b, sbeam.incident_beam.b, 'b');
+  testCase.verifyEqual(numel(sbeam), 1, 'size');
+  
+  % test with two positions
+  sbeam = tmatrix.scatter(beam, 'position', zeros(3, 2));
+  testCase.verifyEqual(numel(sbeam), 2, 'size');
+  testCase.verifyEqual(sbeam.type, tmatrix.type, '2 scat type');
+  testCase.verifyEqual(sbeam.a, sbeam.incident_beam.a, '2 a');
+  testCase.verifyEqual(sbeam.b, sbeam.incident_beam.b, '2 b');
+  
+  % Test with two beams
+  beam = [beam, beam];
+  sbeam = tmatrix.scatter(beam);
+  testCase.verifyEqual(numel(sbeam), 2, 'A size');
+  testCase.verifyEqual(sbeam.type, tmatrix.type, 'A scat type');
+  testCase.verifyEqual(sbeam.a, sbeam.incident_beam.a, 'A a');
+  testCase.verifyEqual(sbeam.b, sbeam.incident_beam.b, 'A b');
+
+end

@@ -51,8 +51,10 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
       plane = plane@ott.shapes.Plane(normal, varargin{:});
       plane = plane@ott.scat.utils.HomogeneousRelative(index_relative);
     end
+  end
 
-    function [rbeam, tbeam] = scatter(plane, beam)
+  methods (Hidden)
+    function [rbeam, tbeam] = scatterInternal(plane, beam)
       % Calculate reflected and transmitted beams
       
       import ott.utils.cross;
@@ -145,6 +147,7 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
       pvect = cross(svec, kt)./vecnorm(kt);
 
       % Generate the reflected and transmitted vectors
+      % TODO: These should be scattered plane wave beams
       % TODO: Not sure if real(kt) is the right thing to do???
       rbeam = ott.beam.abstract.PlaneWave('direction', kr./vecnorm(kr), ...
           'polarisation', pvecr, ...
