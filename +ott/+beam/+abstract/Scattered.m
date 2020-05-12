@@ -80,7 +80,7 @@ classdef Scattered < ott.beam.abstract.Beam
 
       if strcmpi(beam.type, 'scattered')
         tbeam = 2*beam + ibeam;
-        tbeam.type = 'total';
+        tbeam = tbeam.setType('total');
       elseif strcmpi(beam.type, 'total')
         tbeam = beam;
         if nargin == 2
@@ -118,7 +118,7 @@ classdef Scattered < ott.beam.abstract.Beam
         end
       elseif strcmpi(beam.type, 'total')
         sbeam = 0.5*(beam - ibeam);
-        sbeam.type = 'scattered';
+        sbeam = sbeam.setType('scattered');
       else
         error('Unable to convert to specified type');
       end

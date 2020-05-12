@@ -219,7 +219,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       % Transform coordinates
       [xyz, unmatched] = beam.transformWorldToLocal(xyz, varargin{:});
 
-      [E, H] = beam.ehfieldInternal(xyz, varargin{:});
+      [E, H] = beam.ehfieldInternal(xyz, unmatched{:});
     end
 
     function S = poynting(beam, xyz, varargin)
@@ -788,7 +788,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       % For details on usage/arguments see :meth:`forcetorque`.
 
       if isa(other, 'ott.scat.utils.Particle')
-        [varargout{1:nargout}] = other.force(beam, varargin{:})
+        [varargout{1:nargout}] = other.force(beam, varargin{:});
       elseif isa(other, 'ott.beam.abstract.Beam')
         [varargout{1:nargout}] = beam.callParticleMethod(...
             @beam.forceInternal, other, varargin{:});
@@ -808,7 +808,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       % For details on usage/arguments see :meth:`forcetorque`.
 
       if isa(other, 'ott.scat.utils.Particle')
-        [varargout{1:nargout}] = other.torque(beam, varargin{:})
+        [varargout{1:nargout}] = other.torque(beam, varargin{:});
       elseif isa(other, 'ott.beam.abstract.Beam')
         [varargout{1:nargout}] = beam.callParticleMethod(...
             @beam.torqueInternal, other, varargin{:});
@@ -843,7 +843,7 @@ classdef (Abstract) Beam < ott.beam.Properties
       %     Default: ``[]``.
 
       if isa(other, 'ott.scat.utils.Particle')
-        [varargout{1:nargout}] = other.forcetorque(beam, varargin{:})
+        [varargout{1:nargout}] = other.forcetorque(beam, varargin{:});
       elseif isa(other, 'ott.beam.abstract.Beam')
         [varargout{1:nargout}] = beam.callParticleMethod(...
             @beam.forcetorqueInternal, other, varargin{:});

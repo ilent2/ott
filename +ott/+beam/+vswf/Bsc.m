@@ -1504,8 +1504,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       % If the beams are both Bsc beams, adds the field coefficients.
       % Otherwise, deffers to the base class plus operation.
       
-      if isa(b1, 'ott.beam.vswf.Bsc') && isa(b2, 'ott.beam.vswf.Bsc') ...
-          && strcmpi(b1.array_type, 'coherent') && strcmpi(b2.array_type, 'coherent')
+      if isa(b1, 'ott.beam.vswf.Bsc') && isa(b2, 'ott.beam.vswf.Bsc')
         beam = plusInternal(b1, b2);
       else
         beam = plus@ott.beam.utils.ArrayType(b1, b2);

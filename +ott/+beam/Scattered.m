@@ -61,7 +61,8 @@ classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
       % If other is not supplied, uses the incident beam for the calculation.
 
       p = inputParser;
-      p.addOptional('other', [], @(x) isa(x, 'ott.beam.abstract.Beam'));
+      p.addOptional('other', [], ...
+        @(x) isa(x, 'ott.beam.abstract.Beam') || isa(x, 'ott.scat.utils.Particle'));
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -91,7 +92,8 @@ classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
       % If other is not supplied, uses the incident beam for the calculation.
 
       p = inputParser;
-      p.addOptional('other', [], @(x) isa(x, 'ott.beam.abstract.Beam'));
+      p.addOptional('other', [], ...
+        @(x) isa(x, 'ott.beam.abstract.Beam') || isa(x, 'ott.scat.utils.Particle'));
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -136,7 +138,8 @@ classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
       %     Default: ``[]``.
 
       p = inputParser;
-      p.addOptional('other', [], @(x) isa(x, 'ott.beam.abstract.Beam'));
+      p.addOptional('other', [], ...
+        @(x) isa(x, 'ott.beam.abstract.Beam') || isa(x, 'ott.scat.utils.Particle'));
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);

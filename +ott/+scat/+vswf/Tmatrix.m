@@ -573,7 +573,9 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       end
 
       % If we were originally total field, convert back
-      tmatrix = tmatrix.(old_type);
+      if strcmpi(old_type, 'total')
+        tmatrix = tmatrix.total;
+      end
     end
 
     function S = mtimes(A, B)

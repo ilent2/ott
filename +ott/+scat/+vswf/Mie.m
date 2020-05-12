@@ -432,9 +432,9 @@ classdef Mie < ott.scat.vswf.Tmatrix
 
       % Store the T-matrix type
       if p.Results.internal
-        tmatrix.type = 'internal';
+        tmatrix = tmatrix.setType('internal');
       else
-        tmatrix.type = 'scattered';
+        tmatrix = tmatrix.setType('scattered');
       end
 
       % Calculate the T-matrix and store it
