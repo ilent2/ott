@@ -123,6 +123,17 @@ classdef Scattered < ott.beam.abstract.Beam
         error('Unable to convert to specified type');
       end
     end
+    
+    function beam = setType(beam, val)
+      % Set the beam type paramter (without raising a warning)
+      %
+      % Usage
+      %   beam = beam.setType(val);
+      
+      S = warning('off', 'ott:beam:abstract:Scattered:type_change');
+      beam.type = val;
+      warning(S);
+    end
   end
 
   methods % Getters/setters
@@ -133,8 +144,16 @@ classdef Scattered < ott.beam.abstract.Beam
     end
 
     function beam = set.type(beam, val)
+      
+      % Check value
       assert(any(strcmpi(val, {'scattered', 'total', 'internal'})), ...
           'type must be ''scattered'', ''total'' or ''internal''');
+      
+      % Warn user they may be doing the wrong thing
+      warning('ott:beam:abstract:Scattered:type_change', ...
+        ['Changing the type property doesnt change the type', newline, ...
+        'Consider using beam.total_beam or beam.scattered_beam instead.']);
+      
       beam.type = val;
     end
 
@@ -142,7 +161,7 @@ classdef Scattered < ott.beam.abstract.Beam
       if strcmpi(beam.type, 'scattered')
         assert(~isempty(beam.incident_beam), ...
             'Need incident beam for conversion');
-        tbeam = beam.scatteredField();
+        tbeam = beam.totalField();
       elseif strcmpi(beam.type, 'total')
         tbeam = beam;
       else
@@ -156,7 +175,7 @@ classdef Scattered < ott.beam.abstract.Beam
       elseif strcmpi(beam.type, 'total')
         assert(~isempty(beam.incident_beam), ...
             'Need incident beam for conversion');
-        tbeam = beam.totalField();
+        tbeam = beam.scatteredField();
       else
         error('Unable to convert to specified type');
       end
