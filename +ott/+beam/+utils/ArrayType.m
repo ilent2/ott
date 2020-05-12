@@ -10,6 +10,7 @@ classdef ArrayType < ott.beam.abstract.Beam
 %   - vertcat       -- Vertical concatenation of beams and arrays
 %   - horzcat       -- Horizontal concatenation of beams and arrays
 %   - subsref       -- For direct indexing of the beams array
+%   - isempty       -- Returns true if the beam array is empty
 %   - arrayApply    -- Apply function to beam array output
 %   - combineIncoherentArray  -- Combine cell array of beam data
 %
@@ -217,6 +218,15 @@ classdef ArrayType < ott.beam.abstract.Beam
       % Default behaviour: ``prod(size(beam))``
 
       num = prod(size(beam));
+    end
+    
+    function b = isempty(beam)
+      % Returns true if the beam is empty
+      %
+      % Usage
+      %   b = isempty(beam)     or    b = beam.isempty()
+      
+      b = numel(beam) == 0;
     end
     
     function n = numArgumentsFromSubscript(obj,s,indexingContext)
