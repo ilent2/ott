@@ -3,131 +3,144 @@ function tests = testTmatrix
 end
 
 function setupOnce(testCase)
-
-  % Ensure the ott package is in our path
   addpath('../../../');
+end
 
-  % Create a T-matrix for a sphere
-  testCase.TestData.T = ott.scat.vswf.Tmatrix.simple(...
-      'sphere', 1.0, 'wavelength_medium', 1.0, ...
-      'index_medium', 1.0, 'index_particle', 1.2);
+function testConstructDefault(testCase)
 
-  % Tolerance for comparisons
-  testCase.TestData.tol = 1.0e-6;
+  T = ott.scat.vswf.Tmatrix();
+  
+  testCase.verifyEmpty(T.data, 'empty');
+  testCase.verifyEqual(T.type, 'scattered', 'type');
+  testCase.verifyEqual(T.position, [0;0;0], 'position');
+  testCase.verifyEqual(T.rotation, eye(3), 'rotation');
+end
+
+function testEmpty(testCase)
+
+  T = ott.scat.vswf.Tmatrix.empty();
+  testCase.verifyEmpty(T);
+end
+
+function testScatteredToTotal(testCase)
+
+  tmatrix = ott.scat.vswf.Tmatrix([], 'type', 'scattered');
+  testCase.assertEqual(tmatrix.Nmax, [0,0], 'original Nmax');
+  testCase.assertEqual(tmatrix.type, 'scattered');
+  
+  total = tmatrix.total;
+  testCase.verifyEqual(total.data, [], 'empty');
+  testCase.verifyEqual(total.type, 'total', 'new type');
+  
+  total.Nmax = 1;
+  testCase.verifyEqual(total.data, eye(6), 'Nmax = 1');
 
 end
 
-function checkWithTol(testCase, val, msg)
-  assert(all(val < testCase.TestData.tol), msg);
+function testTotalToScattered(testCase)
+
+  tmatrix = ott.scat.vswf.Tmatrix(eye(6), 'type', 'total');
+  testCase.assertEqual(tmatrix.Nmax, [1,1], 'original Nmax');
+  testCase.assertEqual(tmatrix.type, 'total');
+  
+  scattered = tmatrix.scattered;
+  testCase.verifyEqual(scattered.Nmax, [1,1], 'Nmax');
+  testCase.verifyEqual(scattered.data, zeros(6), 'data');
+  testCase.verifyEqual(scattered.type, 'scattered', 'new type');
+  
+  scattered.Nmax = 0;
+  testCase.verifyEqual(scattered.data, [], 'empty');
+
 end
 
-function testPower(testCase)
-  %% Check that the total field T-matrix conserves power
-  T = testCase.TestData.T;
-  checkWithTol(testCase, abs(1.0 - sum(abs(T.total.data).^2, 2)), ...
-      'Power not conserved');
+function testRealImagFunctions(testCase)
 
-  %% Check resizing total conserves power
-  Ttotal = testCase.TestData.T.total;
+  data = randn(6, 6) + 1i*randn(6, 6);
+  T = ott.scat.vswf.Tmatrix(data);
+
+  Treal = real(T);
+  testCase.verifyEqual(Treal.data, real(data), 'real');
+  
+  Timag = imag(T);
+  testCase.verifyEqual(Timag.data, imag(data), 'real');
+
+end
+
+function testShrinkPowerWarning(testCase)
+  % Check shrinking gives a power warning
+
+  T = ott.scat.vswf.Tmatrix(eye(16), 'type', 'scattered');
+  
+  testCase.verifyWarning(@() T.setNmax(1), ...
+      'ott:Tmatrix:setNmax:truncation', 'warn');
+    
+  testCase.verifyError(@() T.setNmax(1, 'powerloss', 'error'), ...
+      'ott:Tmatrix:setNmax:truncation', 'error');
+
+  testCase.verifyWarningFree(@() T.setNmax(1, 'powerloss', 'ignore'), ...
+      'ignore');
+end
+
+function testPowerOnResize(testCase)
+  
+  % Check columnCheck
+  T = ott.scat.vswf.Tmatrix(eye(6), 'type', 'total');
+  testCase.assertEqual(T.columnCheck(), ones(1, 6), 'AbsTol', 1.0e-15);
+  
+  % Check resizing total conserves power
+  Ttotal = T;
   Ttotal.Nmax = Ttotal.Nmax + 5;
-  checkWithTol(testCase, abs(1.0 - sum(abs(Ttotal.data).^2, 2)), ...
-      'Resizing Ttotal doesnt conserve power');
+  sz = size(Ttotal.data, 2);
+  testCase.assertEqual(Ttotal.columnCheck(), ones(1, sz), ...
+    'AbsTol', 1.0e-15, 'Ttotal');
 
-  %% Check resizing scattered conserves power
-  Tscat = testCase.TestData.T.scattered;
+  % Check resizing scattered conserves power
+  Tscat = T.scattered;
   Tscat.Nmax = Tscat.Nmax + 5;
-  checkWithTol(testCase, abs(1.0 - sum(abs(Tscat.total.data).^2, 2)), ...
-      'Resizing Ttotal doesnt conserve power');
-end
-
-function testConvert(testCase)
-  %% Check we can convert to and from scattered and total field
-
-  Ttotal = testCase.TestData.T.total;
-  Tscat = testCase.TestData.T.scattered;
-
-  assert(strcmpi(Ttotal.type, 'total'), 'Conversion to total');
-  assert(strcmpi(Tscat.type, 'scattered'), ...
-      'Conversion to scattered');
-
-  % Check conversions back
-  assert(strcmpi(Tscat.total.type, 'total'), ...
-      'Conversion back to total');
-  assert(strcmpi(Ttotal.scattered.type, 'scattered'), ...
-      'Conversion back to scattered');
-
-  % Check string convert
-  import matlab.unittest.constraints.Matches;
-  Ttotal = testCase.TestData.T;
-  Ttotal.type = 'total';
-  testCase.verifyThat(Ttotal.type, Matches('total'), ...
-    'Incorrect type with string conversion');
+  sz = size(Tscat.data, 2);
+  testCase.assertEqual(Tscat.columnCheck(), ones(1, sz), ...
+    'AbsTol', 1.0e-15, 'Tscat');
 end
 
 function testResizing(testCase)
-  %% Check resizing T-matrix works
+  % Check resizing T-matrix works
 
-  T = testCase.TestData.T;
+  T = ott.scat.vswf.Tmatrix(eye(6), 'type', 'scattered');
   Tnew1 = T;
 
   Tnew1.Nmax = Tnew1.Nmax + 5;
-  assert(all(Tnew1.Nmax == T.Nmax + 5), ...
+  testCase.verifyEqual(Tnew1.Nmax, T.Nmax + 5, ...
       'Faild to increase Nmax with vector size');
-  assert(all(size(Tnew1.data) > size(T.data)), ...
+  testCase.verifyTrue(all(size(Tnew1.data) > size(T.data)), ...
       'Tmatrix size not actually increased (vector input)');
 
   Tnew2 = Tnew1;
   Tnew2.Nmax = T.Nmax;
-  assert(all(Tnew2.Nmax == T.Nmax), ...
+  testCase.verifyEqual(Tnew2.Nmax, T.Nmax, ...
       'Failed to decrease Nmax with vector size');
-  assert(all(size(Tnew2.data) == size(T.data)), ...
+  testCase.verifyEqual(size(Tnew2.data), size(T.data), ...
       'Tmatrix size not actually decreased (vector input)');
 
   Tnew1 = T;
   Tnew1.Nmax = T.Nmax(1) + 5;
-  assert(all(Tnew1.Nmax == T.Nmax + 5), ...
+  testCase.verifyEqual(Tnew1.Nmax, T.Nmax + 5, ...
       'Faild to increase Nmax (scalar input)');
-  assert(all(size(Tnew1.data) > size(T.data)), ...
+  testCase.verifyTrue(all(size(Tnew1.data) > size(T.data)), ...
       'Tmatrix size not actually increased (scalar input)');
 
   Tnew1 = T;
   Tnew1.Nmax = [T.Nmax(1) + 5, T.Nmax(2)];
-  assert(all(Tnew1.Nmax == [T.Nmax(1) + 5, T.Nmax(2)]), ...
+  testCase.verifyEqual(Tnew1.Nmax, [T.Nmax(1) + 5, T.Nmax(2)], ...
       'Faild to increase Nmax (uneven input)');
-  assert(size(Tnew1.data, 1) > size(T.data, 1) ...
+  testCase.verifyTrue(size(Tnew1.data, 1) > size(T.data, 1) ...
       && size(Tnew1.data, 2) == size(T.data, 2), ...
       'Tmatrix size not increased correctly (uneven input)');
 
   Tnew1 = T;
   Tnew1.Nmax(1) = T.Nmax(1) + 5;
-  assert(all(Tnew1.Nmax == [T.Nmax(1) + 5, T.Nmax(2)]), ...
+  testCase.verifyEqual(Tnew1.Nmax, [T.Nmax(1) + 5, T.Nmax(2)], ...
       'Faild to increase Nmax (index input)');
-  assert(size(Tnew1.data, 1) > size(T.data, 1) ...
+  testCase.verifyTrue(size(Tnew1.data, 1) > size(T.data, 1) ...
       && size(Tnew1.data, 2) == size(T.data, 2), ...
       'Tmatrix size not increased correctly (index input)');
 end
-
-function testShrinkPowerWarning(testCase)
-  %% Check shrinking gives a power warning
-
-  T = testCase.TestData.T;
-  testCase.verifyWarning(@() T.set_Nmax(1), ...
-      'ott:Tmatrix:setNmax:truncation');
-
-  T = testCase.TestData.T;
-  testCase.verifyWarningFree(@() T.set_Nmax(1, 'powerloss', 'ignore'), ...
-      'Ignore argument had no effect');
-end
-
-function testRealImagFunctions(testCase)
-
-  T = testCase.TestData.T;
-
-  T2 = real(T);
-  T3 = imag(T);
-
-  T4 = T.real();
-  T5 = T.imag();
-
-end
-
