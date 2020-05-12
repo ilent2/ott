@@ -99,6 +99,42 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       n = n.';
       m = m.';
     end
+    
+    function beam = empty(varargin)
+      % Create an empty Bsc object
+      %
+      % Usage
+      %   beam = Bsc.empty()
+      %
+      %   beam = Bsc.empty(sz, ...)
+      %
+      % Parameters
+      %   - sz (numeric) -- Number of beams in empty array.
+      %     Can either be [1, num] or [num].
+      %
+      % Additional arguments are passed to constructor.
+      
+      p = inputParser;
+      p.addOptional('sz', 0, @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      sz = p.Results.sz;
+      
+      assert(isnumeric(sz) && (sz(1) == 1 || isscalar(sz)), ...
+        'sz must be numeric scalar or first element must be 1');
+      
+      if numel(sz) == 2
+        sz = sz(2);
+      end
+      
+      a = zeros(0, sz);
+      b = zeros(0, sz);
+      
+      beam = ott.beam.vswf.Bsc(a, b, unmatched{:});
+      
+    end
   end
 
   methods (Access=protected)
@@ -265,6 +301,16 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       sz(1) = 1;
 
       [varargout{1:nargout}] = ott.utils.size_helper(sz, varargin{:});
+    end
+    
+    function beam = repmat(beam, varargin)
+      
+      dims = [varargin{:}];
+      assert(dims(1) == 1 && length(dims) == 2, 'Bsc beam array must be 1xN');
+      
+      % Repeat the beam coefficients
+      beam = beam.setCoefficients(...
+        repmat(beam.a, dims), repmat(beam.b, dims));
     end
 
     function [E, H, data] = ehfarfield(beam, rtp, varargin)
@@ -857,13 +903,13 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
         z = z * beam.wavenumber / 2 / pi;
 
         ibeam = beam;
-        beam = ott.beam.vswf.Bsc();
+        beam(numel(z)) = ibeam;
 
         for ii = 1:numel(z)
           [A, B] = ibeam.translateZ_type_helper(z(ii), [p.Results.Nmax, ibeam.Nmax]);
-          beam = beam.append(ibeam.translate(A, B));
-          beam.basis = 'regular';
+          beam(ii) = ibeam.translate(A, B);
         end
+        beam.basis = 'regular';
       else
         error('Wrong number of arguments');
       end
@@ -1244,13 +1290,6 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       fx=real(fxy);
       fy=imag(fxy);
       
-      % Combine incoherent beams
-      if incN > 1
-        fx = sum(reshape(fx, incN, []), 1);
-        fy = sum(reshape(fy, incN, []), 1);
-        fz = sum(reshape(fz, incN, []), 1);
-      end
-      
       % Ensure things are full
       fx = full(fx);
       fy = full(fy);
@@ -1260,7 +1299,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       if nargout == 3
         varargout{1:3} = {fx, fy, fz};
       else
-        varargout{1} = [fx; fy; fz];
+        varargout{1} = [fx(:) fy(:) fz(:)].';
       end
     end
 
@@ -1303,7 +1342,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       if nargout == 3
         varargout{1:3} = {tx, ty, tz};
       else
-        varargout{1} = [tx; ty; tz];
+        varargout{1} = [tx(:) ty(:) tz(:)].';
       end
     end
 
@@ -1363,7 +1402,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       if nargout == 3
         varargout{1:3} = {sx, sy, sz};
       else
-        varargout{1} = [sx; sy; sz];
+        varargout{1} = [sx(:) sy(:) sz(:)].';
       end
     end
 
@@ -1458,6 +1497,20 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
         beam.b = sum(beam.b, 2);
       end
     end
+    
+    function beam = plus(b1, b2)
+      % Add two beams together
+      %
+      % If the beams are both Bsc beams, adds the field coefficients.
+      % Otherwise, deffers to the base class plus operation.
+      
+      if isa(b1, 'ott.beam.vswf.Bsc') && isa(b2, 'ott.beam.vswf.Bsc') ...
+          && strcmpi(b1.array_type, 'coherent') && strcmpi(b2.array_type, 'coherent')
+        beam = plusInternal(b1, b2);
+      else
+        beam = plus@ott.beam.utils.ArrayType(b1, b2);
+      end
+    end
   end
 
   methods (Hidden)
@@ -1496,7 +1549,7 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       % Get the subscripted beam
 
       if numel(subs) > 1
-        if subs(1) == 1
+        if subs{1} == 1 || strcmpi(subs{1}, ':')
           subs = subs(2:end);
         end
         assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
@@ -1527,6 +1580,10 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
         if ~isa(other, 'ott.beam.vswf.Bsc')
           other = ott.beam.vswf.Bsc(other);
         end
+        
+        % Ensure array sizes match
+        beam.Nmax = max(beam.Nmax, other.Nmax);
+        other.Nmax = beam.Nmax;
 
         beam.a(:, subs{:}) = other.a;
         beam.b(:, subs{:}) = other.b;
@@ -1646,55 +1703,40 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
 
     end
     
-    function [ibeam, sbeam, incN] = forcetorqueParser(ibeam, other, varargin)
+    function [ibeam, sbeam, incN] = forcetorqueParser(ibeam, sbeam, varargin)
       % Input parser for forcetorque and related methods
       
-      ip = inputParser;
-      ip.addParameter('position', []);  % Only used for T-matrix
-      ip.addParameter('rotation', []);  % Only used for T-matrix
-      ip.addParameter('combine', []);
-      ip.parse(varargin{:});
+      assert(isa(ibeam, 'ott.beam.vswf.Bsc'), 'ibeam must be Bsc');
+      assert(isa(sbeam, 'ott.beam.vswf.Bsc'), 'sbeam must be Bsc');
       
-      % Ensure we have a T-matrix
-      if isa(other, 'ott.optics.vswf.tmatrix.Tmatrix')
-        
-        % Get the number of beams (for combination)
-        % If coherent, combine before scattering
-        Nbeams = numel(ibeam);
-        if strcmpi(ip.Results.combine, 'coherent')
-          ibeam = sum(ibeam);
-          Nbeams = 1;
-        end
-        
-        [sbeam, ibeam] = ibeam.scatter(other, ...
-            'position', ip.Results.position, ...
-            'rotation', ip.Results.rotation);
-      else
-        sbeam = other;
-        
-        % Get the number of beams (for combination)
-        assert(numel(ibeam) == 1 || numel(ibeam) == numel(sbeam), ...
-            'Number of incident and scattered beams must be 1 or matching');
-        Nbeams = max(numel(ibeam), numel(sbeam));
+      % Combine beams if coherent
+      if strcmpi(ibeam.array_type, 'coherent')
+        ibeam = sum(ibeam);
+      end
+      if strcmpi(sbeam.array_type, 'coherent')
+        sbeam = sum(sbeam);
+      end
+      
+      % Ensure beams are total beams
+      if isa(ibeam, 'ott.beam.abstract.Scattered')
+        ibeam = ibeam.total_beam;
+      end
+      if isa(sbeam, 'ott.beam.abstract.Scattered')
+        sbeam = sbeam.total_beam;
       end
 
+      % Get the number of beams (for combination)
+      assert(numel(ibeam) == 1 || numel(sbeam) == 1 ...
+          || numel(ibeam) == numel(sbeam), ...
+          'Number of incident and scattered beams must be 1 or matching');
+      Nbeams = max(numel(ibeam), numel(sbeam));
+
       % Handle the combine argument
+      % TODO: This should use the array functions
       incN = 1;
-      if isempty(ip.Results.combine) || Nbeams == 1
-        % Nothing to do
-        
-      elseif strcmpi(ip.Results.combine, 'coherent')
-        % Combine the beams before force calculation
-        ibeam = sum(ibeam);
-        sbeam = sum(sbeam);
-        
-      elseif strcmpi(ip.Results.combine, 'incoherent')
+      if strcmpi(ibeam.array_type, 'incoherent')
         % Return how many terms need to be combined later
-        assert(numel(ibeam) == 1 ...
-            || numel(ibeam) == numel(sbeam), ...
-            'Number of incident and scattered beams must be 1 or match');
         incN = Nbeams;
-        
       end
     end
   end

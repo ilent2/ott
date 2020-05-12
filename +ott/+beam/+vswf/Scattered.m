@@ -56,6 +56,9 @@ classdef Scattered < ott.beam.vswf.Bsc & ott.beam.Scattered
       %     effectively rotating the particle.  Default: ``[]``.
       %     Only used with T-matrix input.
       %
+      %   - array_type (enum) -- Array type for scattered beam with respect
+      %     to rotation and position arguments.  Default: ``'array'``.
+      %
       % If both position and rotation are present, the translation is
       % applied first, followed by the rotation.
       % If both position and rotation are arrays, they must have the same
@@ -69,6 +72,7 @@ classdef Scattered < ott.beam.vswf.Bsc & ott.beam.Scattered
       p.addParameter('store_tmatrix', true);
       p.addParameter('position', []);
       p.addParameter('rotation', []);
+      p.addParameter('array_type', 'array');
       p.parse(varargin{:});
       
       % Ensure the beam is a Bsc
@@ -92,15 +96,19 @@ classdef Scattered < ott.beam.vswf.Bsc & ott.beam.Scattered
       % Pre-combine coherent beams
       if strcmpi(tbeam.array_type, 'coherent')
         tbeam = sum(tbeam);
+        tbeam.array_type = p.Results.array_type;
       end
 
       % Check if we need to calculate multiple scatters
       if size(p.Results.position, 2) > 1 || size(p.Results.rotation, 2) > 3
         [sbeam, tbeam] = ott.utils.prxfun(...
-            @(varargin) tbeam.scatter(tmatrix, varargin{:}), 1, ...
+            @(varargin) tmatrix.scatter(tbeam, varargin{:}), 1, ...
             'position', p.Results.position, ...
             'rotation', p.Results.rotation, ...
-            'zeros', @(x) repmat(tbeam, x));
+            'zeros', {@(sz) ott.beam.vswf.Scattered.empty(sz, 'like', tbeam), ...
+            @(sz) repmat(tbeam, sz)});
+        sbeam.array_type = p.Results.array_type;
+        tbeam.array_type = p.Results.array_type;
         return;
       end
 
@@ -166,9 +174,9 @@ classdef Scattered < ott.beam.vswf.Bsc & ott.beam.Scattered
       end
 
       % Calculate the resulting beams
-      sbeam = ott.beam.abstract.Empty();
+      sbeam = ott.beam.vswf.Scattered.empty(numel(tmatrix));
       for ii = 1:numel(tmatrix)
-        sbeam = [sbeam, ott.beam.vswf.Scattered(tmatrix(ii).data * rbeam)];
+        sbeam(ii) = ott.beam.vswf.Scattered(tmatrix(ii).data * rbeam);
       end
       
       % Store the incident beam and T-matrices if requested
@@ -207,10 +215,45 @@ classdef Scattered < ott.beam.vswf.Bsc & ott.beam.Scattered
           error('Unrecognized T-matrix type');
       end
     end
+    
+    function beam = empty(varargin)
+      % Construct a new empty scattered beam
+      %
+      % Usage
+      %   beam = Scattered.empty()
+      %
+      %   beam = Scattered.empty(sz, ...)
+      %
+      % Parameters
+      %   - sz (numeric) -- Number of beams in empty array.
+      %     Can either be [1, num] or [num].
+      %
+      % Additional arguments are passed to constructor.
+      
+      p = inputParser;
+      p.addOptional('sz', 0, @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      sz = p.Results.sz;
+      
+      assert(isnumeric(sz) && (sz(1) == 1 || isscalar(sz)), ...
+        'sz must be numeric scalar or first element must be 1');
+      
+      if numel(sz) == 2
+        sz = sz(2);
+      end
+      
+      a = zeros(0, sz);
+      b = zeros(0, sz);
+      
+      beam = ott.beam.vswf.Scattered(a, b, unmatched{:});
+    end
   end
 
   methods
-    function beam = Scattered(varargin)
+    function bsc = Scattered(varargin)
       % Calculate the scattered beam from a beam and T-matrix
       %
       % Usage
@@ -221,10 +264,11 @@ classdef Scattered < ott.beam.vswf.Bsc & ott.beam.Scattered
       %   beam = Scattered(bsc, ...) specify an existing Bsc beam.
       %
       % Optional named arguments
-      %   - incident_beam (Bsc) -- Incident beam object.  Default ``[]``.
+      %   - incident_beam (Bsc) -- Incident beam object.
+      %     Default ``ott.beam.vswf.Bsc.empty()``.
       %
       %   - tmatrix (Tmatrix) -- T-matrix describing scattering.
-      %     Default ``[]``.
+      %     Default ``ott.scat.vswf.Tmatrix.empty()``.
       %
       %   - type (enum) -- Type of scattered beam.
       %     Type can be one of 'internal', 'total' or 'scattered'.
@@ -241,8 +285,8 @@ classdef Scattered < ott.beam.vswf.Bsc & ott.beam.Scattered
       p.KeepUnmatched = true;
       p.addOptional('a', [], @(x) isnumeric(x) || isa(x, 'ott.beam.vswf.Bsc'));
       p.addOptional('b', [], @isnumeric);
-      p.addParameter('incident_beam', []);
-      p.addParameter('tmatrix', []);
+      p.addParameter('incident_beam', ott.beam.vswf.Bsc.empty());
+      p.addParameter('tmatrix', ott.scat.vswf.Tmatrix.empty());
       p.addParameter('type', []);
       p.addParameter('like', []);
       p.parse(varargin{:});
@@ -273,147 +317,75 @@ classdef Scattered < ott.beam.vswf.Bsc & ott.beam.Scattered
       end
 
       % Call base class
-      beam = beam@ott.beam.Scattered(type);
-      beam = beam@ott.beam.vswf.Bsc(bsc_coeffs{:}, ...
+      bsc = bsc@ott.beam.Scattered(type);
+      bsc = bsc@ott.beam.vswf.Bsc(bsc_coeffs{:}, ...
           'like', p.Results.like, unmatched{:});
 
-      beam.incident_beam = p.Results.incident_beam;
-      beam.tmatrix = p.Results.tmatrix;
+      bsc.incident_beam = p.Results.incident_beam;
+      bsc.tmatrix = p.Results.tmatrix;
+    end
+  end
+  
+  methods (Hidden)
+    function beam = catInternal(dim, beam, varargin)
+      % Concatenate beams
+      
+      % Combine a/b coefficients (Bsc)
+      beam = catInternal@ott.beam.vswf.Bsc(dim, beam, varargin{:});
+      
+      % Combine incident_beam and tmatrix properties
+      other_tmatrix = {};
+      other_ibeam = {};
+      for ii = 1:length(varargin)
+        other_tmatrix{ii} = varargin{ii}.tmatrix;
+        other_ibeam{ii} = varargin{ii}.incident_beam;
+      end
+
+      beam.tmatrix = cat(dim, beam.tmatrix, other_tmatrix{:});
+      beam.incident_beam = cat(dim, beam.incident_beam, other_ibeam{:});
+    end
+    
+    function beam = subsrefInternal(beam, subs)
+      % Get the subscripted beam
+      
+      % Ref a/b coefficients (Bsc)
+      beam = subsrefInternal@ott.beam.vswf.Bsc(beam, subs);
+      
+      if numel(subs) > 1
+        if subs{1} == 1 || strcmpi(subs{1}, ':')
+          subs = subs(2:end);
+        end
+        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
+      end
+
+      % Ref incident_beam and tmatrix properties
+      beam.tmatrix = beam.tmatrix(subs{:});
+      beam.incident_beam = beam.incident_beam(subs{:});
     end
 
-    function [sbeam, tbeam] = calculateScatteredBeam(tbeam, ...
-        tmatrix, varargin)
-      % Calculate the scattered beam
-      %
-      % Usage
-      %   [sbeam, tbeam] = beam.calculateScatteredBeam(tmatrix, ...)
-      %   Calcualtes the scattered beam ``sbeam`` and the translated
-      %   and possibly rotated beam ``tbeam``.
-      %
-      % For optional arguments, see Bsc.scatter or Scattered constructor.
+    function beam = subsasgnInternal(beam, subs, rem, other)
+      % Assign to the subscripted beam
+      
+      % Ref a/b coefficients (Bsc)
+      beam = subsasgnInternal@ott.beam.vswf.Bsc(beam, subs, rem, other);
 
-      p = inputParser;
-      p.addParameter('position', []);
-      p.addParameter('rotation', []);
-      p.addParameter('combine', []);
-      p.parse(varargin{:});
-
-      % Apply combine parameter
-      assert(any(strcmpi(p.Results.combine, {'coherent', 'incoherent'})) ...
-          || isempty(p.Results.combine), ...
-          'combine must be empty, ''cohernet'' or ''incoherent''');
-      if strcmpi(p.Results.combine, 'coherent')
-        tbeam = sum(tbeam);
-      end
-
-      % Check if we need to calculate multiple scatters
-      if size(p.Results.position, 2) > 1 || size(p.Results.rotation, 2) > 3
-        [sbeam, tbeam] = ott.utils.prxfun(...
-            @(varargin) tbeam.scatter(tmatrix, varargin{:}), 1, ...
-            'position', p.Results.position, ...
-            'rotation', p.Results.rotation, ...
-            'zeros', @(x) repmat(tbeam, x));
-
-        % Join outputs (convert from beam arrays to combined beams)
-        sbeam = sbeam(1).append(sbeam(2:end));
-        tbeam = tbeam(1).append(tbeam(2:end));
-
-        return;
-      end
-
-      % Determine the maximum tmatrix.Nmax(2) and check type
-      maxNmax1 = 0;
-      maxNmax2 = 0;
-      tType = tmatrix(1).type;
-      for ii = 1:numel(tmatrix)
-        maxNmax1 = max(maxNmax1, tmatrix(ii).Nmax(1));
-        maxNmax2 = max(maxNmax2, tmatrix(ii).Nmax(2));
-        if ~strcmpi(tmatrix(ii).type, tType)
-          error('T-matrices must be same type');
+      if numel(subs) > 1
+        if subs(1) == 1
+          subs = subs(2:end);
         end
+        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
       end
 
-      % If the T is scattered, we can save time by throwing away columns
-      if strcmpi(tmatrix(1).type, 'scattered')
-        maxNmax2 = min(maxNmax2, tbeam.Nmax);
-      end
-
-      % Ensure all T-matrices are the same size
-      for ii = 1:numel(tmatrix)
-        tmatrix(ii).Nmax = [maxNmax1, maxNmax2];
-      end
-
-      % Apply translation to the beam
-      if ~isempty(p.Results.position)
-
-        % Requires scattered beam, convert if needed
-        if ~strcmpi(tmatrix(1).type, 'scattered')
-          maxNmax2 = min(maxNmax2, tbeam.Nmax);
-          for ii = 1:numel(tmatrix)
-            tmatrix(ii).type = 'scattered';
-            tmatrix(ii).Nmax = [maxNmax1, maxNmax2];
-          end
-        end
-
-        % Apply translation
-        % We need Nmax+1 terms for the force calculation
-        tbeam = tbeam.translateXyz(p.Results.position, 'Nmax', maxNmax2+1);
-      end
-
-      % Apply rotation to the beam
-      rbeam = tbeam;
-      if ~isempty(p.Results.rotation)
-        [rbeam, D] = rbeam.rotate(p.Results.rotation, ...
-            'Nmax', maxNmax1);
-      end
-
-      % Ensure the Nmax for the inner dimension matches
-      if strcmpi(tmatrix(1).type, 'scattered')
-        % T-matrix is already done
-        rbeam = rbeam.set_Nmax(maxNmax2, 'powerloss', 'ignore');
+      assert(isempty(rem), 'Assignment to parts of beams not supported');
+      
+      % Ref incident_beam and tmatrix properties
+      if isempty(other)
+        % Delete data
+        beam.tmatrix(subs{:}) = ott.scat.vswf.Tmatrix.empty();
+        beam.incident_beam(subs{:}) = [];
       else
-        for ii = 1:numel(tmatrix)
-          tmatrix(ii) = tmatrix(ii).set_Nmax([maxNmax1, rbeam.Nmax], ...
-              'powerloss', 'ignore');
-        end
-        if ~strcmpi(tmatrix(1).type, 'internal')
-          ott.warning('ott:Bsc:scatter', ...
-              'It may be more optimal to use a scattered T-matrix');
-        end
-      end
-
-      % Calculate the resulting beams
-      sbeam = ott.beam.vswf.Bsc();
-      for ii = 1:numel(tmatrix)
-        sbeam = [sbeam, tmatrix(ii).data * rbeam];
-      end
-
-      % Apply the inverse rotation
-      if ~isempty(p.Results.rotation)
-
-        % This seems to take a long time
-        %sbeam = sbeam.rotate('wigner', D');
-
-        sbeam = sbeam.rotate(inv(p.Results.rotation));
-      end
-
-      % Assign a type to the resulting beam
-      switch tmatrix(1).type
-        case 'total'
-          sbeam.typeInternal = 'total';
-          sbeam.basis = 'regular';
-        case 'scattered'
-          sbeam.typeInternal = 'scattered';
-          sbeam.basis = 'outgoing';
-        case 'internal'
-          sbeam.typeInternal = 'internal';
-          sbeam.basis = 'regular';
-
-          % Wavelength has changed, update it
-          sbeam.wavenumber = tmatrix(1).wavenumber_particle;
-
-        otherwise
-          error('Unrecognized T-matrix type');
+        beam.tmatrix(subs{:}) = other.tmatrix;
+        beam.incident_beam(subs{:}) = other.incident_beam;
       end
     end
   end

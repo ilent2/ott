@@ -3,7 +3,7 @@ function tests = bsc
 end
 
 function setupOnce(testCase)
-  addpath('../../../../');
+  addpath('../../../');
 end
 
 function testConstructDefault(testCase)
@@ -29,6 +29,13 @@ function testConstructDefault(testCase)
   testCase.verifyEqual(beam.wavenumber, k_medium, 'a');
   testCase.verifyEqual(beam.omega, omega, 'b');
   testCase.verifyEqual(beam.dz, dz, 'dz');
+end
+
+function testEmpty(testCase)
+
+  beam = ott.beam.vswf.Bsc.empty();
+  testCase.verifyEmpty(beam);
+
 end
 
 function testConstructFromBsc(testCase)

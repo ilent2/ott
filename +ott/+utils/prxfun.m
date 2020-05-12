@@ -27,14 +27,17 @@ function varargout = prxfun(func, sz, varargin)
 %   - zeros (function_handle) -- A function like ``zeros`` to call to
 %     allocate memory for the output.  Default: ``zeros``.
 %
+% Unmatched arguments are passed to func.
 % Number of positions and rotations must be scalar or equal.
 
 p = inputParser;
+p.KeepUnmatched = true;
 p.addParameter('position', []);
 p.addParameter('rotation', []);
 p.addParameter('progress', []);
 p.addParameter('zeros', @zeros);
 p.parse(varargin{:});
+unmatched = ott.utils.unmatchedArgs(p);
 
 position = p.Results.position;
 rotation = p.Results.rotation;
@@ -67,7 +70,13 @@ if Nwork == 0
 end
 
 % Allocate memory for output(s)
-varargout = repmat({p.Results.zeros([sz, Nwork])}, 1, nargout);
+if iscell(p.Results.zeros)
+  for ii = 1:length(p.Results.zeros)
+    varargout{ii} = p.Results.zeros{ii}([sz, Nwork]);
+  end
+else
+  varargout = repmat({p.Results.zeros([sz, Nwork])}, 1, nargout);
+end
 
 epw = prod(sz);
 
@@ -90,7 +99,7 @@ for ii = 1:Nwork
   % Calculate the work
   func_outputs = {};
   [func_outputs{1:nargout}] = func('position', our_position, ...
-      'rotation', our_rotation);
+      'rotation', our_rotation, unmatched{:});
   for jj = 1:length(func_outputs)
     varargout{jj}((1:epw) + (ii-1)*epw) = func_outputs{jj};
   end

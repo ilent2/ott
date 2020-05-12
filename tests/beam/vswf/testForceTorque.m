@@ -5,19 +5,20 @@ end
 function setupOnce(testCase)
 
   % Ensure the ott package is in our path
-  addpath('../../../../');
+  addpath('../../../');
   
-  import ott.optics.vswf.*;
+  import ott.beam.vswf.*;
+  import ott.scat.vswf.*;
 
   % Generate a gaussian beam for testing
-  testCase.TestData.beam = bsc.PmGauss('power', 1.0);
+  testCase.TestData.beam = PmGauss('power', 1.0);
 
   % Generate a spherical particle for testing
-  testCase.TestData.T = tmatrix.Tmatrix.simple('sphere', 1.0, ...
+  testCase.TestData.T = Tmatrix.simple('sphere', 1.0, ...
       'index_relative', 1.2);
 
   % Non-contrasting particle
-  testCase.TestData.Tnocont = tmatrix.Tmatrix.simple('sphere', 1.0, ...
+  testCase.TestData.Tnocont = Tmatrix.simple('sphere', 1.0, ...
       'index_relative', 1.0);
 
 end
@@ -141,109 +142,95 @@ end
 
 function testMultiBeam(testCase)
 
-  import matlab.unittest.constraints.IsEqualTo;
-  import matlab.unittest.constraints.AbsoluteTolerance;
   tol = 1.0e-6;
 
   T = testCase.TestData.T;
   beam = testCase.TestData.beam;
 
   % Add a second beam
-  pbeam = beam.append(beam.translateZ(pi/2));
+  pbeam = [beam, beam.translateZ(pi/2)];
 
-  testCase.verifyThat(pbeam.Nbeams, IsEqualTo(2), ...
+  testCase.verifyEqual(numel(pbeam), 2, ...
       'Nbeams after packing failed');
-  testCase.verifyThat(pbeam.Nmax, IsEqualTo(beam.Nmax), ...
+  testCase.verifyEqual(pbeam.Nmax, beam.Nmax, ...
       'Nmax after packing failed');
 
   % Calculate scattered beam
   sbeam = T * pbeam;
 
-  testCase.verifyThat(sbeam.Nbeams, IsEqualTo(2), ...
+  testCase.verifyEqual(numel(sbeam), 2, ...
       'Beams after scattering incorrect');
-  testCase.verifyThat(sbeam.Nmax, IsEqualTo(min(T.Nmax(1), beam.Nmax)), ...
+  testCase.verifyEqual(sbeam.Nmax, min(T.Nmax(1), beam.Nmax), ...
       'Nmax after scattering incorrect');
 
   % Calculate force and torque
   f = beam.force(T, 'position', [0;0;1]*[0, pi/2]);
 
   % Compare the result to the individual beams (requires other tests to pass)
-  f1 = pbeam.beam(1).force(sbeam.beam(1));
-  f2 = pbeam.beam(2).force(sbeam.beam(2));
+  f1 = pbeam(1).force(sbeam(1));
+  f2 = pbeam(2).force(sbeam(2));
 
-  testCase.verifyThat(size(f), IsEqualTo([3, 2]), ...
+  testCase.verifyEqual(size(f), [3, 2], ...
       'Beam1 force size incorrect (1)');
 
-  testCase.verifyThat(f1(:), IsEqualTo(f(1:3).', ...
-      'Within', AbsoluteTolerance(tol)), ...
+  testCase.verifyEqual(f1, f(:, 1), 'AbsTol', tol, ...
       'Beam1 force does not match (1)');
 
-  testCase.verifyThat(f2(:), IsEqualTo(f(4:6).', ...
-      'Within', AbsoluteTolerance(tol)), ...
+  testCase.verifyEqual(f2, f(:, 2), 'AbsTol', tol, ...
       'Beam2 force does not match (1)');
 
   % Calculate force and torque from two arrays of beams
   f = pbeam.force(sbeam);
 
-  testCase.verifyThat(size(f), IsEqualTo([3, 2]), ...
+  testCase.verifyEqual(size(f), [3, 2], ...
       'Beam1 force size incorrect (2)');
 
-  testCase.verifyThat(f1(:), IsEqualTo(f(1:3).', ...
-      'Within', AbsoluteTolerance(tol)), ...
+  testCase.verifyEqual(f1, f(:, 1), 'AbsTol', tol, ...
       'Beam1 force does not match (2)');
 
-  testCase.verifyThat(f2(:), IsEqualTo(f(4:6).', ...
-      'Within', AbsoluteTolerance(tol)), ...
+  testCase.verifyEqual(f2, f(:, 2), 'AbsTol', tol, ...
       'Beam2 force does not match (2)');
 
   % Calculate force and torque from T-matrix and array of beams
   f = pbeam.force(T, 'position', [0;0;1]*[0, pi/2]);
 
-  beam3 = pbeam.beam(1).translateZ(pi/2);
-  beam4 = pbeam.beam(2).translateZ(pi/2);
+  beam3 = pbeam(1).translateZ(pi/2);
+  beam4 = pbeam(2).translateZ(pi/2);
   f3 = beam3.force(T*beam3);
   f4 = beam4.force(T*beam4);
 
   testCase.verifyEqual(size(f), [3, 4], ...
       'Beam1 force size incorrect (2)');
 
-  testCase.verifyThat(f1, IsEqualTo(f(:, 1), ...
-      'Within', AbsoluteTolerance(tol)), ...
+  testCase.verifyEqual(f1, f(:, 1), 'AbsTol', tol, ...
       'Beam1 force does not match (3)');
 
-  testCase.verifyThat(f2, IsEqualTo(f(:, 2), ...
-      'Within', AbsoluteTolerance(tol)), ...
+  testCase.verifyEqual(f2, f(:, 2), 'AbsTol', tol, ...
       'Beam2 force does not match (3)');
 
-  testCase.verifyThat(f3, IsEqualTo(f(:, 3), ...
-      'Within', AbsoluteTolerance(tol)), ...
+  testCase.verifyEqual(f3, f(:, 3), 'AbsTol', tol, ...
       'Beam3 force does not match (3)');
 
-  testCase.verifyThat(f4, IsEqualTo(f(:, 4), ...
-      'Within', AbsoluteTolerance(tol)), ...
+  testCase.verifyEqual(f4, f(:, 4), 'AbsTol', tol, ...
       'Beam4 force does not match (3)');
 end
 
 function testCoherent(testCase)
 
-  import matlab.unittest.constraints.IsEqualTo;
-  import matlab.unittest.constraints.AbsoluteTolerance;
-  tol = 1.0e-6;
-
   T = testCase.TestData.T;
   beam = testCase.TestData.beam;
 
   % Add a second beam
-  pbeam = beam.append(beam.translateZ(pi/2));
+  pbeam = [beam, beam.translateZ(pi/2)];
+  pbeam.array_type = 'coherent';
 
-  f = pbeam.force(T, 'position', [0;0;1]*[0, pi/2], 'combine', 'coherent');
+  f = pbeam.force(T, 'position', [0;0;1]*[0, pi/2]);
   
   beam1 = sum(pbeam);
   beam2 = sum(pbeam.translateZ(pi/2));
   f1 = beam1.force(T);
   f2 = beam2.force(T);
   
-  testCase.verifyThat(f(:), IsEqualTo([f1(:); f2(:)], ...
-      'Within', AbsoluteTolerance(tol)), ...
+  testCase.verifyEqual(f, [f1, f2], 'AbsTol', 1.0e-15, ...
       'Forces do not match');
 end
