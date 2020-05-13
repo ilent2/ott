@@ -221,8 +221,11 @@ classdef Pointmatch < ott.beam.vswf.Bsc
     function beam = Pointmatch(varargin)
       % Protected constructor for BscPointmatch object
       %
+      % All arguments are passed to base class.
+      %
       % See also ott.BscPmGauss and ott.BscPmParaxial
-      beam = beam@ott.beam.vswf.Bsc();
+
+      beam = beam@ott.beam.vswf.Bsc(varargin{:});
     end
   end
 

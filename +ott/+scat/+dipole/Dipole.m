@@ -1,5 +1,6 @@
-classdef Dipole
-% Single point dipole approximation for the force on a particle
+classdef Dipole < ott.scat.utils.Particle & ott.utils.RotationPositionProp
+% Single point dipole approximation for the force on a particle.
+% Inherits from :class:`ott.scat.utils.Particle`.
 %
 % When the particle is small compared to the wavelength, the fields
 % across the particle can be assumed to be uniform, i.e. the particle
@@ -61,14 +62,31 @@ classdef Dipole
 
   methods (Static)
     function val = radiativeReaction(alp)
-      % TODO: Document where this is from
 
       if isvector(alp)
         alp = diag(alp);
       end
 
-       % TODO: Implement
-      error('Not yet implemented');
+      index_relative = 1.2;
+      warning('N-rel and k hard coaded for now, fit it!');
+
+%       n = 1.0;
+      epsU = index_relative.^2;
+      a = 0.5;
+      k = 2*pi/1.0;
+
+      % Equation 2.03 from Draine 1988.
+      % The Discrete-Dipole approximation and its application to
+      % interstellar graphite grains.  The astrophysical journal,
+      % 333 (848--872), 1988.
+      %
+      % TODO: I don't think this is the right equation
+%       val = alp .* inv(1 - 2i./(4*pi*n) .* k.^3 .* (epsU - 1)./(epsU + 2));
+
+      % This one is Equation 11, Yasuhiro Harada and Toshimitsu Asakura
+      val = 8/3 .* pi .* (k .* a).^4 .* a.^2 .* ((epsU - 1)./(epsU + 2)).^2;
+
+      warning('Might not have the right cpr');
 
     end
   end
@@ -92,15 +110,18 @@ classdef Dipole
       % Parse arguments
       p = inputParser;
       p.addParameter('rpcrosssection', ...
-        ott.optics.dipole.Dipole.radiativeReaction(polarizability));
+        ott.scat.dipole.Dipole.radiativeReaction(polarizability));
       p.parse(varargin{:});
 
       % Store properties
       dipole.polarizability = polarizability;
       dipole.rpcrosssection = p.Results.rpcrosssection;
     end
+  end
 
-    function sbeam = scatter(dipole, beam, xyz)
+  methods (Hidden)
+
+    function sbeam = scatterInternal(dipole, beam, xyz)
       % Generates a :class:`ScatteredBeam`
       %
       % Usage
@@ -111,92 +132,58 @@ classdef Dipole
       %   - xyz (3x1 numeric) -- Dipole position in beam
 
       % Defer all argument checks to ScatteredBeam
-      sbeam = ott.optics.dipole.ScatteredBeam(beam, dipole, xyz);
+      % TODO: Should we have a radiating Dipole beam type?
+      sbeam = ott.scat.dipole.ScatteredBeam(beam, dipole, xyz);
     end
 
-    function f = force(dipole, beam, xyz)
+    function f = forceInternal(dipole, beam)
       % Calculate the total force on a dipole in a beam
-      %
-      % Usage
-      %   f = dipole.force(beam, xyz)
-      %
-      % Parameters
-      %   - beam -- A :class:`ott.optics.beam.Beam`
-      %   - xyz (3xN numeric) -- Dipole positions in beam
 
-      % Check inputs
-      assert(isa(beam, 'ott.optics.beam.Beam'), ...
-        'beam must be a ott.optics.beam.Beam objects');
-      assert(isnumeric(xyz) && all(size(xyz, 1) == 3), ...
-        'position must be 3xN numeric');
+      % Cast beam to a real beam
+      if ~isa(beam, 'ott.beam.Beam')
+        beam = ott.beam.Beam(beam);
+      end
 
-      f = dipole.force_scat(beam, xyz) + dipole.force_grad(beam, xyz);
+      f = dipole.force_scat(beam) + dipole.force_grad(beam);
     end
 
-    function f = force_scat(dipole, beam, xyz)
+    function t = torqueInternal(dipole, beam)
+
+      t = zeros(3, 1);
+      warning('Not yet implemented');
+
+    end
+
+    function f = force_scat(dipole, beam)
       % Calculate the scattered force on a dipole in a beam
       %
       % Usage
-      %   f = dipole.force_scat(beam, xyz)
+      %   f = dipole.force_scat(beam)
       %
       % Parameters
       %   - beam -- A :class:`ott.optics.beam.Beam`
-      %   - xyz (3xN numeric) -- Dipole positions in beam
-
-      % Check inputs
-      assert(isa(beam, 'ott.optics.beam.Beam'), ...
-        'beam must be a ott.optics.beam.Beam objects');
-      assert(isnumeric(xyz) && all(size(xyz, 1) == 3), ...
-        'position must be 3xN numeric');
-
-      % TODO: Calculate Cpr
-      error('Not yet implemented');
 
       % Calculate Poynting vector
-      % TODO: For paraxial beams this should have an efield default
-      % and an explicit z dependence
-      S = beam.poynting(xyz);
+      S = beam.poynting(dipole.position);
 
       % Calculate force (Harada Eq 10)
-      f = 1./beam.speed .* Cpr .* 0.5.*real(S);
+      f = 1./beam.medium.speed .* dipole.rpcrosssection .* 0.5.*real(S);
     end
 
-    function f = force_grad(dipole, beam, xyz, varargin)
+    function f = force_grad(dipole, beam)
       % Calculate the gradient force on a dipole in a beam
       %
       % Usage
-      %   f = dipole.force_grad(beam, xyz)
+      %   f = dipole.force_grad(beam)
       %
       % Parameters
       %   - beam -- A :class:`ott.optics.beam.Beam`
-      %   - xyz (3xN numeric) -- Dipole positions in beam
-      %
-      % Optional named arguments
-      %   - dx (numeric) -- step size to use for numerical derivatives.
-      %     Default: ``beam.wavelength*1.0e-3``.
-
-      % Check inputs
-      assert(isa(beam, 'ott.optics.beam.Beam'), ...
-        'beam must be a ott.optics.beam.Beam objects');
-      assert(isnumeric(xyz) && all(size(xyz, 1) == 3), ...
-        'position must be 3xN numeric');
-
-      ip = inputParser;
-      ip.addParameter('dx', 1.0e-3*beam.wavelength);
-      ip.parse(varargin{:});
 
       % Calculate electric field at positions
-      E = beam.efield(xyz);
+      E = beam.efield(dipole.position);
 
-      % Calculate electric field around positions (using forward difference)
-      % TODO: We should defer to the beam to calculate this,
-      %   this could have a analytical values for certain beams or a
-      %   smart thing with a grid of xyz points
-      dx = p.Results.dx;
-      Ex = beam.efield(xyz + [dx;0;0]);
-      Ey = beam.efield(xyz + [0;dx;0]);
-      Ez = beam.efield(xyz + [0;0;dx]);
-      Eforward = [Ex; Ey; Ez];
+      % Calculate the E-field gradient
+      gradE = beam.egradient(dipole.position);
 
       % Calculate polarisation (Harada Eq 9)
       % TODO: Should this be the total or partial polarizability
@@ -208,7 +195,8 @@ classdef Dipole
       end
 
       % Calculate force (Harada Eq 13)
-      f = p .* (Eforward - E) ./ dx;
+      p = reshape(p, 3, 1, []);
+      f = 0.5 .* real(reshape(sum(p .* gradE, 1), 3, []));
 
     end
   end

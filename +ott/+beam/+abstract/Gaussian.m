@@ -7,16 +7,11 @@ classdef Gaussian < ott.beam.abstract.Beam ...
 %
 % Properties
 %   - waist         -- Beam waist radius
-%
-% Inherited properties
-%   - permittivity  -- Relative permittivity of medium (default: 1.0)
-%   - wavelength    -- Wavelength of beam in medium (default: 1.0)
-%   - speed0        -- Speed of light in vacuum (default: 1.0)
+%   - medium        -- Properties of the optical medium
 %   - omega         -- Optical frequency of light
-%   - index_medium  -- Refractive index in medium
-%   - wavenumber    -- Wave-number of beam in medium
-%   - speed         -- Speed of light in medium
-%   - wavelength0   -- Vacuum wavelength of beam
+%   - position      -- Position of the beam
+%   - rotation      -- Rotation of the beam
+%   - power         -- Beam power
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -69,6 +64,30 @@ classdef Gaussian < ott.beam.abstract.Beam ...
         'omega', oldbeam.omega, 'medium', oldbeam.medium, ...
         'power', oldbeam.power, 'position', oldbeam.position, ...
         'rotation', oldbeam.rotation, varargin{:});
+    end
+
+    function beam = ott.beam.vswf.Bsc(oldbeam, varargin)
+      % Convert to a Bsc object
+      %
+      % Usage
+      %   bsc = ott.beam.vswf.Bsc(abstract_beam, ...)
+      %
+      % Optional named arguments
+      %   - suggestedNmax (numeric) -- Suggested Nmax for the Bsc.
+      %     This parameter is ignored.
+
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addParameter('suggestedNmax', []);
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      NA = oldbeam.wavelength0 ./ (pi * oldbeam.waist);
+
+      beam = ott.beam.vswf.PmGauss('lg', [0, 0], ...
+          'omega', oldbeam.omega, 'medium', oldbeam.medium, ...
+          'NA', NA, 'power', oldbeam.power, 'position', oldbeam.position, ...
+          'rotation', oldbeam.rotation, unmatched{:});
     end
   end
 

@@ -23,8 +23,8 @@ classdef (Abstract) ZeroScattered < ott.scat.utils.Particle
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file
 
-  methods
-    function sbeam = scatter(particle, ibeam)
+  methods (Hidden)
+    function sbeam = scatterInternal(particle, ibeam)
       % Construct a new :class:`ott.beam.ZeroScattered` beam.
       %
       % Usage

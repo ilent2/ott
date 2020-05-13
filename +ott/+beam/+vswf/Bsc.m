@@ -198,6 +198,8 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       %
       %   - array_type (enum) -- Type of beam array.  Can be one of
       %     'coherent', 'array', or 'incoherent'.  Default: ``'array'``.
+      %
+      % Unmatched arguments are passed to the base class.
 
       p = inputParser;
       p.KeepUnmatched = true;

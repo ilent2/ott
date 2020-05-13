@@ -789,6 +789,33 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       % applied first, followed by the rotation.
       % The length of position and rotation must match or be scalar.
 
+      % Ensure the beam is a Bsc
+      if ~isa(beam, 'ott.beam.vswf.Bsc')
+
+        % Calculate suggested Nmax from T-matrix and translation
+        %
+        % TODO: There are two optimal cases we could implement
+        %   * For beams with an almost exact representation we should
+        %     use the minimum Nmax.
+        %   * For PlaneWave beams, we should pre-calculate the
+        %     rotations and translatiosn and only convert at the end.
+        %     So Nmax matches the T-matrix Nmax.
+        %
+        % TODO: Are there any cases when this should be converted later?
+        maxPosition = max(vecnorm(beam.position));
+        particleRadius = ott.utils.nmax2ka(tmatrix.Nmax(2));
+        Nmax = ott.utils.ka2nmax(maxPosition*beam.wavenumber + particleRadius);
+
+        beam = ott.beam.vswf.Bsc(beam, 'suggestedNmax', Nmax);
+      end
+
+      % Pre-combine coherent beams
+      % TODO: Are there any cases when this should be done later?
+      if strcmpi(beam.array_type, 'coherent')
+        beam = sum(beam);
+        beam.array_type = p.Results.array_type;
+      end
+      
       % Only add additional documentation
       [varargout{1:nargout}] = scatter@ott.scat.utils.Particle(...
           tmatrix, beam, varargin{:});
@@ -808,31 +835,6 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       p.addParameter('store_tmatrix', true);
       p.parse(varargin{:});
 
-      % Ensure the beam is a Bsc
-      % TODO: For some beams this could (should?) be done earlier
-      if ~isa(beam, 'ott.beam.vswf.Bsc')
-
-        % Calculate suggested Nmax from T-matrix and translation
-        %
-        % TODO: There are two optimal cases we could implement
-        %   * For beams with an almost exact representation we should
-        %     use the minimum Nmax.
-        %   * For PlaneWave beams, we should pre-calculate the
-        %     rotations and translatiosn and only convert at the end.
-        %     So Nmax matches the T-matrix Nmax.
-        maxPosition = max(vecnorm(beam.position));
-        particleRadius = ott.utils.nmax2ka(tmatrix.Nmax(2));
-        Nmax = ott.utils.ka2nmax(maxPosition*beam.wavenumber + particleRadius);
-
-        beam = ott.beam.vswf.Bsc(beam, 'suggestedNmax', Nmax);
-      end
-
-      % Pre-combine coherent beams
-      % TODO: For some beams this could be done earlier
-      if strcmpi(beam.array_type, 'coherent')
-        beam = sum(beam);
-        beam.array_type = p.Results.array_type;
-      end
 
       % Determine the maximum tmatrix.Nmax(2) and check type
       maxNmax1 = tmatrix.Nmax(1);
@@ -845,7 +847,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       end
 
       % Apply translation to the beam
-      if beam.position ~= [0;0;0]
+      if any(beam.position ~= 0)
 
         % Requires scattered beam, convert if needed
         if ~strcmpi(tmatrix.type, 'scattered')
@@ -861,7 +863,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
 
       % Apply rotation to the beam
       rbeam = beam;
-      if beam.rotation ~= eye(3)
+      if any(beam.rotation ~= eye(3))
         rbeam = rbeam.rotate(rbeam.rotation, 'Nmax', maxNmax1);
       end
 
@@ -894,7 +896,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
 
       % Apply the inverse rotation
       % TODO: Should we just set the beam coordinate rotation?
-      if beam.rotation ~= eye(3)
+      if any(beam.rotation ~= eye(3))
         % Faster to recompute rotation than to use wigner-D
         sbeam = sbeam.rotate(beam.rotation.');
       end

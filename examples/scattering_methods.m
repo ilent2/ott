@@ -16,11 +16,11 @@ index_relative = 1.2;
 % Describe beam
 % By using an abstract beam we let the method choose an appropriate
 % approximation for the fields.
-waist = 1.0;
+waist = 0.5;
 beam = ott.beam.abstract.Gaussian(waist);
 
 % Range of axial positions for graph
-z = [0;0;1].*linspace(-10, 10, 80);
+z = [0;0;1].*linspace(-10, 10, 100);
 
 %% Calculate force using shape-induced force method
 
@@ -44,7 +44,8 @@ disp(['Geometric optics took ' num2str(toc()) ' seconds']);
 
 tic
 
-particle = ott.scat.vswf.Mie(shape.radius, index_relative);
+% particle = ott.scat.vswf.Mie(shape.radius, index_relative);
+particle = ott.scat.vswf.Mie.simple(shape, 'index_relative', index_relative);
 f_tmatrix = particle.force(beam, 'position', z);
 
 disp(['T-matrix took ' num2str(toc()) ' seconds']);

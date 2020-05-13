@@ -31,3 +31,14 @@ function testConvertBeam(testCase)
   
 end
 
+function testConvertBsc(testCase)
+
+  waist = 1.0;
+  abs_beam = ott.beam.abstract.Gaussian(waist);
+  beam = ott.beam.vswf.Bsc(abs_beam);
+  
+  testCase.verifyClass(beam, 'ott.beam.vswf.PmGauss');
+  verifyProperties(testCase, ?ott.beam.abstract.Gaussian, beam, abs_beam);
+  
+end
+

@@ -1,4 +1,4 @@
-classdef Dielectric < ott.optics.beam.dipole.Dipole
+classdef Dielectric < ott.scat.dipole.Dipole
 % A dielectric dipole instance
 %
 % The dipole polarizability is calculated from the particle relative
@@ -25,9 +25,13 @@ classdef Dielectric < ott.optics.beam.dipole.Dipole
   end
 
   methods
-    function dipole = Dielectric()
-      % TODO
-      error('not implemented');
+    function dipole = Dielectric(radius, index_relative)
+
+      polarizability = ott.utils.polarizability.CM(radius, index_relative);
+      dipole = dipole@ott.scat.dipole.Dipole(polarizability);
+
+      dipole.index_medium = 1.0;
+      dipole.index_relative = index_relative;
     end
   end
 

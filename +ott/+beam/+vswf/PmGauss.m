@@ -1,4 +1,4 @@
-classdef PmGauss < ott.beam.vswf.Pointmatch
+classdef PmGauss < ott.beam.vswf.Pointmatch & ott.beam.abstract.Gaussian
 %BscPmGauss provides HG, LG and IG beams using point matching method
 %
 % Properties
@@ -44,7 +44,7 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
   end
 
   methods
-    function beam = PmGauss(varargin)
+    function bsc = PmGauss(varargin)
       % Construct a new IG, HG, LG or Gaussian beam.
       %
       % Usage
@@ -89,11 +89,16 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       %        lenses ONLY. Does not preserve high order mode shape
       %        at large angles.
 
-      beam = beam@ott.beam.vswf.Pointmatch(varargin{:});
-      beam.basis = 'regular';
+      % TODO: Clean up these parameters: use mediums
+      % TODO: Separate classes for Gaussian, LG, HG and IG
+      % TODO: translation_method should be part of Bsc or a
+      %   *NewBeamOffset* class or *ConstructOnUse* class
+      %   Maybe these classes could be linked in with beam.abstract?
+      % TODO: Remove offset parameter
 
       % Parse inputs
       p = inputParser;
+      p.KeepUnmatched = true;
       p.addOptional('type', 'lg', ...
         @ott.beam.vswf.PmGauss.supported_beam_type);
       p.addOptional('mode', [ 0 0 ]);
@@ -101,15 +106,10 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       p.addParameter('Nmax', []);
       p.addParameter('offset', []);
       p.addParameter('polarisation', [ 1 1i ]);
-      p.addParameter('wavelength0', 1);
       p.addParameter('power', []);
       p.addParameter('progress_callback', []);
       p.addParameter('translation_method', 'Default', ...
         @ott.beam.vswf.PmGauss.validate_translation_method);
-
-      p.addParameter('k_medium', []);
-      p.addParameter('index_medium', []);
-      p.addParameter('wavelength_medium', []);
 
       p.addParameter('NA', []);
       p.addParameter('angle_deg', []);
@@ -120,32 +120,38 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       p.addParameter('angular_scaling', 'tantheta');
 
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+
+      bsc = bsc@ott.beam.vswf.Pointmatch(unmatched{:});
+      bsc = bsc@ott.beam.abstract.Gaussian(1.0);
+      bsc.basis = 'regular';
+      bsc.waist = bsc.wavelength0 ./ (p.Results.NA .* pi);
 
       % Store parameters
-      beam.gtype = p.Results.type;
-      beam.mode = p.Results.mode;
-      beam.polarisation = p.Results.polarisation;
-      beam.offset = p.Results.offset;
+      bsc.gtype = p.Results.type;
+      bsc.mode = p.Results.mode;
+      bsc.polarisation = p.Results.polarisation;
+      bsc.offset = p.Results.offset;
       
       % Ensure beam offset is not empty
-      if isempty(beam.offset)
-        beam.offset = [0;0;0];
+      if isempty(bsc.offset)
+        bsc.offset = [0;0;0];
       end
 
       % Store truncation angle
       if isempty(p.Results.truncation_angle_deg) &&  ...
           isempty(p.Results.truncation_angle)
-        beam.truncation_angle = pi/2;
+        bsc.truncation_angle = pi/2;
       elseif ~isempty(p.Results.truncation_angle)
-        beam.truncation_angle = p.Results.truncation_angle;
+        bsc.truncation_angle = p.Results.truncation_angle;
       elseif ~isempty(p.Results.truncation_angle_deg)
-        beam.truncation_angle = p.Results.truncation_angle_deg * pi/180;
+        bsc.truncation_angle = p.Results.truncation_angle_deg * pi/180;
       else
-        ott.warning('external');
         error('Truncation angle given in degrees and radians');
       end
       
-      beam.translation_method = p.Results.translation_method;
+      bsc.translation_method = p.Results.translation_method;
 
       % TODO: bsc_pointmatch_farfield.m had other arguments
       % optional parameters:
@@ -215,7 +221,6 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
               final_mode(:,3)==parity),1);
           
           if and(paraxial_order>1,isempty(row))
-            ott.warning('external');
             error('Observe parity convensions!')
           end
       end
@@ -224,12 +229,11 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       initial_mode=initial_mode(keepz,:);
       c=modeweights(row,keepz);
 
-      beam_angle_specified = ~isempty(p.Results.angle) ...
+      bsc_angle_specified = ~isempty(p.Results.angle) ...
           + ~isempty(p.Results.angle_deg) + ~isempty(p.Results.NA);
 
       % Find beam_angle_deg
-      if beam_angle_specified > 1
-        ott.warning('external');
+      if bsc_angle_specified > 1
         error('Too many inputs.  Only specify NA, angle or angle_deg');
       elseif isempty(p.Results.angle) && isempty(p.Results.angle_deg)
         if isempty(p.Results.NA)
@@ -237,10 +241,9 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
           index = 1.33;
         else
           NA = p.Results.NA;
-          if ~isempty(p.Results.index_medium)
-            index = p.Results.index_medium;
+          if ~isempty(bsc.medium.index)
+            index = bsc.medium.index;
           else
-            ott.warning('external');
             error('Need to specify index_medium with NA');
           end
         end
@@ -250,7 +253,7 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       elseif ~isempty(p.Results.angle)
         beam_angle_deg = p.Results.angle*180/pi;
       end
-      beam.angle = beam_angle_deg * pi/180;
+      bsc.angle = beam_angle_deg * pi/180;
 
       xcomponent = p.Results.polarisation(1);
       ycomponent = p.Results.polarisation(2);
@@ -288,7 +291,7 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       if axisymmetry
           ntheta = 2*(nmax+1);
           nphi = 3;
-          if ~strcmp(beam.gtype, 'lg')
+          if ~strcmp(bsc.gtype, 'lg')
               nphi = paraxial_order+3-rem(paraxial_order,2);
           end
       end
@@ -296,7 +299,7 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       % If we have an offset, we need to have a high enough resolution
       % to match the phase gradient across the far-field
       if ~isempty(p.Results.offset)
-        offset_lambda = vecnorm(p.Results.offset)./beam.wavelength;
+        offset_lambda = vecnorm(p.Results.offset)./bsc.wavelength;
         ntheta = max(ntheta, 3*ceil(offset_lambda));
         nphi = max(nphi, 2*3*ceil(offset_lambda));
       end
@@ -333,7 +336,7 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
         error('Unknown angular_scaling parameter value');
       end
       
-      beam.angular_scaling = p.Results.angular_scaling;
+      bsc.angular_scaling = p.Results.angular_scaling;
 
       % degree and order of all modes
       total_modes = nmax^2 + 2*nmax;
@@ -361,14 +364,14 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       mode_index_vector=unique(mode_index_vector);
 
       beam_envelope=sum(beam_envelope,2);
-      outbeam = theta < pi-beam.truncation_angle;
+      outbeam = theta < pi-bsc.truncation_angle;
       beam_envelope(outbeam) = 0;
 
       if ~isempty(offset)
         rhat = rtpv2xyzv( ones(size(theta)), zeros(size(theta)), ...
             zeros(size(theta)), ones(size(theta)), theta, phi );
         [offset,rhat] = matchsize(offset.',rhat);
-        phase_shift = exp( 1i * beam.wavenumber * dot(offset,rhat,2) );
+        phase_shift = exp( 1i * bsc.wavenumber * dot(offset,rhat,2) );
         beam_envelope = beam_envelope .* phase_shift;
       end
       Ex = xcomponent * beam_envelope * central_amplitude;
@@ -394,17 +397,17 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
       end
 
       % Do the point matching and store the result
-      [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, theta, phi);
+      [bsc.a, bsc.b] = bsc.bsc_farfield(nn, mm, e_field, theta, phi);
 
       % If no Nmax supplied, shrink the beam to the smallest size that
       % preserves the beam power
       if isempty(p.Results.Nmax)
-        beam = beam.shrinkNmax();
+        bsc = bsc.shrinkNmax();
       end
 
       % Normalize the beam power
       if ~isempty(p.Results.power)
-        beam.power = p.Results.power;
+        bsc.power = p.Results.power;
       end
     end
     
@@ -553,6 +556,18 @@ classdef PmGauss < ott.beam.vswf.Pointmatch
           'Nmax', p.Results.Nmax, 'angle', beam.angle);
         varargout{1}.basis = beam.basis;
       end
+    end
+  end
+
+  methods (Hidden)
+    function p = getBeamPower(beam)
+      % TODO: What about target power?
+      p = getBeamPower@ott.beam.vswf.Pointmatch(beam);
+    end
+
+    function p = setBeamPower(beam, val)
+      % TODO: What about target power?
+      p = setBeamPower@ott.beam.vswf.Pointmatch(beam, val);
     end
   end
 end

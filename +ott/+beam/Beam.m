@@ -6,6 +6,9 @@ classdef (Abstract) Beam < ott.beam.Properties
 %   - efield     -- Calculate electric field around the origin
 %   - hfield     -- Calculate magnetic field around the origin
 %   - ehfield    -- Calculate electric and magnetic fields around the origin
+%   - egradient  -- Gradient of electric field
+%   - hgradient  -- Gradient of magnetic field
+%   - ehgradient -- Gradient of electric and magnetic fields
 %   - poynting   -- Calculate the Poynting vector field
 %   - efarfield  -- Calculate electric fields in the far-field
 %   - hfarfield  -- Calculate magnetic fields in the far-field
@@ -42,6 +45,9 @@ classdef (Abstract) Beam < ott.beam.Properties
 %   - getBeamPower      -- get method called by dependent property power
 %
 % Hidden methods
+%   - egradientInternal   -- Called by egradient (estimates numerically)
+%   - hgradientInternal   -- Called by hgradient (estimates numerically)
+%   - ehgradientInternal  -- Called by ehgradient (estimates numerically)
 %   - forceInternal       -- Force calculation method (to be overridden)
 %   - torqueInternal      -- Torque calculation method (to be overridden)
 %   - forcetorqueInternal -- Force/Torque calculation method (to be overridden)
@@ -220,6 +226,66 @@ classdef (Abstract) Beam < ott.beam.Properties
       [xyz, unmatched] = beam.transformWorldToLocal(xyz, varargin{:});
 
       [E, H] = beam.ehfieldInternal(xyz, unmatched{:});
+    end
+
+    function gradE = egradient(beam, xyz, varargin)
+      % Calculate the gradient of the E-field at the specified location.
+      %
+      % Usage
+      %   gradE = beam.egradient(xyz)
+      %   Calculates the fields at the specified locations (3xN matrix).
+      %   Returns a 3x3xN matrix of gradient tensors.
+      %
+      % Optional named arguments
+      %   - origin (enum) -- Specify coordinate origin.  Can be
+      %     'local' or 'world'.  Default: ``'world'``.
+      %
+      % Other arguments are passed to egradientInternal.
+
+      % Transform coordinates
+      [xyz, unmatched] = beam.transformWorldToLocal(xyz, varargin{:});
+
+      gradE = beam.egradientInternal(xyz, unmatched{:});
+    end
+
+    function gradH = hgradient(beam, xyz, varargin)
+      % Calculate the gradient of the H-field at the specified location.
+      %
+      % Usage
+      %   gradE = beam.hgradient(xyz)
+      %   Calculates the fields at the specified locations (3xN matrix).
+      %   Returns a 3x3xN matrix of gradient tensors.
+      %
+      % Optional named arguments
+      %   - origin (enum) -- Specify coordinate origin.  Can be
+      %     'local' or 'world'.  Default: ``'world'``.
+      %
+      % Other arguments are passed to hgradientInternal.
+
+      % Transform coordinates
+      [xyz, unmatched] = beam.transformWorldToLocal(xyz, varargin{:});
+
+      gradH = beam.hgradientInternal(xyz, unmatched{:});
+    end
+
+    function [gradE, gradH] = ehgradient(beam, xyz, varargin)
+      % Calculate the gradient of the E-field at the specified location.
+      %
+      % Usage
+      %   gradE = beam.ehgradient(xyz)
+      %   Calculates the fields at the specified locations (3xN matrix).
+      %   Returns a 3x3xN matrix of gradient tensors.
+      %
+      % Optional named arguments
+      %   - origin (enum) -- Specify coordinate origin.  Can be
+      %     'local' or 'world'.  Default: ``'world'``.
+      %
+      % Other arguments are passed to ehgradientInternal.
+
+      % Transform coordinates
+      [xyz, unmatched] = beam.transformWorldToLocal(xyz, varargin{:});
+
+      [gradE, gradH] = beam.ehgradientInternal(xyz, unmatched{:});
     end
 
     function S = poynting(beam, xyz, varargin)
@@ -933,6 +999,103 @@ classdef (Abstract) Beam < ott.beam.Properties
       if strcmpi(p.Results.origin, 'world')
         xyz = beam.inverseTransform(xyz);
       end
+    end
+
+    function div = numericalDivergence(beam, xyz, field, varargin)
+      % Estimate divergence of field numerically (forward difference)
+      %
+      % Usage
+      %   gray = numericalGradient(beam, xyz, field, ...)
+      %
+      % Parameters
+      %   - field (function_handle) -- Function returning a FieldVector field.
+
+      % TODO: Array support
+
+      p = inputParser;
+      p.addParameter('dx', 1.0e-3*beam.wavelength);
+      p.parse(varargin{:});
+
+      dx = p.Results.dx;
+
+      E0 = field(xyz);
+
+      Ex = field(xyz + [dx;0;0]);
+      Ey = field(xyz + [0;dx;0]);
+      Ez = field(xyz + [0;0;dx]);
+      Eforward = [Ex.vxyz(1, :); Ey.vxyz(2, :); Ez.vxyz(3, :)];
+
+      div = (Eforward - E0.vxyz) ./ dx;
+
+    end
+
+    function grad = numericalGradient(beam, xyz, field, varargin)
+      % Calculate gradient numerically
+      %
+      % Usage
+      %   gray = numericalGradient(beam, xyz, field, ...)
+      %
+      % Parameters
+      %   - field (function_handle) -- Function returning a scalar or
+      %     `ott.utils.FieldVector` field.  If the type is scalar,
+      %     returns a 3xN matrix, otherwise returns a 3x3xN matrix.
+
+      % TODO: Array support
+
+      p = inputParser;
+      p.addParameter('dx', 1.0e-3*beam.wavelength);
+      p.parse(varargin{:});
+
+      dx = p.Results.dx;
+
+      E0 = field(xyz);
+
+      Ex = field(xyz + [dx;0;0]);
+      Ey = field(xyz + [0;dx;0]);
+      Ez = field(xyz + [0;0;dx]);
+
+      if isa(E0, 'ott.utils.FieldVector')
+
+        % Vector gradient
+
+        E0 = reshape(E0.vxyz, 3, 1, []);
+        Ex = reshape(Ex.vxyz, 3, 1, []);
+        Ey = reshape(Ey.vxyz, 3, 1, []);
+        Ez = reshape(Ez.vxyz, 3, 1, []);
+
+        Eforward = [Ex, Ey, Ez];
+        grad = (Eforward - E0) ./ dx;
+
+      else
+
+        % Scalar gradient
+        Eforward = [Ex; Ey; Ez];
+        grad = (Eforward - E0) ./ dx;
+
+      end
+
+    end
+
+    function gradE = egradientInternal(beam, xyz, varargin)
+      % Default implementation estimates gradient numerically
+      % If your beam has a nicer method, overload this function.
+
+      gradE = beam.numericalGradient(xyz, @beam.efield, varargin{:});
+    end
+
+    function gradH = hgradientInternal(beam, xyz, varargin)
+      % Default implementation estimates gradient numerically
+      % If your beam has a nicer method, overload this function.
+
+      gradH = beam.numericalGradient(xyz, @beam.hfield, varargin{:});
+    end
+
+    function [gradE, gradH] = ehgradientInternal(beam, xyz, varargin)
+      % Default implementation estimates gradient numerically
+      % If your beam has a nicer method, overload this function.
+
+      gradE = beam.egradientInternal(xyz, varargin{:});
+      gradH = beam.hgradientInternal(xyz, varargin{:});
     end
 
     function [E, H] = ehfieldInternal(beam, xyz, varargin)
