@@ -1,6 +1,6 @@
 classdef Scattered < ott.beam.vswf.Bsc & ott.beam.Scattered
 % A Bsc instance describing a scattered beam.
-% Inherits from :class:`Bsc`.
+% Inherits from :class:`Bsc` and :class:`ott.beam.Scattered`.
 %
 % An instance of this class is created by the Bsc object when
 % a particle scatters a beam.  By default, this object keeps track of the

@@ -1,22 +1,31 @@
-% ott.bsc Beam shape coefficient classes (beams)
+% ott.beam.vswf Vector spherical wave function representations of beams.
 %
-% Descriptions of beams in a vector spherical wave function basis.
-% These classes encapsulate the VSWF coefficients.
+% Descriptions of beams in a vector spherical wave function (VSWF) basis.
+% The Bsc class encapsulates VSWF coefficients, other classes provide
+% methods for generating Bsc of various beams.
 %
-% Classes
-%   Bsc            - class representing beam shape coefficients
-%   Scattered      - A Bsc instance describing scattered beams
+% Generic classes
+%   Bsc               - Class representing VSWF beam shape coefficients
+%   Scattered         - A Bsc instance describing scattered beams
+%   Pointmatch        - A Bsc instance with methods for point-matching
 %
-%   Pointmatch     - base class for BSC generated using point matching
-%   PmGauss        - provides HG, LG and IG beams using point matching method
-%   PmParaxial     - calculate representation from farfield/paraxial beam
-%   PmAnnular      - generate a beam with an annular far-field profile
+% Reduced basis specialisations
+%   BesselBasis       - Bsc using a Bessel function basis set
+%   PlaneBasis        - Bsc using a Plane wave basis set
+%   LgParaxialBasis   - Bsc using a Paraxial LG basis set
 %
-%   Plane          - Plane wave
+% Beam specialisations
+%   Gaussian          - Bsc specialisation for Gaussian beams
+%   LaguerreGaussian  - Bsc specialisation for Laguerre-Gaussian beams
+%   HermiteGaussian   - Bsc specialisation for Hermite-Gaussian beams
+%   InceGaussian      - Bsc specialisation for Ince-Gaussian beams
+%   PlaneWave         - Bsc specialisation for plane wave beams
+%   Bessel            - Bsc specialisation for Bessel beams
+%   Annular           - Bsc specialisation for annular beams
 %
-%   Bessel         - Bessel and Bessel-like beams with OAM
-%   BesselAnnular  - generate a beam with an annular far-field profile
-
+% Utility classes
+%   GrowOnUse         - Base class for beams whose Nmax expands when used
+%
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.

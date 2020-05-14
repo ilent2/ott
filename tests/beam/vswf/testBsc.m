@@ -1,4 +1,4 @@
-function tests = bsc
+function tests = testBsc
   tests = functiontests(localfunctions);
 end
 
@@ -29,13 +29,6 @@ function testConstructDefault(testCase)
   testCase.verifyEqual(beam.wavenumber, k_medium, 'a');
   testCase.verifyEqual(beam.omega, omega, 'b');
   testCase.verifyEqual(beam.dz, dz, 'dz');
-end
-
-function testEmpty(testCase)
-
-  beam = ott.beam.vswf.Bsc.empty();
-  testCase.verifyEmpty(beam);
-
 end
 
 function testConstructFromBsc(testCase)
@@ -76,6 +69,16 @@ function testConstructAbBasis(testCase)
   testCase.verifyEqual(beam.omega, 2*pi, 'b');
   testCase.verifyEqual(beam.dz, 0, 'dz');
 end
+
+% TODO: We want to modify the translation/rotation behaviour so that
+% beams are only translated/rotated in the last step (when needed).
+%
+% This will require modifying the translate/rotate functions.
+% Perhaps we should get rid of the translate* functions (we can just
+% set the position property directly).
+%
+% Possible names for new functions: applyRotation, applyTranslation
+% and applyTransformation(rotation, translation), applyTranslationZ
 
 function testTranslation(testCase)
   % Check that the translation functions run
