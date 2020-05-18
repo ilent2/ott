@@ -10,6 +10,7 @@ classdef (Abstract) RotateHelper
 % implements methods in this order.
 %
 % Methods
+%   - rotate      -- Rotate by 3x3 rotation matrix
 %   - rotateX     -- Rotate about x
 %   - rotateY     -- Rotate about y
 %   - rotateZ     -- Rotate about z
@@ -18,34 +19,30 @@ classdef (Abstract) RotateHelper
 %   - rotateYz    -- Rotate about y then z
 %   - rotateXyz   -- Rotate about x, y and then z
 %
-% Utility methods
-%   - nargoutCheck -- Check the number of output arguments
-%
 % Abstract methods
-%   - rotate    -- The rotation method called by all other methods
+%   - rotateInternal    -- The rotation method called by all other methods
+
+% Copyright 2020 Isaac Lenton
+% This file is part of OTT, see LICENSE.md for information about
+% using/distributing this file.
 
   methods (Abstract)
-    rotate     % The rotation method called by all other methods
-  end
-
-  methods (Access=protected)
-    function nargoutCheck(obj, num_nargout)
-      % Checks the number of output arguments
-      %
-      % If the class is not a handle class, the function should return at
-      % least one argument.
-      %
-      % Usage
-      %   obj.nargoutCheck(nargout)
-
-      if ~isa(obj, 'handle') && num_nargout < 1
-        warning('ott:utils:RotateHelper:nargout_check', ...
-            'Expected at least one output argument with non handle class');
-      end
-    end
+    rotateInternal     % The rotation method called by all other methods
   end
 
   methods
+    function varargout = rotate(obj, mat, varargin)
+      % Rotate by a 3x3 rotation matrix
+      %
+      % Usage
+      %   [obj, ...] = obj.rotate(mat, ...)
+      %   Applies the 3x3 rotation matrix.
+
+      ott.utils.nargoutCheck(obj, nargout);
+
+      [varargout{1:nargout}] = obj.rotateInternal(mat);
+    end
+
     function varargout = rotateX(obj, angle, varargin)
       % Rotate the obj about the x axis
       %
@@ -55,7 +52,7 @@ classdef (Abstract) RotateHelper
 
       import ott.utils.rotx;
 
-      obj.nargoutCheck(nargout);
+      ott.utils.nargoutCheck(obj, nargout);
 
       [varargout{1:nargout}] = obj.rotate(rotx(angle*180/pi), varargin{:});
     end
@@ -69,7 +66,7 @@ classdef (Abstract) RotateHelper
 
       import ott.utils.roty;
 
-      obj.nargoutCheck(nargout);
+      ott.utils.nargoutCheck(obj, nargout);
 
       [varargout{1:nargout}] = obj.rotate(roty(angle*180/pi), varargin{:});
     end
@@ -83,7 +80,7 @@ classdef (Abstract) RotateHelper
 
       import ott.utils.rotz;
 
-      obj.nargoutCheck(nargout);
+      ott.utils.nargoutCheck(obj, nargout);
 
       [varargout{1:nargout}] = obj.rotate(rotz(angle*180/pi), varargin{:});
     end
@@ -98,7 +95,7 @@ classdef (Abstract) RotateHelper
       import ott.utils.rotx;
       import ott.utils.roty;
 
-      obj.nargoutCheck(nargout);
+      ott.utils.nargoutCheck(obj, nargout);
 
       [varargout{1:nargout}] = obj.rotate(roty(angley*180/pi) ...
           *rotx(anglex*180/pi), varargin{:});
@@ -115,7 +112,7 @@ classdef (Abstract) RotateHelper
       import ott.utils.rotx;
       import ott.utils.rotz;
 
-      obj.nargoutCheck(nargout);
+      ott.utils.nargoutCheck(obj, nargout);
 
       [varargout{1:nargout}] = obj.rotate(rotz(anglez*180/pi) ...
           *rotx(anglex*180/pi), varargin{:});
@@ -134,7 +131,7 @@ classdef (Abstract) RotateHelper
       import ott.utils.roty;
       import ott.utils.rotz;
 
-      obj.nargoutCheck(nargout);
+      ott.utils.nargoutCheck(obj, nargout);
 
       [varargout{1:nargout}] = obj.rotate(rotz(anglez*180/pi) ...
           *roty(angley*180/pi), varargin{:});
@@ -152,7 +149,7 @@ classdef (Abstract) RotateHelper
       import ott.utils.roty;
       import ott.utils.rotz;
 
-      obj.nargoutCheck(nargout);
+      ott.utils.nargoutCheck(obj, nargout);
 
       [varargout{1:nargout}] = obj.rotate(rotz(anglez*180/pi)* ...
           roty(angley*180/pi)*rotx(anglex*180/pi), varargin{:});
