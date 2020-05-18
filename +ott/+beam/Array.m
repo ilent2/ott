@@ -21,6 +21,7 @@ classdef Array < ott.beam.Beam & ott.beam.abstract.Array
 %
 % Static methods
 %   - CombineCoherent   -- Combine coherent data from cell arrays
+%   - empty         -- Create an empty array
 
   methods
     function beam = Array(array_type, sz, varargin)
@@ -74,6 +75,16 @@ classdef Array < ott.beam.Beam & ott.beam.abstract.Array
   end
 
   methods (Static)
+    function beam = empty(varargin)
+      % Construct an empty beam array with 'array' type.
+      %
+      % Usage
+      %   beam = ott.beam.Array.empty()
+      
+      sz = [0, 0];
+      beam = ott.beam.Array('array', sz);
+    end
+    
     function D = CombineCoherent(D)
       % Combine data coherently (by recursion)
       %

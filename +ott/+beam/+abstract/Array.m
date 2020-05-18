@@ -14,6 +14,9 @@ classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
 %   - horzcat       -- Horizontal concatenation of beams and arrays
 %   - subsref       -- For direct indexing of the beams array
 %   - combineIncoherentArray  -- Combine cell array of beam data
+%
+% Static methods
+%   - empty         -- Create an empty array
 
 % TODO: Should arrays have beam properties?
 
@@ -106,6 +109,18 @@ classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
           || strcmpi(beam.array_type, 'incoherent')
         E = beam.CombineCoherent(E);
       end
+    end
+  end
+  
+  methods (Static)
+    function beam = empty(varargin)
+      % Construct an empty beam array with 'array' type.
+      %
+      % Usage
+      %   beam = ott.beam.abstract.Array.empty()
+      
+      sz = [0, 0];
+      beam = ott.beam.abstract.Array('array', sz);
     end
   end
 

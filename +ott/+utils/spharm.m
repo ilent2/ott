@@ -42,10 +42,20 @@ if nargout>1
     m=[-n:n];
 end
 
+  
+
 m=m(abs(m)<=n);
 
 [theta,phi] = matchsize(theta,phi);
 input_length = length(theta);
+
+% Check if we have any work to do
+if input_length == 0
+  Y = theta;
+  Yphi = theta;
+  Ytheta = theta;
+  return;
+end
 
 % if abs(m) > n | n < 0
 %    Y = zeros(input_length,1);

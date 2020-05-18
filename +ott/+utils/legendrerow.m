@@ -44,4 +44,6 @@ end
 
 [ST,M]=meshgrid(st,[0:n]);
 
-pnm=pnm.*ST.^(M);
+if ~isempty(pnm)
+  pnm=pnm.*ST.^(M);
+end

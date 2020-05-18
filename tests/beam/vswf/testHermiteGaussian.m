@@ -28,16 +28,3 @@ function testConstructOptional(testCase)
 
 end
 
-function testConstructArray(testCase)
-
-  waist = [0.1, 0.2];
-  mmode = [1, 3];
-  nmode = [2, -2];
-  beam = ott.beam.vswf.HermiteGaussian(waist, mmode, nmode);
-
-  testCase.verifyEqual(beam.waist, waist, 'waist');
-  testCase.verifyEqual(beam.mmode, mmode, 'mmode');
-  testCase.verifyEqual(beam.nmode, nmode, 'mmode');
-
-end
-

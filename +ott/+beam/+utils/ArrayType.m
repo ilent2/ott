@@ -16,6 +16,7 @@ classdef ArrayType < ott.beam.abstract.Beam
 %
 % Static methods
 %   - AutoArray     -- Automatically deduce array type from inputs.
+%   - empty         -- Create an empty array (should be overloaded)
 %
 % Abstract methods
 %   - plusInternal    -- Called by plus when combination is needed
@@ -59,6 +60,19 @@ classdef ArrayType < ott.beam.abstract.Beam
       else
         beam = ott.beam.abstract.Array(array_type, sz, varargin{:});
       end
+    end
+    
+    function beam = empty(varargin)
+      % Construct an empty beam array
+      %
+      % This function should be overloaded by the sub-class to describe
+      % what an empty array looks like for your type.
+      
+      warning(['Constructing a ott.beam.abstract.Array', newline, ...
+        'This method should be overloaded by your sub-class']);
+      
+      sz = [0, 0];
+      beam = ott.beam.abstract.Array('array', sz);
     end
   end
 
@@ -196,7 +210,7 @@ classdef ArrayType < ott.beam.abstract.Beam
 
         % Check same size in dimension
         allSameType = allSameType ...
-            & sum(size(varargin{ii}) ~= dim_size) == 1;
+            & sum(size(varargin{ii}) ~= dim_size) <= 1;
       end
 
       if allSameType && ~isempty(array_type)

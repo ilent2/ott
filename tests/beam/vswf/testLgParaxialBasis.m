@@ -11,25 +11,34 @@ end
 function testConstructOptional(testCase)
 
   lmodes = [0, 1, 2];
-  amodes = [0, 2, 4];
-  paraxial_waist = 1.0;
+  pmodes = [0, 2, 4];
+  polmodes = [-1, 1, 1];
+  waist = 1.0;
 
-  beam = ott.beam.vswf.LgParaxialBasis(paraxial_waist, lmodes, amodes);
+  beam = ott.beam.vswf.LgParaxialBasis(waist, ...
+    lmodes, pmodes, polmodes);
 
-  testCase.verifyEqual(beam.paraxial_waist, paraxial_waist, 'waist');
-  testCase.verifyEqual(beam.lmodes, lmodes, 'lmodes');
-  testCase.verifyEqual(beam.amodes, amodes, 'amodes');
+  testCase.verifyEqual(beam.waist, waist, 'waist');
+  testCase.verifyEqual(beam.lmode, lmodes, 'lmodes');
+  testCase.verifyEqual(beam.pmode, pmodes, 'amodes');
+  testCase.verifyEqual(beam.polmode, polmodes, 'polmodes');
 end
 
-function testAngularScaling(testCase)
+function testParaxialFields(testCase)
 
-  beam = ott.optics.vswf.bsc.PmGauss('angular_scaling', 'sintheta');
-  testCase.verifyEqual(beam.angular_scaling, 'sintheta', ...
-    'sintheta Angular scaling not set correctly');
-
-  beam = ott.optics.vswf.bsc.PmGauss('angular_scaling', 'tantheta');
-  testCase.verifyEqual(beam.angular_scaling, 'tantheta', ...
-    'tantheta Angular scaling not set correctly');
+  beam = ott.beam.vswf.LgParaxialBasis();
+  beam.waist = 1.0;
+  
+  theta = linspace(0, pi, 200).';
+  lmode = 1;
+  pmode = 5;
+  polmode = 1;
+  E = beam.paraxial_fields(theta, lmode, pmode, polmode);
+  
+  testCase.verifySize(E, [2*numel(theta), 1], 'sz');
+  
+%   figure();
+%   plot(theta, abs(reshape(E, [], 2)));
 
 end
 

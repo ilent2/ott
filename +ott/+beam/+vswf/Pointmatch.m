@@ -1,238 +1,181 @@
 classdef Pointmatch < ott.beam.vswf.Bsc
-%BscPointmatch base class for BSC generated using point matching
-% Provides support for both far-field and focal plane point matching.
+% Generates Bsc using point matching.
+% Inherits from :class:`Bsc`.
 %
-% Properties
-%   inv_coefficient_matrix  Pseudo-inverse coefficient matrix for PM
-%   a            (Bsc) Beam shape coefficients a vector
-%   b            (Bsc) Beam shape coefficients b vector
-%   basis        (Bsc) VSWF beam basis (incoming, outgoing or regular)
-%   Nmax         (Bsc) Truncation number for VSWF coefficients
-%   power        (Bsc) Power of the beam [M*L^2/S^3]
-%   Nbeams       (Bsc) Number of beams in this Bsc object
-%   wavelength   (Bsc) Wavelength of beam [L]
-%   speed        (Bsc) Speed of beam in medium [L/T]
-%   omega        (Bsc) Angular frequency of beam [2*pi/T]
-%   k_medium     (Bsc) Wavenumber in medium [2*pi/L]
-%   dz           (Bsc) Absolute cumulative distance the beam has moved
-%
-% Methods
-%   cleanCoefficientMatrix  Removes coefficient matrix data from the beam.
-%
-% Static methods
-%   bsc_farfield          Does point matching in the farfield
-%   bsc_focalplane        Does point matching around the focal plane
-%
-% See also bsc_farfield, bsc_focalplane and ott.BscPmGauss.
-%
+% Hidden methods
+%   - unpack_coefficients   -- Called by constructor to build a/b vectors
+%   - build_coefficients    -- Called by constructor for coefficient matrix
+
 % Based on bsc_pointmatch_focalplane and bsc_pointmatch_farfield
 % from version 1 of the optical tweezers toolbox.
-%
+
+% Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  methods (Static)
-
-    function [a, b, icm] = bsc_farfield(nn, mm, e_field, theta, phi, ...
-        varargin)
-      % point match beam coefficients in farfield
-      %
-      % [a, b, icm] = bsc_farfield(nn, mm, e_field, theta, phi, ...)
-      % a, b are the beam coefficients.  cm is the coefficient matrix.
-      %
-      % nn, mm are the mode indices to include in the coefficient matrix.
-      %
-      % e_field is the E-field to point match.
-      % The format should be [ Etheta(:); Ephi(:) ]
-      %
-      % theta, phi are the coordinates of the Efield values.
-      %
-      % Optional named arguments:
-      %   zero_rejection_level   val   removes modes with less power than
-      %       zero_rejection_level.  Default 1e-8.  Use [] to disable.
-      %   inv_coefficient_matrix     mat   Coefficient matrix to use.
-      %       default [].
-      %   invert_coefficient_matrix  bool  True to invert coefficient
-      %       matrix for point matching.  Default nargout == 3.
-
-      p = inputParser;
-      p.addParameter('inv_coefficient_matrix', []);
-      p.addParameter('zero_rejection_level', 1e-8);
-      p.addParameter('invert_coefficient_matrix', nargout == 3);
-      p.parse(varargin{:});
-
-      % Generate coefficient matrix
-      icm = p.Results.inv_coefficient_matrix;
-      assert(isnumeric(icm), 'Inverse coefficient matrix must be numeric');
-      if isempty(icm)
-        coefficient_matrix = zeros(length(e_field), 2*length(nn));
-        for n = 1:max(nn)
-          ci=find(nn==n);
-
-          [~,dtY,dpY]= ott.utils.spharm(n,mm(ci),theta,phi);
-
-          coefficient_matrix(:,ci) = [dpY;-dtY] * 1i^(n+1)/sqrt(n*(n+1));
-          coefficient_matrix(:,ci+length(nn)) = [dtY;dpY]*1i^(n)/sqrt(n*(n+1));
-        end
-
-        % Invert coefficient matrix for icm
-        if nargout == 3 || p.Results.invert_coefficient_matrix
-          icm = pinv(coefficient_matrix);
-        end
-
-        % Do point matching
-        if p.Results.invert_coefficient_matrix
-          expansion_coefficients = icm * e_field;
-        else
-          expansion_coefficients = coefficient_matrix \ e_field;
-        end
-
-      else
-        assert(size(icm, 2) == length(e_field), ...
-            'Number of cols in coefficient matrix must match length(e_field)');
-
-        % Do point matching
-        expansion_coefficients = icm * e_field;
-      end
-
-      % Unpack results into a and b vectors
-      fa = expansion_coefficients(1:end/2,:);
-      fb = expansion_coefficients(1+end/2:end,:);
-
-      % Look for non-zero elements, only keep non-zeros
-      if ~isempty(p.Results.zero_rejection_level)
-        pwr = abs(fa).^2+abs(fb).^2;
-        non_zero = pwr>p.Results.zero_rejection_level*max(pwr);
-        nn=nn(non_zero);
-        mm=mm(non_zero);
-        fa=fa(non_zero);
-        fb=fb(non_zero);
-      end
-
-      % Make the beam vector and store the coefficients
-      [a, b] = ott.beam.vswf.Bsc.make_beam_vector(fa, fb, nn, mm);
-    end
-
-    function [a, b, cm] = bsc_focalplane(nn, mm, e_field, kr, theta, phi, ...
-        varargin)
-      % point match beam coefficients around focal plane
-      %
-      % [a, b, cm] = bsc_focalplane(nn, mm, e_field, kr, theta, phi, ...)
-      % a, b are the beam coefficients.  cm is the coefficient matrix.
-      %
-      % nn, mm are the mode indices to include in the coefficient matrix.
-      %
-      % e_field is a vector of E-field to points to match.
-      % The format should be [ Ex(:); Ey(:); Ez(:) ]
-      %
-      % kr, theta, phi are the coordinates of the Efield values.
-      % These should be vectors of the same as length(e_field)/3.
-      %
-      % Optional named arguments:
-      %   zero_rejection_level   val   removes modes with less power than
-      %       zero_rejection_level.  Default 1e-8.  Use [] to disable.
-      %   coefficient_matrix     mat   Coefficient matrix to use.
-      %       default [].
-
-      p = inputParser;
-      p.addParameter('inv_coefficient_matrix', []);
-      p.addParameter('zero_rejection_level', 1e-8);
-      p.addParameter('invert_coefficient_matrix', nargout == 3);
-      p.parse(varargin{:});
-      
-      assert(length(e_field) == numel(e_field), ...
-        'e_field must be N element vector');
-      assert(numel(e_field)/3 == numel(kr), 'kr must be same size as e_field/3');
-      assert(numel(e_field)/3 == numel(theta), 'theta must be same size as e_field/3');
-      assert(numel(e_field)/3 == numel(phi), 'phi must be same size as e_field/3');
-
-      % Generate coefficient matrix
-      icm = p.Results.inv_coefficient_matrix;
-      if isempty(icm)
-        coefficient_matrix = zeros(length(e_field), length(nn));
-        for n = 1:length(nn)
-
-           % Find RgM, RgN as appropriate for each mode
-           [M,N] = ott.utils.vswfcart(nn(n),mm(n),kr,theta,phi,3);
-           if rem(nn(n),2) == 0
-              % Even n
-              MN = [ M(:,1); M(:,2); M(:,3) ];
-           else
-              % Odd n
-              MN = [ N(:,1); N(:,2); N(:,3) ];
-           end
-           coefficient_matrix(:,n) = MN;
-
-        end
-
-        % Invert coefficient matrix for icm
-        if nargout == 3 || p.Results.invert_coefficient_matrix
-          icm = pinv(coefficient_matrix);
-        end
-
-        % Do point matching
-        if p.Results.invert_coefficient_matrix
-          expansion_coefficients = icm * e_field;
-        else
-          expansion_coefficients = coefficient_matrix \ e_field;
-        end
-      else
-        assert(size(icm, 2) == length(e_field), ...
-            'Number of rows in coefficient matrix must match length(e_field)');
-
-        % Do point matching
-        expansion_coefficients = icm * e_field;
-      end
-
-      % Look for non-zero elements, only keep non-zeros
-      if ~isempty(p.Results.zero_rejection_level)
-        non_zero = abs(expansion_coefficients) ...
-            > max(abs(expansion_coefficients)) * p.Results.zero_rejection_level;
-        expansion_coefficients = expansion_coefficients(non_zero);
-        nn = nn(non_zero);
-        mm = mm(non_zero);
-      end
-
-      % Calculate beam vectors
-      fa = zeros(size(nn));
-      fb = zeros(size(nn));
-      for n = 1:length(nn)
-
-         if rem(nn(n),2) == 0
-            fa(n) = expansion_coefficients(n);
-            fb(n) = expansion_coefficients(n) * sign(mm(n));
-         else
-            fa(n) = expansion_coefficients(n) * sign(mm(n));
-            fb(n) = expansion_coefficients(n);
-         end
-
-      end
-
-      % Make the beam vector and store the coefficients
-      [a, b] = ott.Bsc.make_beam_vector(fa, fb, nn, mm);
-    end
-  end
-
-  properties (SetAccess=protected)
-    inv_coefficient_matrix      % Coefficient matrix used in point matching
-  end
-
-  methods (Access=protected)
-    function beam = Pointmatch(varargin)
-      % Protected constructor for BscPointmatch object
-      %
-      % All arguments are passed to base class.
-      %
-      % See also ott.BscPmGauss and ott.BscPmParaxial
-
-      beam = beam@ott.beam.vswf.Bsc(varargin{:});
-    end
-  end
+% TODO: The original had shrinking and filtering near-zero coefficients
+%   Do we want either of these features in this version?
+%   Should they be added to the Bsc class instead or here?
 
   methods
-    function cleanCoefficientMatrix(beam)
-      % Remove the coefficient matrix data
-      beam.inv_coefficient_matrix = [];
+    function beam = Pointmatch(varargin)
+      % Construct a new Bsc using point matching.
+      %
+      % Usage
+      %   bsc = Pointmatch(nn, mm, coefficient_matrix, Efield)
+      %
+      %   bsc = Pointmatch(coefficient_matrix, Efield)
+      %   Assumes coefficient matrix is a full matrix (all nn/mm values)
+      %
+      %   bsc = Pointmatch(...)
+      %
+      % Parameters
+      %   - nn, mm (N-numeric|H-cell) -- VSWF mode indices.  Either vectors
+      %     or cell arrays of vectors for each BSC to match.
+      %
+      %   - Efield (numeric|cell) -- Field values to match.
+      %     Format depends on coefficient matrix format.  Number of rows
+      %     must match number of rows in coefficient matrix.
+      %     Can either be a MxL matrix, H cells with MxL matrices.
+      %     For each coefficient matrix, solves the point matching
+      %     problem for L BSC vectors.
+      %
+      %   - coefficient_matrix (MxN numeric|H-cell) -- A coefficient matrix.
+      %     The number of rows must match the number of rows in Efield,
+      %     otherwise :methd:`beam.build_coefficients` is called (only
+      %     implemented for sub-classes).
+      %
+      % Unmatched arguments are passed to base class.
+
+      p = inputParser;
+      p.addOptional('arg1', [], @isnumeric);
+      p.addOptional('arg2', [], @isnumeric);
+      p.addOptional('arg3', [], @isnumeric);
+      p.addOptional('arg4', [], @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+
+      % Construct base
+      unmatched = ott.utils.unmatchedArgs(p);
+      beam = beam@ott.beam.vswf.Bsc(unmatched{:});
+
+      arg1 = p.Results.arg1;
+      arg2 = p.Results.arg2;
+      arg3 = p.Results.arg3;
+      arg4 = p.Results.arg4;
+
+      % Check number of arguments
+      num_args = ~isempty(arg1) + ~isempty(arg2) + ~isempty(arg3) + ~isempty(arg4);
+      assert(num_args == 0 || num_args == 2 || num_args == 4, ...
+          'Must provide either 0, 2 or 4 positional arguments');
+
+      % Get coefficient matrix and Efield
+      if num_args == 4
+        nn = arg1;
+        mm = arg2;
+        Efield = arg4;
+        if ~iscell(nn), nn = {nn}; end;
+        if ~iscell(mm), mm = {mm}; end;
+        if iscell(arg3) && size(arg3{1}, 1) == size(Efield, 1) ...
+          || ~iscell(arg3) && size(arg3, 1) == size(Efield, 1)
+          coefficient_matrix = arg3;
+        else
+          coefficient_matrix = beam.build_coefficients(arg1, arg2, arg3);
+        end
+      elseif num_args == 2
+        coefficient_matrix = arg1;
+        if iscell(coefficient_matrix)
+          lens = cellfun(@(x) size(x, 1)/2, coefficient_matrix);
+          [nn, mm] = cellfun(@(x) ott.utils.combined_index(1:x), ...
+              num2cell(lens), 'UniformOutput', false);
+        else
+          lens = size(x, 1)/2;
+          [nn, mm] = ott.utils.combined_index(1:lens);
+          nn = {nn};
+          mm = {mm};
+        end
+        Efield = arg2;
+      else
+        coefficient_matrix = [];
+        Efield = [];
+        nn = {[]};
+        mm = {[]};
+      end
+
+      % Solve system of equations
+      if iscell(coefficient_matrix) && iscell(Efield)
+        assert(numel(coefficient_matrix) == numel(Efield), ...
+          'Efield and coefficient_matrix cell arrays must have same length');
+
+        fab = cellfun(@(cm, e) cm \ e, coefficient_matrix, Efield, ...
+            'UniformOutput', false);
+
+      elseif iscell(coefficient_matrix)
+        assert(isnumeric(Efield), 'Efield must be numeric');
+
+        fab = cellfun(@(cm) cm \ Efield, coefficient_matrix, ...
+            'UniformOutput', false);
+
+      else
+        assert(isnumeric(Efield) && isnumeric(coefficient_matrix), ...
+            'Efield and coefficient_matrix must be numeric');
+
+        fab = { coefficient_matrix \ Efield };
+
+      end
+
+      % Unpack result
+      [a, b] = beam.unpack_coefficients(fab, nn, mm);
+      beam = beam.setCoefficients(a, b);
+    end
+  end
+
+  methods (Hidden)
+    function cm = build_coefficients(beam, nn, mm, locs)
+      % Build the coefficient matrix.
+      %
+      % This should be overloaded by your sub-class.  This implementation
+      % simply raises and error when called.
+
+      error('Building coefficient matrix not supported', newline, ...
+          'Use an overloaded class instead');
+    end
+
+    function [a, b] = unpack_coefficients(beam, fab, nn, mm)
+      % Unpack beam shape coefficients.
+      %
+      % This default implementation assumes there is one row for each
+      % a/b coefficient in the form `[a; b]`.  Overload this method
+      % if your `build_coefficients` function uses a different packing.
+      
+      % Check if any work to do
+      allempty = all(cellfun(@(x) isempty(x), nn));
+      if allempty
+        a = [];
+        b = [];
+        return;
+      end
+
+      % Get maximum n
+      maxn = max(cellfun(@(x) max(x), nn));
+      numrows = ott.utils.combined_index(maxn, maxn);
+      numcols = sum(cellfun(@(x) size(x, 2), fab));
+
+      % Unpack coefficients
+      a = sparse(numrows, numcols);
+      b = sparse(numrows, numcols);
+      offset = 0;
+      for ii = 1:numel(fab)
+
+        colidx = (1:size(fab{ii}, 2)) + offset;
+        offset = max(colidx);
+
+        rowidx = ott.utils.combined_index(nn{ii}, mm{ii});
+
+        a(rowidx, colidx) = fab{ii}(1:end/2, :);
+        b(rowidx, colidx) = fab{ii}(1+end/2:end, :);
+
+      end
     end
   end
 end

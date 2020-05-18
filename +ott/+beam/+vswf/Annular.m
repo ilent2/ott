@@ -1,5 +1,7 @@
-classdef BesselAnnular < ott.beam.vswf.Bsc
-% Generate a beam with an annular far-field profile
+classdef Annular < ott.beam.vswf.BscScalar
+% Generate a beam with an annular far-field profile.
+% Inherits from :class:`BscScalar`.
+%
 % This code uses annular beams and may be significantly faster than PM.
 %
 % Properties:
@@ -27,9 +29,9 @@ classdef BesselAnnular < ott.beam.vswf.Bsc
   properties (SetAccess=protected)
     NA            % Numerical aperture of inner and outer edge [r1, r2]
   end
-  
+
   methods
-    function beam = BesselAnnular(NA, varargin);
+    function beam = Annular(varargin)
       % Generate BSC with an annular far-field profile
       %
       % beam = PmParaxial(NA, ...) generates beam with an annular
@@ -58,37 +60,30 @@ classdef BesselAnnular < ott.beam.vswf.Bsc
       % Based on PmParaxial
       
       p = inputParser;
-      p.addParameter('verbose', false);
+      p.addOptional('NA', [2*pi/8, 3*pi/8], @isnumeric);
       p.addParameter('progress_callback', @(x) []);
       p.addParameter('Nmax', 30);
-
-      p.addParameter('wavelength0', 1);
-      p.addParameter('k_medium', []);
-      p.addParameter('index_medium', []);
-      p.addParameter('wavelength_medium', []);
 
       p.addParameter('polarisation', [ 1 0 ]);
       p.addParameter('profile', []);
       p.addParameter('oam', 0);
       p.addParameter('ntheta', 100);
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
-
-      verbose = p.Results.verbose;
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      beam = beam@ott.beam.vswf.BscScalar(unmatched{:});
+      
       Nmax = p.Results.Nmax;
-      beam.wavenumber = ott.beam.vswf.Bsc.parser_k_medium(p, 2*pi);
-
-      if isempty(p.Results.index_medium)
-        nMedium = 1.0;
-      else
-        nMedium = p.Results.index_medium;
-      end
 
       polarisation = p.Results.polarisation;
 
       % Update progress callback
       p.Results.progress_callback(0.1);
 
-      NAonm=-NA/nMedium;
+      NA = p.Results.NA;
+      
+      NAonm=-NA/beam.medium.index;
 
       anglez=asin(NAonm);
       
@@ -110,7 +105,8 @@ classdef BesselAnnular < ott.beam.vswf.Bsc
       theta = linspace(min(anglez), max(anglez), p.Results.ntheta);
       
       % Generate bessel beams
-      beams = ott.beam.vswf.Bessel(Nmax, theta, ...
+      beams = ott.beam.vswf.BesselBasis(theta, ...
+          'Nmax', Nmax, ...
           'k_medium', beam.wavenumber, ...
           'polarisation', polarisation, ...
           'lmode', p.Results.oam);

@@ -1,4 +1,4 @@
-classdef Plane < ott.beam.vswf.Bsc
+classdef PlaneBasis < ott.beam.vswf.Bsc
 %BscPlane representation of a plane wave in VSWF coefficients
 %
 % BscPlane properties:
@@ -8,6 +8,9 @@ classdef Plane < ott.beam.vswf.Bsc
 %
 % BscPlane methods:
 %   translateZ      Translates the beam and checks within beam range
+%
+% Static methods
+%   - empty       -- Construct an empty beam array.
 %
 % Based on bsc_plane.m from ottv1.
 %
@@ -22,8 +25,19 @@ classdef Plane < ott.beam.vswf.Bsc
     polarisation    % Beam polarisation [ Etheta Ephi ]
   end
 
+  methods (Static)
+    function bsc = empty(varargin)
+      % Construct an empty beam array
+      %
+      % Usage
+      %   bsc = PlaneBasis.empty()
+
+      bsc = ott.beam.vswf.PlaneBasis();
+    end
+  end
+
   methods
-    function beam = Plane(theta, phi, varargin)
+    function beam = PlaneBasis(varargin)
       %BSCPLANE construct a new plane wave beam
       %
       %  BSCPLANE(theta, phi) creates a new circularly polarised plane
@@ -47,12 +61,17 @@ classdef Plane < ott.beam.vswf.Bsc
       % Parse inputs
       p = inputParser;
       p.KeepUnmatched = true;
+      p.addOptional('theta', [], @isnumeric);
+      p.addOptional('phi', [], @isnumeric);
       p.addParameter('polarisation', [ 1 1i ]);
-      p.addParameter('Nmax', []);
+      p.addParameter('Nmax', 0);
       p.addParameter('radius', []);
       p.addParameter('power', []);
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
+
+      theta = p.Results.theta;
+      phi = p.Results.phi;
       
       beam = beam@ott.beam.vswf.Bsc(unmatched{:});
       beam.basis = 'regular';
@@ -78,21 +97,7 @@ classdef Plane < ott.beam.vswf.Bsc
         beam.polarisation = repmat(beam.polarisation, length(phi), 1);
       end
 
-      % Parse ka/Nmax
-      if isempty(p.Results.Nmax) && isempty(p.Results.radius)
-        warning('ott:BscPlane:no_range', ...
-            'No range specified for plane wave, using range of ka=1');
-        Nmax = ott.utils.ka2nmax(1);
-      elseif ~isempty(p.Results.radius)
-        Nmax = ott.utils.ka2nmax(p.Results.radius * beam.wavenumber);
-      elseif ~isempty(p.Results.Nmax)
-        Nmax = p.Results.Nmax;
-        assert(isscalar(Nmax), 'Nmax must be scalar');
-      else
-        error('ott:BscPlane:duplicate_range', ...
-            'Nmax and ka specified.  Must specify only one');
-      end
-
+      Nmax = p.Results.Nmax;
       ablength = ott.utils.combined_index(Nmax, Nmax);
 
       a = zeros(ablength, length(beam.theta));
