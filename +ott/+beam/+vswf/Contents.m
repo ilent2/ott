@@ -24,7 +24,6 @@
 %   PlaneWave         - Bsc specialisation for plane wave beams
 %   Bessel            - Bsc specialisation for Bessel beams
 %   Annular           - Bsc specialisation for annular beams
-%   PlaneWave         - Bsc specialisation for plane-wave beams
 %
 % Utility classes
 %   GrowOnUse         - Base class for beams whose Nmax expands when used

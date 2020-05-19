@@ -14,11 +14,15 @@ classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
 %   - horzcat       -- Horizontal concatenation of beams and arrays
 %   - subsref       -- For direct indexing of the beams array
 %   - combineIncoherentArray  -- Combine cell array of beam data
+%   - translateXyzInternal    -- Overload for RotationPositionEntity
 %
 % Static methods
 %   - empty         -- Create an empty array
 
 % TODO: Should arrays have beam properties?
+%   No, well, we shouldn't have separate position/rotation properties?
+%   Or should they be cumulative?  Hmm, maybe we do want some properties
+%   including position/rotation?
 
   properties
     beams         % Beams contained in the array
@@ -29,6 +33,18 @@ classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
   end
 
   methods (Hidden)
+    function bsc = translateXyzInternal(bsc, xyz, varargin)
+      % Apply translations to each sub-beam.
+
+      if size(xyz, 2) == 1
+        xyz = repmat(xyz, 1, numel(bsc));
+      end
+
+      for ii = 1:numel(bsc.beams)
+        bsc.beams{ii} = bsc.beams{ii}.translateXyz(xyz(:, ii), varargin{:});
+      end
+    end
+
     function beam = plusInternal(b1, b2)
       % Add beams coherently
 

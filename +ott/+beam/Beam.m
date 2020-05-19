@@ -1,4 +1,4 @@
-classdef (Abstract) Beam < ott.beam.Properties
+classdef (Abstract) Beam < ott.beam.abstract.Beam
 % Abstract base class for beam approximations.
 % Inherits from :class:`Properties`.
 %
@@ -933,6 +933,22 @@ classdef (Abstract) Beam < ott.beam.Properties
   end
 
   methods (Hidden)
+
+    function beam = catNewArray(array_type, sz, varargin)
+      % Construct a new Array for this beam type.
+
+      % Check all inherit from Beam
+      isBeam = true;
+      for ii = 1:length(varargin)
+        isBeam = isBeam & isa(varargin{ii}, 'ott.beam.Beam');
+      end
+
+      if ~isBeam
+        beam = catNewArray@ott.beam.abstract.Beam(array_type, sz, varargin{:});
+      else
+        beam = ott.beam.Array(array_type, sz, varargin{:});
+      end
+    end
 
     function varargout = callParticleMethod(beam, method, other, varargin)
       % Helper for calling particle methods with position/rotation inputs

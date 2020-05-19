@@ -13,10 +13,17 @@ function D = wigner_rotation_matrix( nmax, R )
 % See LICENSE.md for information about using/distributing this file.
 
 % Check inputs
-assert(isnumeric(nmax) && isscalar(nmax), ...
-    'nmax must be a numeric scalar')
+assert(isnumeric(nmax) && isscalar(nmax) ...
+  && round(nmax) == nmax && nmax >= 0, ...
+    'nmax must be a positive integer');
 assert(isnumeric(R) && isequal(size(R), [3,3]), ...
-    'R must be a 3x3 rotation matrix')
+    'R must be a 3x3 rotation matrix');
+  
+% Bail out if we have no work to do
+if nmax == 0
+  D = [];
+  return;
+end
 
 % Transform cartesian rotation matrix to spinor(?) rotation matrix
 %

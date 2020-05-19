@@ -115,12 +115,20 @@ classdef (Abstract) RotationPositionEntity < ...
       p = inputParser;
       p.addParameter('origin', 'global');
       p.parse(varargin{:});
+      
+      if size(xyz, 2) == 1 && numel(obj) > 1
+        xyz = repmat(xyz, 1, numel(obj));
+      end
 
       switch p.Results.origin
         case 'global'
-          obj.position = obj.position + xyz;
+          for ii = 1:numel(obj)
+            obj(ii).position = obj(ii).position + xyz(:, ii);
+          end
         case 'local'
-          obj.position = obj.position + obj.rotation * xyz;
+          for ii = 1:numel(obj)
+            obj(ii).position = obj(ii).position + obj(ii).rotation*xyz(:, ii);
+          end
         otherwise
           error('Unknown origin for translation');
       end

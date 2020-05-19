@@ -1,26 +1,21 @@
-classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
+classdef Bsc < ott.beam.Beam ...
     & ott.beam.utils.ArrayType
 % Class representing beam shape coefficients.
-% Inherits from :class:`ott.beam.Beam`,
-% :class:`ott.utils.RotateHelper` and :class:`ott.beam.utils.ArrayType`.
-%
-% Any units can be used for the properties as long as they are
-% consistent in all specified properties.  Calculated quantities
-% will have these units.
+% Inherits from :class:`ott.beam.Beam` and :class:`ott.beam.utils.ArrayType`.
 %
 % Properties
 %   - a           --  Beam shape coefficients a vector
 %   - b           --  Beam shape coefficients b vector
 %   - basis       --  VSWF beam basis (incoming, outgoing or regular)
-%   - omega       --  Angular frequency of beam [2*pi/T]
-%   - wavelength  --  Wavelength of beam [L]
 %   - absdz       --  Absolute cumulative distance the beam has moved
-%
-% Dependent properties
 %   - Nmax        --  Truncation number for VSWF coefficients
-%   - power       --  Power of the beam [M*L^2/S^3]
-%   - wavenumber  --  Wavenumber in the medium [2*pi/L]
-%   - speed       --  Speed of beam in medium [L/T]
+%
+% Inherited properties
+%   - power         -- The power of the beam (may be infinite)
+%   - omega         -- Beam optical frequency
+%   - medium        -- Medium where beam is propagating
+%   - position      -- Position of the beam or array
+%   - rotation      -- Rotation of the beam or array
 %
 % Methods
 %   - sum         --  Merge the BSCs for the beams contained in this object
@@ -43,12 +38,16 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
 %   - size        -- Get the size of the beam array
 %
 % Static methods:
-%   - make_beam_vector -- Convert output of bsc_* functions to beam coefficients
+%   - FromDenseBeamVectors -- Build Bsc from Dense BSC beam vectors
 %
 % See also Bsc, ott.BscPmGauss, ott.BscPlane.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+% TODO: Review documentation
+% TODO: Should default basis be regular and automatic conversion for
+%   methods that use far-field (unless overridden)
 
   properties (SetAccess=protected)
     a           % Beam shape coefficients a vector
@@ -94,8 +93,13 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       % Replicate ci for 2-D beam vectors (multiple beams)
       [ci, cinbeams] = ndgrid(ci, 1:nbeams);
 
-      fa = sparse(ci, cinbeams, a, total_orders, nbeams);
-      fb = sparse(ci, cinbeams, b, total_orders, nbeams);
+      if ~isempty(ci)
+        fa = sparse(ci, cinbeams, a, total_orders, nbeams);
+        fb = sparse(ci, cinbeams, b, total_orders, nbeams);
+      else
+        fa = sparse(0, 0);
+        fb = sparse(0, 0);
+      end
 
       bsc = ott.beam.vswf.Bsc(fa, fb);
     end
@@ -134,39 +138,6 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
 
       beam = ott.beam.vswf.Bsc(a, b, unmatched{:});
     end
-  end
-
-  methods (Access=protected)
-
-    function [A, B] = translateZ_type_helper(beam, z, Nmax)
-      % Determine the correct type to use in ott.utils.translate_z
-      %
-      % Units for the coordinates should be consistent with the
-      % beam wave number (i.e., if the beam was created by specifying
-      % wavelength in units of meters, distances here should also be
-      % in units of meters).
-      %
-      % Usage
-      %   [A, B] = translateZ_type_helper(beam, z, Nmax) calculates the
-      %   translation matrices for distance z with Nmax
-      %
-      % Usage may change in future releases.
-
-      % Determine beam type
-      switch beam.basis
-        case 'incoming'
-          translation_type = 'sbesselh2';
-        case 'outgoing'
-          translation_type = 'sbesselh1';
-        case 'regular'
-          translation_type = 'sbesselj';
-      end
-
-      % Calculate tranlsation matrices
-      [A, B] = ott.utils.translate_z(Nmax, z, 'type', translation_type);
-
-    end
-
   end
 
   methods
@@ -270,24 +241,6 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       else
         beam.absdz = default_absdz;
       end
-    end
-
-    function beam = setCoefficients(beam, a, b)
-      % Set the `a` and `b` coefficients
-      %
-      % Usage
-      %   beam = beam.setCoefficients(a, b)
-
-      assert(all(size(a) == size(b)), 'size of a and b must match');
-      assert(nargout == 1, 'Expected one output from function');
-
-      assert(isempty(a) || ...
-          (size(a, 1) >= 3 && ...
-          sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1))), ...
-        'number of multipole terms must be empty, 3, 8, 15, 24, ...');
-
-      beam.a = a;
-      beam.b = b;
     end
 
     function varargout = size(beam, varargin)
@@ -753,6 +706,11 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
           beam, unmatched{:}, 'range', p.Results.range);
     end
 
+    % TODO: Add a makeSparse method
+    % TODO: Add full and sparse methods
+    % TODO: Ensure sparsity is respected
+    % TODO: Add a getDenseBeamVectors function
+
     function nbeam = shrinkNmax(beam, varargin)
       % Reduces the size of the beam while preserving power
       %
@@ -850,15 +808,10 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       end
     end
 
-    function beam = translate(beam, A, B)
-      % TRANSLATE apply a translation using given translation matrices.
+    function bsc = applyTransformation(bsc, varargin)
+      % Apply a transformation to the beam.
       %
-      % TRANSLATE(A, B) applies the translation given by A, B.
-      beam = [ A B ; B A ] * beam;
-    end
-
-    function [beam, A, B] = translateZ(beam, varargin)
-      % Translate a beam along the z-axis.
+      % Rotation is applied first, followed by translation.
       %
       % Units for the coordinates should be consistent with the
       % beam wave number (i.e., if the beam was created by specifying
@@ -866,284 +819,344 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       % in units of meters).
       %
       % Usage
-      %   tbeam = beam.translateZ(z) translates by a distance ``z``
-      %   along the z axis.
+      %   bsc = bsc.applyTransformation(...)
       %
-      %   [tbeam, A, B] = beam.translateZ(z) returns the translation matrices
-      %   and the translated beam.  See also :meth:`+ott.Bsc.translate`.
+      % Optional named arguments
+      %   - rotation (3x3N numeric) -- Rotation to apply.
+      %     Default: ``bsc.position``.
       %
-      %   [tbeam, AB] = beam.translateZ(z) returns the ``A, B`` matrices
-      %   packed so they can be directly applied to a
-      %   beam: ``tbeam = AB * beam``.
-      %
-      %   [...] = beam.translateZ(..., 'Nmax', Nmax) specifies the output
-      %   beam ``Nmax``.  Takes advantage of not needing to calculate
-      %   a full translation matrix.
+      %   - position (3xN numeric) -- Translation to apply.
+      %     Default: ``bsc.rotation``.
 
       p = inputParser;
-      p.addOptional('z', []);
-      p.addParameter('Nmax', beam.Nmax);
+      p.addParameter('position', bsc.position);
+      p.addParameter('rotation', bsc.rotation);
       p.parse(varargin{:});
 
-      if nargout ~= 1 && numel(p.Results.z) > 1
-        error('Multiple output with multiple translations not supported');
-      end
+      ott.utils.nargoutCheck(bsc, nargout);
 
-      if ~isempty(p.Results.z)
-        z = p.Results.z;
+      % TODO: Pre-rotation
 
-        % Add a warning when the beam is translated outside nmax2ka(Nmax)
-        % The first time may be OK, the second time does not have enough
-        % information.
-        if any(beam.absdz > ott.utils.nmax2ka(beam.Nmax)./beam.wavenumber)
-          warning('ott:beam:vswf:Bsc:translateZ:outside_nmax', ...
-              'Repeated translation of beam outside Nmax region');
-        end
-        beam.absdz = beam.absdz + abs(z);
-
-        % Convert to beam units
-        z = z * beam.wavenumber / 2 / pi;
-
-        ibeam = beam;
-        beam(numel(z)) = ibeam;
-
-        for ii = 1:numel(z)
-          [A, B] = ibeam.translateZ_type_helper(z(ii), [p.Results.Nmax, ibeam.Nmax]);
-          beam(ii) = ibeam.translate(A, B);
-        end
-        beam.basis = 'regular';
-      else
-        error('Wrong number of arguments');
-      end
-
-      % Pack the rotated matricies into a single ABBA object
-      if nargout == 2
-        A = [ A B ; B A ];
-      end
+      bsc = bsc.applyRotation(p.Results.rotation);
+      bsc = bsc.applyTranslation(p.Results.position);
     end
 
-    function varargout = translateXyz(beam, varargin)
-      % Translate the beam given Cartesian coordinates.
-      %
-      % Units for the coordinates should be consistent with the
-      % beam wave number (i.e., if the beam was created by specifying
-      % wavelength in units of meters, distances here should also be
-      % in units of meters).
+    function [bsc, D] = applyRotation(bsc, varargin)
+      % Apply rotation to the beam shape coefficients.
       %
       % Usage
-      %   tbeam = beam.translateXyz(xyz) translate the beam to locations
-      %   given by the ``xyz`` coordinates, where ``xyz`` is a 3xN matrix
-      %   of coordinates.
+      %   bsc = bsc.applyRotation(...)
+      %   Applies ``bsc.rotation`` to the beam shape coefficients.
       %
-      %   tbeam = beam.translateXyz(Az, Bz, D)
-      %   Translate the beam using z-translation and rotation matrices.
+      %   bsc = bsc.applyRotation(R, ...)
+      %   Applies a specific rotation.  R should be a 3x3N matrix.
       %
-      %   [tbeam, Az, Bz, D] = beam.translateXyz(...) returns the
-      %   z-translation matrices ``Az, Bz``, the rotation matrix ``D``,
-      %   and the translated beam ``tbeam``.
+      %   [bsc, D] = bsc.applyRotation(...)
+      %   Additionally returns the wigner rotation matrix used for
+      %   the operation.  Note, is generally faster *not* to use the
+      %   wigner rotation matrix for inverse rotations.
       %
-      %   [tbeam, A, B] = beam.translateXyz(...) returns the translation
-      %   matrices ``A, B`` and the translated beam.
+      % Optional named arguments
+      %   - Nmax (numeric) -- Requested minimum Nmax for rotated beam.
+      %     Default: ``bsc.Nmax``.
       %
-      %   [tbeam, AB] = beam.translateXyz(...) returns the translation
-      %   matrices ``A, B`` packaged so they can be directly applied
-      %   to a beam using ``tbeam = AB * beam``.
-      %
-      %   tbeam = beam.translateXyz(..., 'Nmax', Nmax) specifies the
-      %   output beam ``Nmax``.  Takes advantage of not needing to
-      %   calculate a full translation matrix.
+      %   - wigner (numeric|cell) -- A wigner rotation matrix or
+      %     a cell array of wigner rotation matrices to use for the
+      %     rotation.
 
       p = inputParser;
-      p.addOptional('opt1', []);    % xyz or Az
-      p.addOptional('opt2', []);    % [] or Bz
-      p.addOptional('opt3', []);    % [] or D
-      p.addParameter('Nmax', beam.Nmax);
-      p.parse(varargin{:});
-
-      if ~isempty(p.Results.opt1) && isempty(p.Results.opt2) ...
-          && isempty(p.Results.opt3)
-        xyz = p.Results.opt1;
-        rtp = ott.utils.xyz2rtp(xyz);
-        [varargout{1:nargout}] = beam.translateRtp(rtp, ...
-            'Nmax', p.Results.Nmax);
-      else
-        [varargout{1:nargout}] = beam.translateRtp(varargin{:});
-      end
-    end
-
-    function [beam, A, B, D] = translateRtp(beam, varargin)
-      %TRANSLATERTP translate the beam given spherical coordinates
-      %
-      % TRANSLATERTP(rtp) translate the beam to locations given by
-      % the xyz coordinates, where rtp is a 3xN matrix of coordinates.
-      %
-      % TRANSLATERTP(Az, Bz, D) translate the beam using
-      % z-translation and rotation matricies.
-      %
-      % [beam, Az, Bz, D] = TRANSLATERTP(...) returns the z-translation
-      % matrices, the rotation matrix D, and the translated beam.
-      %
-      % [beam, A, B] = TRANSLATERTP(...) returns the translation matrices
-      % and the translated beam.
-      %
-      % [beam, AB] = TRANSLATERTP(...) returns the A, B matricies packed
-      % so they can be directly applied to the beam: tbeam = AB * beam.
-      %
-      % TRANSLATERTP(..., 'Nmax', Nmax) specifies the output beam Nmax.
-      % Takes advantage of not needing to calculate a full translation matrix.
-
-      p = inputParser;
-      p.addOptional('opt1', []);    % rtp or Az
-      p.addOptional('opt2', []);    % [] or Bz
-      p.addOptional('opt3', []);    % [] or D
-      p.addParameter('Nmax', beam.Nmax);
-      p.parse(varargin{:});
-
-      % Convert Nmax to a single number
-      if numel(p.Results.Nmax) == 1
-        oNmax = p.Results.Nmax;
-      elseif numel(p.Results.Nmax) == 2
-        oNmax = p.Results.Nmax(2);
-      else
-        error('Nmax must be 2 element vector or scalar');
-      end
-
-      % Handle input arguments
-      if ~isempty(p.Results.opt1) && isempty(p.Results.opt2) ...
-          && isempty(p.Results.opt3)
-
-        % Assume first argument is rtp coordinates
-        r = p.Results.opt1(1, :);
-        theta = p.Results.opt1(2, :);
-        phi = p.Results.opt1(3, :);
-
-      elseif ~isempty(p.Results.opt1) && ~isempty(p.Results.opt2) ...
-          && ~isempty(p.Results.opt3)
-
-        % Rotation/translation is already computed, apply it
-        A = p.Results.opt1;
-        B = p.Results.opt2;
-        D = p.Results.opt3;
-        beam = beam.rotate('wigner', D);
-        beam = beam.translate(A, B);
-        beam = beam.rotate('wigner', D');
-        return;
-      else
-        error('Not enough input arguments');
-      end
-
-      if numel(r) ~= 1 && nargout ~= 1
-        error('Multiple output with multiple translations not supported');
-      end
-
-      % Only do the rotation if we need it
-      if any((theta ~= 0 & abs(theta) ~= pi) | phi ~= 0)
-
-        ibeam = beam;
-        beam = ott.beam.vswf.Bsc();
-
-        for ii = 1:numel(r)
-          [tbeam, D] = ibeam.rotateYz(theta(ii), phi(ii), ...
-              'Nmax', max(oNmax, ibeam.Nmax));
-          [tbeam, A, B] = tbeam.translateZ(r(ii), 'Nmax', oNmax);
-          beam = beam.append(tbeam.rotate('wigner', D'));
-        end
-      else
-        dnmax = max(oNmax, beam.Nmax);
-        D = speye(ott.utils.combined_index(dnmax, dnmax));
-
-        % Replace rotations by 180 with negative translations
-        idx = abs(theta) == pi;
-        r(idx) = -r(idx);
-
-        if numel(r) == 1
-          [beam, A, B] = beam.translateZ(r, 'Nmax', oNmax);
-        else
-          beam = beam.translateZ(r, 'Nmax', oNmax);
-        end
-      end
-
-      % Rotate the translation matricies
-      if nargout == 3 || nargout == 2
-
-        % The beam might change size, so readjust D to match
-        sz = size(A, 1);
-        D2 = D(1:sz, 1:sz);
-
-        A = D2' * A * D;
-        B = D2' * B * D;
-
-        % Pack the rotated matricies into a single ABBA object
-        if nargout == 2
-          A = [ A B ; B A ];
-        end
-      elseif nargout ~= 4 && nargout ~= 1
-        error('Insufficient number of output arguments');
-      end
-    end
-
-    function [beam, D] = rotate(beam, varargin)
-      %ROTATE apply the rotation matrix R to the beam coefficients
-      %
-      % [beam, D] = ROTATE(R) generates the wigner rotation matrix, D,
-      % to rotate the beam.  R is the Cartesian rotation matrix
-      % describing the rotation.  Returns the rotated beam and D.
-      %
-      % beam = ROTATE('wigner', D) applies the precomputed rotation.
-      % This will only work if Nmax ~= 1.  If D is a cell array of
-      % wigner matrices, generates a array of rotated beams.
-      %
-      % ROTATE(..., 'Nmax', nmax) specifies the Nmax for the
-      % rotation matrix.  The beam Nmax is unchanged.  If nmax is smaller
-      % than the beam Nmax, this argument is ignored.
-
-      p = inputParser;
-      p.addOptional('R', []);
-      p.addParameter('Nmax', beam.Nmax);
+      p.addOptional('R', [], @isnumeric);
       p.addParameter('wigner', []);
+      p.addParameter('Nmax', bsc.Nmax);
       p.parse(varargin{:});
 
-      % Check number of outputs is at least 1
-      beam.nargoutCheck(nargout);
+      ott.utils.nargoutCheck(bsc, nargout);
 
-      if ~isempty(p.Results.R) && isempty(p.Results.wigner)
+      if isempty(p.Results.wigner)
 
         R = p.Results.R;
-
-        % If no rotation, don't calculate wigner rotation matrix
-        if sum(sum((eye(3) - R).^2)) < 1e-6
-          D = eye(ott.utils.combined_index(p.Results.Nmax, p.Results.Nmax));
-          return;
+        if isempty(R)
+          R = bsc.rotation;
+        else
+          assert(isnumeric(R) && ismatrix(R) && size(R, 1) == 3 ...
+              && mod(size(R, 2), 3) == 0, ...
+              'R must be 3x3N matrix');
         end
 
-        D = ott.utils.wigner_rotation_matrix(...
-            max(beam.Nmax, p.Results.Nmax), R);
-        beam = beam.rotate('wigner', D);
+        Nrots = size(R, 2)/3;
+        Nbeams = size(bsc, 2);
 
-      elseif ~isempty(p.Results.wigner) && isempty(p.Results.R)
+        assert(Nrots == 1 || Nbeams == 1 || Nrots == Nbeams, ...
+            'Number of rotations must match number of beams or be scalar');
 
-        if iscell(p.Results.wigner)
+        Nwork = max([Nrots, Nbeams]);
+        if Nwork > 1
+          D = cell(1, Nwork);
+          for ii = 1:Nwork
+            D = ott.utils.wigner_rotation_matrix(...
+                max([bsc.Nmax, p.Results.Nmax]), R(:, (1:3) + (ii-1)*3));
+          end
+        else
+          D = ott.utils.wigner_rotation_matrix(...
+              max([bsc.Nmax, p.Results.Nmax]), R);
+        end
+      elseif ~isempty(p.Results.R)
+        error('Too many arguments: Must only supply wigner or R, not both');
+      else
+        D = p.Results.wigner;
 
-          ibeam = beam;
-          beam = ott.beam.vswf.Bsc();
+        if iscell(D)
+          Nrots = numel(D);
+        else
+          Nrots = 1;
+        end
+        Nbeams = size(bsc, 2);
+        Nwork = max([Nrots, Nbeams]);
 
-          for ii = 1:numel(p.Results.wigner)
-            sz = size(ibeam.a, 1);
-            D2 = p.Results.wigner{ii}(1:sz, 1:sz);
-            beam = beam.append(D2 * ibeam);
+        assert(Nrots == 1 || Nbeams == 1 || Nrots == Nbeams, ...
+            'Number of rotations must match number of beams or be scalar');
+      end
+
+      % Apply wigner rotation matrices
+      if iscell(D)
+        ibsc = bsc;
+        bsc = ott.beam.abstract.Empty();
+        sz = size(bsc.a, 1);
+
+        for ii = 1:numel(D)
+          bsc = [bsc, D{ii}(:, 1:sz) * ibsc];
+        end
+      else
+        sz = size(bsc.a, 1);
+        bsc = D(:, 1:sz) * bsc;
+      end
+    end
+
+    function [bsc, Az, Bz, D] = applyTranslation(bsc, varargin)
+      % Apply translation to the beam shape coefficients.
+      %
+      % Applies rotations by first rotating the beam z-axis to align
+      % to the translation axis, then translating along z, before
+      % rotating back to the original orientation.
+      %
+      % Units for the coordinates should be consistent with the
+      % beam wave number (i.e., if the beam was created by specifying
+      % wavelength in units of meters, distances here should also be
+      % in units of meters).
+      %
+      % Usage
+      %   bsc = bsc.applyTranslation(...)
+      %   Applies ``bsc.position`` to the beam shape coefficients.
+      %
+      %   bsc = bsc.applyTranslation(P, ...)
+      %   Applies a specific rotation.  P should be a 3xN matrix.
+      %
+      %   [bsc, Az, Bz, D] = bsc.applyRotation(...)
+      %   Additionally returns the translation matrices.
+      %
+      % Optional named arguments
+      %   - Nmax (numeric) -- Requested minimum Nmax for translated beam.
+      %     The Nmax limit is applied during the translation. The first
+      %     rotation step uses the full Nmax, the last uses the new Nmax.
+      %     Ignored when multiple outputs are requested.
+      %     Default: ``bsc.Nmax``.
+      %
+      %   - AB (2xN|3xN cell) -- Cell array of translation matrices to
+      %     apply.  For 2xN cell array, assumes {A; B}, for 3xN cell
+      %     array {Az; Bz; D} where D is the rotation to the z axis.
+
+      p = inputParser;
+      p.addOptional('P', []);
+      p.addParameter('Nmax', bsc.Nmax);
+      p.addParameter('AB', {});
+      p.parse(varargin{:});
+
+      ott.utils.nargoutCheck(bsc, nargout);
+
+      if isempty(p.Results.AB)
+
+        P = p.Results.P;
+        if isempty(P)
+          R = bsc.position;
+        else
+          assert(isnumeric(P) && ismatrix(P) && size(P, 1) == 3, ...
+              'P must be 3xN numeric matrix');
+        end
+
+        Nrots = size(P, 2);
+        Nbeams = size(bsc, 2);
+        Nwork = max([Nrots, Nbeams]);
+
+        assert(Nrots == 1 || Nbeams == 1 || Nrots == Nbeams, ...
+            'Number of positions must match number of beams or be scalar');
+
+        Nmax = p.Results.Nmax;
+        if nargout > 1
+          Nmax = bsc.Nmax;
+        end
+
+        % TODO: Optimisation: Unique rotation directions
+
+        ibsc = bsc;
+        bsc = ott.beam.abstract.Empty();
+
+        Az = cell(1, Nrots);
+        Bz = cell(1, Nrots);
+        D = cell(1, Nrots);
+
+        for ii = 1:Nrots
+
+          rtp = ott.utils.xyz2rtp(P(:, ii));
+          R = ott.utils.rotz(rtp(3)*180/pi) * ott.utils.roty(rtp(2)*180/pi);
+
+          [newbeam, D{ii}] = ibsc.applyRotation(R);
+          [newbeam, Az{ii}, Bz{ii}] = newbeam.applyZTranslation(...
+              rtp(1), 'Nmax', Nmax);
+
+          if nargout > 1
+            newbeam = D{ii}' * newbeam;
+          else
+            newbeam = newbeam.applyRotation(R.');
           end
 
-        else
-
-          sz = size(beam.a, 1);
-          D2 = p.Results.wigner(1:sz, 1:sz);
-          beam = D2 * beam;
-
+          bsc = [bsc, newbeam];
+        end
+        
+        if Nrots == 1
+          Az = Az{1};
+          Bz = Bz{1};
+          D = D{1};
         end
 
+      elseif ~isempty(p.Results.P)
+        error('Too many arguments: only one of P or AB must be supplied');
       else
-        error('One of wigner or R must be specified');
+
+        AB = p.Results.AB;
+        assert(iscell(AB) && (size(AB, 1) == 2 || size(AB, 1) == 3), ...
+          'AB must be 2xN or 3xN cell array');
+
+        % Unpack AB coefficients
+        A = AB(1, :);
+        B = AB(2, :);
+
+        Nrots = numel(A);
+        Nbeams = size(bsc, 2);
+        Nwork = max([Nrots, Nbeams]);
+
+        assert(Nrots == 1 || Nbeams == 1 || Nrots == Nbeams, ...
+            'Number of AB must match number of beams or be scalar');
+
+        ibsc = bsc;
+        bsc = ott.beam.abstract.Empty();
+        sz = size(ibsc.a, 1);
+
+        if size(AB, 1) == 2
+          for ii = 1:numel(A)
+
+            A2 = A{ii}(:, 1:sz);
+            B2 = B{ii}(:, 1:sz);
+
+            bsc = [bsc, [A2 B2; B2 A2] * ibsc];
+          end
+        else
+          D = AB(3, :);
+          for ii = 1:numel(A)
+
+            % Need all same size for rotation
+            A2 = A{ii}(1:sz, 1:sz);
+            B2 = B{ii}(1:sz, 1:sz);
+            D2 = D{ii}(1:sz, 1:sz);
+
+            bsc = [bsc, D2' * ([A2 B2; B2 A2] * (D2 * ibsc))];
+          end
+        end
       end
+    end
+
+    function [bsc, A, B] = applyZTranslation(bsc, z, varargin)
+      % Apply a translation along the beam z-axis.
+      %
+      % Units for the coordinates should be consistent with the
+      % beam wave number (i.e., if the beam was created by specifying
+      % wavelength in units of meters, distances here should also be
+      % in units of meters).
+      %
+      % Usage
+      %   [bsc, A, B] = bsc.applyZTranslation(z, ...)
+      %
+      %   [bsc, AB] = bsc.applyZTranslation(z, ...)
+      %   Returns AB matrices packed for convenient application.
+      %
+      % Optional named parameters
+      %   - Nmax (numeric) -- Requested minimum Nmax for translated beam.
+      %     Default: ``bsc.Nmax``.
+
+      p = inputParser;
+      p.addParameter('Nmax', bsc.Nmax);
+      p.parse(varargin{:});
+
+      ott.utils.nargoutCheck(bsc, nargout);
+
+      % Check amount of work
+      Nz = numel(z);
+      Nbeams = numel(bsc);
+      assert(Nz == 1 || Nbeams == 1 || Nz == Nbeams, ...
+          'Number of positions and beams must be equal or scalar');
+
+      ibsc = bsc;
+      bsc = ott.beam.vswf.Bsc();
+
+      % Add a warning when the beam is translated outside nmax2ka(Nmax)
+      % The first time may be OK, the second time does not have enough
+      % information.
+      if any(ibsc.absdz > ott.utils.nmax2ka(ibsc.Nmax)./ibsc.wavenumber)
+        warning('ott:beam:vswf:Bsc:translateZ:outside_nmax', ...
+            'Repeated translation of beam outside Nmax region');
+      end
+      bsc.absdz = ibsc.absdz + abs(z);
+
+      % Convert to beam units
+      z = z * ibsc.wavenumber / 2 / pi;
+
+      A = cell(1, Nz);
+      B = cell(1, Nz);
+
+      for ii = 1:numel(z)
+
+        [A{ii}, B{ii}] = ibsc.applyZTranslationInternal(...
+            z(ii), [p.Results.Nmax, ibsc.Nmax]);
+        bsc = [bsc, [A{ii}, B{ii}; B{ii}, A{ii}] * ibsc];
+
+      end
+      
+      % Pack output for convinient application
+      if nargout < 3
+        A = cellfun(@(a, b) [a b; b a], A, B, 'UniformOutput', false);
+      end
+      
+      if numel(z) == 1
+        A = A{1};
+        B = B{1};
+      end
+    end
+
+    function beam = setCoefficients(beam, a, b)
+      % Set the `a` and `b` coefficients
+      %
+      % Usage
+      %   beam = beam.setCoefficients(a, b)
+
+      assert(all(size(a) == size(b)), 'size of a and b must match');
+      assert(nargout == 1, 'Expected one output from function');
+
+      assert(isempty(a) || ...
+          (size(a, 1) >= 3 && ...
+          sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1))), ...
+        'number of multipole terms must be empty, 3, 8, 15, 24, ...');
+
+      beam.a = a;
+      beam.b = b;
     end
 
     function varargout = getCoefficients(beam, ci)
@@ -1186,6 +1199,250 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       %MRDIVIDE (op) divide the beam coefficients by a scalar
       beam.a = beam.a / o;
       beam.b = beam.b / o;
+    end
+
+    function beam = mtimes(a,b)
+      % Provides beam matrix and scalar multiplication
+      %
+      % Usage
+      %   beam = scalar * beam   or   beam = beam * scalar
+      %   Scalar multiplication of beam shape coefficients.
+      %
+      %   beam = matrix * beam
+      %   Matrix multiplication.  Matrix can either have the same
+      %   number of columns as the `a` and `b` beam shape coefficients
+      %   or half as many rows.  In other words, the resulting beam
+      %   is either `[M*a; M*b]` or `M*[a;b]`.
+
+      if isa(a, 'ott.beam.vswf.Bsc')
+        beam = a;
+        beam.a = beam.a * b;
+        beam.b = beam.b * b;
+      else
+        beam = b;
+        if size(a, 2) == 2*size(beam.a, 1)
+          ab = a * [beam.a; beam.b];
+          beam.a = ab(1:size(ab, 1)/2, :);
+          beam.b = ab(1+size(ab, 1)/2:end, :);
+        else
+          beam.a = a * beam.a;
+          beam.b = a * beam.b;
+        end
+      end
+    end
+
+    function beam = minus(beam1, beam2)
+      %MINUS subtract two beams
+
+      if beam1.Nmax > beam2.Nmax
+        beam2.Nmax = beam1.Nmax;
+      elseif beam2.Nmax > beam1.Nmax
+        beam1.Nmax = beam2.Nmax;
+      end
+
+      beam = beam1;
+      beam.a = beam.a - beam2.a;
+      beam.b = beam.b - beam2.b;
+    end
+
+    function beam = sum(beamin, dim)
+      % Sum beam coefficients
+      %
+      % Usage
+      %   beam = sum(beam)
+      %
+      %   beam = beam.sum()
+      %
+      %   beam = sum([beam1, beam2, ...], dim) sums the given beams,
+      %   similar to Matlab's ``sum`` builtin.  ``dim`` is the dimension
+      %   to sum over (optional).
+
+      if numel(beamin) > 1
+        % beam is an array
+
+        % Handle default value for dimension
+        if nargin < 2
+          if isvector(beamin)
+            dim = find(size(beamin) > 1, 1);
+          elseif ismatrix(beamin) == 2
+            dim = 2;
+          else
+            dim = find(size(beamin) > 1, 1);
+          end
+        end
+
+        % Select the first row in our dimension
+        subs = [repmat({':'},1,dim-1), 1, ...
+          repmat({':'},1,ndims(beamin)-dim)];
+        S = struct('type', '()', 'subs', {subs});
+        beam = subsref(beamin, S);
+
+        % Add each beam
+        for ii = 2:size(beamin, dim)
+        subs = [repmat({':'},1,dim-1), ii, ...
+          repmat({':'},1,ndims(beamin)-dim)];
+          S = struct('type', '()', 'subs', {subs});
+          beam = beam + subsref(beamin, S);
+        end
+
+      else
+        % Beam union
+        beam = beamin;
+        beam.a = sum(beam.a, 2);
+        beam.b = sum(beam.b, 2);
+      end
+    end
+
+    function beam = plus(b1, b2)
+      % Add two beams together
+      %
+      % If the beams are both Bsc beams, adds the field coefficients.
+      % Otherwise, deffers to the base class plus operation.
+
+      if isa(b1, 'ott.beam.vswf.Bsc') && isa(b2, 'ott.beam.vswf.Bsc')
+        beam = plusInternal(b1, b2);
+      else
+        beam = plus@ott.beam.utils.ArrayType(b1, b2);
+      end
+    end
+  end
+
+  methods (Hidden)
+    function beam = catNewArray(array_type, sz, varargin)
+      % Construct a new ott.beam.vswf.Array beam
+
+      % Check all inherit from Beam
+      isBeam = true;
+      for ii = 1:length(varargin)
+        isBeam = isBeam & isa(varargin{ii}, 'ott.beam.vswf.Bsc');
+      end
+
+      if ~isBeam
+        beam = catNewArray@ott.beam.Beam(array_type, sz, varargin{:});
+      else
+        beam = ott.beam.vswf.Array(array_type, sz, varargin{:});
+      end
+    end
+
+    function bsc = translateXyzInternal(bsc, xyz, varargin)
+      % Apply translations to position property.
+      %
+      % If we have more than one beam or translation, converts the
+      % Bsc object to an array and applies translations to array elements.
+
+      if size(xyz, 2) > 1
+        bsc = ott.beam.vswf.Array(bsc);
+        bsc = bsc.translateXyz(xyz, varargin{:});
+      else
+        bsc = translateXyzInternal@ott.beam.utils.ArrayType(...
+            bsc, xyz, varargin{:});
+      end
+    end
+
+    function [A, B] = applyZTranslationInternal(beam, z, Nmax)
+      % Generate the translation matrices used by translate z.
+      %
+      % This behaviour can be different with some beams.
+      %
+      % Units for the coordinates should be consistent with the
+      % beam wave number (i.e., if the beam was created by specifying
+      % wavelength in units of meters, distances here should also be
+      % in units of meters).
+      %
+      % Usage
+      %   [A, B] = translateZ_type_helper(beam, z, Nmax) calculates the
+      %   translation matrices for distance z with Nmax
+      %
+      % Usage may change in future releases.
+
+      % Determine beam type
+      switch beam.basis
+        case 'incoming'
+          translation_type = 'sbesselh2';
+        case 'outgoing'
+          translation_type = 'sbesselh1';
+        case 'regular'
+          translation_type = 'sbesselj';
+      end
+
+      % Calculate tranlsation matrices
+      [A, B] = ott.utils.translate_z(Nmax, z, 'type', translation_type);
+
+    end
+
+    function beam = catInternal(dim, beam, varargin)
+      % Concatenate beams
+
+      assert(dim == 2, 'Only horzcat (dim=2) supported for now');
+
+      other_a = {};
+      other_b = {};
+      for ii = 1:length(varargin)
+        other_a{ii} = varargin{ii}.a;
+        other_b{ii} = varargin{ii}.b;
+      end
+
+      beam.a = cat(dim, beam.a, other_a{:});
+      beam.b = cat(dim, beam.b, other_b{:});
+    end
+
+    function beam = plusInternal(beam1, beam2)
+      %PLUS add two beams together
+
+      if beam1.Nmax > beam2.Nmax
+        beam2.Nmax = beam1.Nmax;
+      elseif beam2.Nmax > beam1.Nmax
+        beam1.Nmax = beam2.Nmax;
+      end
+
+      beam = beam1;
+      beam.a = beam.a + beam2.a;
+      beam.b = beam.b + beam2.b;
+    end
+
+    function beam = subsrefInternal(beam, subs)
+      % Get the subscripted beam
+
+      if numel(subs) > 1
+        if subs{1} == 1 || strcmpi(subs{1}, ':')
+          subs = subs(2:end);
+        end
+        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
+      end
+
+      beam.a = beam.a(:, subs{:});
+      beam.b = beam.b(:, subs{:});
+    end
+
+    function beam = subsasgnInternal(beam, subs, rem, other)
+      % Assign to the subscripted beam
+
+      if numel(subs) > 1
+        if subs{1} == 1
+          subs = subs(2:end);
+        end
+        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
+      end
+
+      assert(isempty(rem), 'Assignment to parts of beams not supported');
+      if isempty(other)
+        % Delete data
+        beam.a(:, subs{:}) = [];
+        beam.b(:, subs{:}) = [];
+
+      else
+        % Ensure we have a plane wave
+        if ~isa(other, 'ott.beam.vswf.Bsc')
+          other = ott.beam.vswf.Bsc(other);
+        end
+
+        % Ensure array sizes match
+        beam.Nmax = max(beam.Nmax, other.Nmax);
+        other.Nmax = beam.Nmax;
+
+        beam.a(:, subs{:}) = other.a;
+        beam.b(:, subs{:}) = other.b;
+      end
     end
 
     function varargout = forcetorqueInternal(ibeam, other, varargin)
@@ -1408,188 +1665,6 @@ classdef Bsc < ott.beam.Beam & ott.utils.RotateHelper ...
       end
     end
 
-    function beam = mtimes(a,b)
-      % Provides beam matrix and scalar multiplication
-      %
-      % Usage
-      %   beam = scalar * beam   or   beam = beam * scalar
-      %   Scalar multiplication of beam shape coefficients.
-      %
-      %   beam = matrix * beam
-      %   Matrix multiplication.  Matrix can either have the same
-      %   number of columns as the `a` and `b` beam shape coefficients
-      %   or half as many rows.  In other words, the resulting beam
-      %   is either `[M*a; M*b]` or `M*[a;b]`.
-
-      if isa(a, 'ott.beam.vswf.Bsc')
-        beam = a;
-        beam.a = beam.a * b;
-        beam.b = beam.b * b;
-      else
-        beam = b;
-        if size(a, 2) == 2*size(beam.a, 1)
-          ab = a * [beam.a; beam.b];
-          beam.a = ab(1:size(ab, 1)/2, :);
-          beam.b = ab(1+size(ab, 1)/2:end, :);
-        else
-          beam.a = a * beam.a;
-          beam.b = a * beam.b;
-        end
-      end
-    end
-
-    function beam = minus(beam1, beam2)
-      %MINUS subtract two beams
-
-      if beam1.Nmax > beam2.Nmax
-        beam2.Nmax = beam1.Nmax;
-      elseif beam2.Nmax > beam1.Nmax
-        beam1.Nmax = beam2.Nmax;
-      end
-
-      beam = beam1;
-      beam.a = beam.a - beam2.a;
-      beam.b = beam.b - beam2.b;
-    end
-
-    function beam = sum(beamin, dim)
-      % Sum beam coefficients
-      %
-      % Usage
-      %   beam = sum(beam)
-      %
-      %   beam = beam.sum()
-      %
-      %   beam = sum([beam1, beam2, ...], dim) sums the given beams,
-      %   similar to Matlab's ``sum`` builtin.  ``dim`` is the dimension
-      %   to sum over (optional).
-
-      if numel(beamin) > 1
-        % beam is an array
-
-        % Handle default value for dimension
-        if nargin < 2
-          if isvector(beamin)
-            dim = find(size(beamin) > 1, 1);
-          elseif ismatrix(beamin) == 2
-            dim = 2;
-          else
-            dim = find(size(beamin) > 1, 1);
-          end
-        end
-
-        % Select the first row in our dimension
-        subs = [repmat({':'},1,dim-1), 1, ...
-          repmat({':'},1,ndims(beamin)-dim)];
-        S = struct('type', '()', 'subs', {subs});
-        beam = subsref(beamin, S);
-
-        % Add each beam
-        for ii = 2:size(beamin, dim)
-        subs = [repmat({':'},1,dim-1), ii, ...
-          repmat({':'},1,ndims(beamin)-dim)];
-          S = struct('type', '()', 'subs', {subs});
-          beam = beam + subsref(beamin, S);
-        end
-
-      else
-        % Beam union
-        beam = beamin;
-        beam.a = sum(beam.a, 2);
-        beam.b = sum(beam.b, 2);
-      end
-    end
-
-    function beam = plus(b1, b2)
-      % Add two beams together
-      %
-      % If the beams are both Bsc beams, adds the field coefficients.
-      % Otherwise, deffers to the base class plus operation.
-
-      if isa(b1, 'ott.beam.vswf.Bsc') && isa(b2, 'ott.beam.vswf.Bsc')
-        beam = plusInternal(b1, b2);
-      else
-        beam = plus@ott.beam.utils.ArrayType(b1, b2);
-      end
-    end
-  end
-
-  methods (Hidden)
-
-    function beam = catInternal(dim, beam, varargin)
-      % Concatenate beams
-
-      assert(dim == 2, 'Only horzcat (dim=2) supported for now');
-
-      other_a = {};
-      other_b = {};
-      for ii = 1:length(varargin)
-        other_a{ii} = varargin{ii}.a;
-        other_b{ii} = varargin{ii}.b;
-      end
-
-      beam.a = cat(dim, beam.a, other_a{:});
-      beam.b = cat(dim, beam.b, other_b{:});
-    end
-
-    function beam = plusInternal(beam1, beam2)
-      %PLUS add two beams together
-
-      if beam1.Nmax > beam2.Nmax
-        beam2.Nmax = beam1.Nmax;
-      elseif beam2.Nmax > beam1.Nmax
-        beam1.Nmax = beam2.Nmax;
-      end
-
-      beam = beam1;
-      beam.a = beam.a + beam2.a;
-      beam.b = beam.b + beam2.b;
-    end
-
-    function beam = subsrefInternal(beam, subs)
-      % Get the subscripted beam
-
-      if numel(subs) > 1
-        if subs{1} == 1 || strcmpi(subs{1}, ':')
-          subs = subs(2:end);
-        end
-        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
-      end
-
-      beam.a = beam.a(:, subs{:});
-      beam.b = beam.b(:, subs{:});
-    end
-
-    function beam = subsasgnInternal(beam, subs, rem, other)
-      % Assign to the subscripted beam
-
-      if numel(subs) > 1
-        if subs{1} == 1
-          subs = subs(2:end);
-        end
-        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
-      end
-
-      assert(isempty(rem), 'Assignment to parts of beams not supported');
-      if isempty(other)
-        % Delete data
-        beam.a(:, subs{:}) = [];
-        beam.b(:, subs{:}) = [];
-
-      else
-        % Ensure we have a plane wave
-        if ~isa(other, 'ott.beam.vswf.Bsc')
-          other = ott.beam.vswf.Bsc(other);
-        end
-
-        % Ensure array sizes match
-        beam.Nmax = max(beam.Nmax, other.Nmax);
-        other.Nmax = beam.Nmax;
-
-        beam.a(:, subs{:}) = other.a;
-        beam.b(:, subs{:}) = other.b;
-      end
-    end
 
     function p = getBeamPower(beam)
       % get.power calculate the power of the beam

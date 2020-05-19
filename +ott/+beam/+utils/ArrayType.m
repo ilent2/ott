@@ -13,9 +13,9 @@ classdef ArrayType < ott.beam.abstract.Beam
 %   - isempty       -- Returns true if the beam array is empty
 %   - arrayApply    -- Apply function to beam array output
 %   - combineIncoherentArray  -- Combine cell array of beam data
+%   - translateXyzInternal    -- Overload for RotationPositionEntity
 %
 % Static methods
-%   - AutoArray     -- Automatically deduce array type from inputs.
 %   - empty         -- Create an empty array (should be overloaded)
 %
 % Abstract methods
@@ -23,6 +23,10 @@ classdef ArrayType < ott.beam.abstract.Beam
 %   - catInternal     -- Called by cat when combination is needed
 %   - subsrefInternal -- Called by subsref for beam subscripting
 %   - size            -- Size of the beam array
+
+% Copyright 2020 Isaac Lenton
+% This file is part of OTT, see LICENSE.md for information about
+% using/distributing this file.
 
   properties
     array_type     % Type of array ('coherent', 'array' or 'incoherent')
@@ -37,40 +41,15 @@ classdef ArrayType < ott.beam.abstract.Beam
   end
 
   methods (Static)
-    function beam = AutoArray(array_type, sz, varargin)
-      % Creates a Array or abstract.Array depending on input types.
-      %
-      % Usage
-      %   beam = AutoArray(array_type, sz, beam1, beam2, ...)
-      %
-      % Parameters are passed to the appropriate constructor.
-      % If all beams inherit from :class:`ott.beam.Beam`, uses a
-      % :class:`ott.beam.Array`, otherwise
-      % uses :class:`ott.beam.abstract.Array`.
-
-      % Determine if all objects inherit from Beam
-      isBeam = true;
-      for ii = 1:length(varargin)
-        isBeam = isBeam & isa(varargin{ii}, 'ott.beam.Beam');
-      end
-
-      % Create appropriate array instance
-      if isBeam
-        beam = ott.beam.Array(array_type, sz, varargin{:});
-      else
-        beam = ott.beam.abstract.Array(array_type, sz, varargin{:});
-      end
-    end
-    
     function beam = empty(varargin)
       % Construct an empty beam array
       %
       % This function should be overloaded by the sub-class to describe
       % what an empty array looks like for your type.
-      
+
       warning(['Constructing a ott.beam.abstract.Array', newline, ...
         'This method should be overloaded by your sub-class']);
-      
+
       sz = [0, 0];
       beam = ott.beam.abstract.Array('array', sz);
     end
@@ -134,8 +113,7 @@ classdef ArrayType < ott.beam.abstract.Beam
           && strcmpi(b2.array_type, 'coherent')
         beam = plusInternal(b1, b2);
       else
-        beam = ott.beam.utils.ArrayType.AutoArray('coherent', ...
-            [1, 2], b1, b2);
+        beam = catNewArray('coherent', [1, 2], b1, b2);
       end
     end
 
@@ -218,8 +196,7 @@ classdef ArrayType < ott.beam.abstract.Beam
       else
         sz = ones(1, dim+1);
         sz(dim) = numel(varargin);
-        beam = ott.beam.utils.ArrayType.AutoArray('array', ...
-            sz, varargin{:});
+        beam = catNewArray('array', sz, varargin{:});
       end
     end
 
@@ -233,7 +210,7 @@ classdef ArrayType < ott.beam.abstract.Beam
 
       num = prod(size(beam));
     end
-    
+
     function b = isempty(beam)
       % Returns true if the beam is empty
       %
@@ -394,20 +371,47 @@ classdef ArrayType < ott.beam.abstract.Beam
     end
   end
 
+  methods (Hidden)
+    function obj = translateXyzInternal(obj, xyz, varargin)
+      % Apply translations to position property.
+      %
+      % Raises an error if more than one translation.
+      % If your ArrayType supports more than one translation, overload
+      % this method.
+
+      if size(xyz, 2) > 1
+        error('Too many positions to apply to beam array');
+      end
+
+      p = inputParser;
+      p.addParameter('origin', 'global');
+      p.parse(varargin{:});
+
+      switch p.Results.origin
+        case 'global'
+          obj.position = obj.position + xyz;
+        case 'local'
+          obj.position = obj.position + obj.rotation*xyz;
+        otherwise
+          error('Unknown origin for translation');
+      end
+    end
+  end
+
   methods % Getters/setters
     function beam = set.array_type(beam, val)
-      
+
       % Check valid value
       assert(any(strcmpi(val, {'coherent', 'array', 'incoherent'})), ...
         'array_type must be one of ''cohereht'', ''array'', ''incohereht''');
-      
+
       % Check array contains no incoherent values
       if strcmpi(val, 'coherent') && isa(beam, 'ott.beam.abstract.Array')
         assert(~beam.contains_incoherent, ...
           'ott:beam:utils:ArrayType:coherent_with_incoherent', ...
           'Cannot have coherent array of incoherent beams');
       end
-      
+
       beam.array_type = val;
     end
   end
