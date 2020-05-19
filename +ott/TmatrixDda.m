@@ -112,12 +112,7 @@ classdef TmatrixDda < ott.Tmatrix
       % Get the symmetry of the shape
       [~,~, z_rotational_symmetry] = shape.axialSymmetry();
       [~,~, z_mirror_symmetry] = shape.mirrorSymmetry();
-      
-      if z_rotational_symmetry == 0
-        warning('Using z_rotational_symmetry = 4 instead of 0 for now');
-        z_rotational_symmetry = 4;
-      end
-      
+
       % Should we avoid 0 for voxels?
       use_even = mod(z_rotational_symmetry, 2) == 0 || z_mirror_symmetry;
 
@@ -229,7 +224,15 @@ classdef TmatrixDda < ott.Tmatrix
         xyz(:, xyz(3, :) < 0) = [];
       end
       if pa.Results.z_rotational_symmetry == 0
-        error('z_rotational_symmetry == 0 not yet supported');
+
+        % TODO: Work out how to do infinite rotational symmetry DDA
+        warning('Using 4-fold symmetry for voxels (infinite for PM)');
+        k_particle = tmatrix.remove_by_mask(...
+            k_particle, xyz(2, :) < 0 | xyz(1, :) < 0);
+        alpha = tmatrix.remove_by_mask(...
+            alpha, xyz(2, :) < 0 | xyz(1, :) < 0);
+        xyz(:, xyz(2, :) < 0 | xyz(1, :) < 0) = [];
+
       elseif pa.Results.z_rotational_symmetry == 1
         % Nothing to do
       elseif pa.Results.z_rotational_symmetry == 2
@@ -243,7 +246,7 @@ classdef TmatrixDda < ott.Tmatrix
             alpha, xyz(2, :) < 0 | xyz(1, :) < 0);
         xyz(:, xyz(2, :) < 0 | xyz(1, :) < 0) = [];
       else
-        error('Only z_rotational_symmetry == 2|4 supported for now');
+        error('Only z_rotational_symmetry == 0|2|4 supported for now');
       end
       
       % Check we can allocate sufficient memory
@@ -834,6 +837,45 @@ classdef TmatrixDda < ott.Tmatrix
       
     end
 
+    function [theta, phi] = angulargrid(Nmax, z_mirror, z_rotation)
+      % Generate the angular grid for DDA point matching
+
+      % We need at least one point for every beam shape coefficient
+      % With no mirror or rotational symmetry, use the same grid as PmGauss
+      ntheta = (Nmax + 1);
+      nphi = 2*(Nmax + 1);
+
+      % We can reduce the number of point around the z-axis when we
+      % have z rotational symmetry since modes will only scatter to
+      % other modes with a multiple of the rotational symmetry factor.
+      if z_rotation > 1
+        nphi = ceil(nphi ./ z_rotation);
+      elseif z_rotation == 0
+
+        % TODO: When we work out how to infinite rotational DDA
+        %   we should change this value to 1, for now its 3.
+        nphi = 3;
+      end
+
+      % Similarly, we can reduce the number of point in theta
+      % when we have z-mirror symmetry since we match twice
+      if z_mirror
+        ntheta = ceil(ntheta ./ 2);
+      end
+
+      % Finally, generate the grid
+      [theta, phi] = ott.utils.angulargrid(ntheta, nphi);
+
+      % We also need to rescale our points by a similar amount
+      % This avoids making the problem rank deficient
+      if z_rotation > 1
+        phi = phi ./ z_rotation;
+      end
+      if z_mirror
+        theta = theta ./ 2;
+      end
+    end
+
     function data = calc_nearfield(Nmax, xyz, rtp, n_rel, modes, alpha, ...
         progress_callback, z_mirror, z_rotation, low_memory)
       % Near-field implementation of T-matrix calculation
@@ -844,58 +886,45 @@ classdef TmatrixDda < ott.Tmatrix
       iterative = true;
       k = 2*pi;
 
-      import ott.utils.combined_index;
-
-      total_orders = combined_index(Nmax,Nmax);
-
-      % What is this?
-      npts = round(sqrt(8*total_orders));
-      [theta,phi] = ott.utils.angulargrid(npts,npts);
-      
-      % Throw away near-field points not needed for rotational/mirror symmetry
-      if z_mirror
-        phi(theta > pi/2) = [];
-        theta(theta > pi/2) = [];
+      % Because we don't use infinite rotational symmetry everywhere,
+      % we have a safe 4-fold symmetry variable.
+      % TODO: Remove this when we work out infinite rotational symmetry
+      z_rotation_safe = z_rotation;
+      if z_rotation_safe == 0
+        z_rotation_safe = 4;
       end
-      if z_rotation == 0
-        error('z_rotational_symmetry == 0 not yet supported');
-      elseif z_rotation == 1
-        % Nothing to do
-      elseif z_rotation == 2
-        theta(phi > pi) = [];
-        phi(phi > pi) = [];
-      elseif z_rotation == 4
-        theta(phi > pi/2) = [];
-        phi(phi > pi/2) = [];
-      else
-        error('Only z_rotational_symmetry == 2|4 supported for now');
-      end
+
+      % Generate grid of points over sphere
+      [theta, phi] = ott.TmatrixDda.angulargrid(Nmax, z_mirror, z_rotation);
+
+      total_orders = ott.utils.combined_index(Nmax,Nmax);
 
       % Hmm, what if we have a larger sphere?
       r_near = 8; % near field radius
       assert(r_near > max(rtp(1, :)), 'Particle radius too large');
-      
+
       % Pre-calculate inv-alpha
       inv_alpha = ott.TmatrixDda.alpha_to_full_inv_alpha(alpha, size(rtp, 1));
-      assert(all(isfinite(inv_alpha(:))), 'singular polarizability not yet supported');
-      
+      assert(all(isfinite(inv_alpha(:))), ...
+          'singular polarizability not yet supported');
+
       if ~low_memory
         % When using mirror/rotational symmetry, A is still full size
         % This maybe produces a speed optimisation but uses lots of memory
 
         % Pre-calculate A
         A_total = ott.TmatrixDda.interaction_A_total(k, rtp, inv_alpha, ...
-            z_mirror, z_rotation);
+            z_mirror, z_rotation_safe);
 
         % Pre-calculate F
         F_total = ott.TmatrixDda.nearfield_matrix_total(...
-            theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation);
-          
+            theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation_safe);
+
       end
 
       MN = ott.TmatrixDda.calculate_nearfield_modes(...
         k*r_near, theta, phi, Nmax);
-      
+
       % Pre-compute near-field Cartesian to Spherical transform
       cart2sph = zeros(3, 3*length(theta));
       for ii = 1:length(theta)
@@ -905,7 +934,7 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Allocate memory for T-matrix
       data = zeros(2*total_orders, 2*total_orders);
-      
+
       [nmodes, mmodes] = ott.utils.combined_index(modes(:));
 
       for m = unique(mmodes).'
@@ -916,24 +945,24 @@ classdef TmatrixDda < ott.Tmatrix
 
           % Pre-calculate A
           A_total = ott.TmatrixDda.interaction_A_lowmem(k, rtp, inv_alpha, ...
-              z_mirror, z_rotation, m);
+              z_mirror, z_rotation_safe, m);
 
           % Pre-calculate F
           F_total = ott.TmatrixDda.nearfield_matrix_lowmem(...
-              theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation, m);
+              theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation_safe, m);
 
         end
 
         [Feven, Fodd] = ott.TmatrixDda.combine_rotsym_matrix(F_total, ...
-            m, z_rotation);
+            m, z_rotation_safe);
         [Aeven, Aodd] = ott.TmatrixDda.combine_rotsym_matrix(A_total, ...
-            m, z_rotation);
-          
+            m, z_rotation_safe);
+
         % Find which modes we should calculate
         ournmodes = nmodes(mmodes == m).';
 
         for n = ournmodes
-          
+
           % Calculate fields in Cartesian coordinates
           if z_mirror
             if mod(m + n, 2) == 0
@@ -996,7 +1025,7 @@ classdef TmatrixDda < ott.Tmatrix
           Es_TE = ott.TmatrixDda.apply_cart2sph(E_TE, cart2sph);
           Es_TM = ott.TmatrixDda.apply_cart2sph(E_TM, cart2sph);
 
-          ci = combined_index(n,m);
+          ci = ott.utils.combined_index(n,m);
 
           if z_rotation == 1
             % No rotational symmetry
@@ -1031,12 +1060,20 @@ classdef TmatrixDda < ott.Tmatrix
 
             end
 
-          elseif z_rotation > 1
-            % Discrete rotational symmetry
+          else
 
-            % Calculate which modes preseve symmetry, m = +/- ip
             [alln, allm] = ott.utils.combined_index((1:total_orders).');
-            axial_modes = mod(allm - m, z_rotation) == 0;
+
+            if z_rotation > 1
+              % Calculate which modes preseve symmetry, m = +/- ip
+              axial_modes = mod(allm - m, z_rotation) == 0;
+            elseif z_rotation == 0
+              % Modes only scatter to modes with same m
+              axial_modes = allm == m;
+            else
+              error('Invalid z_rotation value');
+            end
+
             modes = [axial_modes; axial_modes];
 
             if z_mirror
@@ -1051,6 +1088,8 @@ classdef TmatrixDda < ott.Tmatrix
                 modes_odd = modes & [ even_modes; ~even_modes ];
                 modes_evn = modes & [ ~even_modes; even_modes ];
               end
+
+              disp([m, n, sum(modes_evn), sum(modes_odd)]);
 
               pq1 = MN(:, modes_evn) \ Es_TE;
               pq2 = MN(:, modes_odd) \ Es_TM;
@@ -1067,12 +1106,6 @@ classdef TmatrixDda < ott.Tmatrix
               data(modes,ci+total_orders) = pq2;
 
             end
-
-          elseif z_rotation == 0
-            % Infinite rotational symmetry
-            error('Not yet implemented');
-          else
-            error('Invalid z_rotation value');
           end
 
         end		% for n = 1:m
