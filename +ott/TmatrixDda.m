@@ -394,16 +394,6 @@ classdef TmatrixDda < ott.Tmatrix
            -sin(phi) cos(phi) 0].';
     end
 
-    function E = apply_cart2sph(E, cart2sph)
-      % Apply coordinate transformation to E-field vector
-      % Warning: Function usage/definition may change without notice
-
-      for ii = 1:size(cart2sph, 2)/3
-        M = cart2sph(:, (1:3) + 3*(ii-1));
-        E((1:3) + 3*(ii-1)) = M * E((1:3) + 3*(ii-1));
-      end
-    end
-
     function D = dipole_farfield(dipole_xyz, targets_xyz, M_dipole, k)
       % Calculate asymptotic far-field limit of dipole contributions
       %
@@ -774,15 +764,21 @@ classdef TmatrixDda < ott.Tmatrix
         MN(roworder,ci+total_orders) = Nnm;
       end
 
-      % TODO: Add rotations here (pre-computed)
+      % Convert spherical to Cartesian coordinates
+      % This DDA implementation works in Cartesian
+      % TODO: Perhaps its better to have a DDA/PM which works
+      %   with Spherical coordinates instead? (i.e. put this
+      %   in dipole_farfield instead)
+      for ii = 1:numel(theta)
+        MN((1:3) + (ii-1)*3, :) = ...
+            ott.TmatrixDda.sph2cart_mat(theta(ii), phi(ii)) ...
+            * MN((1:3) + (ii-1)*3, :);
+      end
     end
 
     function MN = calculate_nearfield_modes(kr, theta, phi, Nmax)
       % precalculate M1 * N1's for all pts and all modes
       % Warning: Function usage/definition may change without notice
-
-      % TODO: Should this use vswfcart instead so we don't need the
-      %   extra coordinate conversion?
 
       total_orders = ott.utils.combined_index(Nmax,Nmax);
       npts = length(theta);
@@ -791,7 +787,7 @@ classdef TmatrixDda < ott.Tmatrix
       for n = 1:Nmax
         for m = -n:n
           ci = ott.utils.combined_index(n,m);
-          [M1,N1] = ott.utils.vswf(n, m, kr, theta, phi, 'outgoing');
+          [M1,N1] = ott.utils.vswfcart(n, m, kr, theta, phi, 'outgoing');
 
           % Package output in [theta1; phi2; theta2; phi2; ...]
           M1nm = M1.';
@@ -930,13 +926,6 @@ classdef TmatrixDda < ott.Tmatrix
 
       end
 
-      % Pre-compute near-field Cartesian to Spherical transform
-      cart2sph = zeros(3, 3*length(theta));
-      for ii = 1:length(theta)
-        cart2sph(:, (1:3) + (ii-1)*3) = ott.TmatrixDda.cart2sph_mat(...
-            theta(ii), phi(ii));
-      end
-
       % Allocate memory for T-matrix
       data = zeros(2*total_orders, 2*total_orders);
 
@@ -1024,13 +1013,6 @@ classdef TmatrixDda < ott.Tmatrix
           E_TE = F_TE * P_TE;
           E_TM = F_TM * P_TM;
 
-          % Apply cartesian to spherical transformation
-          % This could also be pre-computed and applied to F
-          % but this would be O(Ndipoles) compared to O(2*Nmax),
-          % assuming no rotational or mirror symmetry.
-          Es_TE = ott.TmatrixDda.apply_cart2sph(E_TE, cart2sph);
-          Es_TM = ott.TmatrixDda.apply_cart2sph(E_TM, cart2sph);
-
           ci = ott.utils.combined_index(n,m);
 
           if z_rotation == 1
@@ -1050,16 +1032,16 @@ classdef TmatrixDda < ott.Tmatrix
                 modes = ~modes;
               end
 
-              pq1 = MN(:, modes) \ Es_TE;
-              pq2 = MN(:, ~modes) \ Es_TM;
+              pq1 = MN(:, modes) \ E_TE;
+              pq2 = MN(:, ~modes) \ E_TM;
 
               data(modes,ci) = pq1;
               data(~modes,ci+total_orders) = pq2;
 
             else
 
-              pq1 = MN\Es_TE;
-              pq2 = MN\Es_TM;
+              pq1 = MN\E_TE;
+              pq2 = MN\E_TM;
 
               data(:,ci) = pq1;
               data(:,ci+total_orders) = pq2;
@@ -1095,16 +1077,16 @@ classdef TmatrixDda < ott.Tmatrix
                 modes_evn = modes & [ ~even_modes; even_modes ];
               end
 
-              pq1 = MN(:, modes_evn) \ Es_TE;
-              pq2 = MN(:, modes_odd) \ Es_TM;
+              pq1 = MN(:, modes_evn) \ E_TE;
+              pq2 = MN(:, modes_odd) \ E_TM;
 
               data(modes_evn,ci) = pq1;
               data(modes_odd,ci+total_orders) = pq2;
 
             else
 
-              pq1 = MN(:, modes) \ Es_TE;
-              pq2 = MN(:, modes) \ Es_TM;
+              pq1 = MN(:, modes) \ E_TE;
+              pq2 = MN(:, modes) \ E_TM;
 
               data(modes,ci) = pq1;
               data(modes,ci+total_orders) = pq2;
