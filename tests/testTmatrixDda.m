@@ -27,6 +27,12 @@ function testSphere(testCase)
     'spacing', spacing, 'index_medium', 1.0, 'wavelength0', wavelength0);
   Tmie = ott.TmatrixMie.simple(shape, 'index_relative', nrel, ...
     'index_medium', 1.0, 'wavelength0', wavelength0);
+  
+%   z = [0;1;1] .* linspace(-3, 3, 100);
+%   beam = ott.BscPmGauss();
+%   fz_mie = ott.forcetorque(beam, Tmie, 'position', z);
+%   fz_dda = ott.forcetorque(beam, Tdda, 'position', z);
+%   figure(), plot(z(3, :), [fz_mie(3, :); fz_dda(3, :)]);
 
   testCase.verifyEqual(Tdda.Nmax, Tmie.Nmax, ...
       'Nmax does not match Mie T-matrix');
@@ -217,12 +223,20 @@ function testSphereRotSym(testCase)
   spacing = 1/40;
   voxels = shape.voxels(spacing, 'even_range', true);
 
+%   voxels = ott.utils.roty(35) * voxels;
+  
   Tdda = ott.TmatrixDda(voxels, ...
       'index_relative', nrel, ...
       'Nmax', Nmax, ...
       'spacing', spacing, ...
       'z_mirror_symmetry', z_mirror_symmetry, ...
       'z_rotational_symmetry', z_rotational_symmetry);
+    
+%   z = [0;1;1] .* linspace(-3, 3, 100);
+%   beam = ott.BscPmGauss();
+%   fz_mie = ott.forcetorque(beam, Tmie, 'position', z);
+%   fz_dda = ott.forcetorque(beam, Tdda, 'position', z);
+%   figure(), plot(z(3, :), [fz_mie(3, :); fz_dda(3, :)]);
 
   diag_dda = diag(Tdda.data);
   ndiag_dda = Tdda.data - diag(diag_dda);
@@ -359,5 +373,82 @@ function testSphere3Modes(testCase)
 
   testCase.verifyEqual(full(diag_dda([4:24, 28:end])), 0.*full(diag_mie([4:24, 28:end])), ...
       'Uncalculated T-matrix modes incorrect');
+
+end
+
+function testDipoleFarfield(testCase)
+
+  distance = 1e6;
+  dipole_xyz = [0;1;0];
+  targets_xyz = ott.utils.rtp2xyz([distance,0,0]).';
+  M_dipole = eye(3);
+  k = 2*pi;
+  
+  % Phase factor for near-field
+  P = exp(1i*k*distance)./distance;
+  
+  % Different sign convention for modes
+  fudge = -1;
+  
+  farfield = ott.TmatrixDda.dipole_farfield(dipole_xyz, targets_xyz, M_dipole, k);
+  nearfield = ott.TmatrixDda.dipole_nearfield(dipole_xyz, targets_xyz, M_dipole, k);
+
+  testCase.verifyEqual(farfield, fudge.*nearfield./P, 'AbsTol', 1.0e-3);
+  
+end
+
+function testFarfieldModes(testCase)
+
+  distance = 1.0e6;
+  k = 1;
+  kr = k*distance;
+  theta = pi/2;
+  phi = pi/2;
+  Nmax = 1;
+  
+  % Phase factor for near-field
+  P = exp(1i*k*distance)./kr;
+  
+  % Different sign convention for modes
+  fudge = -1;
+  
+  farfield = ott.TmatrixDda.calculate_farfield_modes(theta, phi, Nmax);
+  nearfield = ott.TmatrixDda.calculate_nearfield_modes(kr, theta, phi, Nmax);
+  
+  testCase.verifyEqual(farfield, fudge.*nearfield./P, 'AbsTol', 1.0e-3);
+
+end
+
+function testCart2Sph(testCase)
+
+  theta = 0.0;
+  phi = 0.0;
+
+  M = ott.TmatrixDda.cart2sph_mat(theta, phi);
+
+  Md = ott.TmatrixDda.sph2cart_mat(theta, phi);
+  
+  testCase.verifyEqual(M * Md, eye(3), 'AbsTol', 1.0e-15);
+  
+end
+
+function testFarfield(testCase)
+
+  wavelength0 = 1.0e-6;
+  shape = ott.shapes.Sphere(0.3*wavelength0);
+  nrel = 1.2;
+  
+  % Small changes to spacing spacing seems to have a very large
+  % effect on error, even/odd spacing for voxels also change things
+  spacing = 1/20 .* wavelength0;
+  
+  TddaFar = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
+    'spacing', spacing, 'index_medium', 1.0, 'wavelength0', wavelength0, ...
+    'use_nearfield', false);
+  TddaNear = ott.TmatrixDda.simple(shape, 'index_relative', nrel, ...
+    'spacing', spacing, 'index_medium', 1.0, 'wavelength0', wavelength0, ...
+    'use_nearfield', true);
+  
+  testCase.verifyEqual(TddaFar.data, TddaNear.data, 'AbsTol', 1.0e-6);
 
 end

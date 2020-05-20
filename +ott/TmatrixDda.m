@@ -46,6 +46,8 @@ classdef TmatrixDda < ott.Tmatrix
       p.addParameter('z_mirror_symmetry', false);
       p.addParameter('z_rotational_symmetry', 1);
       p.addParameter('low_memory', false);
+      p.addParameter('use_nearfield', false);
+      p.addParameter('use_iterative', false);
 
       p.addParameter('modes', []);
 
@@ -185,6 +187,12 @@ classdef TmatrixDda < ott.Tmatrix
       %     calculated T-matrix.  Can either be a Nx2 matrix or a N
       %     element vector with the (n, m) modes or combined index modes
       %     respectively.  Default: ``[]``.
+      %
+      %   - use_nearfield (logical) -- If true, uses near-field point
+      %     matching.  Default: `false`.
+      %
+      %   - use_iterative (logical) -- If true, uses an iterative solver.
+      %     Default: ``false``.
       %
       %   - verbose (logical) -- Display additional information.
       %     Doesn't affect the display of the progress callback.
@@ -329,10 +337,11 @@ classdef TmatrixDda < ott.Tmatrix
       end
 
       % Calculate the T-matrix
-      tmatrix.data = tmatrix.calc_nearfield(Nmax, xyz.', rtp, ...
+      tmatrix.data = tmatrix.calc_tmatrix(Nmax, xyz.', rtp, ...
           n_relative, modes, alpha, pa.Results.progress_callback, ...
           pa.Results.z_mirror_symmetry, pa.Results.z_rotational_symmetry, ...
-          pa.Results.low_memory);
+          pa.Results.low_memory, pa.Results.use_nearfield, ...
+          pa.Results.use_iterative);
 
       % Store the type of T-matrix
       tmatrix.type = 'scattered';
@@ -395,8 +404,44 @@ classdef TmatrixDda < ott.Tmatrix
       end
     end
 
-    function D = dipole_contribution(dipole_xyz, targets_xyz, M_dipole, k)
-      % Calculate contribution from dipole to each target
+    function D = dipole_farfield(dipole_xyz, targets_xyz, M_dipole, k)
+      % Calculate asymptotic far-field limit of dipole contributions
+      %
+      % Warning: Function usage/definition may change without notice
+
+      assert(size(dipole_xyz, 1) == 3, 'dipole_xyz must be 3xN array');
+      assert(size(targets_xyz, 1) == 3, 'targets_xyz must be 3xN array');
+
+      n_vec = targets_xyz ./ vecnorm(targets_xyz);
+      k_vec = k .* n_vec;
+      k_rd = sum(k_vec .* dipole_xyz, 1);
+
+      n_targets = size(targets_xyz, 2);
+
+      nn = reshape(n_vec, 3, 1, n_targets) .* reshape(n_vec, 1, 3, n_targets);
+
+      % Reshape arrays for multiplication
+      nn = reshape(nn, [3, 3, n_targets]);
+      k_rd = reshape(k_rd, [1, 1, n_targets]);
+
+      % Far-field limit of dipole approximation (only 1/r term)
+      %
+      % Based on equation 5 from
+      % https://www.sciencedirect.com/science/article/pii/S0022407315002307
+      F = -k^2 .* exp(-1i .* k_rd) .* (nn - eye(3));
+
+      % Apply coordinate transformations for dipoles/targets (D = F * M)
+      D = sum(reshape(F, [3, 3, 1, n_targets]) ...
+          .* reshape(M_dipole, [1, size(M_dipole)]), 2);
+      D = reshape(D, 3, 3, n_targets);
+
+      % Change back to 3Nx3 result
+      D = permute(D, [1, 3, 2]);
+      D = reshape(D, [3*n_targets, 3]);
+    end
+
+    function D = dipole_nearfield(dipole_xyz, targets_xyz, M_dipole, k)
+      % Calculate contribution from dipole to each near-field target
       %
       % dipole_xyz and targets_xyz must both be 3xN arrays
       % M_dipole and M_targets should be 3x3 and 3x3xN arrays
@@ -437,7 +482,7 @@ classdef TmatrixDda < ott.Tmatrix
     end
 
     function F = nearfield_matrix_lowmem(theta, phi, r_near, k_medium, ...
-        xyz, rtp, z_mirror, z_rotation, m)
+        xyz, rtp, z_mirror, z_rotation, m, field_func)
 
       % Determine if we need extra memory for mirror symmetry
       if z_mirror
@@ -486,7 +531,7 @@ classdef TmatrixDda < ott.Tmatrix
 
             % Calculate columns of F
             F(:, :, kk, ii) = F(:, :, kk, ii) + ...
-                ott.TmatrixDda.dipole_contribution(...
+                field_func(...
                 dipole_xyz, targets_xyz, M_dipole, k_medium) .* phase_factor(jj);
           end
         end
@@ -499,7 +544,7 @@ classdef TmatrixDda < ott.Tmatrix
     end
 
     function F = nearfield_matrix_total(theta, phi, r_near, k_medium, ...
-        xyz, rtp, z_mirror, z_rotation)
+        xyz, rtp, z_mirror, z_rotation, field_func)
 
       % Determine if we need extra memory for mirror symmetry
       if z_mirror
@@ -543,7 +588,7 @@ classdef TmatrixDda < ott.Tmatrix
             end
 
             % Calculate columns of F
-            F(:, :, kk, jj, ii) = ott.TmatrixDda.dipole_contribution(...
+            F(:, :, kk, jj, ii) = field_func(...
                 dipole_xyz, targets_xyz, M_dipole, k_medium);
           end
         end
@@ -602,7 +647,7 @@ classdef TmatrixDda < ott.Tmatrix
 
             % Calculate columns of A
             A(:, :, kk, ii) = A(:, :, kk, ii) + ...
-                ott.TmatrixDda.dipole_contribution(...
+                ott.TmatrixDda.dipole_nearfield(...
                 dipole_xyz, xyz.', M_dipole, k_medium) .* phase_factor(jj);
 
             % Remove self-interaction terms
@@ -665,7 +710,7 @@ classdef TmatrixDda < ott.Tmatrix
             end
 
             % Calculate columns of A
-            A(:, :, kk, jj, ii) = ott.TmatrixDda.dipole_contribution(...
+            A(:, :, kk, jj, ii) = ott.TmatrixDda.dipole_nearfield(...
                 dipole_xyz, xyz.', M_dipole, k_medium);
 
             % Remove self-interaction terms
@@ -705,89 +750,39 @@ classdef TmatrixDda < ott.Tmatrix
 
     end
 
-    function [F, Fodd] = nearfield_matrix(theta, phi, r_near, k, xyz, rtp, ...
-          z_mirror, z_rotation)
-      % Based on DDA/T-matrix/near_field/nearfield_matrix
-      %
+    function MN = calculate_farfield_modes(theta, phi, Nmax)
+      % Pre-calculates Ms and Ns for all pts and all modes
       % Warning: Function usage/definition may change without notice
 
-      assert(z_rotation >= 1, ...
-        'Only finite z rotationaly symmetry supported for now');
+      total_orders = ott.utils.combined_index(Nmax,Nmax);
+      npts = length(theta);
 
-      n_dipoles = size(rtp, 1);
-      n_nfpts = length(theta);
+      roworder = [2:3:3*npts, 3:3:3*npts].';
 
-      xyz_E = ott.utils.rtp2xyz(r_near,theta,phi);
+      MN = zeros(3*npts,2*total_orders);
+      for n = 1:Nmax
+        m = -n:n;
+        ci = ott.utils.combined_index(n,m);
 
-      F = zeros(3*n_nfpts,3*n_dipoles, z_rotation);
-      Fodd = F;
+        % Calculate fields
+        [~,dtY,dpY]= ott.utils.spharm(n,m,theta,phi);
+        Mnm = [dpY;-dtY] * (-1i)^(n+1)/sqrt(n*(n+1));
+        Nnm = [dtY;dpY] * (-1i)^(n)/sqrt(n*(n+1));
 
-      I = eye(3);
-
-      for m = 1:z_rotation
-
-        % Get voxel location for this quadrant
-        if m == 1
-          our_xyz = xyz;
-        else
-          our_xyz = ott.utils.rtp2xyz(rtp(:, 1), ...
-            rtp(:, 2), rtp(:, 3) + 2*pi*(m-1)/z_rotation);
-        end
-
-        for n = 1:n_dipoles
-          n_i = 3*(n-1)+1;   % F column index
-
-          r_vec = xyz_E - our_xyz(n, :);
-          r_jk = vecnorm(r_vec, 2, 2);
-          r_hat = r_vec./r_jk;
-
-          % Calculate location of mirror point
-          if z_mirror
-            rM_vec = xyz_E - [our_xyz(n, 1:2), -our_xyz(n, 3)];
-            rM_jk = vecnorm(rM_vec, 2, 2);
-            rM_hat = rM_vec./rM_jk;
-          end
-
-          % Calculate coordinate rotation
-          if m == 1
-            M = 1;
-          else
-            % Calculate z rotation coordinate transformation matrix
-            M_cart2sph = ott.TmatrixDda.cart2sph_mat(...
-                rtp(n, 2), rtp(n, 3));
-            M_sph2cart = ott.TmatrixDda.sph2cart_mat(...
-                rtp(n, 2), rtp(n, 3) + 2*pi*(m-1)/z_rotation);
-            M = M_sph2cart * M_cart2sph;
-          end
-
-          for p = 1:n_nfpts
-            p_i = 3*(p-1)+1;    % F row index
-
-            rr = r_hat(p, :).'*r_hat(p, :);
-
-            F(p_i:p_i+2, n_i:n_i+2, m) = exp(1i*k*r_jk(p, :))/r_jk(p, :)*...
-              (k^2*(rr - I) + (1i*k*r_jk(p, :)-1)/r_jk(p, :)^2*(3*rr - I)) * M;
-
-            % Add z-mirror-symmetry point
-            if z_mirror
-              Mm = diag([1, 1, -1]);
-              rr = rM_hat(p, :).'*rM_hat(p, :);
-
-              term = exp(1i*k*rM_jk(p, :))/rM_jk(p, :)*...
-                (k^2*(rr - I) + (1i*k*rM_jk(p, :)-1)/rM_jk(p, :)^2*(3*rr - I)) * Mm * M;
-
-              Fodd(p_i:p_i+2, n_i:n_i+2, m) = F(p_i:p_i+2, n_i:n_i+2, m) - term;
-              F(p_i:p_i+2, n_i:n_i+2, m) = F(p_i:p_i+2, n_i:n_i+2, m) + term;
-
-            end
-          end
-        end
+        % Package output in [theta1; phi1; theta2; phi2; ...]
+        MN(roworder,ci) = Mnm;
+        MN(roworder,ci+total_orders) = Nnm;
       end
+
+      % TODO: Add rotations here (pre-computed)
     end
 
     function MN = calculate_nearfield_modes(kr, theta, phi, Nmax)
       % precalculate M1 * N1's for all pts and all modes
       % Warning: Function usage/definition may change without notice
+
+      % TODO: Should this use vswfcart instead so we don't need the
+      %   extra coordinate conversion?
 
       total_orders = ott.utils.combined_index(Nmax,Nmax);
       npts = length(theta);
@@ -798,9 +793,9 @@ classdef TmatrixDda < ott.Tmatrix
           ci = ott.utils.combined_index(n,m);
           [M1,N1] = ott.utils.vswf(n, m, kr, theta, phi, 'outgoing');
 
+          % Package output in [theta1; phi2; theta2; phi2; ...]
           M1nm = M1.';
           N1nm = N1.';
-
           MN(:,ci) = -M1nm(:);
           MN(:,ci+total_orders) = -N1nm(:);
         end
@@ -877,14 +872,14 @@ classdef TmatrixDda < ott.Tmatrix
       end
     end
 
-    function data = calc_nearfield(Nmax, xyz, rtp, n_rel, modes, alpha, ...
-        progress_callback, z_mirror, z_rotation, low_memory)
+    function data = calc_tmatrix(Nmax, xyz, rtp, n_rel, modes, alpha, ...
+        progress_callback, z_mirror, z_rotation, low_memory, ...
+        use_nearfield, use_iterative)
       % Near-field implementation of T-matrix calculation
       %
       % This is based on DDA/T-matrix/near_field/DDA_T_NF.m
       % Warning: Function usage/definition may change without notice
 
-      iterative = true;
       k = 2*pi;
 
       % Because we don't use infinite rotational symmetry everywhere,
@@ -900,9 +895,20 @@ classdef TmatrixDda < ott.Tmatrix
 
       total_orders = ott.utils.combined_index(Nmax,Nmax);
 
-      % Hmm, what if we have a larger sphere?
-      r_near = 8; % near field radius
-      assert(r_near > max(rtp(1, :)), 'Particle radius too large');
+      if use_nearfield
+        % Hmm, what if we have a larger sphere?
+        r_near = 8; % near field radius
+        assert(r_near > max(rtp(1, :)), 'Particle radius too large');
+
+        MN = ott.TmatrixDda.calculate_nearfield_modes(...
+          k*r_near, theta, phi, Nmax);
+        field_func = @ott.TmatrixDda.dipole_nearfield;
+      else
+        r_near = 1;   % Parameter largely ignored
+
+        MN = ott.TmatrixDda.calculate_farfield_modes(theta, phi, Nmax)./k;
+        field_func = @ott.TmatrixDda.dipole_farfield;
+      end
 
       % Pre-calculate inv-alpha
       inv_alpha = ott.TmatrixDda.alpha_to_full_inv_alpha(alpha, size(rtp, 1));
@@ -919,12 +925,10 @@ classdef TmatrixDda < ott.Tmatrix
 
         % Pre-calculate F
         F_total = ott.TmatrixDda.nearfield_matrix_total(...
-            theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation_safe);
+            theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation_safe, ...
+            field_func);
 
       end
-
-      MN = ott.TmatrixDda.calculate_nearfield_modes(...
-        k*r_near, theta, phi, Nmax);
 
       % Pre-compute near-field Cartesian to Spherical transform
       cart2sph = zeros(3, 3*length(theta));
@@ -950,7 +954,8 @@ classdef TmatrixDda < ott.Tmatrix
 
           % Pre-calculate F
           F_total = ott.TmatrixDda.nearfield_matrix_lowmem(...
-              theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation_safe, m);
+              theta, phi, r_near, k, xyz, rtp, z_mirror, z_rotation_safe, m, ...
+              field_func);
 
         end
 
@@ -989,7 +994,7 @@ classdef TmatrixDda < ott.Tmatrix
           Ei_TE = Ei_TE.';
           Ei_TM = Ei_TM.';
 
-          if iterative
+          if use_iterative
             [P_TE, ~] = gmres(A_TE,Ei_TE(:),1,1e-6,30);
             [P_TM, ~] = gmres(A_TM,Ei_TM(:),1,1e-6,30);
           else
@@ -1090,8 +1095,6 @@ classdef TmatrixDda < ott.Tmatrix
                 modes_evn = modes & [ ~even_modes; even_modes ];
               end
 
-              disp([m, n, sum(modes_evn), sum(modes_odd)]);
-
               pq1 = MN(:, modes_evn) \ Es_TE;
               pq2 = MN(:, modes_odd) \ Es_TM;
 
@@ -1112,12 +1115,6 @@ classdef TmatrixDda < ott.Tmatrix
         end		% for n = 1:m
       end		% for m = mrange
 
-    end
-
-    function calc_farfield(tmatrix)
-      % TODO: Far-field implementation of T-matrix calculation
-      % Warning: Function usage/definition may change without notice
-      error('Not yet implemented');
     end
   end
 end
