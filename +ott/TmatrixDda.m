@@ -458,7 +458,8 @@ classdef TmatrixDda < ott.Tmatrix
       r_jk = reshape(r_jk, [1, 1, n_targets]);
 
       % Calculate Greens function between dipole and target location
-      F = exp(1i*k*r_jk)./r_jk .* ...
+      % This matches Eq 17 from https://doi.org/10.1364/JOSAA.18.001944
+      F = -exp(1i*k*r_jk)./r_jk .* ...
         (k^2*(rr - eye(3)) + (1i*k*r_jk - 1)./r_jk.^2.*(3*rr - eye(3)));
 
       % Apply coordinate transformations for dipoles/targets (D = F * M)
@@ -792,8 +793,8 @@ classdef TmatrixDda < ott.Tmatrix
           % Package output in [theta1; phi2; theta2; phi2; ...]
           M1nm = M1.';
           N1nm = N1.';
-          MN(:,ci) = -M1nm(:);
-          MN(:,ci+total_orders) = -N1nm(:);
+          MN(:,ci) = M1nm(:);
+          MN(:,ci+total_orders) = N1nm(:);
         end
       end
     end
@@ -989,24 +990,6 @@ classdef TmatrixDda < ott.Tmatrix
           else
             P_TE = A_TE\Ei_TE(:);
             P_TM = A_TM\Ei_TM(:);
-          end
-
-          % Add n_rel correction
-          if numel(n_rel) == 1
-            P_TE = P_TE * n_rel;
-          elseif numel(n_rel) == 3
-            P_TE = repmat(n_rel(:), [numel(P_TE)/3, 1]) .* P_TE;
-          elseif numel(n_rel) == numel(P_TE)/3
-            P_TE = repelem(n_rel(:), 3) .* P_TE;
-          elseif numel(n_rel) == numel(P_TE)
-            P_TE = n_rel(:) .* P_TE;
-          elseif numel(n_rel) == 3*numel(P_TE) && size(n_rel, 1) == 3
-            for ii = 1:(length(P_TE)/3)
-              P_TE((1:3) + (ii-1)*3) = ...
-                n_rel(:, (1:3) + (ii-1)*3) * P_TE((1:3) + (ii-1)*3);
-            end
-          else
-            error('Bad number of n_rel values');
           end
 
           % Calculate fields in Cartesian coordinates
