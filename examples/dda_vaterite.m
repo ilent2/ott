@@ -24,9 +24,6 @@
 % moved the script you may need to modify this command
 addpath('../');
 
-% Close open figures
-close all;
-
 % Make warnings less obtrusive
 ott.warning('once');
 ott.change_warnings('off');
@@ -85,6 +82,10 @@ ylabel('Z Position [m]');
 % Enable this if you run out of ram for the larger particles
 low_memory = false;
 
+% The method supports using '\' and 'gmres'.  Set use iterative to
+% true to use 'gmres' for solving the DDA system.  (Might be faster).
+use_iterative = false;
+
 radius = logspace(-8, -6.2147, 20);
 % radius = 1.0e-6;   % Try with low_memory
 % radius = logspace(-8, -6, 20);
@@ -121,13 +122,13 @@ for ii = 1:length(times)
 
     Tmatrix = ott.TmatrixDda(voxels, ...
         'polarizability', polarizabilities, ...
-        'index_relative', index_relative, ...
         'index_medium', index_medium, ...
         'spacing', spacing, ...
-        'z_rotational_symmetry', 4, ...
+        'z_rotational_symmetry', 0, ...
         'z_mirror_symmetry', true, ...
         'wavelength0', wavelength0, ...
-        'low_memory', low_memory);
+        'low_memory', low_memory, ...
+        'use_iterative', use_iterative);
 
     times(ii) = toc();
     

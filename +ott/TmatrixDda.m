@@ -217,45 +217,39 @@ classdef TmatrixDda < ott.Tmatrix
         disp(['Running with ' num2str(size(xyz, 2)) ' voxels']);
       end
 
-      % Store inputs k_medium and k_particle
-      [k_medium, k_particle] = tmatrix.parser_wavenumber(pa, 2*pi);
+      % Store inputs k_medium
+      k_medium = ott.Tmatrix.parser_k_medium(pa, 2.0*pi);
 
       alpha = [];
       if isnumeric(pa.Results.polarizability)
         alpha = pa.Results.polarizability;
       end
 
-      % Filter xyz and k_particle for symmetries
+      % Generate mask for filtering alpha, xyz and k_particle
       if pa.Results.z_mirror_symmetry
-        k_particle = tmatrix.remove_by_mask(k_particle, xyz(3, :) < 0);
-        alpha = tmatrix.remove_by_mask(alpha, xyz(3, :) < 0);
-        xyz(:, xyz(3, :) < 0) = [];
+        mask = xyz(3, :) < 0;
+      else
+        mask = false(1, size(xyz, 2));
       end
       if pa.Results.z_rotational_symmetry == 0
 
         % TODO: Work out how to do infinite rotational symmetry DDA
         warning('Using 4-fold symmetry for voxels (infinite for PM)');
-        k_particle = tmatrix.remove_by_mask(...
-            k_particle, xyz(2, :) < 0 | xyz(1, :) < 0);
-        alpha = tmatrix.remove_by_mask(...
-            alpha, xyz(2, :) < 0 | xyz(1, :) < 0);
-        xyz(:, xyz(2, :) < 0 | xyz(1, :) < 0) = [];
+        mask = mask | (xyz(2, :) < 0 | xyz(1, :) < 0);
 
       elseif pa.Results.z_rotational_symmetry == 1
         % Nothing to do
       elseif pa.Results.z_rotational_symmetry == 2
-        k_particle = tmatrix.remove_by_mask(k_particle, xyz(2, :) < 0);
-        alpha = tmatrix.remove_by_mask(alpha, xyz(2, :) < 0);
-        xyz(:, xyz(2, :) < 0) = [];
+        mask = mask | xyz(2, :) < 0;
       elseif pa.Results.z_rotational_symmetry == 4
-        k_particle = tmatrix.remove_by_mask(...
-            k_particle, xyz(2, :) < 0 | xyz(1, :) < 0);
-        alpha = tmatrix.remove_by_mask(...
-            alpha, xyz(2, :) < 0 | xyz(1, :) < 0);
-        xyz(:, xyz(2, :) < 0 | xyz(1, :) < 0) = [];
+        mask = mask | (xyz(2, :) < 0 | xyz(1, :) < 0);
       else
         error('Only z_rotational_symmetry == 0|2|4 supported for now');
       end
+
+      % Filter xyz and alpha by symmetries
+      alpha = tmatrix.remove_by_mask(alpha, mask);
+      xyz(:, mask) = [];
 
       % Check we can allocate sufficient memory
       uV = memory;
@@ -277,17 +271,22 @@ classdef TmatrixDda < ott.Tmatrix
       xyz = xyz ./ wavelength_medium;
       rtp(:, 1) = rtp(:, 1) ./ wavelength_medium;
 
-      n_relative = k_particle./k_medium;
-
       % Compute or get polarizability from inputs
       if isnumeric(pa.Results.polarizability)
         % Nothing more to do, already have alpha
+        assert(isempty(pa.Results.index_particle), ...
+            'index_particle not supported when using polarizability');
       else
         % Calculate alpha for remaining positions
 
         if isempty(pa.Results.spacing)
           error('Spacing is needed for polarizability calculation');
         end
+
+        % Get and filter k_particle, convert to index
+        [~, k_particle] = tmatrix.parser_wavenumber(pa, 2*pi);
+        k_particle = tmatrix.remove_by_mask(k_particle, mask);
+        n_relative = k_particle./k_medium;
 
         % Get spacing in units of medium wavelength
         spacing = pa.Results.spacing;
@@ -317,7 +316,7 @@ classdef TmatrixDda < ott.Tmatrix
         spacing = spacing ./ wavelength_medium;
 
         if isempty(spacing)
-          warning('Estimating spacing for Nmax calculation from k_particle');
+          warning('Using spacing 1/20 for Nmax estimation');
           spacing = 1./20;
         end
 
@@ -338,7 +337,7 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Calculate the T-matrix
       tmatrix.data = tmatrix.calc_tmatrix(Nmax, xyz.', rtp, ...
-          n_relative, modes, alpha, pa.Results.progress_callback, ...
+          modes, alpha, pa.Results.progress_callback, ...
           pa.Results.z_mirror_symmetry, pa.Results.z_rotational_symmetry, ...
           pa.Results.low_memory, pa.Results.use_nearfield, ...
           pa.Results.use_iterative);
@@ -637,7 +636,7 @@ classdef TmatrixDda < ott.Tmatrix
             end
 
             % Calculate columns of A
-            A(:, :, kk, ii) = A(:, :, kk, ii) + ...
+            A(:, :, kk, ii) = A(:, :, kk, ii) - ...
                 ott.TmatrixDda.dipole_nearfield(...
                 dipole_xyz, xyz.', M_dipole, k_medium) .* phase_factor(jj);
 
@@ -701,7 +700,7 @@ classdef TmatrixDda < ott.Tmatrix
             end
 
             % Calculate columns of A
-            A(:, :, kk, jj, ii) = ott.TmatrixDda.dipole_nearfield(...
+            A(:, :, kk, jj, ii) = -ott.TmatrixDda.dipole_nearfield(...
                 dipole_xyz, xyz.', M_dipole, k_medium);
 
             % Remove self-interaction terms
@@ -869,7 +868,7 @@ classdef TmatrixDda < ott.Tmatrix
       end
     end
 
-    function data = calc_tmatrix(Nmax, xyz, rtp, n_rel, modes, alpha, ...
+    function data = calc_tmatrix(Nmax, xyz, rtp, modes, alpha, ...
         progress_callback, z_mirror, z_rotation, low_memory, ...
         use_nearfield, use_iterative)
       % Near-field implementation of T-matrix calculation
@@ -895,7 +894,8 @@ classdef TmatrixDda < ott.Tmatrix
       if use_nearfield
         % Hmm, what if we have a larger sphere?
         r_near = 8; % near field radius
-        assert(r_near > max(rtp(1, :)), 'Particle radius too large');
+        assert(r_near > max(rtp(1, :)), ...
+            'Particle radius too large for nearfield F');
 
         MN = ott.TmatrixDda.calculate_nearfield_modes(...
           k*r_near, theta, phi, Nmax);
@@ -917,7 +917,7 @@ classdef TmatrixDda < ott.Tmatrix
         % This maybe produces a speed optimisation but uses lots of memory
 
         % Pre-calculate A
-        A_total = ott.TmatrixDda.interaction_A_total(k, rtp, inv_alpha, ...
+        A_total = ott.TmatrixDda.interaction_A_total(k, xyz, inv_alpha, ...
             z_mirror, z_rotation_safe);
 
         % Pre-calculate F
@@ -939,7 +939,7 @@ classdef TmatrixDda < ott.Tmatrix
         if low_memory
 
           % Pre-calculate A
-          A_total = ott.TmatrixDda.interaction_A_lowmem(k, rtp, inv_alpha, ...
+          A_total = ott.TmatrixDda.interaction_A_lowmem(k, xyz, inv_alpha, ...
               z_mirror, z_rotation_safe, m);
 
           % Pre-calculate F
@@ -959,42 +959,28 @@ classdef TmatrixDda < ott.Tmatrix
 
         for n = ournmodes
 
-          % Calculate fields in Cartesian coordinates
-          if z_mirror
-            if mod(m + n, 2) == 0
-              A_TM = Aeven;
-              A_TE = Aodd;
-              F_TM = Feven;
-              F_TE = Fodd;
-            else
-              A_TE = Aeven;
-              A_TM = Aodd;
-              F_TE = Feven;
-              F_TM = Fodd;
-            end
-          else
-            A_TM = Aeven;
-            A_TE = Aeven;
-            F_TM = Feven;
-            F_TE = Feven;
-          end
-
+          % Calculate fields (Cartesian coordinates)
           [Ei_TE, Ei_TM] = ott.utils.vswfcart(n, m, ...
               rtp(:, 1)*k, rtp(:, 2), rtp(:, 3), 'regular');
           Ei_TE = Ei_TE.';
           Ei_TM = Ei_TM.';
 
-          if use_iterative
-            [P_TE, ~] = gmres(A_TE,Ei_TE(:),1,1e-6,30);
-            [P_TM, ~] = gmres(A_TM,Ei_TM(:),1,1e-6,30);
+          % Evaluate PM fields (Cartesian coordinates)
+          if z_mirror
+            if mod(m + n, 2) == 0
+              E_TE = ott.TmatrixDda.solve_and_evaluate(Aodd, Fodd, Ei_TE(:), use_iterative);
+              E_TM = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, Ei_TM(:), use_iterative);
+            else
+              E_TE = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, Ei_TE(:), use_iterative);
+              E_TM = ott.TmatrixDda.solve_and_evaluate(Aodd, Fodd, Ei_TM(:), use_iterative);
+            end
           else
-            P_TE = A_TE\Ei_TE(:);
-            P_TM = A_TM\Ei_TM(:);
+            % Solve both at the same time (to save time)
+            E_EM = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, ...
+                [Ei_TE(:), Ei_TM(:)], use_iterative);
+            E_TE = E_EM(:, 1);
+            E_TM = E_EM(:, 2);
           end
-
-          % Calculate fields in Cartesian coordinates
-          E_TE = F_TE * P_TE;
-          E_TM = F_TM * P_TM;
 
           ci = ott.utils.combined_index(n,m);
 
@@ -1080,6 +1066,20 @@ classdef TmatrixDda < ott.Tmatrix
         end		% for n = 1:m
       end		% for m = mrange
 
+    end
+
+    function E = solve_and_evaluate(A, F, E, use_iterative)
+      % Solve DDA problem and evaluate fields at specified locations
+
+      % Solve for poarizability of each dipole
+      if use_iterative
+        [P, ~] = gmres(A, E, 1, 1e-6, 30);
+      else
+        P = A\E;
+      end
+
+      % Calculate fields
+      E = F * P;
     end
   end
 end
