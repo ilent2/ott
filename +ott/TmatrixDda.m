@@ -957,29 +957,76 @@ classdef TmatrixDda < ott.Tmatrix
         % Find which modes we should calculate
         ournmodes = nmodes(mmodes == m).';
 
-        for n = ournmodes
+        if ~use_iterative
+          % Not supported by gmres
 
-          % Calculate fields (Cartesian coordinates)
-          [Ei_TE, Ei_TM] = ott.utils.vswfcart(n, m, ...
-              rtp(:, 1)*k, rtp(:, 2), rtp(:, 3), 'regular');
-          Ei_TE = Ei_TE.';
-          Ei_TM = Ei_TM.';
+          % Pre-calculate all fields
+          Ei_TE = zeros(3*size(rtp, 1), numel(ournmodes));
+          Ei_TM = Ei_TE;
+          for ii = 1:numel(ournmodes)
+            [E, M] = ott.utils.vswfcart(ournmodes(ii), m, ...
+                rtp(:, 1)*k, rtp(:, 2), rtp(:, 3), 'regular');
+            E = E.';
+            M = M.';
+            Ei_TE(:, ii) = E(:);
+            Ei_TM(:, ii) = M(:);
+          end
 
-          % Evaluate PM fields (Cartesian coordinates)
+          % Solve all n-modes together
           if z_mirror
-            if mod(m + n, 2) == 0
-              E_TE = ott.TmatrixDda.solve_and_evaluate(Aodd, Fodd, Ei_TE(:), use_iterative);
-              E_TM = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, Ei_TM(:), use_iterative);
-            else
-              E_TE = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, Ei_TE(:), use_iterative);
-              E_TM = ott.TmatrixDda.solve_and_evaluate(Aodd, Fodd, Ei_TM(:), use_iterative);
-            end
+            evn = mod(m+ournmodes, 2) == 0;
+
+            E_odd = ott.TmatrixDda.solve_and_evaluate(Aodd, Fodd, ...
+                [Ei_TE(:, evn), Ei_TM(:, ~evn)], use_iterative);
+            E_evn = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, ...
+                [Ei_TM(:, evn), Ei_TE(:, ~evn)], use_iterative);
+
+            En_TE = zeros(size(E_odd, 1), numel(ournmodes));
+            En_TM = En_TE;
+
+            En_TE(:, evn) = E_odd(:, 1:sum(evn));
+            En_TE(:, ~evn) = E_evn(:, sum(evn)+1:end);
+            En_TM(:, evn) = E_evn(:, 1:sum(evn));
+            En_TM(:, ~evn) = E_odd(:, sum(evn)+1:end);
           else
             % Solve both at the same time (to save time)
             E_EM = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, ...
-                [Ei_TE(:), Ei_TM(:)], use_iterative);
-            E_TE = E_EM(:, 1);
-            E_TM = E_EM(:, 2);
+                [Ei_TE, Ei_TM], use_iterative);
+            En_TE = E_EM(:, 1:end/2);
+            En_TM = E_EM(:, end/2+1:end);
+          end
+        end
+
+        for n = ournmodes
+
+          if ~use_iterative
+            E_TE = En_TE(:, ournmodes == n);
+            E_TM = En_TM(:, ournmodes == n);
+
+          else
+
+            % Calculate fields (Cartesian coordinates)
+            [Ei_TE, Ei_TM] = ott.utils.vswfcart(n, m, ...
+                rtp(:, 1)*k, rtp(:, 2), rtp(:, 3), 'regular');
+            Ei_TE = Ei_TE.';
+            Ei_TM = Ei_TM.';
+
+            % Evaluate PM fields (Cartesian coordinates)
+            if z_mirror
+              if mod(m + n, 2) == 0
+                E_TE = ott.TmatrixDda.solve_and_evaluate(Aodd, Fodd, Ei_TE(:), use_iterative);
+                E_TM = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, Ei_TM(:), use_iterative);
+              else
+                E_TE = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, Ei_TE(:), use_iterative);
+                E_TM = ott.TmatrixDda.solve_and_evaluate(Aodd, Fodd, Ei_TM(:), use_iterative);
+              end
+            else
+              % Solve both at the same time (to save time)
+              E_EM = ott.TmatrixDda.solve_and_evaluate(Aeven, Feven, ...
+                  [Ei_TE(:), Ei_TM(:)], use_iterative);
+              E_TE = E_EM(:, 1);
+              E_TM = E_EM(:, 2);
+            end
           end
 
           ci = ott.utils.combined_index(n,m);
