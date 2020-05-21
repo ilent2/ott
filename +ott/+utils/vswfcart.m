@@ -1,4 +1,4 @@
-function [M,N,M2,N2,M3,N3] = vswfcart(n,m,kr,theta,phi,htype)
+function varargout = vswfcart(n,m,kr,theta,phi,htype)
 % VSWFCART vector spherical harmonics spherical coordinate input,
 % cartesian output.
 %
@@ -32,7 +32,7 @@ if nargin < 6
    htype = 0;
 end
 
-[M,N,M2,N2,M3,N3] = vswf(n,m,kr,theta,phi,htype);
+[varargout{1:nargout}] = vswf(n,m,kr,theta,phi,htype);
 
 % Convert to cartesian coordinates
 [x,y,z] = rtp2xyz(kr,theta,phi);
@@ -63,64 +63,20 @@ r_hat_x(kr == 0) = sin(theta(kr == 0)).*cos(phi(kr == 0));
 r_hat_y(kr == 0) = sin(theta(kr == 0)).*sin(phi(kr == 0));
 r_hat_z(kr == 0) = cos(theta(kr == 0));
 
-if length(M) > 1
-Mr = M(:,1);
-Mtheta = M(:,2);
-Mphi = M(:,3);
-Mx = Mr .* r_hat_x + Mtheta .* theta_hat_x + Mphi .* phi_hat_x;
-My = Mr .* r_hat_y + Mtheta .* theta_hat_y + Mphi .* phi_hat_y;
-Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
-M = [ Mx My Mz ];
-end
-
-if length(N) > 1
-Mr = N(:,1);
-Mtheta = N(:,2);
-Mphi = N(:,3);
-Mx = Mr .* r_hat_x + Mtheta .* theta_hat_x + Mphi .* phi_hat_x;
-My = Mr .* r_hat_y + Mtheta .* theta_hat_y + Mphi .* phi_hat_y;
-Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
-N = [ Mx My Mz ];
-end
-
-if length(M2) > 1
-Mr = M2(:,1);
-Mtheta = M2(:,2);
-Mphi = M2(:,3);
-Mx = Mr .* r_hat_x + Mtheta .* theta_hat_x + Mphi .* phi_hat_x;
-My = Mr .* r_hat_y + Mtheta .* theta_hat_y + Mphi .* phi_hat_y;
-Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
-M2 = [ Mx My Mz ];
-end
-
-if length(N2) > 1
-Mr = N2(:,1);
-Mtheta = N2(:,2);
-Mphi = N2(:,3);
-Mx = Mr .* r_hat_x + Mtheta .* theta_hat_x + Mphi .* phi_hat_x;
-My = Mr .* r_hat_y + Mtheta .* theta_hat_y + Mphi .* phi_hat_y;
-Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
-N2 = [ Mx My Mz ];
-end
-
-if length(M3) > 1
-Mr = M3(:,1);
-Mtheta = M3(:,2);
-Mphi = M3(:,3);
-Mx = Mr .* r_hat_x + Mtheta .* theta_hat_x + Mphi .* phi_hat_x;
-My = Mr .* r_hat_y + Mtheta .* theta_hat_y + Mphi .* phi_hat_y;
-Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
-M3 = [ Mx My Mz ];
-end
-
-if length(N3) > 1
-Mr = N3(:,1);
-Mtheta = N3(:,2);
-Mphi = N3(:,3);
-Mx = Mr .* r_hat_x + Mtheta .* theta_hat_x + Mphi .* phi_hat_x;
-My = Mr .* r_hat_y + Mtheta .* theta_hat_y + Mphi .* phi_hat_y;
-Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
-N3 = [ Mx My Mz ];
+for ii = 1:nargout
+  
+  if isempty(varargout{ii})
+    continue;
+  end
+  
+  Mr = varargout{ii}(:,1);
+  Mtheta = varargout{ii}(:,2);
+  Mphi = varargout{ii}(:,3);
+  Mx = Mr .* r_hat_x + Mtheta .* theta_hat_x + Mphi .* phi_hat_x;
+  My = Mr .* r_hat_y + Mtheta .* theta_hat_y + Mphi .* phi_hat_y;
+  Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
+  varargout{ii} = [ Mx My Mz ];
+  
 end
 
 ott.warning('external');
