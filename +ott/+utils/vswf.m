@@ -81,7 +81,7 @@ else
 end
 
 switch(htype)
-    case 1,
+    case 1
         if length(m)>1
             kr3=repmat(kr,[1,length(m)*3]); %makes all these suitable length
             hn=repmat(sbesselh1(n,kr),[1,length(m)*3]);
@@ -95,7 +95,7 @@ switch(htype)
         M = Nn * hn .* C;
         N = Nn * ( n*(n+1)./kr3 .* hn .* P + ( hn1 - n./kr3 .* hn ) .* B );
         M2 = 0; N2 = 0; M3 = 0; N3 = 0;
-    case 2,
+    case 2
         
         if length(m)>1
             kr3=repmat(kr,[1,length(m)*3]); %makes all these suitable length
@@ -110,7 +110,7 @@ switch(htype)
         M = Nn * hn .* C;
         N = Nn * ( n*(n+1)./kr3 .* hn .* P + ( hn1 - n./kr3 .* hn ) .* B );
         M2 = 0; N2 = 0; M3 = 0; N3 = 0;
-    case 3,
+    case 3
         
         if length(m)>1
             kr3=repmat(kr,[1,length(m)*3]); %makes all these suitable length
@@ -131,7 +131,7 @@ switch(htype)
         else
             N(kr3==0)=2/3*Nn*( P(kr3==0) + B(kr3==0));
         end
-    otherwise,
+    otherwise
         if length(m)>1
             kr3=repmat(kr,[1,length(m)*3]); %makes all these suitable length
             

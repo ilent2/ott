@@ -43,7 +43,7 @@ switch method
 
   case 'besselh'
     % This doesn't work too well for kr < n
-    [hn] = besselh(n+1/2,1,kr);
+    [hn] = besselh(n+1/2,2,kr);
 
   otherwise
     error('Unknown method');
