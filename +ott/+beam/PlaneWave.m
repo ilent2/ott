@@ -38,6 +38,10 @@ classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
 %   - permeability  -- Material relative permeability (default: 1.0)
 %   - wavenumber    -- Wave-number of beam in medium
 %   - impedance     -- Impedance of the medium
+%
+% Supported casts
+%   - vswf.Bsc      -- Default Bsc cast, uses vswf.PlaneWave
+%   - vswf.PlaneWave
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

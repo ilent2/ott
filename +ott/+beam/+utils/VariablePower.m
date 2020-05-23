@@ -1,41 +1,22 @@
-classdef (Abstract) VariablePower < ott.beam.Properties
+classdef VariablePower
 % Adds a variable power property to a Beam.
-% Inherits from :class:`ott.beam.Properties`.
 %
-% Properties (Hidden)
-%   - powerInternal       -- The power property
-%
-% Methods (Hidden)
-%   - getBeamPower        -- Get the internal power value
-%   - setBeamPower        -- Set the internal power value
+% Properties
+%   - power       -- Power property
 
-  properties (Hidden)
-    powerInternal
+% Copyright 2020 Isaac Lenton
+% This file is part of OTT, see LICENSE.md for information about
+% using/distributing this file.
+
+  properties
+    power
   end
 
-  methods
-    function beam = VariablePower(power, varargin)
-      % Construct a beam specifying the power
-      %
-      % Usage
-      %   beam = VariablePower(power, ...)
-      %
-      % For optional arguments, see :class:`Properties`.
-
-      beam = beam@ott.beam.Properties(varargin{:});
-      beam.powerInternal = power;
-    end
-  end
-
-  methods (Hidden)
-    function val = getBeamPower(beam)
-      % Get the internal power value
-      val = beam.powerInternal;
-    end
-    function beam = setBeamPower(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-        'power must be numeric scalar');
-      beam.powerInternal = val;
+  methods % Getters/setters
+    function beam = set.power(beam, val)
+      assert(isnumeric(val) && isscalar(val) && val >= 0.0, ...
+          'Power must be numeric scalar greater than or equal to zero');
+      beam.power = val;
     end
   end
 end

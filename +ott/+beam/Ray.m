@@ -1,4 +1,4 @@
-classdef Ray < ott.beam.PlaneWave
+classdef Ray
 % Specialisation of a PlaneWave for Ray-optics beams
 % Inherits from :class:`PlaneWave`.
 %

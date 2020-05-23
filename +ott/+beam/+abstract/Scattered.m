@@ -2,11 +2,15 @@ classdef Scattered < ott.beam.abstract.Beam
 % Represents a scattered beam.
 % Inherits from :class:`abstract.Beam`.
 %
-% The scattered beam class has an additional property for the incident
-% beam, which may be set to empty or a Abstract beam instance.
+% The scattered beam class is a container which encapsulates a scattered
+% beams type and the incident beam that cause the scattering.  Scattered
+% beams behave like other beams, all properties are differed to the
+% internal beam_data property.
 %
 % Properties
+%   - beam_data       -- Beam object associated with the scattering
 %   - incident_beam   -- The incident ray object (can be set to [])
+%   - particle        -- Particle that caused the scattering (can be [])
 %   - type            -- Type of beam ('scattered', 'total' or 'internal')
 %
 % Dependent properties
@@ -21,10 +25,17 @@ classdef Scattered < ott.beam.abstract.Beam
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file
 
+% TODO: This class shouldn't inherit from abstract beam, since it has
+%   no proeprties of its own.  It should implement the beam interface though.
+
   properties
+    beam_data           % Beam object associated with the scattering
     incident_beam       % The incident ray object (can be set to [])
+    particle            %  Particle that caused the scattering (can be [])
     type                % Type of beam ('scattered', 'total' or 'internal')
   end
+
+  % TODO: Dependent beam properties or subsref/subsasgn methods
 
   properties (Dependent)
     total_beam          % Instance of the beam with total type
@@ -32,21 +43,25 @@ classdef Scattered < ott.beam.abstract.Beam
   end
 
   methods
-    function beam = Scattered(type, varargin)
+    function beam = Scattered(type, beam, varargin)
       % Construct a new scattered beam representation
       %
       % Usage
-      %   beam = Scattered(type, ...)
+      %   beam = Scattered(type, beam, ...)
       %
       % Parameters
-      %   - incident_beam ([]|Beam) -- Incident beam or emtpy.
-      %     Default: ``[]``.
-      %
       %   - type (enum) -- Type of scattered beam.
       %     Either 'scattered', 'total' or 'internal'.
       %
-      % Other parameters are passed to :class:`abstract.Beam`.
-      
+      %   - beam (ott.beam.Beam) -- The beam data.
+      %
+      % Optional named parameters
+      %   - incident_beam ([]|Beam) -- Incident beam or emtpy.
+      %     Default: ``[]``.
+      %
+      %   - particle ([]|ott.scat.utils.Particle) -- The particle that
+      %     caused the scattering or empty.  Default ``[]``.
+
       p = inputParser;
       p.addParameter('incident_beam', []);
       p.KeepUnmatched = true;
@@ -123,13 +138,13 @@ classdef Scattered < ott.beam.abstract.Beam
         error('Unable to convert to specified type');
       end
     end
-    
+
     function beam = setType(beam, val)
       % Set the beam type paramter (without raising a warning)
       %
       % Usage
       %   beam = beam.setType(val);
-      
+
       S = warning('off', 'ott:beam:abstract:Scattered:type_change');
       beam.type = val;
       warning(S);
@@ -146,16 +161,16 @@ classdef Scattered < ott.beam.abstract.Beam
     end
 
     function beam = set.type(beam, val)
-      
+
       % Check value
       assert(any(strcmpi(val, {'scattered', 'total', 'internal'})), ...
           'type must be ''scattered'', ''total'' or ''internal''');
-      
+
       % Warn user they may be doing the wrong thing
       warning('ott:beam:abstract:Scattered:type_change', ...
         ['Changing the type property doesnt change the type', newline, ...
         'Consider using beam.total_beam or beam.scattered_beam instead.']);
-      
+
       beam.type = val;
     end
 
@@ -165,7 +180,7 @@ classdef Scattered < ott.beam.abstract.Beam
             'Need incident beam for conversion');
         tbeam = beam.totalField();
       elseif strcmpi(beam.type, 'total')
-        tbeam = beam;
+        tbeam = beam.beam_data;
       else
         error('Unable to convert to specified type');
       end
@@ -173,7 +188,7 @@ classdef Scattered < ott.beam.abstract.Beam
 
     function tbeam = get.scattered_beam(beam)
       if strcmpi(beam.type, 'scattered')
-        tbeam = beam;
+        tbeam = beam.beam_data;
       elseif strcmpi(beam.type, 'total')
         assert(~isempty(beam.incident_beam), ...
             'Need incident beam for conversion');

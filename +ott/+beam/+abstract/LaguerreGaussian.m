@@ -1,70 +1,46 @@
-classdef LaguerreGaussian < ott.beam.abstract.Gaussian
+classdef LaguerreGaussian < ott.beam.properties.LaguerreGaussian ...
+    & ott.beam.abstract.Gaussian
 % Abstract representation of a Laguerre-Gaussian beam.
-% Inherits from :class:`Gaussian`.
+% Inherits from :class:`Gaussian` and
+% :class:`ott.beam.properties.LaguerreGaussian`.
 %
-% Properties
-%   - waist      -- Beam waist at focus
-%   - lmode      -- Azimuthal Laguerre mode order
-%   - pmode      -- Radial Laguerre mode order
+% Supported casts
+%   - Beam            -- Default Beam cast, uses paraxial.LaguerreGaussian
+%   - vswf.Bsc        -- Default Bsc cast, uses vswf.LaguerreGaussian
+%   - vswf.LaguerreGaussian
+%   - vswf.Gaussian             -- Only for LG00
+%   - vswf.HermiteGaussian      -- Only for LG00
+%   - vswf.InceGaussian         -- Only for LG00
+%   - paraxial.LaguerreGaussian
+%   - paraxial.Gaussian         -- Only for LG00
+%   - paraxial.HermiteGaussian  -- Only for LG00
 %
-% Inherited properties
-%   - permittivity  -- Relative permittivity of medium (default: 1.0)
-%   - wavelength    -- Wavelength of beam in medium (default: 1.0)
-%   - speed0        -- Speed of light in vacuum (default: 1.0)
-%   - omega         -- Optical frequency of light
-%   - index_medium  -- Refractive index in medium
-%   - wavenumber    -- Wave-number of beam in medium
-%   - speed         -- Speed of light in medium
-%   - wavelength0   -- Vacuum wavelength of beam
+% See also :class:`ott.beam.properties.LaguerreGaussian` for properties.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
-    lmode       % Azimuthal Laguerre mode order
-    pmode       % Radial Laguerre mode order
-  end
-
   methods
-    function beam = LaguerreGaussian(waist, lmode, pmode, varargin)
+    function beam = LaguerreGaussian(varargin)
       % Construct a new Abstract Laguerre Gaussian beam
       %
       % Usage
       %   beam = LaguerreGaussian(waist, lmode, pmode, ...)
+      %   Parameters can also be passed as named arguments.
       %
       % Parameters
       %   - waist (numeric)     -- Beam waist
       %   - lmode (integer)     -- Azimuthal LG mode
       %   - pmode (integer > 0) -- Radial LG mode
       %
-      % For optional parameters, see :class:`Properties`.
+      % Optional named arguments
+      %   - power (numeric) -- beam power.  Default: ``1.0``.
+      %
+      % See :class:`ott.beam.properties.LaguerreGaussian`.
 
-      beam = beam@ott.beam.abstract.Gaussian(waist, varargin{:});
-      beam.lmode = lmode;
-      beam.pmode = pmode;
-    end
-  end
-
-  methods % Getters/setters
-    % waist       % Beam waist at focus
-    % lmode       % Azimuthal Laguerre mode order
-    % pmode       % Radial Laguerre mode order
-
-    function beam = set.lmode(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-        'lmode must be numeric scalar');
-      assert(round(val) == val, ...
-          'lmode must be integer');
-      beam.lmode = val;
-    end
-
-    function beam = set.pmode(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-        'pmode must be numeric scalar');
-      assert(round(val) == val && val >= 0, ...
-          'pmode must be positive integer');
-      beam.pmode = val;
+      args = ott.utils.addDefaultParameter('power', 1.0, varargin);
+      beam = beam@ott.beam.properties.LaguerreGaussian(args{:});
     end
   end
 end

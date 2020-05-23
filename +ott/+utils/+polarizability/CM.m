@@ -1,5 +1,13 @@
 function alpha_CM = CM(spacing, index)
-% Clausius-Mossoti Polarizability 
+% Clausius-Mossoti Polarizability
+%
+% Evaluates::
+%
+%   \alpha = \frac{3}{4\pi} s^3 \frac{n^2 - 1}{n^2 + 2}
+%
+% Where :math:`n` is the refractive index and :math:`s` is the
+% dipole spacing.  This has units of L^3.  To convert to SI units,
+% multiply by :math:`4\pi\epsilon_0`.
 %
 % Usage
 %   alpha = CM(spacing, index)
@@ -7,7 +15,7 @@ function alpha_CM = CM(spacing, index)
 %   polarisabilities for N dipoles.
 %
 % Parameters
-%   - spacing (numeric scalar) -- lattice spacing parameter
+%   - spacing (numeric scalar) -- lattice spacing parameter [L]
 %   - index (Nx1 numeric) -- Relative refractive indices for N dipoles.
 
 % Based on the script by Vincent Loke.

@@ -74,6 +74,12 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
       %     material describing optical properties of medium.
       %     Default: ``ott.beam.medium.Vacuum.Unitary``.
       %
+      %   - power (numeric) -- Initial beam power (if supported).
+      %     Default: ``[]`` (i.e., doesn't set beam power explicitly).
+      %     TODO: This is incompatible with like...
+      %       Maybe we should have a method called 'like', this would
+      %       simplify the interface of our constructors!
+      %
       %   - like (ott.beam.Properties) -- Uses another beam
       %     group for default parameters.
       %
@@ -95,6 +101,7 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
       p.addParameter('position', []);
       p.addParameter('rotation', []);
       p.addParameter('like', []);
+      p.addParameter('power', []);
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 

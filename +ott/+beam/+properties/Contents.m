@@ -1,22 +1,12 @@
-% ott.beam.abstract Abstract representations of beams
+% ott.beam.properties Descriptions of beam properties
 %
-% This sub-package contains abstract representations of beams.
-% These beams have all the properties of the beam they represent
-% but don't implement methods to calculate the fields.  They define
-% methods for creating beams of other types (casts).
+% This sub-package contains classes describing properties of beams
+% which can be re-used by various beam implementations.  These classes
+% don't inherit from any special classes such as hetrogeneous array,
+% making them compatible with both beam and abstract beam representations.
 %
-% Abstract beams inherit from ott.beam.properties classes with the
-% same names but not :class:`ott.beam.Beam`.  They define casts and
-% should not be used as base classes for other beams.
-%
-% Abstract beams are hetrogeneous arrays and do not inherit from
-% :class:`ott.beam.utils.ArrayType`.  Arrays of beams are assumed
-% to be coherent unless they are :class:`Array` or :class:`Incoherent`.
-% The :class:`Coherent` class is semi-redundant, only useful for
-% arrays or sub-arrays of coherent beams.
-%
-% Generic beams
-%   Beam              -- Base class for abstract beam representations.
+% Generic classes
+%   Beam              -- Base class for beam properties.
 %   Scattered         -- Represents generic scattered beams
 %   Array             -- Represents arrays of beams
 %   Coherent          -- Specialisation for coherent arrays of beams
@@ -40,8 +30,7 @@
 %   FocussedTopHat    -- Focussed paraxial top-hat beam
 %   Dipole            -- Radiation field produced by a dipole
 %   FarfieldMasked    -- Combination beam with far-field mask
-%   NearfieldMasked2d -- Combination beam with 2-D near-field mask
-%   NearfieldMasked3d -- Combination beam with 3-D near-field mask
+%   NearfieldMasked   -- Combination beam with near-field mask
 %   ParaxialMasked    -- Combination beam with paraxial mask
 %
 % Copyright 2020 Isaac Lenton

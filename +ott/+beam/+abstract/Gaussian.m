@@ -1,25 +1,27 @@
-classdef Gaussian < ott.beam.abstract.Beam ...
+classdef Gaussian < ott.beam.properties.Gaussian ...
+    & ott.beam.abstract.Beam ...
     & ott.beam.utils.VariablePower
-% Abstract description of a Gaussian beam.
-% Inherits from :class:`abstract.Beam` and :class:`utils.VariablePower`.
+% Describes the Beam casts for a Gaussian beam.
+% Inherits from :class:`Beam`, :class:`ott.beam.properties.Gaussian`,
+% and :class:`utils.VariablePower`.
 %
-% Units of the fields depend on units used for the properties.
+% Supported casts
+%   - Beam            -- Default Beam cast, uses GaussianDavis5
+%   - vswf.Bsc        -- Default Bsc cast, uses vswf.Gaussian
+%   - GaussianDavis5
+%   - vswf.Gaussian
+%   - vswf.HermiteGaussian
+%   - vswf.LaguerreGaussian
+%   - vswf.InceGaussian
+%   - paraxial.Gaussian
+%   - paraxial.LaguerreGaussian
+%   - paraxial.HermiteGaussian
 %
-% Properties
-%   - waist         -- Beam waist radius
-%   - medium        -- Properties of the optical medium
-%   - omega         -- Optical frequency of light
-%   - position      -- Position of the beam
-%   - rotation      -- Rotation of the beam
-%   - power         -- Beam power
+% See also :class:`ott.beam.properties.Gaussian` for properties.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
-
-  properties
-    waist          % Beam waist radius
-  end
 
   methods
     function beam = Gaussian(waist, varargin)
@@ -27,6 +29,7 @@ classdef Gaussian < ott.beam.abstract.Beam ...
       %
       % Usage
       %   beam = Gaussian(waist, ...)
+      %   Parameters can also be passed as named arguments.
       %
       % Parameters
       %   - waist (numeric) -- Beam waist [L]
@@ -34,32 +37,24 @@ classdef Gaussian < ott.beam.abstract.Beam ...
       % Optional named arguments
       %   - power (numeric) -- beam power.  Default: ``1.0``.
       %
-      % For optional parameters, see :class:`Properties`.
+      % See also :class:`ott.beam.properties.Gaussian` for properties.
 
-      % Filter output power for Variable power constructor
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addParameter('power', 1.0);
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      beam = beam@ott.beam.utils.VariablePower(p.Results.power);
-      beam = beam@ott.beam.abstract.Beam(unmatched{:});
-      beam.waist = waist;
+      args = ott.utils.addDefaultParameter('power', 1.0, varargin);
+      beam = beam@ott.beam.properties.Gaussian(args{:});
     end
-    
+
     function beam = ott.beam.Beam(oldbeam, varargin)
       % Cast the beam to a ott.beam.Beam object
       %
       % The default beam is a ott.beam.GaussianDavis5, since it
       % is a good compromise between speed and accuracy.
-      
+
       beam = ott.beam.GaussianDavis5(oldbeam, varargin{:});
     end
-    
+
     function beam = ott.beam.GaussianDavis5(oldbeam, varargin)
       % Cast beam to a GaussianDavis5
-      
+
       beam = ott.beam.GaussianDavis5(oldbeam.waist, ...
         'omega', oldbeam.omega, 'medium', oldbeam.medium, ...
         'power', oldbeam.power, 'position', oldbeam.position, ...
@@ -88,14 +83,6 @@ classdef Gaussian < ott.beam.abstract.Beam ...
           'omega', oldbeam.omega, 'medium', oldbeam.medium, ...
           'NA', NA, 'power', oldbeam.power, 'position', oldbeam.position, ...
           'rotation', oldbeam.rotation, unmatched{:});
-    end
-  end
-
-  methods % Getters/setters
-    function beam = set.waist(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-        'waist must be numeric scalar');
-      beam.waist = val;
     end
   end
 end
