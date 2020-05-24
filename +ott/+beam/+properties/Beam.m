@@ -1,4 +1,4 @@
-classdef (Abstract) Properties < ott.utils.RotationPositionProp
+classdef (Abstract) Beam < ott.utils.RotationPositionProp
 % A base class for Beam and abstract.Beam representations.
 % Inherits from :class:`ott.utils.RotationPositionProp`.
 %
@@ -10,7 +10,6 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
 % two classes.
 %
 % Properties
-%   - power         -- The power of the beam (may be infinite)
 %   - omega         -- Beam optical frequency
 %   - medium        -- Medium where beam is propagating
 %   - position      -- Position of the beam or array
@@ -23,12 +22,12 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
 %   - wavelength0   -- Wave-length of the beam in vacuum
 %   - wavenumber0   -- Wave-number of beam in vacuum
 %
+% Abstract properties
+%   - power         -- The power of the beam (may be infinite)
+%
 % Methods
 %  - rotate*     -- Beam rotation methods
 %  - translate*  -- Beam translation methods
-%
-% Abstract methods
-%   - getBeamPower      -- get method called by dependent property power
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -39,8 +38,11 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
     medium           % Medium where beam is propagating
   end
 
-  properties (Dependent)
+  properties (Abstract)
     power           % The power of the beam (may be infinite)
+  end
+
+  properties (Dependent)
     vacuum          % Vacuum material liked to the medium
 
     wavenumber      % Wave-number of beam in medium
@@ -49,12 +51,22 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
     wavelength0     % Vacuum wavelength of beam
   end
 
-  methods (Abstract)
-    getBeamPower    % get method called by dependent property power
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      %
+      % Usage
+      %   args = Beam.like(other, args)
+
+      args = ott.utils.addDefaultParameter('position', other.position, args);
+      args = ott.utils.addDefaultParameter('rotation', other.rotation, args);
+      args = ott.utils.addDefaultParameter('omega', other.omega, args);
+      args = ott.utils.addDefaultParameter('medium', other.medium, args);
+    end
   end
 
   methods
-    function beam = Properties(varargin)
+    function beam = Beam(varargin)
       % Initialize beam properties
       %
       % Usage
@@ -75,13 +87,7 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
       %     Default: ``ott.beam.medium.Vacuum.Unitary``.
       %
       %   - power (numeric) -- Initial beam power (if supported).
-      %     Default: ``[]`` (i.e., doesn't set beam power explicitly).
-      %     TODO: This is incompatible with like...
-      %       Maybe we should have a method called 'like', this would
-      %       simplify the interface of our constructors!
-      %
-      %   - like (ott.beam.Properties) -- Uses another beam
-      %     group for default parameters.
+      %     No default, only sets property if argument passed.
       %
       % The medium is constructed from
       % :meth:`ott.beam.medium.Material.Simple`.  All unmatched parameters,
@@ -100,24 +106,22 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
       p.addParameter('medium', []);
       p.addParameter('position', []);
       p.addParameter('rotation', []);
-      p.addParameter('like', []);
       p.addParameter('power', []);
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
+      % Store power if supplied
+      if ~any(strcmpi('power', p.UsingDefaults))
+        beam.power = p.Results.power;
+      end
+
       % Get default values from like
+      % TODO: Use 'UsingDefaults' instead of isempty
       default_omega = 2*pi;
       default_vacuum = ott.beam.medium.Vacuum.Unitary();
       default_medium = default_vacuum;
       default_position = [0;0;0];
       default_rotation = eye(3);
-      if ~isempty(p.Results.like)
-        default_omega = p.Results.like.omega;
-        default_vacuum = p.Results.like.vacuum;
-        default_medium = p.Results.like.medium;
-        default_position = p.Results.like.position;
-        default_rotation = p.Results.like.rotation;
-      end
 
       % Check number of omega related arguments
       % TODO: We often want to supply two of these (to specify medium)
@@ -149,6 +153,7 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
       end
 
       % Construct medium
+      % TODO: Should we remove like from Materials too?
       beam.medium = ott.beam.medium.Material.Simple(...
           'vacuum', vacuum, 'like', medium, unmatched{:});
         
@@ -257,22 +262,7 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
     end
   end
 
-  methods (Hidden)
-    function beam = setBeamPower(beam, val)
-      % Function to set the beam power (if supported)
-      % Override this function if your beam supports this feature
-      error('Setting beam power not supported');
-    end
-  end
-
   methods % Getters/setters
-    function val = get.power(beam)
-      val = beam.getBeamPower();
-    end
-    function beam = set.power(beam, val)
-      beam = beam.setBeamPower(val);
-    end
-
     function val = get.vacuum(beam)
       val = beam.medium.vacuum;
     end
@@ -290,7 +280,7 @@ classdef (Abstract) Properties < ott.utils.RotationPositionProp
     function val = get.wavenumber(beam)
       val = beam.omega ./ beam.medium.speed;
     end
-    
+
     % Wavenumber is dependent on frequency
     function val = get.wavenumber0(beam)
       val = beam.omega ./ beam.vecuum.speed;

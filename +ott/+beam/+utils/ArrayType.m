@@ -1,5 +1,7 @@
-classdef ArrayType < ott.beam.abstract.Beam
+classdef ArrayType < ott.beam.properties.Beam
 % A mix-in type for beams that have internal arrays of beams.
+% TODO: Review if this should inherit from properties.Beam
+% TODO: Review this whole file
 %
 % Properties
 %   - array_type    -- Type of array ('coherent', 'array' or 'incoherent')
@@ -69,7 +71,7 @@ classdef ArrayType < ott.beam.abstract.Beam
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.abstract.Beam(unmatched{:});
+      beam = beam@ott.beam.properties.Beam(unmatched{:});
       beam.array_type = p.Results.array_type;
     end
 
@@ -165,7 +167,7 @@ classdef ArrayType < ott.beam.abstract.Beam
 
       % Check we have beams
       for ii = 1:length(varargin)
-        assert(isa(varargin{ii}, 'ott.beam.abstract.Beam'), ...
+        assert(isa(varargin{ii}, 'ott.beam.Beam'), ...
             'beams must inherit from ott.beam.abstract.Beam');
 
         if isa(varargin{ii}, 'ott.beam.utils.ArrayType')

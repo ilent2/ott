@@ -1,7 +1,9 @@
 classdef LaguerreGaussian < ott.beam.paraxial.Paraxial ...
-    & ott.beam.abstract.LaguerreGaussian ...
-    & ott.beam.utils.Vector2Polarisation
-% Laguerre-Gaussian beam in the paraxial approximation
+    & ott.beam.properties.LaguerreGaussian ...
+    & ott.beam.utils.VariablePower
+% Laguerre-Gaussian beam in the paraxial approximation.
+% Inherits from :class:`ott.beam.paraxial.Paraxial` and
+% :class:`ott.beam.properties.LaguerreGaussian`.
 %
 % Solution to paraxial Helmholtz equation in cylindrical coordinates::
 %
@@ -14,6 +16,7 @@ classdef LaguerreGaussian < ott.beam.paraxial.Paraxial ...
 %   - waist      -- Beam waist at focus
 %   - lmode      -- Azimuthal Laguerre mode order
 %   - pmode      -- Radial Laguerre mode order
+%   - power      -- Beam power
 %
 % Inherited properties
 %   - permittivity  -- Relative permittivity of medium (default: 1.0)
@@ -28,6 +31,50 @@ classdef LaguerreGaussian < ott.beam.paraxial.Paraxial ...
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.utils.VariablePower.likeProperties(other, args);
+      args = ott.beam.properties.LaguerreGaussian.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = LaguerreGaussian.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.paraxial.LaguerreGaussian.likeProperties(...
+          other, varargin);
+      beam = ott.beam.paraxial.LaguerreGaussian(args{:});
+    end
+  end
+
+  methods
+    function beam = LaguerreGaussian(varargin)
+      % Construct a new Laguerre-Gaussian beam
+      %
+      % Usage
+      %   beam = LaguerreGaussian(waist, lmode, pmode, ...)
+      %   Parameters can also be passed as named arguments.
+      %
+      % Parameters
+      %   - waist (numeric) -- Beam waist
+      %   - lmode (integer)     -- Azimuthal LG mode
+      %   - pmode (integer > 0) -- Radial LG mode
+      %
+      % Optional named arguments
+      %   - power (numeric) -- Beam power.  Default: 1.0.
+      %
+      % For properties see :class:`ott.beam.properties.Gaussian`.
+
+      args = ott.utils.addDefaultParameter('power', 1.0, varargin);
+      beam = beam@ott.beam.properties.LaguerreGaussian(args{:});
+    end
+  end
 
   methods (Hidden)
     function u = uRadial(beam, r, z)
@@ -85,37 +132,4 @@ classdef LaguerreGaussian < ott.beam.paraxial.Paraxial ...
 
     end
   end
-
-  methods
-    function beam = LaguerreGaussian(waist, lmode, pmode, varargin)
-      % Construct a new Laguerre-Gaussian beam
-      %
-      % Usage
-      %   beam = LaguerreGaussian(waist, mmode, nmode, ...)
-      %
-      % Parameters
-      %   - waist (numeric) -- Beam waist
-      %   - lmode (integer)     -- Azimuthal LG mode
-      %   - pmode (integer > 0) -- Radial LG mode
-      %
-      % Optional named arguments
-      %   - polarisation (2 numeric) -- Polarisation.  Default: [1,0].
-      %   - power (numeric) -- Beam power.  Default: 1.0.
-      %
-      % For optional parameters, see :class:`Properties`.
-
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addParameter('polarisation', [1;0]);
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      % Call base constructor
-      beam = beam@ott.beam.utils.Vector2Polarisation(...
-          p.Results.polarisation);
-      beam = beam@ott.beam.abstract.LaguerreGaussian(waist, ...
-          lmode, pmode, unmatched{:});
-    end
-  end
 end
-

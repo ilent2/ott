@@ -16,6 +16,15 @@ classdef Scattered < ott.beam.properties.Beam
     nmode       % Hermite mode order
   end
 
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Add like-properties to argument list
+      args = ott.utils.addDefaultParameter('mmode', other.lmode, args);
+      args = ott.utils.addDefaultParameter('nmode', other.pmode, args);
+      args = ott.beam.properties.Gaussian.likeProperties(other, args);
+    end
+  end
+
   methods % Getters/setters
     % mmode       % Hermite mode order
     % nmode       % Hermite mode order

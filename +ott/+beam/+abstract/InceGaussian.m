@@ -1,5 +1,6 @@
 classdef InceGaussian < ott.beam.properties.InceGaussian ...
-    ott.beam.abstract.Gaussian
+    & ott.beam.abstract.Beam ...
+    & ott.beam.utils.VariablePower
 % Abstract representation of a Ince-Gaussian beam
 % Inherits from :class:`Gaussian`.
 %
@@ -19,6 +20,27 @@ classdef InceGaussian < ott.beam.properties.InceGaussian ...
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.utils.VariablePower.likeProperties(other, args);
+      args = ott.beam.properties.InceGaussian.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = InceGaussian.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.abstract.InceGaussian.likeProperties(...
+          other, varargin);
+      beam = ott.beam.abstract.InceGaussian(args{:});
+    end
+  end
 
   methods
     function beam = InceGaussian(varargin)

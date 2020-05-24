@@ -17,6 +17,33 @@ classdef LaguerreGaussian < ott.beam.properties.Gaussian
     pmode       % Radial Laguerre mode order
   end
 
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Add like-properties to argument list
+      args = ott.utils.addDefaultParameter('lmode', other.lmode, args);
+      args = ott.utils.addDefaultParameter('pmode', other.pmode, args);
+      args = ott.beam.properties.Gaussian.likeProperties(other, args);
+    end
+  end
+
+  methods
+    function beam = LaguerreGaussian(varargin)
+      % Construct LG beam properties
+
+      p = inputParser;
+      p.addOptional('waist', [], @isnumeric);
+      p.addOptional('lmode', [], @isnumeric);
+      p.addOptional('pmode', [], @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      beam = beam@ott.beam.properties.Gaussian(p.Results.waist, unmatched{:});
+      beam.lmode = p.Results.lmode;
+      beam.pmode = p.Results.pmode;
+    end
+  end
+
   methods % Getters/setters
     % waist       % Beam waist at focus
     % lmode       % Azimuthal Laguerre mode order

@@ -1,4 +1,4 @@
-classdef (Abstract) Beam < ott.beam.properties.Beam
+classdef (Abstract) BeamInterface < ott.beam.properties.Beam
 % Abstract base class for beam approximations.
 % Inherits from :class:`ott.beam.utils.BeamInterface`.
 %
@@ -31,11 +31,13 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
 %   - visualiseFarfieldSphere -- Visualise the filed on a sphere
 %
 % Properties
-%   - power       -- The power of the beam (may be infinite)
 %   - wavelength    -- Wavelength of beam in medium (default: 1.0)
 %
 % Dependent properties
 %   - wavenumber    -- Wave-number of beam in medium
+%
+% Abstract properties
+%   - power       -- The power of the beam (may be infinite)
 %
 % Abstract methods
 %   - efieldInternal    -- Called by efield
@@ -176,6 +178,17 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
   end
 
   methods
+    function beam = BeamInterface(varargin)
+      % Pass-through constructor for beam interface
+      %
+      % Usage
+      %   beam = beam@ott.beam.utils.BeamInterface(...)
+      %
+      % All properties passed to ott.beam.properties.Beam
+
+      beam = beam@ott.beam.properties.Beam(varargin{:});
+    end
+
     function E = efield(beam, xyz, varargin)
       % Calculate E and H field
       %
@@ -941,23 +954,6 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
   end
 
   methods (Hidden)
-
-    function beam = catNewArray(array_type, sz, varargin)
-      % Construct a new Array for this beam type.
-
-      % Check all inherit from Beam
-      isBeam = true;
-      for ii = 1:length(varargin)
-        isBeam = isBeam & isa(varargin{ii}, 'ott.beam.Beam');
-      end
-
-      if ~isBeam
-        beam = catNewArray@ott.beam.abstract.Beam(array_type, sz, varargin{:});
-      else
-        beam = ott.beam.Array(array_type, sz, varargin{:});
-      end
-    end
-
     function varargout = callParticleMethod(beam, method, other, varargin)
       % Helper for calling particle methods with position/rotation inputs
       %
@@ -1021,7 +1017,7 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
 
       % Translate locations to beam coordinates
       if strcmpi(p.Results.origin, 'world')
-        xyz = beam.inverseTransform(xyz);
+        xyz = beam.global2local(xyz);
       end
     end
 

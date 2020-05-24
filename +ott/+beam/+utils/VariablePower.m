@@ -12,6 +12,13 @@ classdef VariablePower
     power
   end
 
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.utils.addDefaultParameter('power', other.power, args);
+    end
+  end
+
   methods % Getters/setters
     function beam = set.power(beam, val)
       assert(isnumeric(val) && isscalar(val) && val >= 0.0, ...

@@ -61,6 +61,7 @@ classdef Bsc < ott.beam.Beam ...
 
   properties (Dependent)
     Nmax        % Truncation number for VSWF coefficients
+    power       % Power of the beam shape coefficients
   end
 
   methods (Static)
@@ -719,6 +720,8 @@ classdef Bsc < ott.beam.Beam ...
       %
       % Optional named arguments
       %   - tolerance (numeric) -- Tolerance to use for power loss.
+      
+      ott.utils.nargoutCheck(beam, nargout);
 
       p = inputParser;
       p.addParameter('tolerance', 1.0e-6, @isnumeric);
@@ -1146,6 +1149,26 @@ classdef Bsc < ott.beam.Beam ...
       %
       % Usage
       %   beam = beam.setCoefficients(a, b)
+      %
+      %   beam = beam.setCoefficients(ab)
+      %   Set coefficients from a [a; b] vector.
+      %
+      %   beam = beam.setCoefficients(other_beam)
+      %   Get the beam coefficients from another beam
+      
+      ott.utils.nargoutCheck(beam, nargout);
+      
+      if nargin == 2
+        if isa(a, 'ott.beam.vswf.Bsc')
+          b = a.b;
+          a = a.a;
+        else
+          assert(isnumeric(a) && ismatrix(a), 'ab must be numeric matrix');
+          assert(mod(size(a, 1), 2) == 0, 'ab must be 2NxM in size');
+          b = a(end/2+1:end, :);
+          a = a(1:end/2, :);
+        end
+      end
 
       assert(all(size(a) == size(b)), 'size of a and b must match');
       assert(nargout == 1, 'Expected one output from function');
@@ -1665,16 +1688,6 @@ classdef Bsc < ott.beam.Beam ...
       end
     end
 
-
-    function p = getBeamPower(beam)
-      % get.power calculate the power of the beam
-      p = full(sum(abs(beam.a).^2 + abs(beam.b).^2));
-    end
-    function beam = setBeamPower(beam, p)
-      % set.power set the beam power
-      beam = sqrt(p / beam.power) * beam;
-    end
-
     function [E, data] = efieldInternal(beam, xyz, varargin)
       % Method used by efield(xyz)
       [E, ~, data] = beam.ehfield(xyz, varargin{:});
@@ -1818,6 +1831,11 @@ classdef Bsc < ott.beam.Beam ...
   end
 
   methods % Getters/setters
+    % power
+    % Nmax
+    % basis
+    % absdz
+
     function nmax = get.Nmax(beam)
       % Calculates Nmax from the current size of the beam coefficients
       nmax = ott.utils.combined_index(size(beam.a, 1));
@@ -1825,6 +1843,15 @@ classdef Bsc < ott.beam.Beam ...
     function beam = set.Nmax(beam, nmax)
       % Resizes the beam vectors (a,b)
       beam = beam.setNmax(nmax);
+    end
+
+    function p = get.power(beam)
+      % get.power calculate the power of the beam
+      p = full(sum(abs(beam.a).^2 + abs(beam.b).^2));
+    end
+    function beam = set.power(beam, val)
+      % set.power set the beam power
+      beam = sqrt(val / beam.power) * beam;
     end
 
     function beam = set.basis(beam, val)

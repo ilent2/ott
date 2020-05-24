@@ -1,7 +1,9 @@
 classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
-    & ott.beam.abstract.HermiteGaussian ...
-    & ott.beam.utils.Vector2Polarisation
-% Hermite-Gaussian beam in the paraxial approximation
+    & ott.beam.properties.HermiteGaussian ...
+    & ott.beam.utils.VariablePower
+% Hermite-Gaussian beam in the paraxial approximation.
+% Inherits from :class:`Paraxial`
+% and :class:`ott.beam.properties.HermiteGaussian`.
 %
 % Solution to paraxial Helmholtz equation in Cartesian coordinates::
 %
@@ -11,10 +13,57 @@ classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
 %   - waist      -- Beam waist at focus
 %   - mmode      -- Hermite mode order
 %   - nmode      -- Hermite mode order
+%   - power      -- Beam power
+%
+% See :class:`ott.beam.Beam` for additional methods/properties.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.utils.VariablePower.likeProperties(other, varargin);
+      args = ott.beam.properties.HermiteGaussian.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = HermiteGaussian.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.abstract.HermiteGaussian.likeProperties(...
+          other, varargin);
+      beam = ott.beam.paraxial.HermiteGaussian(args{:});
+    end
+  end
+
+  methods
+    function beam = HermiteGaussian(waist, mmode, nmode, varargin)
+      % Construct a new Hermite-Gaussian beam
+      %
+      % Usage
+      %   beam = HermiteGaussian(waist, mmode, nmode, ...)
+      %   Parameters can also be passed as named arguments.
+      %
+      % Parameters
+      %   - waist (numeric) -- Beam waist
+      %   - mmode (integer) -- Mode number
+      %   - nmode (integer) -- Mode number
+      %
+      % Optional named arguments
+      %   - power (numeric) -- Beam power.  Default: 1.0.
+      %
+      % For properties see :class:`ott.beam.properties.HermiteGaussian`.
+
+      args = ott.utils.addDefaultParameter('power', 1.0, varargin);
+      beam = beam@ott.beam.properties.HermiteGaussian(args{:});
+    end
+  end
 
   methods (Hidden)
     function u = uInternal(beam, x, z, mode)
@@ -56,37 +105,4 @@ classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
 
     end
   end
-
-  methods
-    function beam = HermiteGaussian(waist, mmode, nmode, varargin)
-      % Construct a new Hermite-Gaussian beam
-      %
-      % Usage
-      %   beam = HermiteGaussian(waist, mmode, nmode, ...)
-      %
-      % Parameters
-      %   - waist (numeric) -- Beam waist
-      %   - mmode (integer) -- Mode number
-      %   - nmode (integer) -- Mode number
-      %
-      % Optional named arguments
-      %   - polarisation (2 numeric) -- Polarisation.  Default: [1,0].
-      %   - power (numeric) -- Beam power.  Default: 1.0.
-      %
-      % For optional parameters, see :class:`Properties`.
-
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addParameter('polarisation', [1;0]);
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      % Call base constructor
-      beam = beam@ott.beam.utils.Vector2Polarisation(...
-          p.Results.polarisation);
-      beam = beam@ott.beam.abstract.HermiteGaussian(waist, ...
-          mmode, nmode, unmatched{:});
-    end
-  end
 end
-

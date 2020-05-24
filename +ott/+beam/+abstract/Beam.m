@@ -11,6 +11,12 @@ classdef (Abstract) Beam < ott.beam.utils.BeamInterface ...
 % The class implements the :class:`BeamInterface`, which defines methods for
 % calculating fields and forces.  To do this, the class casts the
 % :class:`ott.beam.abstract.Beam` object to a :class:`ott.beam.Beam` object.
+%
+% Supported casts
+%   - Beam          -- Default beam cast for arrays, uses Coherent
+%   - Array
+%   - Coherent
+%   - Incoherent
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -25,7 +31,61 @@ classdef (Abstract) Beam < ott.beam.utils.BeamInterface ...
       %
       % For optional parameters, see :class:`ott.beam.properties.Beam`.
 
-      beam = beam@ott.beam.properties.Beam(varargin{:});
+      beam = beam@ott.beam.utils.BeamInterface(varargin{:});
+    end
+
+    function beam = ott.beam.Beam(beam, varargin)
+      % Cast an array of beams to a coherent array of beams
+      %
+      % This method is called for hetrogeneous arrays.
+      % This method should be overloaded by abstract beams sub-classes.
+
+      assert(isa(beam, 'ott.beam.abstract.Beam'), ...
+          'First argument must be abstract.Beam');
+
+      assert(numel(beam) > 1, ...
+          'Cast not implemented for this abstract type');
+
+      beam = ott.beam.Coherent(beam);
+    end
+
+    function beam = ott.beam.Array(beam, varargin)
+      % Construct an array of beam objects
+
+      assert(isa(beam, 'ott.beam.abstract.Beam'), ...
+          'First argument must be abstract.Beam');
+
+      beam_array = ott.beam.Array(size(beam));
+
+      for ii = numel(beam)
+        beam_array(ii) = ott.beam.Beam(beam(ii));
+      end
+    end
+
+    function beam_array = ott.beam.Coherent(beam, varargin)
+      % Generate incoherent array of beams
+
+      assert(isa(beam, 'ott.beam.abstract.Beam'), ...
+          'First argument must be abstract.Beam');
+
+      beam_array = ott.beam.Coherent(size(beam));
+
+      for ii = numel(beam)
+        beam_array(ii) = ott.beam.Beam(beam(ii));
+      end
+    end
+
+    function beam_array = ott.beam.Incoherent(beam, varargin)
+      % Generate incoherent array of dipoles
+
+      assert(isa(beam, 'ott.beam.abstract.Beam'), ...
+          'First argument must be abstract.Beam');
+
+      beam_array = ott.beam.Incoherent(size(beam));
+
+      for ii = numel(beam)
+        beam_array(ii) = ott.beam.Beam(beam(ii));
+      end
     end
   end
 

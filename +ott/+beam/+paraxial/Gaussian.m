@@ -1,7 +1,8 @@
 classdef Gaussian < ott.beam.paraxial.Paraxial ...
-    & ott.beam.abstract.Gaussian & ott.beam.utils.Vector2Polarisation
+    & ott.beam.properties.Gaussian ...
+    & ott.beam.utils.VariablePower
 % Paraxial approximation of a Gaussian beam
-% Inherits from :class:`Paraxial` and :class:`Gaussian`.
+% Inherits from :class:`Paraxial` and :class:`ott.beam.properties.Gaussian`.
 %
 % The paraxial beam is described by the potential::
 %
@@ -41,6 +42,47 @@ classdef Gaussian < ott.beam.paraxial.Paraxial ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.utils.VariablePower.likeProperties(other, varargin);
+      args = ott.beam.properties.Gaussian.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = Gaussian.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.abstract.Gaussian.likeProperties(other, varargin);
+      beam = ott.beam.paraxial.Gaussian(args{:});
+    end
+  end
+
+  methods
+    function beam = Gaussian(waist, varargin)
+      % Construct a new Gaussian paraxial beam representation
+      %
+      % Usage
+      %   beam = paraxial.Gaussian(waist, ...)
+      %   Parameters can also be passed as named arguments.
+      %
+      % Parameters
+      %   - waist (numeric) -- Beam waist [L]
+      %
+      % Optional named arguments
+      %   - power (numeric) -- Beam power.  Default: ``1.0``.
+      %
+      % For properties see :class:`ott.beam.properties.Gaussian`.
+
+      args = ott.utils.addDefaultParameter('power', 1.0, varargin);
+      beam = beam@ott.beam.properties.Gaussian(args{:});
+    end
+  end
+
   methods (Hidden)
     function E = efieldInternal(beam, xyz)
       % Calculate the E (and H) fields
@@ -71,41 +113,4 @@ classdef Gaussian < ott.beam.paraxial.Paraxial ...
       E = ott.utils.FieldVector(xyz, E, 'cartesian');
     end
   end
-
-  methods
-    function beam = Gaussian(waist, varargin)
-      % Construct a new Gaussian paraxial beam representation
-      %
-      % Usage
-      %   beam = paraxial.Gaussian(waist, ...)
-      %
-      % Parameters
-      %   - waist (numeric) -- Beam waist [L]
-      %
-      % Optional named arguments
-      %   - permittivity (numeric) -- Relative permittivity of medium
-      %   - wavelength (numeric) -- Wavelength in medium [L]
-      %   - speed0 (numeric) -- Speed of light in vacuum [L/T]
-      %   - power (numeric) -- Beam power.  Default: ``1.0``.
-      %   - polarisation (2x1 numeric) -- Polarisation.  Default: ``[1;0]``.
-      %
-      %   - omega (numeric) -- Optical frequency [2*pi/T]
-      %   - index_medium (numeric) -- Refractive index in medium
-      %   - wavenumber (numeric) -- Wave-number in medium [2*pi/L]
-      %   - speed (numeric) -- Speed of light in medium [L/T]
-      %   - wavelength0 (numeric) -- Wavelength in medium [L]
-
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addParameter('polarisation', [1;0]);
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      % Call base constructor
-      beam = beam@ott.beam.utils.Vector2Polarisation(...
-          p.Results.polarisation);
-      beam = beam@ott.beam.abstract.Gaussian(waist, unmatched{:});
-    end
-  end
 end
-

@@ -1,8 +1,9 @@
 classdef Gaussian < ott.beam.vswf.BscScalar ...
-    & ott.beam.abstract.Gaussian ...
+    & ott.beam.properties.Gaussian ...
+    & ott.beam.utils.FarfieldMapping
 % Gaussian beam VSWF representation using LG-paraxial point matching.
 % Inherits from :class:`ott.beam.vswf.BscScalar`,
-% :class:`ott.beam.abstract.Gaussian`.
+% :class:`ott.beam.properties.Gaussian`.
 %
 % Properties
 %   - waist         -- Beam waist radius
@@ -12,13 +13,25 @@ classdef Gaussian < ott.beam.vswf.BscScalar ...
 %   - rotation      -- Rotation of the beam
 %   - power         -- Beam power
 %   - polarisation  -- Far-field polarisation of paraxial beam
+%   - mapping       -- Paraxial to Far-field mapping
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
-    polarisation      % Far-field polarisation of paraxial beam
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.utils.FarfieldMapping.likeProperties(other, args);
+      args = ott.beam.vswf.BscScalar.likeProperties(other, args);
+      args = ott.beam.properties.Gaussian.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Construct a VSWF beam like another beam
+      args = ott.beam.vswf.Gaussian.likeProperties(other, varargin);
+      beam = ott.beam.vswf.Gaussian(args{:});
+    end
   end
 
   methods
@@ -27,13 +40,10 @@ classdef Gaussian < ott.beam.vswf.BscScalar ...
       %
       % Usage
       %   bsc = Gaussian(waist, ...)
-      %
-      %   bsc = Gaussian(...)
-      %   Construct a Gaussian beam with default parameters.
       %   Parameters can also be passed as named arguments.
       %
       % Parameters
-      %   - waist (numeric) -- Beam waist.  Default: ``1.0``.
+      %   - waist (numeric) -- Beam waist.
       %
       % Optional named parameters
       %   - position (3x1 numeric) -- Position of the beam.
@@ -44,34 +54,30 @@ classdef Gaussian < ott.beam.vswf.BscScalar ...
       %
       %   - polarisation (2-numeric) -- Polarisation of the beam.
       %     2 element Jones vector.  Default: ``[1, 1i]``.
+      %
+      %   - mapping (enum) -- Mapping method for paraxial far-field.
+      %     Can be either 'sintheta' or 'tantheta' (small angle).
+      %     For a discussion of this parameter, see Documentation
+      %     (:ref:`conception-angular-scaling`).  Default: ``'sintheta'``.
 
       p = inputParser;
-      p.addOptional('waist', 1.0, @isnumeric);
+      p.addOptional('waist', [], @isnumeric);
+      p.addParameter('mapping', 'sintheta');
       p.addParameter('polarisation', [1, 1i]);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      % Construct a beam LgParaxialBasis beam
-      data = ott.beam.vswf.LgParaxialBasis.FromLgMode(p.Results.waist, ...
-        0, 0, p.Results.polarisation);
+      bsc = bsc@ott.beam.utils.FarfieldMapping(p.Results.mapping);
+      bsc = bsc@ott.beam.properties.Gaussian(p.Results.waist, ...
+          'polarisation', p.Results.polarisation, unmatched{:});
+      bsc = bsc@ott.beam.vswf.BscScalar();
 
-      % Construct this object from data
-      bsc = bsc@ott.beam.vswf.BscScalar(sum(data));
-      bsc = bsc@ott.beam.abstract.Gaussian(p.Results.waist, unmatched{:});
-      
-      bsc.polarisation = p.Results.polarisation;
-    end
-  end
-  
-  methods (Hidden)
-    function bsc = setBeamPower(bsc, power)
-      bsc = setBeamPower@ott.beam.vswf.Bsc(bsc, power);
-      bsc = setBeamPower@ott.beam.abstract.Gaussian(bsc, power);
-    end
-    
-    function p = getBeamPower(bsc)
-      p = getBeamPower@ott.beam.vswf.Bsc(bsc);
+      % Construct a beam LgParaxialBasis beam
+      % TODO: Perhaps this should be called later?  Grow?
+      data = ott.beam.vswf.LgParaxialBasis.FromLgMode(...
+          bsc.waist, 0, 0, bsc.polarisation, 'mapping', bsc.mapping);
+      bsc = bsc.setCoefficients(sum(data));
     end
   end
 end

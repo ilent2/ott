@@ -1,8 +1,9 @@
 classdef LaguerreGaussian < ott.beam.vswf.BscScalar ...
-    & ott.beam.abstract.LaguerreGaussian ...
+    & ott.beam.properties.LaguerreGaussian ...
+    & ott.beam.utils.FarfieldMapping
 % Laguerre-Gaussian beam VSWF representation using LG-paraxial point matching.
 % Inherits from :class:`ott.beam.vswf.BscScalar` and
-% :class:`ott.beam.abstract.LaguerreGaussian`.
+% :class:`ott.beam.properties.LaguerreGaussian`.
 %
 % This is a simplified interface for :class:`LgParaxialBasis`.
 %
@@ -21,8 +22,19 @@ classdef LaguerreGaussian < ott.beam.vswf.BscScalar ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
-    polarisation      % Far-field polarisation of paraxial beam
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.utils.FarfieldMapping.likeProperties(other, args);
+      args = ott.beam.vswf.BscScalar.likeProperties(other, args);
+      args = ott.beam.properties.LaguerreGaussian.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Construct a VSWF beam like another beam
+      args = ott.beam.vswf.LaguerreGaussian.likeProperties(other, varargin);
+      beam = ott.beam.vswf.LaguerreGaussian(args{:});
+    end
   end
 
   methods
@@ -50,37 +62,33 @@ classdef LaguerreGaussian < ott.beam.vswf.BscScalar ...
       %
       %   - polarisation (2-numeric) -- Polarisation of the beam.
       %     2 element Jones vector.  Default: ``[1, 1i]``.
+      %
+      %   - mapping (enum) -- Mapping method for paraxial far-field.
+      %     Can be either 'sintheta' or 'tantheta' (small angle).
+      %     For a discussion of this parameter, see Documentation
+      %     (:ref:`conception-angular-scaling`).  Default: ``'sintheta'``.
 
       p = inputParser;
-      p.addOptional('waist', 1.0, @isnumeric);
-      p.addOptional('lmode', 0, @isnumeric);
-      p.addOptional('pmode', 0, @isnumeric);
+      p.addOptional('waist', [], @isnumeric);
+      p.addOptional('lmode', [], @isnumeric);
+      p.addOptional('pmode', [], @isnumeric);
+      p.addParameter('mapping', 'sintheta');
       p.addParameter('polarisation', [1, 1i]);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      % Construct a beam LgParaxialBasis beam
-      data = ott.beam.vswf.LgParaxialBasis.FromLgMode(p.Results.waist, ...
-          p.Results.lmode, p.Results.pmode, p.Results.polarisation);
+      bsc = bsc@ott.beam.utils.FarfieldMapping(p.Results.mapping);
+      bsc = bsc@ott.beam.properties.LaguerreGaussian(...
+          p.Results.waist, p.Results.lmode, p.Results.pmode, ...
+          'polarisation', p.Results.polarisation, unmatched{:});
+      bsc = bsc@ott.beam.vswf.BscScalar();
 
-      % Construct this object from data
-      bsc = bsc@ott.beam.vswf.BscScalar(sum(data));
-      bsc = bsc@ott.beam.abstract.LaguerreGaussian(p.Results.waist, ...
-          p.Results.lmode, p.Results.pmode, unmatched{:});
-      
-      bsc.polarisation = p.Results.polarisation;
-    end
-  end
-  
-  methods (Hidden)
-    function bsc = setBeamPower(bsc, power)
-      bsc = setBeamPower@ott.beam.vswf.Bsc(bsc, power);
-      bsc = setBeamPower@ott.beam.abstract.LaguerreGaussian(bsc, power);
-    end
-    
-    function p = getBeamPower(bsc)
-      p = getBeamPower@ott.beam.vswf.Bsc(bsc);
+      % Construct a beam LgParaxialBasis beam
+      data = ott.beam.vswf.LgParaxialBasis.FromLgMode(bsc.waist, ...
+          bsc.lmode, bsc.pmode, bsc.polarisation, ...
+          'mapping', bsc.mapping);
+      bsc = bsc.setCoefficients(sum(data));
     end
   end
 end

@@ -1,5 +1,6 @@
 classdef InceGaussian < ott.beam.vswf.BscScalar ...
     & ott.beam.abstract.InceGaussian ...
+    & ott.beam.utils.FarfieldMapping
 % Ince-Gaussian beam VSWF representation using LG-paraxial point matching.
 % Inherits from :class:`ott.beam.vswf.BscScalar` and
 % :class:`ott.beam.abstract.InceGaussian`.
@@ -16,13 +17,25 @@ classdef InceGaussian < ott.beam.vswf.BscScalar ...
 %   - rotation      -- Rotation of the beam
 %   - power         -- Beam power
 %   - polarisation  -- Far-field polarisation of paraxial beam
+%   - mapping       -- Paraxial to far-field mapping
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
-    polarisation      % Far-field polarisation of paraxial beam
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.utils.FarfieldMapping.likeProperties(other, args);
+      args = ott.beam.vswf.BscScalar.likeProperties(other, args);
+      args = ott.beam.properties.InceGaussian.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Construct a VSWF beam like another beam
+      args = ott.beam.vswf.InceGaussian.likeProperties(other, varargin);
+      beam = ott.beam.vswf.InceGaussian(args{:});
+    end
   end
 
   methods
@@ -53,42 +66,37 @@ classdef InceGaussian < ott.beam.vswf.BscScalar ...
       %
       %   - polarisation (2-numeric) -- Polarisation of the beam.
       %     2 element Jones vector.  Default: ``[1, 1i]``.
+      %
+      %   - mapping (enum) -- Mapping method for paraxial far-field.
+      %     Can be either 'sintheta' or 'tantheta' (small angle).
+      %     For a discussion of this parameter, see Documentation
+      %     (:ref:`conception-angular-scaling`).  Default: ``'sintheta'``.
 
       p = inputParser;
-      p.addOptional('waist', 1.0, @isnumeric);
-      p.addOptional('lmode', 0, @isnumeric);
-      p.addOptional('porder', 1, @isnumeric);
-      p.addOptional('parity', 'even', @(x) any(strcmpi(x, {'even', 'odd'})));
-      p.addOptional('ellipticity', 1, @isnumeric);
+      p.addOptional('waist', [], @isnumeric);
+      p.addOptional('lmode', [], @isnumeric);
+      p.addOptional('porder', [], @isnumeric);
+      p.addOptional('parity', [], @(x) any(strcmpi(x, {'odd', 'even'})));
+      p.addOptional('ellipticity', [], @isnumeric);
+      p.addParameter('mapping', 'sintheta');
       p.addParameter('polarisation', [1, 1i]);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      % Construct a beam LgParaxialBasis beam
-      data = ott.beam.vswf.LgParaxialBasis.FromIgMode(...
+      bsc = bsc@ott.beam.utils.FarfieldMapping(p.Results.mapping);
+      bsc = bsc@ott.beam.properties.InceGaussian(...
           p.Results.waist, p.Results.lmode, p.Results.porder, ...
           p.Results.parity, p.Results.ellipticity, ...
-          p.Results.polarisation);
+          'polarisation', p.Results.polarisation, unmatched{:});
+      bsc = bsc@ott.beam.vswf.BscScalar();
 
-      % Construct this object from data
-      bsc = bsc@ott.beam.vswf.BscScalar(sum(data));
-      bsc = bsc@ott.beam.abstract.InceGaussian(...
-          p.Results.waist, p.Results.lmode, p.Results.porder, ...
-          p.Results.parity, p.Results.ellipticity, unmatched{:});
-      
-      bsc.polarisation = p.Results.polarisation;
-    end
-  end
-  
-  methods (Hidden)
-    function bsc = setBeamPower(bsc, power)
-      bsc = setBeamPower@ott.beam.vswf.Bsc(bsc, power);
-      bsc = setBeamPower@ott.beam.abstract.InceGaussian(bsc, power);
-    end
-    
-    function p = getBeamPower(bsc)
-      p = getBeamPower@ott.beam.vswf.Bsc(bsc);
+      % Construct a beam LgParaxialBasis beam
+      data = ott.beam.vswf.LgParaxialBasis.FromIgMode(...
+          bsc.waist, bsc.lmode, bsc.porder, ...
+          bsc.parity, bsc.ellipticity, ...
+          bsc.polarisation, 'mapping', bsc.mapping);
+      bsc = bsc.setCoefficients(sum(data));
     end
   end
 end

@@ -20,6 +20,18 @@ classdef Scattered < ott.beam.properties.Beam
     parity       % Parity of beam ('even' or 'odd')
   end
 
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Add like-properties to argument list
+      args = ott.utils.addDefaultParameter('lmode', other.lmode, args);
+      args = ott.utils.addDefaultParameter('porder', other.porder, args);
+      args = ott.utils.addDefaultParameter(...
+          'ellipticity', other.ellipticity, args);
+      args = ott.utils.addDefaultParameter('parity', other.parity, args);
+      args = ott.beam.properties.Gaussian.likeProperties(other, args);
+    end
+  end
+
   methods
     function beam = InceGaussian(varargin)
       % TODO: Docs

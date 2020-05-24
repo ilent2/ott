@@ -1,4 +1,6 @@
-classdef GaussianDavis5 < ott.beam.Beam & ott.beam.abstract.Gaussian
+classdef GaussianDavis5 < ott.beam.Beam ...
+    & ott.beam.properties.Gaussian ...
+    & ott.beam.utils.VariablePower
 % Fifth-order Davis approximation of a Gaussian beam
 % Inherits from :class:`Beam` and :class:`Gaussian`.
 %
@@ -36,13 +38,50 @@ classdef GaussianDavis5 < ott.beam.Beam & ott.beam.abstract.Gaussian
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
-    polarisation      % x and y polarisation
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.utils.VariablePower.likeProperties(other, args);
+      args = ott.beam.properties.Gaussian.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = GaussianDavis5.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.abstract.Gaussian.likeProperties(other, varargin);
+      beam = ott.beam.GaussianDavis5(args{:});
+    end
+  end
+
+  methods
+    function beam = GaussianDavis5(varargin)
+      % Construct a new fifth-order Davis Gaussian beam approximation
+      %
+      % Usage
+      %   beam = GaussianDavis(waist, ...)
+      %   Parameters can also be passed as named arguments.
+      %
+      % Optional named arguments
+      %   - power (numeric) -- Beam power, default 1.0.
+      %
+      % For properties see :class:`ott.beam.properties.Gaussian`.
+
+      args = ott.utils.addDefaultParameter('power', 1.0, varargin);
+      beam = beam@ott.beam.properties.Gaussian(args{:});
+    end
   end
 
   methods (Hidden)
     function [E, H] = ehfieldInternal(beam, xyz)
       % Calculate the E and H fields
+
+      assert(isnumeric(xyz) && size(xyz, 1) == 3, ...
+          'xyz must be 3xN numeric');
 
       % Calculate normalised beam waist (Eq 1)
       s = 1 ./ (beam.wavenumber .* beam.waist);
@@ -109,51 +148,4 @@ classdef GaussianDavis5 < ott.beam.Beam & ott.beam.abstract.Gaussian
       error('Not yet implemented');
     end
   end
-
-  methods
-    function beam = GaussianDavis5(waist, varargin)
-      % Construct a new fith-order Davis Gaussian beam approximation
-      %
-      % Usage
-      %   beam = GaussianDavis(waist, ...)
-      %
-      % Parameters
-      %   - waist (numeric) -- Beam waist [L]
-      %
-      % Optional named arguments
-      %   - permittivity (numeric) -- Relative permittivity of medium
-      %   - wavelength (numeric) -- Wavelength in medium [L]
-      %   - speed0 (numeric) -- Speed of light in vacuum [L/T]
-      %   - power (numeric) -- Beam power.  Default: ``1.0``.
-      %   - polarisation (2x1 numeric) -- Polarisation.  Default: ``[1;0]``.
-      %
-      %   - omega (numeric) -- Optical frequency [2*pi/T]
-      %   - index_medium (numeric) -- Refractive index in medium
-      %   - wavenumber (numeric) -- Wave-number in medium [2*pi/L]
-      %   - speed (numeric) -- Speed of light in medium [L/T]
-      %   - wavelength0 (numeric) -- Wavelength in medium [L]
-
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addParameter('power', 1.0);
-      p.addParameter('polarisation', [1;0]);
-      p.parse(varargin{:});
-
-      % Call base constructor
-      unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
-      beam = beam@ott.beam.abstract.Gaussian(waist, varargin{:});
-
-      beam.power = p.Results.power;
-      beam.polarisation = p.Results.polarisation;
-    end
-  end
-
-  methods
-    function beam = set.polarisation(beam, val)
-      assert(isnumeric(val) && all(size(val) == [2, 1]), ...
-        'polarisation must be 2x1 vector');
-      beam.polarisation = val;
-    end
-  end
 end
-

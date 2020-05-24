@@ -502,13 +502,15 @@ classdef LgParaxialBasis < ott.beam.vswf.Bsc
     function [rw, dr] = paraxial_scaling(bsc, theta)
       % Calculate paraxial scaling factors
 
+      waist = bsc.waist;
+
       switch bsc.mapping
         case 'sintheta'
-          rw = 2*(bsc.waist).^2 .* sin(theta).^2;
-          dr = bsc.waist .* abs(cos(theta));
+          rw = 2*(waist).^2 .* sin(theta).^2;
+          dr = waist .* abs(cos(theta));
         case 'tantheta'
-          rw = 2*(bsc.waist).^2 .* tan(theta).^2;
-          dr = bsc.waist .* (sec(theta)).^2;
+          rw = 2*(waist).^2 .* tan(theta).^2;
+          dr = waist .* (sec(theta)).^2;
         otherwise
           error('Unknown mapping option');
       end

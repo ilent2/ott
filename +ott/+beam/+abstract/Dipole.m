@@ -12,9 +12,9 @@ classdef Dipole < ott.beam.properties.Dipole ...
 %
 % Supported casts
 %   - Beam          -- Default Beam cast, uses Dipole
-%   - Array
+%   - Array         -- (Inherited from abstract.Beam)
 %   - Coherent      -- Creates coherent dipole beam, Uses Dipole
-%   - Incoherent
+%   - Incoherent    -- (Inherited from abstract.Beam)
 %   - Dipole
 %   - vswf.Bsc
 
@@ -72,34 +72,9 @@ classdef Dipole < ott.beam.properties.Dipole ...
       beam = ott.beam.vswf.Bsc(a, b, 'basis', 'outgoing');
     end
 
-    function beam = ott.beam.Array(beam, varargin)
-
-      assert(isa(beam, 'ott.beam.abstract.Dipole'), ...
-          'First argument must be abstract.Dipole');
-
-      beam_array = ott.beam.Array(size(beam));
-
-      for ii = numel(beam)
-        beam_array(ii) = ott.beam.Dipole(beam(ii));
-      end
-    end
-
     function beam = ott.beam.Coherent(varargin)
       % Convert to Dipole
       beam = ott.beam.Dipole(varargin{:});
-    end
-
-    function beam_array = ott.beam.Incoherent(beam, varargin)
-      % Generate incoherent array of dipoles
-
-      assert(isa(beam, 'ott.beam.abstract.Dipole'), ...
-          'First argument must be abstract.Dipole');
-
-      beam_array = ott.beam.Incoherent(size(beam));
-
-      for ii = numel(beam)
-        beam_array(ii) = ott.beam.Dipole(beam(ii));
-      end
     end
   end
 

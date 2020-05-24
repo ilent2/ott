@@ -1,5 +1,6 @@
 classdef HermiteGaussian < ott.beam.properties.HermiteGaussian ...
-    & ott.beam.abstract.Gaussian
+    & ott.beam.abstract.Beam ...
+    & ott.beam.utils.VariablePower
 % Abstract representation of a Hermite-Gaussian beam
 % Inherits from :class:`Gaussian` and
 % :class:`ott.beam.properties.LaguerreGaussian`.
@@ -20,6 +21,27 @@ classdef HermiteGaussian < ott.beam.properties.HermiteGaussian ...
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.utils.VariablePower.likeProperties(other, args);
+      args = ott.beam.properties.HermiteGaussian.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = HermiteGaussian.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.abstract.HermiteGaussian.likeProperties(...
+          other, varargin);
+      beam = ott.beam.abstract.HermiteGaussian(args{:});
+    end
+  end
 
   methods
     function beam = HermiteGaussian(varargin)

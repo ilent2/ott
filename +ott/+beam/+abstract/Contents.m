@@ -29,13 +29,15 @@
 %   LaguerreGaussian  -- Laguerre-Gaussian beam.
 %   InceGaussian      -- Ince-Gaussian beam.
 %
-% Plane wave beams
+% PlaneWave-like beams
 %   PlaneWave         -- Plane wave beam.
 %   Ray               -- Geometric optics ray beam.
 %
-% Other beams
+% Bessel-like beams
 %   Bessel            -- Bessel beam
 %   Annular           -- Annular beam
+%
+% Other beams
 %   TopHat            -- Collimated top-hat beam
 %   FocussedTopHat    -- Focussed paraxial top-hat beam
 %   Dipole            -- Radiation field produced by a dipole
@@ -43,6 +45,9 @@
 %   NearfieldMasked2d -- Combination beam with 2-D near-field mask
 %   NearfieldMasked3d -- Combination beam with 3-D near-field mask
 %   ParaxialMasked    -- Combination beam with paraxial mask
+%   InterpParaxial    -- Interpolated beam for paraxial-field
+%   InterpNearfield   -- Interpolated beam for near-field
+%   InterpFarfield    -- Interpolated beam for far-field
 %
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

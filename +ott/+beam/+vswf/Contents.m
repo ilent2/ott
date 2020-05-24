@@ -8,8 +8,8 @@
 %   Bsc               - Class representing VSWF beam shape coefficients
 %   Scattered         - A Bsc instance describing scattered beams
 %   Pointmatch        - A Bsc instance with methods for point-matching
-%   FarfieldPm        - Far-field point matching base class
-%   NearfieldPm       - Near-field point matching base class
+%   FarfieldPm        - Far-field and paraxial point matching
+%   NearfieldPm       - Near-field point matching
 %
 % Reduced basis specialisations
 %   BesselBasis       - Bsc using a Bessel function basis set
