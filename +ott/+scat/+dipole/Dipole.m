@@ -2,6 +2,10 @@ classdef Dipole < ott.scat.utils.Particle & ott.utils.RotationPositionProp
 % Single point dipole approximation for the force on a particle.
 % Inherits from :class:`ott.scat.utils.Particle`.
 %
+% TODO: Perhaps we should have a calculation for C_pr and C_scat, C_ext
+% in the dipole beam class.  This class could just use these to
+% calculate the scattered field and the force.
+%
 % When the particle is small compared to the wavelength, the fields
 % across the particle can be assumed to be uniform, i.e. the particle
 % is in the Rayleigh scattering regime and can be modelled as a small
