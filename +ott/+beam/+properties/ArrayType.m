@@ -1,37 +1,37 @@
-classdef ArrayType < ott.beam.properties.Beam
-% A mix-in type for beams that have internal arrays of beams.
-% TODO: Review if this should inherit from properties.Beam
-% TODO: Review this whole file
+classdef (Abstract) ArrayType < ott.beam.properties.Beam
+% Properties of arrays inheriting from ott.beam.Beam.
 %
-% Properties
-%   - array_type    -- Type of array ('coherent', 'array' or 'incoherent')
+% This class defines the properties and methods required for ArrayType
+% beams (does not include abstract arrays).
 %
 % Methods
-%   - plus          -- Provides addition of coherent beams
-%   - cat           -- Concatenation of beams and arrays
-%   - vertcat       -- Vertical concatenation of beams and arrays
-%   - horzcat       -- Horizontal concatenation of beams and arrays
-%   - subsref       -- For direct indexing of the beams array
-%   - isempty       -- Returns true if the beam array is empty
-%   - arrayApply    -- Apply function to beam array output
+%   - contains        -- Query if a type is contained in the array
+%   - isa             -- Determine if input matches specified class
+%   - plus            -- Provides addition of coherent beams
+%   - cat             -- Concatenation of beams and arrays
+%   - vertcat         -- Vertical concatenation of beams and arrays
+%   - horzcat         -- Horizontal concatenation of beams and arrays
+%   - subsref         -- For direct indexing of the beams array
+%   - isempty         -- Returns true if the beam array is empty
+%   - arrayApply      -- Apply function to beam array output
 %   - combineIncoherentArray  -- Combine cell array of beam data
 %   - translateXyzInternal    -- Overload for RotationPositionEntity
-%
-% Static methods
-%   - empty         -- Create an empty array (should be overloaded)
 %
 % Abstract methods
 %   - plusInternal    -- Called by plus when combination is needed
 %   - catInternal     -- Called by cat when combination is needed
 %   - subsrefInternal -- Called by subsref for beam subscripting
 %   - size            -- Size of the beam array
+%
+% Abstract properties
+%   - array_type      -- Type of array (coherent/incoherent/array)
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
-    array_type     % Type of array ('coherent', 'array' or 'incoherent')
+  properties (Abstract)
+    array_type
   end
 
   methods (Abstract, Hidden)
@@ -39,40 +39,54 @@ classdef ArrayType < ott.beam.properties.Beam
     subsrefInternal   % Called by subsref for beam subscripting
     plusInternal      % Called by plus when combination is needed
     catInternal       % Called by horzcat when combination is needed
-    size              % Get the size of the beam array
   end
 
-  methods (Static)
-    function beam = empty(varargin)
-      % Construct an empty beam array
-      %
-      % This function should be overloaded by the sub-class to describe
-      % what an empty array looks like for your type.
-
-      warning(['Constructing a ott.beam.abstract.Array', newline, ...
-        'This method should be overloaded by your sub-class']);
-
-      sz = [0, 0];
-      beam = ott.beam.abstract.Array('array', sz);
-    end
+  methods (Abstract)
+    size              % Get the size of the beam array
   end
 
   methods
     function beam = ArrayType(varargin)
       % Construct a new array type beam
       %
-      % Optional named arguments:
-      %   - array_type (enum) -- Initial value for array_type.
-      %     Default: ``'array'``.
+      % Usage
+      %   beam = beam@ott.beam.properties.ArrayType(...)
+      %   All parameters passed to base.
 
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addParameter('array_type', 'array');
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
+      beam = beam@ott.beam.properties.Beam(varargin{:});
+    end
 
-      beam = beam@ott.beam.properties.Beam(unmatched{:});
-      beam.array_type = p.Results.array_type;
+    function b = contains(beam, type)
+      % Returns true if the array contains the specified type
+      %
+      % Usage
+      %   b = beam.contains(type)
+      %
+      % Parameters
+      %   - type (enum) -- Type to check, must be a beam array type.
+
+      assert(any(strcmpi(type, {'coherent', 'incoherent', 'array'})), ...
+          'type must be a valid array_type');
+
+      b = strcmpi(beam.array_type, type);
+    end
+
+    function b = isa(beam, strType)
+      % Determine if input is object of specified class.
+      %
+      % In addition to the builtin-functionality provided by isa,
+      % this method returns true for types
+      %
+      %    - ott.beam.Coherent  --   if `array_type = 'cohereht'`
+      %    - ott.beam.Incoherent  -- if `array_type = 'incohereht'`
+
+      if strcmpi(strType, 'ott.beam.Coherent')
+        b = strcmpi(beam.array_type, 'coherent');
+      elseif strcmpi(strType, 'ott.beam.Incoherent')
+        b = strcmpi(beam.array_type, 'incoherent');
+      else
+        b = builtin('isa', beam, strType);
+      end
     end
 
     function beam = plus(b1, b2)
@@ -91,7 +105,7 @@ classdef ArrayType < ott.beam.properties.Beam
       % Check we have beams
       assert(isa(b1, 'ott.beam.abstract.Beam'), 'beam1 must be a beam');
       assert(isa(b2, 'ott.beam.abstract.Beam'), 'beam2 must be a beam');
-      
+
       % Check mediums match
       assert(b1.medium == b2.medium, ...
         'mediums must match for coherent addition');
@@ -150,7 +164,7 @@ classdef ArrayType < ott.beam.properties.Beam
       %
       % Usage
       %   beam = cat(dim, beam1, beam2, beam3, ...)
-      
+
       % Remove all inputs that are ott.beam.abstract.Empty
       mask = false(size(varargin));
       for ii = 1:length(varargin)
@@ -183,7 +197,7 @@ classdef ArrayType < ott.beam.properties.Beam
         % Check same type
         allSameType = allSameType ...
             & strcmpi(class_type, class(varargin{ii}));
-          
+
         % Check same medium
         allSameType = allSameType ...
             & varargin{ii}.medium == medium;
@@ -218,10 +232,10 @@ classdef ArrayType < ott.beam.properties.Beam
       %
       % Usage
       %   b = isempty(beam)     or    b = beam.isempty()
-      
+
       b = numel(beam) == 0;
     end
-    
+
     function n = numArgumentsFromSubscript(obj,s,indexingContext)
       % Specify the number of output arguments
       if indexingContext == matlab.mixin.util.IndexingContext.Assignment
@@ -233,7 +247,7 @@ classdef ArrayType < ott.beam.properties.Beam
 
     function varargout = subsref(obj, s)
       % Implement array subscripts for beams in this array
-      
+
       % Declare an ismethod function which checks hidden methods
       methodlist = @(metacls) {metacls.MethodList.Name};
       ismethod = @(obj, name) any(strcmpi(name, methodlist(metaclass(obj))));
@@ -244,23 +258,23 @@ classdef ArrayType < ott.beam.properties.Beam
           % we can't just dispatch to a built-in subsref (for example,
           % for cell indexing).  Can't do subsref(obj.(s(1).subs), s(2:end))
           if length(s) > 1 && ~ismethod(obj, s(1).subs)
-            
+
             % Get field of array
             part = obj.(s(1).subs);
-            
+
             % Iterate over remaining terms
             for ii = 2:length(s)-1
-              
+
               % Methods consume two arguments
               if ismethod(part, s(ii).subs)
                 break;
               end
-              
+
               % This should call subsref on array beams as intended
               % Assumes single outputs of intermediate (is this ok?)
               part = subsref(part, s(ii));
             end
-            
+
             if length(s) >= 3 && ismethod(part, s(ii).subs)
               % Call method using default subsref
               [varargout{1:nargout}] = builtin('subsref',obj,s(ii:end));
@@ -293,9 +307,9 @@ classdef ArrayType < ott.beam.properties.Beam
           error('Not a valid indexing expression')
       end
     end
-    
+
     function obj = subsasgn(obj,s,varargin)
-      
+
       switch s(1).type
         case '.'
           if length(s) > 1
@@ -309,7 +323,7 @@ classdef ArrayType < ott.beam.properties.Beam
           if length(s) >= 1 % obj(indices)
             % obj(indices) -> obj.beams(indices)
             obj = obj.subsasgnInternal(s(1).subs, s(2:end), varargin{:});
-            
+
           else
             % Call built-in for any other case
             obj = builtin('subsasgn',obj,s,varargin{:});
@@ -321,7 +335,7 @@ classdef ArrayType < ott.beam.properties.Beam
           error('Not a valid indexing expression')
       end
     end
-    
+
     function data = arrayApply(beam, func, varargin)
       % Apply function to each array in the beam array output.
       %
@@ -331,9 +345,9 @@ classdef ArrayType < ott.beam.properties.Beam
       %
       % This default implemenataion applies the function to
       % each cell in data if the beam is not coherent.
-      
+
       % TODO: Shouldn't this use beam?
-      
+
       if iscell(varargin{1})
         % Apply visualisatio funtion to sub-beams
         data = cell(size(varargin{1}));
@@ -397,24 +411,6 @@ classdef ArrayType < ott.beam.properties.Beam
         otherwise
           error('Unknown origin for translation');
       end
-    end
-  end
-
-  methods % Getters/setters
-    function beam = set.array_type(beam, val)
-
-      % Check valid value
-      assert(any(strcmpi(val, {'coherent', 'array', 'incoherent'})), ...
-        'array_type must be one of ''cohereht'', ''array'', ''incohereht''');
-
-      % Check array contains no incoherent values
-      if strcmpi(val, 'coherent') && isa(beam, 'ott.beam.abstract.Array')
-        assert(~beam.contains_incoherent, ...
-          'ott:beam:utils:ArrayType:coherent_with_incoherent', ...
-          'Cannot have coherent array of incoherent beams');
-      end
-
-      beam.array_type = val;
     end
   end
 end

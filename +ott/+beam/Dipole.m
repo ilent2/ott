@@ -1,6 +1,6 @@
-classdef Dipole < ott.beam.Beam ...
-    & ott.beam.properties.Dipole
-    & ott.beam.utils.CoherentArrayType
+classdef Dipole < ott.beam.properties.Dipole ...
+    & ott.beam.properties.CoherentArrayType ...
+    & ott.beam.Beam
 % Describes the field produced by a polarisable dipole.
 % Inherits from :class:`ott.beam.Beam`, :class:`ott.beam.properties.Dipole`
 % and :class:`ott.beam.utils.CoherentArrayType`.
@@ -48,6 +48,7 @@ classdef Dipole < ott.beam.Beam ...
 
   properties (Dependent)
     ndipoles          % Number of dipoles
+    power             % Power of scattered field
   end
 
   methods
@@ -397,6 +398,7 @@ classdef Dipole < ott.beam.Beam ...
       % Matches equation 5 from
       % https://www.sciencedirect.com/science/article/pii/S0022407315002307
       F = -k^2 .* exp(-1i .* k_rd) .* (nn - eye(3));
+    end
 
     function F = field_matrix_internal(locs, field_func, varargin)
       % Calculate the field-matrices
@@ -568,6 +570,17 @@ classdef Dipole < ott.beam.Beam ...
 
     function d = get.ndipoles(beam)
       d = size(beam.dipole_xyz, 2);
+    end
+
+    function p = get.power(beam)
+      % TODO: Implement this, numerical integration?
+      %   Are there cases with simpler solutions?
+      error('Not yet implemented');
+    end
+    function beam = set.power(beam, val)
+      % TODO: Is this something we want to support?  Can it be done by
+      % scaling the dipole magnitudes?
+      error('Not yet implemented');
     end
   end
 end

@@ -1,4 +1,6 @@
-classdef PlaneWave < ott.beam.abstract.PlaneWave & ott.beam.Beam
+classdef PlaneWave < ott.beam.properties.PlaneWave
+    & ott.beam.properties.AnyArrayType ...
+    & ott.beam.Beam
 % Description of a plane wave beam.
 % Inherits from :class:`abstract.PlaneWave`.
 %

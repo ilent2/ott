@@ -1,5 +1,5 @@
-classdef (Abstract) Beam < ott.beam.utils.BeamInterface ...
-    & matlab.mixin.Heterogeneous ...
+classdef (Abstract) Beam < ott.beam.Beam
+    & matlab.mixin.Heterogeneous
 % Base class for abstract beam descriptions (no fields).
 % Inherits from :class:`ott.beam.utils.BeamInterface` and
 % :class:`matlab.mixin.Hetrogeneous`.
@@ -11,6 +11,9 @@ classdef (Abstract) Beam < ott.beam.utils.BeamInterface ...
 % The class implements the :class:`BeamInterface`, which defines methods for
 % calculating fields and forces.  To do this, the class casts the
 % :class:`ott.beam.abstract.Beam` object to a :class:`ott.beam.Beam` object.
+%
+% Methods
+%   - contains      -- Query if a array_type is contained in the array
 %
 % Supported casts
 %   - Beam          -- Default beam cast for arrays, uses Coherent
@@ -32,6 +35,34 @@ classdef (Abstract) Beam < ott.beam.utils.BeamInterface ...
       % For optional parameters, see :class:`ott.beam.properties.Beam`.
 
       beam = beam@ott.beam.utils.BeamInterface(varargin{:});
+    end
+
+    function b = contains(beam, array_type)
+      % Query if a array_type is contained in the array.
+      %
+      % Usage
+      %   b = beam.contains(array_type)
+      %
+      % Parameters
+      %   - array_type (enum) -- An array type, must be one of
+      %     'array', 'coherent' or 'incoherent'.
+
+      assert(any(strcmpi(array_type, {'array', 'incoherent', 'coherent'})), ...
+          'array_type must be ''array'', ''incoherent'' or ''coherent''');
+
+      if numel(beam) > 1
+        if strcmpi(array_type, 'coherent')
+          b = true;
+        else
+          b = false;
+          for ii = 1:numel(beam)
+            b = b | beam(ii).contains(array_type);
+          end
+        end
+      else
+        % Other cases handled by ott.beam.abstract.Array etc.
+        b = false;
+      end
     end
 
     function beam = ott.beam.Beam(beam, varargin)

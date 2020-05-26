@@ -1,257 +1,123 @@
-classdef Array < ott.beam.abstract.Beam & ott.beam.utils.ArrayType
-% Abstract array of beams.
-% Inherits from :class:`ott.beam.utils.ArrayType`.
-%
-% Properties
-%   - beams       -- Internal array of beam objects
-%   - array_type  -- Type of array ('coherent', 'array' or 'incoherent')
+classdef Array < ott.beam.properties.AbstractArray ...
+    & ott.beam.abstract.Beam
+% Generic array abstract beam arrays.
+% Inherits from :class:`ott.beam.properties.AbstractArray` and :class:`Beam`.
 %
 % Methods
-%   - size          -- Size of the beam array
-%   - plus          -- Provides addition of coherent beams
-%   - cat           -- Concatenation of beams and arrays
-%   - vertcat       -- Vertical concatenation of beams and arrays
-%   - horzcat       -- Horizontal concatenation of beams and arrays
-%   - subsref       -- For direct indexing of the beams array
-%   - combineIncoherentArray  -- Combine cell array of beam data
-%   - translateXyzInternal    -- Overload for RotationPositionEntity
+%   - contains        -- Query if array contains specific array_type
 %
-% Static methods
-%   - empty         -- Create an empty array
+% Supported casts
+%   - Beam                  -- Default Beam cast, uses Array
+%   - Array
+%   - Incoherent            -- Not recommended, raises an warning
+%   - Coherent              -- Not recommended, raises an warning
+%   - abstract.Incoherent   -- Convert to incoherent array
+%   - abstract.Coherent     -- Convert to coherent array
+%   - Bsc
+%   - PlaneWave
+%   - Ray
 
-% TODO: Should arrays have beam properties?
-%   No, well, we shouldn't have separate position/rotation properties?
-%   Or should they be cumulative?  Hmm, maybe we do want some properties
-%   including position/rotation?
-
-  properties
-    beams         % Beams contained in the array
-  end
-
-  properties (Dependent)
-    contains_incoherent     % True if the beam contains incoherent beams
-  end
-
-  methods (Hidden)
-    function bsc = translateXyzInternal(bsc, xyz, varargin)
-      % Apply translations to each sub-beam.
-
-      if size(xyz, 2) == 1
-        xyz = repmat(xyz, 1, numel(bsc));
-      end
-
-      for ii = 1:numel(bsc.beams)
-        bsc.beams{ii} = bsc.beams{ii}.translateXyz(xyz(:, ii), varargin{:});
-      end
-    end
-
-    function beam = plusInternal(b1, b2)
-      % Add beams coherently
-
-      isArr1 = isa(b1, 'ott.beam.abstract.Array');
-      isArr2 = isa(b2, 'ott.beam.abstract.Array');
-
-      if isArr1 && isArr2
-        b1.beams = [b1.beams, b2.beams];
-        beam = b1;
-      elseif isArr1
-        b1.beams = [b1.beams, {b2}];
-        beam = b1;
-      elseif isArr2
-        b2.beams = [{b1}, b2.beams];
-        beam = b2;
-      end
-    end
-
-    function beam = catInternal(dim, beam, varargin)
-      % Concatenate arrays
-
-      other_beams = {};
-      for ii = 1:length(varargin)
-        other_beams{ii} = varargin{ii}.beams;
-      end
-
-      beam.beams = cat(dim, beam.beams, other_beams{:});
-    end
-
-    function beams = subsrefInternal(beam, subs)
-      % Get the subscripted beam
-      
-      % Check if single index
-      all_single = true;
-      for ii = 1:numel(subs)
-        all_single = all_single & numel(subs{ii}) == 1;
-      end
-      
-      % TODO: Should we have () and {} indexing?  Would remove need for
-      % all_single and make things a bit more 'natural'.
-      if all_single
-        % Return the individual beam (this would be {})
-        beams = beam.beams{subs{:}};
-      else
-        % Form an array with the selection of new beams (behaviour of ())
-        beams = [beam.beams{subs{:}}];
-        
-        % Ensure output type is not double (is this a good idea?)
-        if isequaln(beams, [])
-          beams = ott.beam.Array(beam.array_type, [0, 0]);
-        end
-      end
-    end
-    
-    function beam = subsasgnInternal(beam, subs, ~, other)
-      % Assign to the subsripted beam
-      
-      % TODO: Should this support varargin
-      % TODO: Should this have remaining subscripts?
-      
-      beam.beams{subs{:}} = other;
-    end
-
-    function E = getBeamPower(beam)
-      % Calculate the sum of beam power for each beam
-      %
-      % Combine as long as array_type is not 'array'.
-
-      E = {};
-
-      % Evaluate each beam
-      for ii = 1:numel(beam)
-        E{ii} = beam.beams{ii}.getBeamPower();
-      end
-
-      % Combine if requested
-      if strcmpi(beam.array_type, 'coherent') ...
-          || strcmpi(beam.array_type, 'incoherent')
-        E = beam.CombineCoherent(E);
-      end
-    end
-  end
-  
-  methods (Static)
-    function beam = empty(varargin)
-      % Construct an empty beam array with 'array' type.
-      %
-      % Usage
-      %   beam = ott.beam.abstract.Array.empty()
-      
-      sz = [0, 0];
-      beam = ott.beam.abstract.Array('array', sz);
-    end
-  end
+% Copyright 2020 Isaac Lenton
+% This file is part of OTT, see LICENSE.md for information about
+% using/distributing this file.
 
   methods
-    function beam = Array(array_type, sz, varargin)
-      % Construct a new abstract beam array
+    function b = contains(beam, array_type)
+      % Query if array contains specific array_type
       %
       % Usage
-      %   beam = Array(array_type, dim)
-      %   Creates an empty beam array.
-      %
-      %   beam = Array(array_type, dim, varargin)
-      %   Creates a beam array.  Setting the initial beams to the
-      %   contents of varargin.
+      %   b = beam.contains(array_type)
       %
       % Parameters
-      %   - array_type (enum) -- Type of beam array.  Either
+      %   - array_type (enum) -- An array type, must be one of
       %     'array', 'coherent' or 'incoherent'.
-      %
-      %   - sz (N numeric) -- Size of the beam array.
-      %
-      %   - beam1, beam2, ... -- Beams to include in the array.
-      %     If empty, creates an empty cell array internally.
 
-      beam = beam@ott.beam.utils.ArrayType('array_type', array_type);
-
-      % Store beam array and reshape
-      if numel(varargin) == 0
-        beam.beams = repmat({ott.beam.abstract.Empty()}, sz);
+      if strcmpi(array_type, 'array')
+        b = true;
+      elseif numel(beam) > 1
+        b = contains@ott.beam.abstract.Beam(beam, array_type);
       else
-        beam.beams = reshape(varargin, sz);
+        b = false;
+        for ii = 1:numel(beam.beams)
+          b = b | beam.beams(ii).contains(array_type);
+        end
       end
     end
 
-    function sz = size(beam, varargin)
-      % Get the size of the beam array
-      %
-      % Usage
-      %   sz = size(beam, ...)  or beam.size(...)
-      %   For arguments, see help on Matlab's built-in ``size``.
-
-      sz = size(beam.beams, varargin{:});
+    function beam = ott.beam.Beam(varargin)
+      % Cast to Incoherent
+      beam = ott.beam.Array(varargin{:});
     end
 
-    function arr = combineIncoherentArray(beam, arr, dim)
-      % Combine incoherent layers as required
-
-      % Check if we have work to do
-      if strcmpi(beam.array_type, 'coherent')
-        return;
-      end
-
-      assert(numel(arr) == numel(beam), ...
-          'Number of elements in beam must match number of elements in array');
-
-      % Combine child beams
-      for ii = 1:numel(beam)
-        arr{ii} = beam.beams{ii}.combineIncoherentArray(arr{ii}, dim);
-      end
-      
-      % Combine this array
-      arr = combineIncoherentArray@ott.beam.utils.ArrayType(beam, arr, dim);
+    function beam = ott.beam.Incoherent(beam, varargin)
+      % Cast to Array
+      beam = castHelper(@ott.beam.Array.like, beam, varargin{:});
     end
-    
-    function data = arrayApply(beam, data, func)
-      % Apply function to each array in the beam array output.
-      %
-      % This function is overloaded by Array types in order to
-      % implement incoherent combination.
-      
-      % Apply visualisatio funtion to sub-beams
-      for ii = 1:numel(beam)
-        data{ii} = beam.beams{ii}.arrayApply(data{ii}, func);
-      end
+
+    function beam = ott.beam.Coherent(beam, varargin)
+      % Cast to Coherent
+      beam = castHelper(@ott.beam.Coherent.like, beam, varargin{:});
+      warning('ott:beam:abstract:Incoherent:different_type', ...
+          'Cast to different array type, perhaps you meant Array');
+    end
+
+    function beam = ott.beam.Incoherent(beam, varargin)
+      % Cast to Incoherent
+      beam = castHelper(@ott.beam.Incoherent.like, beam, varargin{:});
+      warning('ott:beam:abstract:Array:different_type', ...
+          'Cast to different array type, perhaps you meant Array');
+    end
+
+    function beam = ott.beam.abstract.Coherent(beam, varargin)
+      % Cast to abstract.Coherent
+      beam = castHelper(@ott.beam.abstract.Coherent.like, ...
+          beam, varargin{:});
+    end
+
+    function beam = ott.beam.abstract.Incoherent(beam, varargin)
+      % Cast to abstract.Incoherent
+      beam = castHelper(@ott.beam.abstract.Incoherent.like, ...
+          beam, varargin{:});
+    end
+
+    function beam = ott.beam.vswf.Bsc(beam, varargin)
+      % Cast to vswf.Bsc
+      beam = castHelper(@ott.beam.vswf.Bsc.like, ...
+          beam, varargin{:});
+      beam.array_type = 'array';
+    end
+
+    function beam = ott.beam.PlaneWave(beam, varargin)
+      % Cast to PlaneWave
+      beam = castHelper(@ott.beam.PlaneWave.like, ...
+          beam, varargin{:});
+      beam.array_type = 'array';
+    end
+
+    function beam = ott.beam.Ray(beam, varargin)
+      % Cast to Ray
+      beam = castHelper(@ott.beam.Ray.like, ...
+          beam, varargin{:});
+      beam.array_type = 'array';
     end
   end
 
-  methods % Getters/setters
-    function val = get.contains_incoherent(beam)
+  methods (Access=private)
+    function beam = castHelper(cast, beam, varargin)
+      % Helper for casts
 
-      val = false;
+      assert(isa(beam, 'ott.beam.abstract.Array'), ...
+          'First argument should be a abstract.Array');
 
-      for ii = 1:numel(beam)
-        if isa(beam.beams{ii}, 'ott.beam.utils.ArrayType')
-          val = val | strcmpi(beam.beams{ii}, 'incoherent');
-          if isa(beam.beams{ii}, 'ott.beam.abstract.Array')
-            val = val | beam.beams{ii}.contains_incoherent;
-          end
+      if numel(beam) > 1
+        oldbeam = beam;
+        beam = ott.beam.Array('array', size(beam));
+        for ii = 1:numel(oldbeam)
+          beam(ii) = cast(beam, varargin{:});
         end
+      else
+        beam = cast(beam, varargin{:});
       end
-    end
-
-    function beam = set.beams(beam, val)
-
-      assert(iscell(val), 'beams property be cell array');
-
-      % Cann't have coherent arrays of incoherent beams
-      if strcmpi(beam.array_type, 'coherent')
-        for ii = 1:numel(val)
-          if isa(val{ii}, 'ott.beam.utils.ArrayType')
-
-            assert(~strcmpi(val{ii}.array_type, 'incoherent'), ...
-              'ott:beam:utils:ArrayType:coherent_with_incoherent', ...
-              'Cannot have coherent array of incoherent beams');
-
-            if isa(val{ii}, 'ott.beam.abstract.Array')
-              assert(~val{ii}.contains_incoherent, ...
-                'ott:beam:utils:ArrayType:coherent_with_incoherent', ...
-                'Cannot have coherent array of incoherent beams');
-            end
-          end
-        end
-      end
-
-      beam.beams = val;
     end
   end
 end

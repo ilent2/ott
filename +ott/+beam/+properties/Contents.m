@@ -8,10 +8,15 @@
 % Generic classes
 %   Beam              -- Base class for beam properties.
 %   Scattered         -- Represents generic scattered beams
-%   Array             -- Represents arrays of beams
-%   Coherent          -- Specialisation for coherent arrays of beams
-%   Incoherent        -- Specialisation for incoherent arrays of beams
 %   Empty             -- Empty beam array element
+%
+% Array types
+%   ArrayType           -- Base class for arrays of beams (non-abstract)
+%   AbstractArray       -- base class for abstract arrays of beams
+%   CoherentArrayType   -- Specialisation for coherent array types
+%   IncoherentArrayType -- Specialisation for incoherent array types
+%   ArrayArrayType      -- Specialisation for generic array types
+%   AnyArrayType        -- Specialisation for variable array types
 %
 % Paraxial beams
 %   Gaussian          -- Gaussian beam.

@@ -1,6 +1,7 @@
-classdef Ray
+classdef Ray < ott.beam.properties.Ray
+    & ott.beam.properties.AnyArrayType ...
+    & ott.beam.Beam
 % Specialisation of a PlaneWave for Ray-optics beams
-% Inherits from :class:`PlaneWave`.
 %
 % The main differences between :class:`PlaneWave` and :class:`Ray` are
 % finite power and more ray-orientated defaults for methods.

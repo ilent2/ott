@@ -13,14 +13,14 @@
 % :class:`ott.beam.utils.ArrayType`.  Arrays of beams are assumed
 % to be coherent unless they are :class:`Array` or :class:`Incoherent`.
 % The :class:`Coherent` class is semi-redundant, only useful for
-% arrays or sub-arrays of coherent beams.
+% arrays of sub-arrays of coherent beams.
 %
 % Generic beams
 %   Beam              -- Base class for abstract beam representations.
 %   Scattered         -- Represents generic scattered beams
-%   Array             -- Represents arrays of beams
-%   Coherent          -- Specialisation for coherent arrays of beams
-%   Incoherent        -- Specialisation for incoherent arrays of beams
+%   Array             -- Represents generic arrays of beams
+%   Coherent          -- Represents arrays of coherent beams
+%   Incoherent        -- Represents arrays of incoherent beams
 %   Empty             -- Empty beam array element
 %
 % Paraxial beams

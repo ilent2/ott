@@ -1,10 +1,17 @@
-classdef Array < ott.beam.Beam & ott.beam.abstract.Array
-% A class representing arrays of coherent, unrelated and related beams
-% Inherits from :class:`Beam` and :class:`abstract.Array`.
+classdef Array < ott.beam.Beam ...
+    & ott.beam.properties.AnyArrayType
+% A class representing arrays of beams.
+% Inherits from :class:`Beam` and :class:`ott.beam.utils.AnyArrayType`.
 %
 % This class declares the methods needed for :class:`Beam`.
 % Output of the :class:`Beam` methods is packaged into arrays of
 % the appropriate size.
+%
+% The :class:`Coherent` and :class:`Incoherent` classes are pseudonyms
+% for this class class.  There is no generic array pseudonyms: i.e.,
+% casting directly to this class creates a generic array by default.
+% The other consequence is the `isa` method returns true for coherent
+% and incoherent arrays when applied to instance of :class:`Array`.
 %
 % Properties
 %   - beams       -- Internal array of beam objects
@@ -22,6 +29,10 @@ classdef Array < ott.beam.Beam & ott.beam.abstract.Array
 % Static methods
 %   - CombineCoherent   -- Combine coherent data from cell arrays
 %   - empty         -- Create an empty array
+
+  properties
+    beams           % Internal cell array of beam objects
+  end
 
   methods
     function beam = Array(array_type, sz, varargin)
@@ -71,6 +82,15 @@ classdef Array < ott.beam.Beam & ott.beam.abstract.Array
     end
     function E = hfarfieldInternal(beam, varargin)
       E = beam.deferWithCoherent(@(b) b.hfarfieldInternal(varargin{:}));
+    end
+
+    function validateArrayType(newType)
+      % Check if beam contains incoherent beams
+      if strcmpi(newType, 'coherent')
+        assert(~beam.contains_incoherent, ...
+          'ott:beam:Array:coherent_with_incoherent', ...
+          'Cannot have coherent array of incoherent beams');
+      end
     end
   end
 

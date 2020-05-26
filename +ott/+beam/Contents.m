@@ -2,12 +2,17 @@
 %
 % This package contains descriptions of optical beams.
 %
+% Beams can be formed into arrays using any of the :class:`Array`,
+% :class:`Coherent` or :class:`Incoherent` classes.
+% Some classes implicitly support arrays of beams by inheriting from
+% :class:`ott.utils.ArrayType`.
+%
 % Generic beams
 %   Beam            -- Base class for all beam implementations
 %   Scattered       -- Represents generic scattered beams
 %   Array           -- Represents arrays of beams
-%   Coherent        -- Specialisation for coherent arrays of beams
-%   Incoherent      -- Specialisation for incoherent arrays of beams
+%   Coherent        -- Pseudonym for coherent arrays
+%   Incoherent      -- Pseudonym for incoherent arrays
 %   Empty           -- Empty beam array element
 %
 % Beam specialisations
