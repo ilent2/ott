@@ -1832,6 +1832,7 @@ classdef Bsc < ott.beam.Beam ...
 
     function p = get.power(beam)
       % get.power calculate the power of the beam
+      % TODO: Shouldn't this change for different array types
       p = full(sum(abs(beam.a).^2 + abs(beam.b).^2));
     end
     function beam = set.power(beam, val)

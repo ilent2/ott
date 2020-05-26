@@ -125,11 +125,12 @@ classdef Array < ott.beam.Beam ...
       % This function is overloaded by Array types in order to
       % implement incoherent combination.
 
-      assert(strcmpi(beam.array_type, 'coherent'), ...
-          'function only supports coherent beams');
-
       % Apply visualisatio funtion to sub-beams
       if numel(beam) > 1
+
+        areCells = cellfun(@iscell, varargin);
+        assert(all(areCells), 'All inputs must be cell arrays');
+
         data = cell(size(beam));
         for ii = 1:numel(beam)
           sub_data = cellfun(@(x) x{ii}, varargin, 'UniformOutput', false);

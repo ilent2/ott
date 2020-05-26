@@ -354,12 +354,13 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
       %
       % This default implemenataion applies the function to
       % each cell in data if the beam is not coherent.
-
-      assert(strcmpi(beam.array_type, 'coherent'), ...
-          'function only supports coherent beams');
+        
+      areCells = cellfun(@iscell, varargin);
+      assert(xor(all(areCells), strcmpi(beam.array_type, 'coherent')), ...
+        'Inputs must be cells if array is not coherent');
 
       % Apply visualisatio funtion to sub-beams
-      if numel(beam) > 1
+      if ~strcmpi(beam.array_type, 'coherent')
         data = cell(size(beam));
         for ii = 1:numel(beam)
           sub_data = cellfun(@(x) x{ii}, varargin, 'UniformOutput', false);

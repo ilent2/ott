@@ -115,11 +115,14 @@ figure();
 % A single plane wave can be constructed using the abstract class
 subplot(1, 4, 1);
 abstract_beam = ott.beam.abstract.PlaneWave();
-abstract_beam.visualise('field', 'Re(Ex)');
+abstract_beam.visualise('axis', 'y', 'field', 'Re(Ex)');
 
 % For arrays it is better to invoke the PlaneWave class directly
+origin = zeros(3, 5);
 directions = randn(3, 5);
-plane_waves = ott.beam.PlaneWave('direction', directions);
+polarisation = cross(directions, randn(3, 5));
+plane_waves = ott.beam.PlaneWave(origin, ...
+  'direction', directions, 'polarisation', polarisation);
 
 % Arrays of plane waves can be coherent or incoherent
 subplot(1, 4, 2);

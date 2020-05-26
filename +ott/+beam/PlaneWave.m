@@ -1,5 +1,6 @@
-classdef PlaneWave < ott.beam.properties.PlaneWave
+classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
     & ott.beam.properties.AnyArrayType ...
+    & ott.beam.utils.InfinitePower ...
     & ott.beam.Beam
 % Description of a plane wave beam.
 % Inherits from :class:`abstract.PlaneWave`.
@@ -50,6 +51,25 @@ classdef PlaneWave < ott.beam.properties.PlaneWave
 % using/distributing this file.
 
   methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.properties.AnyArrayType.likeProperties(other, args);
+      args = ott.beam.properties.PlaneWaveArray.likeProperties(other, args);
+      args = ott.beam.Beam.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = Gaussian.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.PlaneWave.likeProperties(other, varargin);
+      beam = ott.beam.PlaneWave(args{:});
+    end
+
     function beam = empty(varargin)
       % Construct an emtpy beam array
       %
@@ -190,107 +210,45 @@ classdef PlaneWave < ott.beam.properties.PlaneWave
   end
 
   methods
-    function beam = PlaneWave(varargin)
-      % Construct a new plane wave beam or beam array
+    function bm = PlaneWave(varargin)
+      % Construct plane wave array properties
       %
       % Usage
-      %   beam = PlaneWave(...)
+      %   beam = PlaneWave(origin, direction, polarisation1, ...)
+      %
+      %   beam = PlaneWave(origin, 'directionSet', directionSet, ...)
+      %
+      % Parameters
+      %   - origin (3xN numeric) -- Plane wave origins.
+      %   - direction (3xN numeric) -- Plane wave direction.
+      %   - polarisation1 (3xN numeric) -- Primary polarisation direction.
+      %
+      %   - directionSet (3x3N numeric) -- Array formed by combining
+      %     direction/polarisation vectors into rotation matrices.  The
+      %     direction vector should be the last column of the matrix.
+      %     Default: ``eye(3)``.
       %
       % Optional named arguments
-      %   - direction (3xN numeric) -- direction vectors (Cartesian)
-      %     Default: ``[0;0;1]``.
+      %   - field (2xN numeric) -- Field parallel and perpendicular to
+      %     plane wave polarisation direction.
+      %     Default: ``[1, 1i]``.
       %
-      %   - polarisation (3xN numeric) -- polarisation vectors (Cartesian)
-      %     Default: ``[1;0;0]``.
-      %
-      %   - field (1xN|2xN numeric) -- Field vectors parallel and
-      %     (optionally) perpendicular to the polarisation direction.
-      %     Allows for 0 intensity with finite polarisation direction.
-      %     Default: ``1``.
-      %
-      %   - origin (3xN numeric) -- Origin of plane waves.
-      %     Default: ``[0;0;0]``.
-      %
-      %   - vector (ott.utils.Vector) -- Vector describing origin and
-      %     direction of the Ray.  Incompatible with `direction` and
-      %     `origin`.  Default: ``[]``.
+      %   - array_type (enum) -- Beam array type.  Can be
+      %     'coherent', 'incoherent' or 'array'.  Default: ``'coherent'``.
+      
+      [origin, directionSet, field, unmatched] = ...
+          ott.beam.properties.PlaneWaveArray.parseArgs(varargin{:});
 
-      % No additional properties needed
-      beam = beam@ott.beam.properties.PlaneWave(varargin{:});
-    end
-
-    function varargout = visualiseRays(vec, varargin)
-      % Plots the vector set in 3-D.
-      %
-      % Uses the quiver function to generate a visualisation of the
-      % vector set.
-      %
-      % Usage
-      %   h = beam.visualiseRays(...)
-      %
-      % Optional named arguments
-      %   - Scale (numeric) -- rescales the coordinates and components
-      %     of the vector before plotting.  Can either be a scalar
-      %     or vector ``[S1, S2]`` specifying separate scaling for the
-      %     coordinates and components.  Default: ``[1, 1]``.
-      %
-      %   - ray_lengths (1xN numeric) -- Array of ray lengths for
-      %     plotting finite length rays.
-      %
-      % Any unmatched named arguments are applied to the plot handles
-      % returned by the quiver function calls.
-
-      % Parse inputs
       p = inputParser;
+      p.addParameter('array_type', 'coherent');
       p.KeepUnmatched = true;
-      p.addParameter('Scale', [1, 1]);
-      p.addParameter('ray_lengths', []);
-      p.addParameter('show_polarisation', true);
-      p.parse(varargin{:});
+      p.parse(unmatched{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      S1 = p.Results.Scale(1);
-      S2 = p.Results.Scale(2);
-      S2pol = p.Results.Scale(2);
-
-      if ~isempty(p.Results.ray_lengths)
-        S2 = p.Results.ray_lengths;
-        assert(size(S2, 1) == 1, 'ray_lengths must be 1xN');
-      end
-
-      isholdon = ishold();
-
-      % Generate plot of directions
-      h = quiver3(S1*vec.origin(1, :), S1*vec.origin(2, :), ...
-          S1*vec.origin(3, :), S2.*vec.direction(1, :), ...
-          S2.*vec.direction(2, :), S2.*vec.direction(3, :), 0);
-
-      if p.Results.show_polarisation
-
-        if ~isholdon
-          hold('on');
-        end
-
-        % Generate plot of polarisations
-        h(2) = quiver3(S1*vec.origin(1, :), S1*vec.origin(2, :), ...
-            S1*vec.origin(3, :), S2pol.*vec.polarisation(1, :), ...
-            S2pol.*vec.polarisation(2, :), S2pol.*vec.polarisation(3, :), 0);
-
-        if ~isholdon
-          hold('off');
-        end
-
-      end
-
-      % Apply unmatched arguments to plot handle
-      unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
-      if ~isempty(unmatched)
-        set(h, unmatched{:});
-      end
-
-      % Assign outputs
-      if nargout > 0
-        varargout{1} = h;
-      end
+      bm = bm@ott.beam.properties.AnyArrayType(p.Results.array_type);
+      bm = bm@ott.beam.properties.PlaneWaveArray(...
+          origin, 'directionSet', directionSet, 'field', field, ...
+          unmatched{:});
     end
   end
 
@@ -328,8 +286,8 @@ classdef PlaneWave < ott.beam.properties.PlaneWave
       H = zeros([3, numel(beam), size(xyz, 2)]);
       
       % Get dependent properties from beam
-      Edir = beam.polarisation;
-      Hdir = cross(beam.direction, beam.polarisation);
+      Edir = beam.polarisation1;
+      Hdir = beam.polarisation2;
       wavenumber = beam.wavenumber;
       origin = beam.origin;
       direction = beam.direction;
@@ -358,14 +316,9 @@ classdef PlaneWave < ott.beam.properties.PlaneWave
             error('Unknown method specified');
         end
 
-
         % Calculate the polarisation (possibly in two directions)
-        P0 = Edir .* beam.field(1, :);
-        H0 = Hdir .* beam.field(1, :);
-        if size(beam.field, 1) == 2
-          P0 = P0 + Hdir .* beam.field(2, :);
-          H0 = H0 + Edir .* beam.field(2, :);
-        end
+        P0 = Edir .* beam.field(1, :) + Hdir .* beam.field(2, :);
+        H0 = Hdir .* beam.field(1, :) + Edir .* beam.field(2, :);
 
         % Calculate the field at the location
         E(:, :, ii) = scale .* P0 .* exp(1i.*wavenumber.*dist);

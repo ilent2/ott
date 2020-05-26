@@ -8,13 +8,21 @@ end
 
 function testConstructor(testCase)
 
-  direction = [0; 0; 1];
-  polarisation = [1; 0; 0];
-  beam = ott.beam.PlaneWave('direction', direction, ...
-    'polarisation', polarisation);
+  origin = [0;0;1];
+  direction = [1;0;0];
+  polarisation = [0;1;0];
+  beam = ott.beam.PlaneWave(origin, direction, polarisation);
   
-  testCase.verifyEqual(beam.direction, direction, 'dir');
-  testCase.verifyEqual(beam.polarisation, polarisation, 'pol');
+  testCase.verifyEqual(beam.origin, origin);
+  testCase.verifyEqual(beam.direction, direction);
+  testCase.verifyEqual(beam.polarisation1, polarisation);
+  
+  dirSet = ott.utils.roty(50);
+  beam = ott.beam.PlaneWave(origin, 'directionSet', dirSet);
+  
+  testCase.verifyEqual(beam.origin, origin);
+  testCase.verifyEqual(beam.directionSet, dirSet);
+  
 end
 
 function testConstructorIndexMedium(testCase)
