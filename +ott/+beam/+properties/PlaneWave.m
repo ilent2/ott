@@ -1,5 +1,6 @@
-classdef (Abstract) PlaneWave < ott.beam.properties.Beam
-% Properties of scattered beams
+classdef (Abstract) PlaneWave < ott.beam.properties.MaterialBeam
+% Properties of scattered beams.
+% Inherits from :class:`MaterialBeam`.
 %
 % Properties
 %   - position      -- Position used to calculate beam phase offset

@@ -7,6 +7,7 @@
 %
 % Generic classes
 %   Beam              -- Base class for beam properties.
+%   MaterialBeam      -- Base class for beams with materials.
 %   Scattered         -- Represents generic scattered beams
 %   Empty             -- Empty beam array element
 %

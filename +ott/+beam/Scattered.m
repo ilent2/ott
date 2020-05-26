@@ -1,22 +1,26 @@
-classdef Scattered < ott.beam.Beam & ott.beam.abstract.Scattered
+classdef (InferiorClasses = {?ott.beam.abstract.Beam}) Scattered ...
+    < ott.beam.Beam & ott.beam.properties.Scattered
 % Overload of the Beam class for scattered beams.
-% Inherits from :class:`Beam` and :class:`abstract.Scattered`.
+% Inherits from :class:`Beam` and :class:`properties.Scattered`.
+%
+% All beam related methods/properties refer to the internal beam_data
+% object.
 %
 % This class provides simpler force and torque calculation methods
 % which operate directly on the internal incident beam and ensure
 % that the beam type is set appropriately before the calculation.
 %
 % Properties
+%   - beam_data       -- Beam object associated with the scattering
 %   - incident_beam   -- The incident ray object (can be set to [])
+%   - particle        -- Particle that caused the scattering (can be [])
 %   - type            -- Type of beam ('scattered', 'total' or 'internal')
 %
 % Dependent properties
+%   - omega           -- omega property of beam_data
+%   - medium          -- medium property of beam_data
 %   - total_beam      -- Instance of the beam with total type
 %   - scattered_beam  -- Instance of the beam with scattered type
-%
-% Methods
-%   - totalField      -- Calculate the total field beam
-%   - scatteredField  -- Calculate the scattered field beam
 %
 % For details on methods, see :class:`Beam`.
 

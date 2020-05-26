@@ -1,5 +1,6 @@
-classdef Scattered < ott.beam.properties.Beam
-% Properties of scattered beams
+classdef HermiteGaussian < ott.beam.properties.Gaussian
+% Properties of Hermite-Gaussian beams.
+% Inherits from :class:`Gaussian`.
 %
 % Properties
 %   - waist      -- Beam waist at focus

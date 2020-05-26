@@ -1,4 +1,4 @@
-classdef Empty < ott.beam.properties.Beam & ott.beam.utils.ZeroPower
+classdef Empty < ott.beam.properties.MaterialBeam & ott.beam.utils.ZeroPower
 % Properties of scattered beams
 %
 % Properties

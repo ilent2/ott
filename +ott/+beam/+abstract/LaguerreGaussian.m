@@ -130,24 +130,5 @@ classdef LaguerreGaussian < ott.beam.properties.LaguerreGaussian ...
           beam, 'lmode', beam.lmode, 'pmode', beam.pmode, varargin{:});
     end
   end
-
-  methods (Access=private)
-    function beam = castHelper(cast, beam, varargin)
-      % Helper for casts
-
-      assert(isa(beam, 'ott.beam.abstract.LaguerreGaussian'), ...
-          'First argument must be a abstract.LaguerreGaussian');
-
-      if numel(beam) > 1
-        oldbeam = beam;
-        beam = ott.beam.Coherent(size(beam));
-        for ii = 1:numel(oldbeam)
-          beam(ii) = cast(beam, varargin{:});
-        end
-      else
-        beam = cast(beam, varargin{:});
-      end
-    end
-  end
 end
 

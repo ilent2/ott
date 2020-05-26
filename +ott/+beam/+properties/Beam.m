@@ -10,8 +10,6 @@ classdef (Abstract) Beam < ott.utils.RotationPositionProp
 % two classes.
 %
 % Properties
-%   - omega         -- Beam optical frequency
-%   - medium        -- Medium where beam is propagating
 %   - position      -- Position of the beam or array
 %   - rotation      -- Rotation of the beam or array
 %
@@ -24,6 +22,8 @@ classdef (Abstract) Beam < ott.utils.RotationPositionProp
 %
 % Abstract properties
 %   - power         -- The power of the beam (may be infinite)
+%   - omega         -- Beam optical frequency
+%   - medium        -- Medium where beam is propagating
 %
 % Methods
 %  - rotate*     -- Beam rotation methods
@@ -33,12 +33,9 @@ classdef (Abstract) Beam < ott.utils.RotationPositionProp
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
+  properties (Abstract)
     omega            % Beam optical frequency
     medium           % Medium where beam is propagating
-  end
-
-  properties (Abstract)
     power           % The power of the beam (may be infinite)
   end
 
@@ -265,12 +262,6 @@ classdef (Abstract) Beam < ott.utils.RotationPositionProp
   methods % Getters/setters
     function val = get.vacuum(beam)
       val = beam.medium.vacuum;
-    end
-
-    function beam = set.omega(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-          'omega must be numeric scalar');
-      beam.omega = val;
     end
 
     % Wavelength and wavenumber only have getters (setters are ambiguous)

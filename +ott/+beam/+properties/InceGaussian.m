@@ -1,5 +1,6 @@
-classdef Scattered < ott.beam.properties.Beam
-% Properties of scattered beams
+classdef InceGaussian < ott.beam.properties.Gaussian
+% Properties of Ince-Gaussian beams.
+% Inherits from :class:`Gaussian`.
 %
 % Properties
 %   - waist       -- Beam waist radius at focus

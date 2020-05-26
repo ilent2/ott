@@ -1,4 +1,4 @@
-classdef Gaussian < ott.beam.properties.Beam
+classdef Gaussian < ott.beam.properties.MaterialBeam
 % Properties of a paraxial Gaussian beam.
 % Inherits from :class:`ott.beam.properties.Beam`.
 %

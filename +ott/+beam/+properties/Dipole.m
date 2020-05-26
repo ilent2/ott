@@ -1,4 +1,4 @@
-classdef Dipole < ott.beam.properties.Beam
+classdef Dipole < ott.beam.properties.MaterialBeam
 % Properties of dipoles.
 % Inherits from :class:`ott.beam.properties.Beam`.
 %

@@ -1,4 +1,4 @@
-classdef Scattered < ott.beam.properties.Beam
+classdef FocussedTopHat < ott.beam.properties.MaterialBeam
 % Properties of scattered beams
 
 % Copyright 2020 Isaac Lenton

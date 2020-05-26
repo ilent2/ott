@@ -25,6 +25,9 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
 %
 % Abstract properties
 %   - array_type      -- Type of array (coherent/incoherent/array)
+%   - power           -- Power of beam array
+%   - omega           -- Optical frequency of beam array
+%   - medium          -- Optical medium of beam array
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -32,6 +35,8 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
 
   properties (Abstract)
     array_type
+    omega
+    medium
   end
 
   methods (Abstract, Hidden)

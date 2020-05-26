@@ -1,16 +1,21 @@
-classdef (Abstract) Beam < ott.beam.Beam
+classdef (Abstract) Beam < ott.beam.Beam ...
     & matlab.mixin.Heterogeneous
-% Base class for abstract beam descriptions (no fields).
-% Inherits from :class:`ott.beam.utils.BeamInterface` and
+% Base class for abstract beam descriptions.
+% Inherits from :class:`ott.beam.Beam` and
 % :class:`matlab.mixin.Hetrogeneous`.
 %
-% Classes that inherit from this class include a description of the
-% beam but do not include methods to calculate the fields.
-% These classes define casts to other beam descriptions.
+% Abstract beams describe particular properties of beams but do not
+% specify the method to calculate the fields.  Most classes declare
+% no properties, instead, properties are declared via
+% :class:`ott.beam.properties` sub-classes.
 %
-% The class implements the :class:`BeamInterface`, which defines methods for
-% calculating fields and forces.  To do this, the class casts the
-% :class:`ott.beam.abstract.Beam` object to a :class:`ott.beam.Beam` object.
+% These classes define casts to field calculation classes.  Abstract
+% classes implement the same interface as full field calculation classes
+% but the field calculation methods typically involve a cast to another
+% beam type.
+%
+% Abstract beam can be formed into hetrogeneous arrays.  These arrays
+% are assumed to be coherent and can be cast to beam implementations.
 %
 % Methods
 %   - contains      -- Query if a array_type is contained in the array
@@ -147,6 +152,27 @@ classdef (Abstract) Beam < ott.beam.Beam
 
       beam = ott.beam.Beam(beam);
       [varargout{1:nargout}] = beam.hfarfieldInternal(varargin{:});
+    end
+  end
+
+  methods (Access=protected)
+    function beam = castHelper(cast, beam, varargin)
+      % Helper for casts
+
+      assert(isa(beam, 'ott.beam.abstract.Beam'), ...
+          'First argument must be a abstract.Beam');
+
+      ott.utils.nargoutCheck(beam, nargout);
+
+      if numel(beam) > 1
+        oldbeam = beam;
+        beam = ott.beam.Array('coherent', size(beam));
+        for ii = 1:numel(oldbeam)
+          beam(ii) = cast(beam, varargin{:});
+        end
+      else
+        beam = cast(beam, varargin{:});
+      end
     end
   end
 

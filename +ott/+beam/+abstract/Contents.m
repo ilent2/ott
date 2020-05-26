@@ -46,7 +46,8 @@
 %   NearfieldMasked3d -- Combination beam with 3-D near-field mask
 %   ParaxialMasked    -- Combination beam with paraxial mask
 %   InterpParaxial    -- Interpolated beam for paraxial-field
-%   InterpNearfield   -- Interpolated beam for near-field
+%   InterpNearfield2d -- Interpolated beam for near-field
+%   InterpNearfield3d -- Interpolated beam for near-field
 %   InterpFarfield    -- Interpolated beam for far-field
 %
 % Copyright 2020 Isaac Lenton
