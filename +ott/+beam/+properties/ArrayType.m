@@ -1,5 +1,6 @@
 classdef (Abstract) ArrayType < ott.beam.properties.Beam
 % Properties of arrays inheriting from ott.beam.Beam.
+% Inherits from :class:`ott.beam.properties.Beam`.
 %
 % This class defines the properties and methods required for ArrayType
 % beams (does not include abstract arrays).
@@ -26,8 +27,6 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
 % Abstract properties
 %   - array_type      -- Type of array (coherent/incoherent/array)
 %   - power           -- Power of beam array
-%   - omega           -- Optical frequency of beam array
-%   - medium          -- Optical medium of beam array
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -35,8 +34,6 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
 
   properties (Abstract)
     array_type
-    omega
-    medium
   end
 
   methods (Abstract, Hidden)
@@ -93,6 +90,11 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
         b = builtin('isa', beam, strType);
       end
     end
+    
+    function beam = defaultArrayType(~, array_type, elements)
+      % Construct a new array for this type
+      beam = ott.beam.Array(array_type, elements);
+    end
 
     function beam = plus(b1, b2)
       % Implementation of the addition operator for adding coherent beams.
@@ -108,8 +110,8 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
       %   beam = beam1 + beam2
 
       % Check we have beams
-      assert(isa(b1, 'ott.beam.abstract.Beam'), 'beam1 must be a beam');
-      assert(isa(b2, 'ott.beam.abstract.Beam'), 'beam2 must be a beam');
+      assert(isa(b1, 'ott.beam.Beam'), 'beam1 must be a beam');
+      assert(isa(b2, 'ott.beam.Beam'), 'beam2 must be a beam');
 
       % Check mediums match
       assert(b1.medium == b2.medium, ...
@@ -170,10 +172,10 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
       % Usage
       %   beam = cat(dim, beam1, beam2, beam3, ...)
 
-      % Remove all inputs that are ott.beam.abstract.Empty
+      % Remove all inputs that are ott.beam.Empty
       mask = false(size(varargin));
       for ii = 1:length(varargin)
-        mask(ii) = isa(varargin{ii}, 'ott.beam.abstract.Empty');
+        mask(ii) = isa(varargin{ii}, 'ott.beam.Empty');
       end
       varargin(mask) = [];
 
@@ -187,9 +189,9 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
       % Check we have beams
       for ii = 1:length(varargin)
         assert(isa(varargin{ii}, 'ott.beam.Beam'), ...
-            'beams must inherit from ott.beam.abstract.Beam');
+            'beams must inherit from ott.beam.Beam');
 
-        if isa(varargin{ii}, 'ott.beam.utils.ArrayType')
+        if isa(varargin{ii}, 'ott.beam.properties.ArrayType')
 
           if isempty(array_type)
             array_type = varargin{ii}.array_type;
@@ -217,7 +219,8 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
       else
         sz = ones(1, dim+1);
         sz(dim) = numel(varargin);
-        beam = catNewArray('array', sz, varargin{:});
+        array_data = reshape(varargin, sz);
+        beam = varargin{1}.defaultArrayType('array', array_data);
       end
     end
 
@@ -347,16 +350,18 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
       % Usage
       %   data = beam.arrayApply(func, ...)
       %   Additional parameters are passed to the function.
+      %   All inputs must be cell arrays of the same size as the beam.
       %
       % This default implemenataion applies the function to
       % each cell in data if the beam is not coherent.
 
-      % TODO: Shouldn't this use beam?
+      assert(strcmpi(beam.array_type, 'coherent'), ...
+          'function only supports coherent beams');
 
-      if iscell(varargin{1})
-        % Apply visualisatio funtion to sub-beams
-        data = cell(size(varargin{1}));
-        for ii = 1:numel(varargin{1})
+      % Apply visualisatio funtion to sub-beams
+      if numel(beam) > 1
+        data = cell(size(beam));
+        for ii = 1:numel(beam)
           sub_data = cellfun(@(x) x{ii}, varargin, 'UniformOutput', false);
           data{ii} = func(sub_data{:});
         end

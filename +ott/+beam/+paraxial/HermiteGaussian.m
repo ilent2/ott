@@ -43,7 +43,7 @@ classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
   end
 
   methods
-    function beam = HermiteGaussian(waist, mmode, nmode, varargin)
+    function beam = HermiteGaussian(varargin)
       % Construct a new Hermite-Gaussian beam
       %
       % Usage
@@ -82,7 +82,7 @@ classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
       u = sqrt(1./(2.^mode .* factorial(mode))) ...
           .* sqrt(q0./qz) .* (-conj(qz)./qz).^(mode./2) ...
           .* hermiteH(mode, sqrt(2).*x./waistz) ...
-          .* exp(-i .* beam.wavenumber .* x.^2 ./ 2 ./ qz);
+          .* exp(-1i .* beam.wavenumber .* x.^2 ./ 2 ./ qz);
 
     end
 

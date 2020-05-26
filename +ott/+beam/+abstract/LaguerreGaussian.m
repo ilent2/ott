@@ -115,17 +115,26 @@ classdef LaguerreGaussian < ott.beam.properties.LaguerreGaussian ...
       assert(beam.lmode == 0 && beam.pmode == 0, ...
           'Beam must be LG00 for cast to Gaussian');
 
-      beam = ott.beam.abstract.Gaussian.like(beam, varargin{:});
+      beam = castHelper(@ott.beam.abstract.Gaussian.like, ...
+          beam, varargin{:});
     end
 
     function beam = ott.beam.vswf.LaguerreGaussian(beam, varargin)
       % Cast to vswf.LaguerreGaussian
+
+      assert(isa(beam, 'ott.beam.abstract.LaguerreGaussian'), ...
+          'first argument must be a abtract.LaguerreGaussian');
+
       beam = castHelper(@ott.beam.vswf.LaguerreGaussian.like, ...
           beam, 'lmode', beam.lmode, 'pmode', beam.pmode, varargin{:});
     end
 
     function beam = ott.beam.paraxial.LaguerreGaussian(beam, varargin)
       % Cast to paraxial.LaguerreGaussian
+
+      assert(isa(beam, 'ott.beam.abstract.LaguerreGaussian'), ...
+          'first argument must be a abtract.LaguerreGaussian');
+
       beam = castHelper(@ott.beam.paraxial.LaguerreGaussian.like, ...
           beam, 'lmode', beam.lmode, 'pmode', beam.pmode, varargin{:});
     end

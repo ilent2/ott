@@ -1,7 +1,9 @@
 classdef Bsc < ott.beam.Beam ...
-    & ott.beam.utils.ArrayType
+    & ott.beam.properties.AnyArrayType ...
+    & ott.beam.properties.Material
 % Class representing beam shape coefficients.
-% Inherits from :class:`ott.beam.Beam` and :class:`ott.beam.utils.ArrayType`.
+% Inherits from :class:`ott.beam.Beam` 
+% and :class:`ott.beam.properties.AnyArrayType`.
 %
 % Properties
 %   - a           --  Beam shape coefficients a vector
@@ -105,6 +107,25 @@ classdef Bsc < ott.beam.Beam ...
       bsc = ott.beam.vswf.Bsc(fa, fb);
     end
 
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      if isa(other, 'ott.beam.vswf.Bsc')
+        args = ott.utils.addDefaultParameter('a', other.a, args);
+        args = ott.utils.addDefaultParameter('b', other.b, args);
+        args = ott.utils.addDefaultParameter('basis', other.basis, args);
+        args = ott.utils.addDefaultParameter('absdz', other.absdz, args);
+      end
+      args = ott.beam.Beam.likeProperties(other, args);
+      args = ott.beam.properties.AnyArrayType.likeProperties(other, args);
+      args = ott.beam.properties.Material.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Construct a VSWF beam like another beam
+      args = ott.beam.vswf.Bsc.likeProperties(other, varargin);
+      beam = ott.beam.vswf.Bsc(args{:});
+    end
+
     function beam = empty(varargin)
       % Create an empty Bsc object
       %
@@ -150,97 +171,77 @@ classdef Bsc < ott.beam.Beam ...
       %
       %   beam = Bsc(a, b, ...) constructs beam from a/b coefficients.
       %
-      %   beam = Bsc(bsc, ...) construct a copy of the existing Bsc beam.
-      %
       % Parameters
       %   - a,b (numeric) -- Vectors of VSWF coefficients
-      %   - bsc (vswf.bsc.Bsc) -- An existing BSC object
       %
       % Optional named arguments
       %   - basis (enum) -- VSWF basis: incoming, outgoing or regular.
       %     Default: ``'regular'``.
-      %
-      %   - like (Bsc) -- Another beam obejct to use for default values.
-      %     Default: ``[]``.
       %
       %   - absdz (numeric) -- Initial displacement of the beam.  This is
       %     used to keep track of when the beam may be displaced too far.
       %     Default: ``0``.
       %
       %   - array_type (enum) -- Type of beam array.  Can be one of
-      %     'coherent', 'array', or 'incoherent'.  Default: ``'array'``.
+      %     'coherent', 'array', or 'incoherent'.  Default: ``'coherent'``.
       %
       % Unmatched arguments are passed to the base class.
 
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addOptional('a', [], @(x) isnumeric(x) || isa(x, 'ott.beam.vswf.Bsc'));
+      p.addOptional('a', [], @isnumeric);
       p.addOptional('b', [], @isnumeric);
-      p.addParameter('basis', []);
-      p.addParameter('absdz', []);
-      p.addParameter('array_type', []);
-      p.addParameter('like', []);
+      p.addParameter('basis', 'regular');
+      p.addParameter('absdz', 0.0);
+      p.addParameter('array_type', 'coherent');
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      % Get default parameters
-      default_a = [];
-      default_b = [];
-      default_array_type = 'array';
-      default_basis = 'regular';
-      default_absdz = 0.0;
-      if ~isempty(p.Results.like)
-        if isa(p.Results.like, 'ott.beam.utils.ArrayType')
-          default_array_type = p.Results.like.array_type;
+      % Call base classes
+      beam = beam@ott.beam.properties.AnyArrayType(p.Results.array_type);
+      beam = beam@ott.beam.properties.Material();
+      beam = beam@ott.beam.Beam(unmatched{:});
+
+      % Store properties
+      beam = beam.setCoefficients(p.Results.a, p.Results.b);
+      beam.basis = p.Results.basis;
+      beam.absdz = p.Results.absdz;
+    end
+
+    function bsc = ott.beam.vswf.Array(bsc)
+      % Split the BSC into an array of BSC
+
+      array_type = bsc.array_type;
+
+      beam_data = cell(1, numel(bsc));
+      for ii = 1:numel(bsc)
+        beam_data{ii} = bsc(ii);
+      end
+
+      bsc = ott.beam.vswf.Array(array_type, beam_data);
+    end
+    
+    function beam = defaultArrayType(~, array_type, elements)
+      % Construct a new array for this type
+      
+      if iscell(elements)
+        isCompatible = true;
+        for ii = 1:numel(elements)
+          isCompatible = isCompatible & isa(elements{ii}, 'ott.beam.vswf.Bsc');
         end
-        if isa(p.Results.like, 'ott.beam.vswf.Bsc')
-          default_basis = p.Results.like.basis;
-          default_absdz = p.Results.like.absdz;
-          default_a = p.Results.like.a;
-          default_b = p.Results.like.b;
+        
+        if ~ismatrix(elements) || min(size(elements)) ~= 1 || ~isCompatible
+          beam = ott.beam.vswf.Array(array_type, elements);
+        else
+          error('Not yet implemented');
         end
-      end
-
-      % If a is a Bsc, update defaults
-      if isa(p.Results.a, 'ott.beam.vswf.Bsc')
-        assert(isempty(p.Results.b), 'Too many arguments supplied');
-
-        default_absdz = p.Results.a.absdz;
-        default_basis = p.Results.a.basis;
-        default_array_type = p.Results.a.array_type;
-      end
-
-      % Get array type
-      array_type = p.Results.array_type;
-      if isempty(array_type)
-        array_type = default_array_type;
-      end
-
-      % Call base class
-      beam = beam@ott.beam.utils.ArrayType(...
-        'array_type', array_type, 'like', p.Results.like, unmatched{:});
-
-      % Get a,b
-      if isa(p.Results.a, 'ott.beam.vswf.Bsc')
-        beam = beam.setCoefficients(p.Results.a.a, p.Results.a.b);
-      elseif ~isempty(p.Results.a)
-        beam = beam.setCoefficients(p.Results.a, p.Results.b);
       else
-        beam = beam.setCoefficients(default_a, default_b);
-      end
-
-      % Store basis
-      if ~isempty(p.Results.basis)
-        beam.basis = p.Results.basis;
-      else
-        beam.basis = default_basis;
-      end
-
-      % Store absdz
-      if ~isempty(p.Results.absdz)
-        beam.absdz = p.Results.absdz;
-      else
-        beam.absdz = default_absdz;
+        if numel(elements) > 2 || min(elements) ~= 1
+          beam = ott.beam.vswf.Array(array_type, elements);
+        else
+          beam = ott.beam.vswf.Bsc.empty(elements, ...
+            'array_type', array_type);
+        end
       end
     end
 
@@ -1331,22 +1332,6 @@ classdef Bsc < ott.beam.Beam ...
   end
 
   methods (Hidden)
-    function beam = catNewArray(array_type, sz, varargin)
-      % Construct a new ott.beam.vswf.Array beam
-
-      % Check all inherit from Beam
-      isBeam = true;
-      for ii = 1:length(varargin)
-        isBeam = isBeam & isa(varargin{ii}, 'ott.beam.vswf.Bsc');
-      end
-
-      if ~isBeam
-        beam = catNewArray@ott.beam.Beam(array_type, sz, varargin{:});
-      else
-        beam = ott.beam.vswf.Array(array_type, sz, varargin{:});
-      end
-    end
-
     function bsc = translateXyzInternal(bsc, xyz, varargin)
       % Apply translations to position property.
       %

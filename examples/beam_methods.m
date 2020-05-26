@@ -68,39 +68,45 @@ abstract_beam = ott.beam.abstract.LaguerreGaussian(paraxial_waist, ...
 % Default visualisation method is Paraxial
 subplot(1, 2, 1);
 abstract_beam.visualise('range', 2*[1, 1]);
+title('Paraxial');
 
 % Can also construct a VSWF representation
 subplot(1, 2, 2);
 ott.beam.vswf.Bsc(abstract_beam).visualise('range', 2*[1, 1]);
+title('VSWF');
 
 %% Hermite-Gaussian beams
 
 figure();
 
 % HG beam with azimuthal mode (mmode = -5) and radial mode (nmode = 3)
-paraxial_waist = 0.5;
+paraxial_waist = 3;
 abstract_beam = ott.beam.abstract.HermiteGaussian(paraxial_waist, ...
-    'mmode', -5, 'nmode', 3, 'polarisation', [1, 0]);
+    'mmode', 5, 'nmode', 3, 'polarisation', [1, 0]);
+  
+range = [1,1] * 2.5*paraxial_waist;
 
 % Default visualisation method is Paraxial
 subplot(1, 2, 1);
-abstract_beam.visualise();
+abstract_beam.visualise('range', range);
+title('Paraxial');
 
 % Can also construct a VSWF representation
 subplot(1, 2, 2);
-ott.beam.vswf.Bsc(abstract_beam).visualise();
+ott.beam.vswf.Bsc(abstract_beam).visualise('range', range);
+title('VSWF');
 
 %% Ince-Gaussian beam
 
 figure();
 
 % Construct an Ince-Gaussian beam
-paraxial_waist = 0.5;
+paraxial_waist = 2;
 abstract_beam = ott.beam.abstract.InceGaussian(paraxial_waist, ...
-    'pmode', 5, 'parity', 'even', 'polarisation', [1, 1i]);
+    'lmode', 3, 'porder', 5, 'parity', 'even', 'polarisation', [1, 1i]);
 
 % Default visualisation method is VSWF
-abstract_beam.visualise();
+abstract_beam.visualise('range', [3, 3]);
 
 %% Plane wave beams
 

@@ -30,6 +30,14 @@ classdef (Abstract) Medium
     impedance
   end
 
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Add like-properties to argument list
+
+      % Nothing to do
+    end
+  end
+
   methods
     function rmat = rdivide(material1, material2)
       % Construct a relative material from two mediums

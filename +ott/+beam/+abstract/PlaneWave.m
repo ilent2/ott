@@ -100,7 +100,6 @@ classdef PlaneWave < ott.beam.properties.PlaneWave ...
       end
 
       % Get Vector to store most
-      beam = beam@ott.beam.utils.ArrayType('array_type', p.Results.array_type);
       beam = beam@ott.utils.Vector(origin, direction);
       beam = beam@ott.beam.abstract.Beam(unmatched{:}, ...
           'like', p.Results.like);

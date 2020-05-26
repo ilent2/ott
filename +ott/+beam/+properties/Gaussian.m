@@ -48,7 +48,7 @@ classdef Gaussian < ott.beam.properties.MaterialBeam
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.properties.Beam(unmatched{:});
+      beam = beam@ott.beam.properties.MaterialBeam(unmatched{:});
       beam.polarisation = p.Results.polarisation;
       beam.waist = p.Results.waist;
     end

@@ -1,4 +1,4 @@
-classdef (Abstract) BeamInterface < ott.beam.properties.Beam
+classdef (Abstract) Beam < ott.beam.properties.Beam
 % Abstract base class for beam approximations.
 % Inherits from :class:`ott.beam.utils.BeamInterface`.
 %
@@ -69,10 +69,10 @@ classdef (Abstract) BeamInterface < ott.beam.properties.Beam
 % TODO: Add support for re-usable visualisation data
 
   methods (Abstract)
-    efieldInternal      % Method called by efield
-    hfieldInternal      % Method called by hfield
-    efarfieldInternal   % Called by efarfield
-    hfarfieldInternal   % Called by hfarfield
+    efieldInternal(obj)      % Method called by efield
+    hfieldInternal(obj)      % Method called by hfield
+    efarfieldInternal(obj)   % Called by efarfield
+    hfarfieldInternal(obj)   % Called by hfarfield
   end
 
   methods (Static)
@@ -178,7 +178,7 @@ classdef (Abstract) BeamInterface < ott.beam.properties.Beam
   end
 
   methods
-    function beam = BeamInterface(varargin)
+    function beam = Beam(varargin)
       % Pass-through constructor for beam interface
       %
       % Usage

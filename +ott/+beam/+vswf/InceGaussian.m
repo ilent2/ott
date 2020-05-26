@@ -1,5 +1,5 @@
 classdef InceGaussian < ott.beam.vswf.BscScalar ...
-    & ott.beam.abstract.InceGaussian ...
+    & ott.beam.properties.InceGaussian ...
     & ott.beam.utils.FarfieldMapping
 % Ince-Gaussian beam VSWF representation using LG-paraxial point matching.
 % Inherits from :class:`ott.beam.vswf.BscScalar` and
@@ -44,11 +44,6 @@ classdef InceGaussian < ott.beam.vswf.BscScalar ...
       %
       % Usage
       %   bsc = InceGaussian(waist, lmode, porder, parity, ellipticity, ...)
-      %
-      %   bsc = InceGaussian(...)
-      %   Construct a beam with `waist = 1`, `lmode = 0`, `porder = 1`,
-      %   even parity and `ellipticity = 1`.
-      %   Parameters can also be passed as named arguments.
       %
       % Parameters
       %   - waist (numeric) -- Beam waist.

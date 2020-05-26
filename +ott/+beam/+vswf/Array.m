@@ -18,16 +18,18 @@ classdef Array < ott.beam.Array
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+      
+% TODO: Validation that array elements are BSC (where?)
 
   methods
-    function beam = Array(array_type, sz, varargin)
+    function beam = Array(array_type, arg)
       % Construct a new beam array
       %
       % Usage
-      %   beam = Array(bsc)
-      %   Convert an existing bsc object to an array of separate bscs.
+      %   beam = Array(array_type, beams)
+      %   Construct a new array containing the specified BSC beams.
       %
-      %   beam = Array(array_type, sz, beam1, beam2, ...)
+      %   beam = Array(array_type, sz, ...)
       %   Construct a new array containing the specified BSC beams.
       %
       % Parameters
@@ -39,27 +41,7 @@ classdef Array < ott.beam.Array
       %   - beam1, beam2, ... -- Beams to include in the array.
       %     If empty, creates an empty cell array internally.
 
-      if ischar(array_type)
-        beam_data = varargin;
-
-        for ii = 1:numel(beam_data)
-          assert(isa(beam_data{ii}, 'ott.beam.vswf.Bsc'), ...
-              'vswf.Array must contain only Bsc objects');
-        end
-      else
-        assert(nargin == 1, 'Incorrect number of arguments');
-
-        bsc = array_type;
-        array_type = bsc.array_type;
-        sz = size(bsc);
-
-        beam_data = cell(1, numel(bsc));
-        for ii = 1:numel(bsc)
-          beam_data{ii} = bsc(ii);
-        end
-      end
-
-      beam = beam@ott.beam.Array(array_type, sz, beam_data{:});
+      beam = beam@ott.beam.Array(array_type, arg);
     end
 
     function bsc = ott.beam.vswf.Bsc(array)

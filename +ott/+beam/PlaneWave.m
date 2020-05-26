@@ -216,7 +216,7 @@ classdef PlaneWave < ott.beam.properties.PlaneWave
       %     `origin`.  Default: ``[]``.
 
       % No additional properties needed
-      beam = beam@ott.beam.abstract.PlaneWave(varargin{:});
+      beam = beam@ott.beam.properties.PlaneWave(varargin{:});
     end
 
     function varargout = visualiseRays(vec, varargin)

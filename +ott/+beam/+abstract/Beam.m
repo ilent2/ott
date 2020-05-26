@@ -39,7 +39,7 @@ classdef (Abstract) Beam < ott.beam.Beam ...
       %
       % For optional parameters, see :class:`ott.beam.properties.Beam`.
 
-      beam = beam@ott.beam.utils.BeamInterface(varargin{:});
+      beam = beam@ott.beam.Beam(varargin{:});
     end
 
     function b = contains(beam, array_type)

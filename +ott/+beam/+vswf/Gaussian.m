@@ -22,9 +22,14 @@ classdef Gaussian < ott.beam.vswf.BscScalar ...
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
+
+      % Direct base class likeProperties methods
       args = ott.beam.utils.FarfieldMapping.likeProperties(other, args);
       args = ott.beam.vswf.BscScalar.likeProperties(other, args);
       args = ott.beam.properties.Gaussian.likeProperties(other, args);
+
+      % Also add the power input argument
+      args = ott.utils.addDefaultParameter('power', other.power, args);
     end
 
     function beam = like(other, varargin)
@@ -55,6 +60,9 @@ classdef Gaussian < ott.beam.vswf.BscScalar ...
       %   - polarisation (2-numeric) -- Polarisation of the beam.
       %     2 element Jones vector.  Default: ``[1, 1i]``.
       %
+      %   - power (numeric) -- Beam power.
+      %     Default: ``1.0``.
+      %
       %   - mapping (enum) -- Mapping method for paraxial far-field.
       %     Can be either 'sintheta' or 'tantheta' (small angle).
       %     For a discussion of this parameter, see Documentation
@@ -64,6 +72,7 @@ classdef Gaussian < ott.beam.vswf.BscScalar ...
       p.addOptional('waist', [], @isnumeric);
       p.addParameter('mapping', 'sintheta');
       p.addParameter('polarisation', [1, 1i]);
+      p.addParameter('power', 1.0);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -74,10 +83,12 @@ classdef Gaussian < ott.beam.vswf.BscScalar ...
       bsc = bsc@ott.beam.vswf.BscScalar();
 
       % Construct a beam LgParaxialBasis beam
-      % TODO: Perhaps this should be called later?  Grow?
       data = ott.beam.vswf.LgParaxialBasis.FromLgMode(...
           bsc.waist, 0, 0, bsc.polarisation, 'mapping', bsc.mapping);
       bsc = bsc.setCoefficients(sum(data));
+
+      % Set beam power
+      beam.power = p.Results.power;
     end
   end
 end

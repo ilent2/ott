@@ -30,8 +30,12 @@ classdef AnyArrayType < ott.beam.properties.ArrayType
 
       p = inputParser;
       p.addOptional('array_type', [], ...
-          @(x) any(strcmpi('coherent', 'array', 'incoherent')));
+          @(x) any(strcmpi(x, {'coherent', 'array', 'incoherent'})));
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      beam = beam@ott.beam.properties.ArrayType(unmatched{:});
       beam.array_type = p.Results.array_type;
     end
   end

@@ -20,8 +20,10 @@ classdef LaguerreGaussian < ott.beam.properties.Gaussian
   methods (Static)
     function args = likeProperties(other, args)
       % Add like-properties to argument list
-      args = ott.utils.addDefaultParameter('lmode', other.lmode, args);
-      args = ott.utils.addDefaultParameter('pmode', other.pmode, args);
+      if isa(other, 'ott.beam.properties.LaguerreGaussian')
+        args = ott.utils.addDefaultParameter('lmode', other.lmode, args);
+        args = ott.utils.addDefaultParameter('pmode', other.pmode, args);
+      end
       args = ott.beam.properties.Gaussian.likeProperties(other, args);
     end
   end

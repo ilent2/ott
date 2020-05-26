@@ -24,11 +24,13 @@ classdef InceGaussian < ott.beam.properties.Gaussian
   methods (Static)
     function args = likeProperties(other, args)
       % Add like-properties to argument list
-      args = ott.utils.addDefaultParameter('lmode', other.lmode, args);
-      args = ott.utils.addDefaultParameter('porder', other.porder, args);
-      args = ott.utils.addDefaultParameter(...
-          'ellipticity', other.ellipticity, args);
-      args = ott.utils.addDefaultParameter('parity', other.parity, args);
+      if isa(other, 'ott.beam.properties.InceGaussian')
+        args = ott.utils.addDefaultParameter('lmode', other.lmode, args);
+        args = ott.utils.addDefaultParameter('porder', other.porder, args);
+        args = ott.utils.addDefaultParameter(...
+            'ellipticity', other.ellipticity, args);
+        args = ott.utils.addDefaultParameter('parity', other.parity, args);
+      end
       args = ott.beam.properties.Gaussian.likeProperties(other, args);
     end
   end
