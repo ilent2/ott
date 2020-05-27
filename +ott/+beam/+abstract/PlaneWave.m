@@ -1,8 +1,9 @@
 classdef PlaneWave < ott.beam.properties.PlaneWaveScalar ...
-    & ott.beam.abstract.Beam ...
-    & ott.beam.utils.InfinitePower
+    & ott.beam.abstract.CastBoth ...
+    & ott.beam.properties.InfinitePower
 % Abstract representation of a plane wave beam.
-% Inherits from :class:`Beam` and :class:`ott.beam.properties.PlaneWave`.
+% Inherits from :class:`Beam`
+% and :class:`ott.beam.properties.PlaneWaveScalar`.
 %
 % This class creates a single abstract Plane Wave beam.  For more
 % efficient arrays of plane wave beams, use :class;`ott.beam.PlaneWave`

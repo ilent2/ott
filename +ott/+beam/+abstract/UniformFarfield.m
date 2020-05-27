@@ -6,11 +6,7 @@ classdef UniformFarfield < ott.beam.abstract.CastNearfield ...
 % Properties
 %   - polarisation        - Far-field polarisation (theta/phi)
 %
-% Supported casts
-%   - Beam              -- (Inherited) uses vswf.Bsc
-%   - vswf.Bsc          -- (Inherited) uses vswf.Pointmatch
-%   - vswf.Pointmatch   -- (Inherited) uses vswf.FarfieldPm
-%   - vswf.FarfieldPm   -- (Inherited)
+% All casts inherited from base.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

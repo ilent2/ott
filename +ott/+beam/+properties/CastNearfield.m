@@ -10,14 +10,14 @@ classdef CastNearfield
     function varargout = efieldInternal(beam, varargin)
       % Cast the beam to a Beam and call method
 
-      beam = ott.beam.utils.BeamNear(beam);
+      beam = ott.beam.Beam(beam);
       [varargout{1:nargout}] = beam.efieldInternal(varargin{:});
     end
 
     function varargout = hfieldInternal(beam, varargin)
       % Cast the beam to a Beam and call method
 
-      beam = ott.beam.utils.BeamNear(beam);
+      beam = ott.beam.Beam(beam);
       [varargout{1:nargout}] = beam.hfieldInternal(varargin{:});
     end
   end

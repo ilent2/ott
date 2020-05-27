@@ -12,6 +12,10 @@ function testConstructor(testCase)
   
   testCase.verifyEqual(beam.origin, beam.position);
   testCase.verifyEqual(beam.direction, beam.rotation * [0;0;1]);
+  
+  h = figure();
+  beam.visualise('axis', 'y', 'field', 'Re(Ey)');
+  close(h);
 
 end
 

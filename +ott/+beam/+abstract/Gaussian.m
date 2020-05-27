@@ -5,6 +5,8 @@ classdef Gaussian < ott.beam.properties.Gaussian ...
 % Inherits from :class:`Beam`, :class:`ott.beam.properties.Gaussian`,
 % and :class:`utils.VariablePower`.
 %
+% Casts
+%
 % Supported casts
 %   - Beam              -- Default Beam cast, uses GaussianDavis5
 %   - vswf.Bsc          -- Default Bsc cast, uses vswf.Gaussian

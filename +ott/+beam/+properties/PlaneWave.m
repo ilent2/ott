@@ -1,6 +1,6 @@
-classdef (Abstract) PlaneWave < ott.beam.properties.MaterialBeam
+classdef (Abstract) PlaneWave < ott.beam.properties.Material
 % Properties of scattered beams.
-% Inherits from :class:`MaterialBeam`.
+% Inherits from :class:`Material`.
 %
 % Properties
 %   - position      -- (Inherited) Beam position

@@ -1,19 +1,17 @@
-classdef UniformParaxial < ott.beam.abstract.Beam ...
+classdef UniformParaxial < ott.beam.abstract.CastNearfield ...
     & ott.beam.properties.Material ...
     & ott.beam.properties.FarfieldMapping
 % A beam with a uniform paraxial far-field.
-% Inherits from :class:`Beam` and :class:`ott.beam.properties.Material`.
+% Inherits from :class:`CastNearfield`
+% and :class:`ott.beam.properties.Material`
+% and :class:`ott.beam.properties.FarfieldMapping`.
 %
 % Properties
 %   - polarisation
 %   - mapping       -- Mapping for far-field to paraxial conversion
 %   - direction     -- Mask direction (positive or negative hemisphere)
 %
-% Supported casts
-%   - Beam              -- (Inherited) uses vswf.Bsc
-%   - vswf.Bsc          -- (Inherited) uses vswf.Pointmatch
-%   - vswf.Pointmatch   -- (Inherited) uses vswf.FarfieldPm
-%   - vswf.FarfieldPm   -- (Inherited)
+% All casts inherited from base.
 
   properties
     polarisation
