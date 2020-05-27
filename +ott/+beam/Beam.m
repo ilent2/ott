@@ -55,6 +55,7 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
 %   - forcetorqueInternal -- Force/Torque calculation method (to be overridden)
 %
 % Supported casts
+%   - Ray                 -- Constructs a Ray set from the far-field
 %   - vswf.Bsc            -- Default Bsc cast, uses vswf.FarfieldPm
 %   - vswf.Pointmatch     -- Default Bsc.Pm cast, uses vswf.FarfieldPm
 %   - vswf.FarfieldPm
@@ -191,6 +192,24 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
       % All properties passed to ott.beam.properties.Beam
 
       beam = beam@ott.beam.properties.Beam(varargin{:});
+    end
+
+    function beam = ott.beam.Ray(beam, varargin)
+
+      % TODO: Multiple beams and type check
+
+      theta = linspace(0, beam.angle, 50);
+      phi = linspace(0, 2*pi, 100);
+      radius = 100;
+      [R, T, P] = meshgrid(radius, theta, phi);
+      rtp = [R(:), T(:), P(:)].';
+      vrtp = [0*R(:), ones(size(T(:))), 0*P(:)].';
+      [vxyz, xyz] = ott.utils.rtp2xyz(vrtp, rtp);
+
+      Etp = beam.efarfield(rtp).vrtp(2:3, :);
+
+      beam = ott.beam.Ray('origin', xyz, 'dierction', -xyz, ...
+          'polarisation1', vxyz, 'field', Etp, varargin{:});
     end
 
     function beam = ott.beam.vswf.Pointmatch(varargin)

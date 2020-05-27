@@ -1,7 +1,7 @@
 classdef MaskedFarfield < ott.beam.properties.Beam ...
-    & ott.beam.abstract.Beam
+    & ott.beam.abstract.CastNearfield
 % Describes composite beam with a masked far-field.
-% Inherits from :class:`Beam` and :class:`ott.beam.properties.Beam`.
+% Inherits from :class:`CastNearfield` and :class:`ott.beam.properties.Beam`.
 %
 % Static methods
 %   - TopHat        -- Creates a top-hat profile
@@ -11,10 +11,7 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
 %   - beam          -- The masked beam (any ott.beam.Beam)
 %   - mask          -- Function defining the mask
 %
-% Supported casts
-%   - Beam
-%   - Bsc
-%   - abstract.InterpFarfield
+% All casts inherited from base.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -23,6 +20,12 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
   properties
     beam
     mask
+  end
+
+  properties (Dependent)
+    omega
+    medium
+    power
   end
 
   methods (Static)
@@ -42,7 +45,7 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
       % Usage
       %   beam = MaskedParaxial.Annular(angles, masked_beam, ...)
 
-      mask = @(tp) tp(1, :) >= angles(1) && tp(1, :) <= angles(2);
+      mask = @(tp) tp(1, :) >= angles(1) & tp(1, :) <= angles(2);
       beam = ott.beam.abstract.MaskedFarfield(mask, masked_beam, varargin{:});
     end
   end
@@ -74,10 +77,11 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
       E = beam.beam.efarfield(rtp, varargin{:});
 
       % Compute mask
-      mask = beam.mask(rtp(1:2, :));
+      mask = beam.mask(rtp(2:3, :));
 
       % Zero fields outside mask
-      vrtp = E.vrtp(:, ~mask) = 0.0;
+      vrtp = E.vrtp;
+      vrtp(:, ~mask) = 0.0;
       E = ott.utils.FieldVector(E.locations, vrtp, 'spherical');
     end
 
@@ -88,11 +92,26 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
       H = beam.beam.efarfield(rtp, varargin{:});
 
       % Compute mask
-      mask = beam.mask(rtp(1:2, :));
+      mask = beam.mask(rtp(2:3, :));
 
       % Zero fields outside mask
-      vrtp = H.vrtp(:, ~mask) = 0.0;
+      vrtp = H.vrtp;
+      vrtp(:, ~mask) = 0.0;
       H = ott.utils.FieldVector(H.locations, vrtp, 'spherical');
+    end
+  end
+
+  methods % Getters/setters
+    function p = get.power(beam)
+      % How should we do this?  We did something fancy in the old TopHat?
+      error('Not yet implemented');
+    end
+
+    function m = get.medium(beam)
+      m = beam.beam.medium;
+    end
+    function m = get.omega(beam)
+      m = beam.beam.omega;
     end
   end
 end

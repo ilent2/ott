@@ -38,6 +38,8 @@
 %   Bessel            -- Bessel beam
 %   PlaneWave         -- Plane wave beam.
 %   Dipole            -- Radiation field produced by a dipole
+%   FocussedTopHat    -- Focussed paraxial top-hat beam
+%   Annular           -- Annular beam
 %
 % Paraxial beams (CastBoth)
 %   Gaussian          -- Gaussian beam.
@@ -46,8 +48,6 @@
 %   InceGaussian      -- Ince-Gaussian beam.
 %
 % Far-field beams (CastNear)
-%   FocussedTopHat    -- Focussed paraxial top-hat beam
-%   Annular           -- Annular beam
 %   UniformFarfield   -- Beam with a uniform far-field
 %   UniformParaxial   -- Beam with a uniform paraxial far-field
 %

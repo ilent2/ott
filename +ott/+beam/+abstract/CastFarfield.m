@@ -9,6 +9,8 @@ classdef CastFarfield < ott.beam.properties.CastFarfield ...
 %   - vswf.Pointmatch  -- Overloaded, Uses vswf.FarfieldPm
 %   - vswf.NearfieldPm -- (Inherited) Uses Beam via :class:`CastFarfield`
 %   - vswf.FarfieldPm  -- (Inherited)
+%   - abstract.InterpFarfield   -- (Inherited)
+%   - abstract.InterpNearfield  -- (Inherited) Uses Beam via CastFarfield
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

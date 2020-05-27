@@ -40,6 +40,7 @@ classdef FocussedTopHat
     function beam = set.angle(beam, val)
       assert(isnumeric(val) && isscalar(val), ...
           'angle must be numeric scalar');
+      beam.angle = val;
     end
   end
 end

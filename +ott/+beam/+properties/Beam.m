@@ -94,15 +94,8 @@ classdef (Abstract) Beam < ott.utils.RotationPositionProp
 
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addParameter('omega', []);
-      p.addParameter('wavelength', []);
-      p.addParameter('wavelength0', []);
-      p.addParameter('wavenumber', []);
-      p.addParameter('wavenumber0', []);
-      p.addParameter('vacuum', []);
-      p.addParameter('medium', []);
-      p.addParameter('position', []);
-      p.addParameter('rotation', []);
+      p.addParameter('position', [0;0;0]);
+      p.addParameter('rotation', eye(3));
       p.addParameter('power', []);
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -112,76 +105,11 @@ classdef (Abstract) Beam < ott.utils.RotationPositionProp
         beam.power = p.Results.power;
       end
 
-      % Get default values from like
-      % TODO: Use 'UsingDefaults' instead of isempty
-      default_omega = 2*pi;
-      default_vacuum = ott.beam.medium.Vacuum.Unitary();
-      default_medium = default_vacuum;
-      default_position = [0;0;0];
-      default_rotation = eye(3);
-
-      % Check number of omega related arguments
-      % TODO: We often want to supply two of these (to specify medium)
-      num_omega = isempty(p.Results.omega) ...
-          + isempty(p.Results.wavelength) ...
-          + isempty(p.Results.wavenumber) ...
-          + isempty(p.Results.wavelength0) ...
-          + isempty(p.Results.wavenumber0);
-      assert(num_omega >= 4, ...
-        'Must only provide one or two of omega|wavelength|wavenumber');
-
-      % Get default values for medium construction
-      medium = p.Results.medium;
-      vacuum = p.Results.vacuum;
-      if ~isempty(vacuum) && ~isempty(medium)
-        assert(~isa(medium, 'ott.beam.medium.Material'), ...
-            'medium must not be a material if vacuum is specified');
-      elseif isempty(vacuum) && isempty(medium)
-        medium = default_medium;
-        vacuum = default_vacuum;
-      elseif isempty(medium)
-        medium = default_medium;
-      elseif isempty(vacuum)
-        if isa(medium, 'ott.beam.medium.Material')
-          vacuum = medium.vacuum;
-        else
-          vacuum = default_vacuum;
-        end
-      end
-
-      % Construct medium
-      % TODO: Should we remove like from Materials too?
-      beam.medium = ott.beam.medium.Material.Simple(...
-          'vacuum', vacuum, 'like', medium, unmatched{:});
-        
       % Store position/rotation
-      if ~isempty(p.Results.position)
-        beam.position = p.Results.position;
-      else
-        beam.position = default_position;
-      end
-      if ~isempty(p.Results.rotation)
-        beam.rotation = p.Results.rotation;
-      else
-        beam.rotation = default_rotation;
-      end
-
-      % Calculate optical frequency
-      if ~isempty(p.Results.omega)
-        beam.omega = p.Results.omega;
-      elseif ~isempty(p.Results.wavelength)
-        beam = beam.setFrequency('wavelength', p.Results.wavelength);
-      elseif ~isempty(p.Results.wavelength0)
-        beam = beam.setFrequency('wavelength0', p.Results.wavelength0);
-      elseif ~isempty(p.Results.wavenumber)
-        beam = beam.setFrequency('wavenumber', p.Results.wavenumber);
-      elseif ~isempty(p.Results.wavenumber0)
-        beam = beam.setFrequency('wavenumber0', p.Results.wavenumber0);
-      else
-        beam.omega = default_omega;
-      end
+      beam.position = p.Results.position;
+      beam.rotation = p.Results.rotation;
     end
-    
+
     function beam = setWavelength(beam, val, mode)
       % Change the wavelength of the beam
       %

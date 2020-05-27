@@ -6,7 +6,17 @@ function setupOnce(testCase)
   addpath('../../../');
 end
 
-function testConstructor(testCase)
+
+function testConstruct(testCase)
+
+  angles = [pi/8, pi/4];
+  beam = ott.beam.abstract.Annular(angles);
+
+  testCase.verifyEqual(beam.angles, angles);
+
+  h = figure();
+  beam.visualiseFarfield();
+  close(h);
 
 end
 
