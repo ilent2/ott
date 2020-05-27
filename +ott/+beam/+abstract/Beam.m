@@ -21,9 +21,11 @@ classdef (Abstract) Beam < ott.beam.Beam ...
 %   - contains      -- Query if a array_type is contained in the array
 %
 % Supported casts
-%   - Beam            -- Default beam cast for arrays, uses Coherent/Bsc
-%   - vswf.Bsc        -- Default Bsc cast, uses vswf.FarfieldPm
-%   - vswf.Pointmatch -- Default Bsc.Pm cast, uses vswf.FarfieldPm
+%   - Beam             -- Default beam cast for arrays, uses Coherent/Bsc
+%   - vswf.Bsc         -- (Inherited)
+%   - vswf.Pointmatch  -- (Inherited)
+%   - vswf.NearfieldPm -- (Inherited)
+%   - vswf.FarfieldPm  -- (Inherited)
 %   - Array
 %   - Coherent
 %   - Incoherent
@@ -76,10 +78,12 @@ classdef (Abstract) Beam < ott.beam.Beam ...
       % Cast an array of beams to a coherent array of beams
       %
       % This method is called for hetrogeneous arrays.
-      % This method should be overloaded by abstract beams sub-classes.
 
       assert(isa(beam, 'ott.beam.abstract.Beam'), ...
           'First argument must be abstract.Beam');
+
+      % TODO: Cast to coherent or array depending on contents
+      %   Maybe warn if not coherent?
 
       if numel(beam) > 1
         beam = ott.beam.Coherent(beam);
@@ -125,36 +129,6 @@ classdef (Abstract) Beam < ott.beam.Beam ...
       for ii = numel(beam)
         beam_array(ii) = ott.beam.Beam(beam(ii));
       end
-    end
-  end
-
-  methods (Hidden)
-    function varargout = efieldInternal(beam, varargin)
-      % Cast the beam to a Beam and call method
-
-      beam = ott.beam.Beam(beam);
-      [varargout{1:nargout}] = beam.efieldInternal(varargin{:});
-    end
-
-    function varargout = hfieldInternal(beam, varargin)
-      % Cast the beam to a Beam and call method
-
-      beam = ott.beam.Beam(beam);
-      [varargout{1:nargout}] = beam.hfieldInternal(varargin{:});
-    end
-
-    function varargout = efarfieldInternal(beam, varargin)
-      % Cast the beam to a Beam and call method
-
-      beam = ott.beam.Beam(beam);
-      [varargout{1:nargout}] = beam.efarfieldInternal(varargin{:});
-    end
-
-    function varargout = hfarfieldInternal(beam, varargin)
-      % Cast the beam to a Beam and call method
-
-      beam = ott.beam.Beam(beam);
-      [varargout{1:nargout}] = beam.hfarfieldInternal(varargin{:});
     end
   end
 

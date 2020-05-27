@@ -19,45 +19,49 @@
 % The :class:`Coherent` class is semi-redundant, only useful for
 % arrays of sub-arrays of coherent beams.
 %
-% Generic beams
-%   Beam              -- Base class for abstract beam representations.
+% Base classes
+%   Beam              -- Abstract base class for abstract beams.
+%   BeamFarfield      -- Abstract base class with casts for near-field.
+%   BeamNearfield     -- Abstract base class with casts for far-field
+%   CastBoth          -- Base class with casts for near and far-fields.
+%
+% Generic beams (Beam)
 %   Scattered         -- Represents generic scattered beams
 %   Array             -- Represents generic arrays of beams
 %   Coherent          -- Represents arrays of coherent beams
 %   Incoherent        -- Represents arrays of incoherent beams
 %   Empty             -- Empty beam array element
 %
-% Paraxial beams
+% No-field beams (CastBoth)
+%   TopHat            -- Collimated top-hat beam
+%   Ray               -- Geometric optics ray beam.
+%   Bessel            -- Bessel beam
+%   PlaneWave         -- Plane wave beam.
+%   Dipole            -- Radiation field produced by a dipole
+%
+% Paraxial beams (CastBoth)
 %   Gaussian          -- Gaussian beam.
 %   HermiteGaussian   -- Hermite-Gaussian beam.
 %   LaguerreGaussian  -- Laguerre-Gaussian beam.
 %   InceGaussian      -- Ince-Gaussian beam.
 %
-% PlaneWave-like beams
-%   PlaneWave         -- Plane wave beam.
-%   Ray               -- Geometric optics ray beam.
-%
-% Bessel-like beams
-%   Bessel            -- Bessel beam
+% Far-field beams (CastNear)
+%   FocussedTopHat    -- Focussed paraxial top-hat beam
 %   Annular           -- Annular beam
+%   UniformFarfield   -- Beam with a uniform far-field
+%   UniformParaxial   -- Beam with a uniform paraxial far-field
 %
-% Masked beams
+% Masked beams (CastNear/CastFar)
 %   MaskedFarfield    -- Combination beam with far-field mask
 %   MaskedNearfield2d -- Combination beam with 2-D near-field mask
 %   MaskedNearfield3d -- Combination beam with 3-D near-field mask
 %   MaskedParaxial    -- Combination beam with paraxial mask
 %
-% Interpolated beams
+% Interpolated beams (CastNear/CastFar)
 %   InterpParaxial    -- Interpolated beam for paraxial-field
 %   InterpNearfield2d -- Interpolated beam for near-field
 %   InterpNearfield3d -- Interpolated beam for near-field
 %   InterpFarfield    -- Interpolated beam for far-field
-%
-% Other beams
-%   UniformFarfield   -- Beam with a uniform far-field
-%   TopHat            -- Collimated top-hat beam
-%   FocussedTopHat    -- Focussed paraxial top-hat beam
-%   Dipole            -- Radiation field produced by a dipole
 %
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
