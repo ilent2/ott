@@ -4,6 +4,8 @@ classdef TopHat < ott.beam.Beam & ott.beam.paraxial.Paraxial ...
 % Inherits from :class:`Beam`, :class:`Paraxial`
 % and :class:`ott.utils.Vector`.
 %
+% TODO: Most of this will move to MaskedNearfield2d/3d
+%
 % A top-hat beam has a sharp edge intensity profile, for example, in
 % polar coordinates::
 %

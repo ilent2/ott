@@ -38,10 +38,10 @@
 %   Annular           -- Annular beam
 %
 % Masked beams
-%   FarfieldMasked    -- Combination beam with far-field mask
-%   NearfieldMasked2d -- Combination beam with 2-D near-field mask
-%   NearfieldMasked3d -- Combination beam with 3-D near-field mask
-%   ParaxialMasked    -- Combination beam with paraxial mask
+%   MaskedFarfield    -- Combination beam with far-field mask
+%   MaskedNearfield2d -- Combination beam with 2-D near-field mask
+%   MaskedNearfield3d -- Combination beam with 3-D near-field mask
+%   MaskedParaxial    -- Combination beam with paraxial mask
 %
 % Interpolated beams
 %   InterpParaxial    -- Interpolated beam for paraxial-field
@@ -50,6 +50,7 @@
 %   InterpFarfield    -- Interpolated beam for far-field
 %
 % Other beams
+%   UniformFarfield   -- Beam with a uniform far-field
 %   TopHat            -- Collimated top-hat beam
 %   FocussedTopHat    -- Focussed paraxial top-hat beam
 %   Dipole            -- Radiation field produced by a dipole
