@@ -37,18 +37,22 @@
 %   Bessel            -- Bessel beam
 %   Annular           -- Annular beam
 %
-% Other beams
-%   TopHat            -- Collimated top-hat beam
-%   FocussedTopHat    -- Focussed paraxial top-hat beam
-%   Dipole            -- Radiation field produced by a dipole
+% Masked beams
 %   FarfieldMasked    -- Combination beam with far-field mask
 %   NearfieldMasked2d -- Combination beam with 2-D near-field mask
 %   NearfieldMasked3d -- Combination beam with 3-D near-field mask
 %   ParaxialMasked    -- Combination beam with paraxial mask
+%
+% Interpolated beams
 %   InterpParaxial    -- Interpolated beam for paraxial-field
 %   InterpNearfield2d -- Interpolated beam for near-field
 %   InterpNearfield3d -- Interpolated beam for near-field
 %   InterpFarfield    -- Interpolated beam for far-field
+%
+% Other beams
+%   TopHat            -- Collimated top-hat beam
+%   FocussedTopHat    -- Focussed paraxial top-hat beam
+%   Dipole            -- Radiation field produced by a dipole
 %
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

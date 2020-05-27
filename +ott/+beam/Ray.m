@@ -235,7 +235,7 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
   methods % Getters/setters
     function p = get.power(beam)
       % Returns finite power of the ray set
-      p = sum(abs(beam.field(:)).^2);
+      p = beam.intensity;
     end
   end
 end

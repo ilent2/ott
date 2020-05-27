@@ -1,7 +1,18 @@
-classdef Empty < ott.beam.properties.Empty ...
+classdef FocussedTopHat < ott.beam.properties.FocussedTopHat ...
     & ott.beam.abstract.Beam
-% Specialisation for coherent abstract beam arrays.
-% Inherits from :class:`ott.beam.properties.Coherent` and :class:`Beam`.
+% Abstract description of a focussed top-hat beam.
+% Inherits from :class:`ott.beam.properties.FocussedTopHat` and :class:`Beam`.
+%
+% Supported casts
+%   - Beam                -- Uses vswf.FarfieldPm
+%   - Ray
+%   - abstract.InterpFarfield
+%   - abstract.InterpParaxial
+%   - abstract.MaskedFarfield
+%   - abstract.Ray
+%   - vswf.Bsc            -- Uses vswf.FarfieldPm
+%   - vswf.Pointmatch     -- Uses vswf.FarfieldPm
+%   - vswf.FarfieldPm
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

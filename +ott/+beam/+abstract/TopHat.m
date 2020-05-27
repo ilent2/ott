@@ -49,6 +49,17 @@ classdef TopHat < ott.beam.Beam & ott.beam.paraxial.Paraxial ...
 %   - permeability  -- Material relative permeability (default: 1.0)
 %   - wavenumber    -- Wave-number of beam in medium
 %   - impedance     -- Impedance of the medium
+%
+% Supported casts
+%   - Beam
+%   - Ray
+%   - abstract.MaskedNearfield2d
+%   - abstract.MaskedNearfield3d
+%   - abstract.Interpnearfield2d
+%   - abstract.Interpnearfield3d
+%   - vswf.Bsc
+%   - vswf.Pointmatch
+%   - vswf.NearfieldPm
 
   properties
     field           % Field parallel and perpendicular to polarisation
