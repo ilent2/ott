@@ -5,6 +5,10 @@
 % but don't implement methods to calculate the fields.  They define
 % methods for creating beams of other types (casts).
 %
+% Some beams calculate some of the fields and defer to casts to
+% calculate the other fields.  These beams are not necessarily physical,
+% although they can be used to construct physical beams or approximations.
+%
 % Abstract beams inherit from ott.beam.properties classes with the
 % same names but not :class:`ott.beam.Beam`.  They define casts and
 % should not be used as base classes for other beams.

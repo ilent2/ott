@@ -21,7 +21,9 @@ classdef (Abstract) Beam < ott.beam.Beam ...
 %   - contains      -- Query if a array_type is contained in the array
 %
 % Supported casts
-%   - Beam          -- Default beam cast for arrays, uses Coherent
+%   - Beam            -- Default beam cast for arrays, uses Coherent/Bsc
+%   - vswf.Bsc        -- Default Bsc cast, uses vswf.FarfieldPm
+%   - vswf.Pointmatch -- Default Bsc.Pm cast, uses vswf.FarfieldPm
 %   - Array
 %   - Coherent
 %   - Incoherent
@@ -79,10 +81,11 @@ classdef (Abstract) Beam < ott.beam.Beam ...
       assert(isa(beam, 'ott.beam.abstract.Beam'), ...
           'First argument must be abstract.Beam');
 
-      assert(numel(beam) > 1, ...
-          'Cast not implemented for this abstract type');
-
-      beam = ott.beam.Coherent(beam);
+      if numel(beam) > 1
+        beam = ott.beam.Coherent(beam);
+      else
+        beam = ott.beam.vswf.Bsc(beam);
+      end
     end
 
     function beam = ott.beam.Array(beam, varargin)

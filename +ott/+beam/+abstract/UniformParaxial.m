@@ -1,10 +1,13 @@
-classdef UniformFarfield < ott.beam.abstract.Beam ...
-    & ott.beam.properties.MaterialBeam
-% A beam with a uniform far-field.
+classdef UniformParaxial < ott.beam.abstract.Beam ...
+    & ott.beam.properties.MaterialBeam ...
+    & ott.beam.properties.FarfieldMapping
+% A beam with a uniform paraxial far-field.
 % Inherits from :class:`Beam` and :class:`ott.beam.properties.MaterialBeam`.
 %
 % Properties
-%   - polarisation        - Far-field polarisation (theta/phi)
+%   - polarisation
+%   - mapping       -- Mapping for far-field to paraxial conversion
+%   - direction     -- Mask direction (positive or negative hemisphere)
 %
 % Supported casts
 %   - Beam              -- (Inherited) uses vswf.Bsc
@@ -12,12 +15,8 @@ classdef UniformFarfield < ott.beam.abstract.Beam ...
 %   - vswf.Pointmatch   -- (Inherited) uses vswf.FarfieldPm
 %   - vswf.FarfieldPm   -- (Inherited)
 
-% Copyright 2020 Isaac Lenton
-% This file is part of OTT, see LICENSE.md for information about
-% using/distributing this file.
-
   properties
-    polarisation      % [theta; phi] polarisation of far-field
+    polarisation
   end
 
   properties (Dependent)
@@ -32,6 +31,7 @@ classdef UniformFarfield < ott.beam.abstract.Beam ...
             'polarisation', other.polarisation, args);
       end
       args = ott.beam.properties.MaterialBeam.likeProperties(other, args);
+      args = ott.beam.properties.FarfieldMapping.likeProperties(other, args);
     end
 
     function beam = like(other, varargin)
@@ -42,55 +42,54 @@ classdef UniformFarfield < ott.beam.abstract.Beam ...
       %
       % See constructor for arguments.
 
-      args = ott.beam.abstract.UniformFarfield.likeProperties(other, varargin);
-      beam = ott.beam.abstract.UniformFarfield(args{:});
+      args = ott.beam.abstract.UniformParaxial.likeProperties(other, varargin);
+      beam = ott.beam.abstract.UniformParaxial(args{:});
     end
   end
 
   methods
-    function beam = UniformFarfield(varargin)
-      % Construct a uniform far-field instance.
+    function beam = UniformParaxial(varargin)
+      % Construct a uniform paraxial far-field instance.
       %
       % Usage
-      %   beam = UniformFarfield(polarisation, ...)
+      %   beam = UniformParaxial(polarisation, ...)
       %
       % Parameters
-      %   - polarisation (2 numeric) -- [theta; phi] polarisation of
-      %     far-field.
+      %   - polarisation (2 numeric) -- [x; y] polarisation of
+      %     paraxial far-field.
+      %
+      % Optional named arguments
+      %   - mapping (enum) -- 'sintheta' or 'tantheta'.  Default: 'tantheta'
+      %   - hemisphere (enum) -- 'pos' or 'neg'.  Default: 'pos'
 
       p = inputParser;
       p.addOptional('polarisation', [], @isnumeric);
+      p.addParameter('mapping', 'tantheta');
+      p.addParameter('hemisphere', 'pos');
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
       beam = beam@ott.beam.properties.MaterialBeam(unmatched{:});
+      beam = beam@ott.beam.properties.MaterialBeam(...
+          'mapping', p.Results.mapping, 'hemisphere', p.Results.hemisphere);
       beam.polarisation = p.Results.polarisation;
     end
   end
 
   methods (Hidden)
     function E = efarfieldInternal(beam, rtp, varargin)
-      % Uniform polarisation across sphere
+      % Uniform polarisation across paraxial plane
 
-      if size(rtp, 1) == 2
-        rtp = [zeros(1, size(rtp, 2)); rtp];
-      end
-
-      E = ott.utils.FieldVector(rtp, ...
-          repmat([0; beam.polarisation], 1, size(rtp, 2)), 'spherical');
+      % TODO: Implement
+      error('Not yet implemented');
     end
 
     function H = hfarfieldInternal(beam, rtp, varargin)
       % Uniform polarisation across sphere
 
-      if size(rtp, 1) == 2
-        rtp = [zeros(1, size(rtp, 2)); rtp];
-      end
-
-      % TODO: Missing conversion factor?
-      H = ott.utils.FieldVector(rtp, ...
-          repmat([0; flip(beam.polarisation)], 1, size(rtp, 2)), 'spherical');
+      % TODO: Implement
+      error('Not yet implemented');
     end
   end
 
@@ -102,8 +101,9 @@ classdef UniformFarfield < ott.beam.abstract.Beam ...
     end
 
     function power = get.power(beam, val)
-      % TODO: Check this
-      power = 4*pi*sum(abs(beam.polarisation).^2);
+      % TODO: Implement
+      error('Not yet implemented');
     end
   end
 end
+

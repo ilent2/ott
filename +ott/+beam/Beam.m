@@ -55,12 +55,16 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
 %   - forcetorqueInternal -- Force/Torque calculation method (to be overridden)
 %
 % Supported casts
-%   - vswf.Bsc        -- Default Bsc cast, uses vswf.FarfieldPm
+%   - vswf.Bsc            -- Default Bsc cast, uses vswf.FarfieldPm
+%   - vswf.Pointmatch     -- Default Bsc.Pm cast, uses vswf.FarfieldPm
 %   - vswf.FarfieldPm
 %   - vswf.NearfieldPm
 %   - vswf.BesselBasis
 %   - vswf.PlaneBasis
 %   - vswf.LgParaxialBasis
+%   - abstract.InterpFarfield
+%   - abstract.InterpNearfield2d
+%   - abstract.InterpNearfield3d
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -187,6 +191,43 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
       % All properties passed to ott.beam.properties.Beam
 
       beam = beam@ott.beam.properties.Beam(varargin{:});
+    end
+
+    function beam = ott.beam.vswf.Pointmatch(varargin)
+      % Cast to vswf.FarfieldPm
+      beam = ott.beam.vswf.FarfieldPm(varargin{:});
+    end
+
+    function beam = ott.beam.vswf.Bsc(varargin)
+      % Cast to vswf.FarfieldPm
+      beam = ott.beam.vswf.FarfieldPm(varargin{:});
+    end
+
+    function beam = ott.beam.vswf.FarfieldPm(varargin)
+      % TODO: implement
+
+      % For abstract beams, this invokes the Beam cast.
+      [Etp, Htp] = beam.ehfarfield(tp);
+
+      error('Not yet implemented');
+    end
+
+    function beam = ott.beam.abstract.InterpFarfield(beam, varargin)
+      % Construct a far-field interpolated beam
+
+      % TODO: Multiple beams and type check
+
+      % Calculate far-field pattern
+      % TODO: Might be smarter choice
+      theta = linspace(0, pi, 100);
+      phi = linspace(0, 2*pi, 100);
+      [T, P] = meshgrid(theta, phi);
+      tp = [T(:), P(:)].';
+
+      % For abstract beams, this invokes the Beam cast.
+      [Etp, Htp] = beam.ehfarfield(tp);
+
+      beam = ott.beam.abstract.InterpFarfield(tp, Etp, Htp, varargin{:});
     end
 
     function E = efield(beam, xyz, varargin)

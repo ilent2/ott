@@ -1,4 +1,5 @@
 classdef FocussedTopHat < ott.beam.properties.FocussedTopHat ...
+    & ott.beam.properties.MaterialBeam ...
     & ott.beam.abstract.Beam
 % Abstract description of a focussed top-hat beam.
 % Inherits from :class:`ott.beam.properties.FocussedTopHat` and :class:`Beam`.
@@ -6,19 +7,42 @@ classdef FocussedTopHat < ott.beam.properties.FocussedTopHat ...
 % Properties
 %   - angle
 %
+% TODO: The Beam cast looks wrong, we should have a full
+%     beam not an abstract
+%
 % Supported casts
-%   - Beam                -- Uses vswf.FarfieldPm
+%   - Beam                -- Uses abstract.MaskedFarfield
 %   - Ray
-%   - abstract.InterpFarfield
+%   - abstract.InterpFarfield   -- (Inherited)
 %   - abstract.MaskedFarfield
 %   - abstract.MaskedNearfield3d
-%   - vswf.Bsc            -- Uses vswf.FarfieldPm
-%   - vswf.Pointmatch     -- Uses vswf.FarfieldPm
-%   - vswf.FarfieldPm
+%   - vswf.Bsc            -- (Inherited) Uses vswf.FarfieldPm
+%   - vswf.Pointmatch     -- (Inherited) Uses vswf.FarfieldPm
+%   - vswf.FarfieldPm     -- (Inherited) Uses Beam
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+  methods (Static)
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.properties.FocussedTopHat.likeProperties(other, args);
+      args = ott.beam.abstract.Beam.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = UniformFarfield.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.abstract.FocussedTopHat.likeProperties(other, varargin);
+      beam = ott.beam.abstract.FocussedTopHat(args{:});
+    end
+  end
 
   methods
     function beam = FocussedTopHat(varargin)
@@ -31,18 +55,8 @@ classdef FocussedTopHat < ott.beam.properties.FocussedTopHat ...
     end
 
     function beam = ott.beam.Beam(varargin)
-      % Cast to FarfieldPm
-      beam = ott.beam.vswf.FarfieldPm(varargin{:});
-    end
-
-    function beam = ott.beam.vswf.Bsc(varargin)
-      % Cast to FarfieldPm
-      beam = ott.beam.vswf.FarfieldPm(varargin{:});
-    end
-
-    function beam = ott.beam.vswf.Pointmatch(varargin)
-      % Cast to FarfieldPm
-      beam = ott.beam.vswf.FarfieldPm(varargin{:});
+      % Cast the beam to a MaskedFarfield
+      beam = ott.beam.MaskedFarfield(varargin{:});
     end
 
     function beam = ott.beam.Ray(beam, varargin)
@@ -92,33 +106,6 @@ classdef FocussedTopHat < ott.beam.properties.FocussedTopHat ...
 
       beam = ott.beam.abstract.MaskedNearfield3d(xyz_mask, ...
           masked_beam, varargin{:});
-    end
-
-    function newbeam = ott.beam.abstract.InterpFarfield(beam, varargin)
-      % Construct a far-field interpolated beam
-
-      % TODO: Multiple beams and type check
-
-      newbeam = ott.beam.abstract.MaskedFarfield(beam);
-
-      % Calculate far-field pattern
-      % TODO: Might be smarter choice
-      theta = linspace(0, pi, 100);
-      phi = linspace(0, 2*pi, 100);
-      [T, P] = meshgrid(theta, phi);
-      tp = [T(:), P(:)].';
-      [Etp, Htp] = newbeam.ehfarfield(tp);
-
-      newbeam = ott.beam.abstract.InterpFarfield(tp, Etp, Htp, varargin{:});
-    end
-
-    function beam = ott.beam.vswf.FarfieldPm(beam, varargin)
-      % First cast to InterpFarfield then to FarfieldPm
-
-      % TODO: Multiple beams and type check
-
-      beam = ott.beam.abstract.InterpFarfield(beam);
-      beam = ott.beam.vswf.FarfieldPm(beam, varargin{:});
     end
   end
 end

@@ -1,4 +1,4 @@
-function tests = testBessel
+function tests = testUniformFarfield
   tests = functiontests(localfunctions);
 end
 
@@ -8,14 +8,13 @@ end
 
 function testConstruct(testCase)
 
-  angle = pi/4;
-  beam = ott.beam.abstract.FocussedTopHat(angle);
+  polarisation = [1; 2];
+  beam = ott.beam.abstract.UniformFarfield(polarisation);
 
-  testCase.verifyEqual(beam.angle, angle);
+  testCase.verifyEqual(beam.polarisation, polarisation);
 
   h = figure();
   beam.visualiseFarfield();
   close(h);
 
 end
-
