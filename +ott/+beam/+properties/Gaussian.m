@@ -22,10 +22,12 @@ classdef Gaussian < ott.beam.properties.Material
   methods (Static)
     function args = likeProperties(other, args)
       % Add like-properties to argument list
-      args = ott.utils.addDefaultParameter('waist', other.waist, args);
-      args = ott.utils.addDefaultParameter(...
-          'polarisation', other.polarisation, args);
-      args = ott.beam.properties.Beam.likeProperties(other, args);
+      if isa(other, 'ott.beam.properties.Gaussian')
+        args = ott.utils.addDefaultParameter('waist', other.waist, args);
+        args = ott.utils.addDefaultParameter(...
+            'polarisation', other.polarisation, args);
+      end
+      args = ott.beam.properties.Material.likeProperties(other, args);
     end
   end
 

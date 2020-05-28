@@ -173,7 +173,7 @@ classdef (Abstract) PlaneWaveArray < ott.beam.properties.PlaneWave ...
       beam.field = field;
     end
 
-    function sz = size(beam, varargin)
+    function varargout = size(beam, varargin)
       % Get the number of beams contained in this object
       %
       % Usage
@@ -218,7 +218,7 @@ classdef (Abstract) PlaneWaveArray < ott.beam.properties.PlaneWave ...
     function beam = subsrefInternal(beam, subs)
       % Get the subscripted beam
 
-      if numel(subs) > ndims(beam.data)
+      if numel(subs) > ndims(beam.origin)
         if subs(1) == 1
           subs = subs(2:end);
         end
@@ -226,7 +226,6 @@ classdef (Abstract) PlaneWaveArray < ott.beam.properties.PlaneWave ...
             'Too many subscript indices');
       end
 
-      % Must set data first!
       beam.origin = beam.origin(:, subs{:});
       beam.field = beam.field(:, subs{:});
 
@@ -237,7 +236,7 @@ classdef (Abstract) PlaneWaveArray < ott.beam.properties.PlaneWave ...
     function beam = subsasgnInternal(beam, subs, rem, other)
       % Assign to the subscripted beam
 
-      if numel(subs) > ndims(beam.data)
+      if numel(subs) > ndims(beam.origin)
         if subs(1) == 1
           subs = subs(2:end);
         end

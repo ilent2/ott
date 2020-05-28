@@ -11,12 +11,17 @@ function testConstructor(testCase)
   polarization = [0;0;1];
   dipole = ott.beam.abstract.Dipole('polarization', polarization);
   testCase.verifyEqual(dipole.polarization, polarization);
+  testCase.verifyEqual(dipole.location, dipole.position);
+  
+  h = figure();
+  dipole.visualise('axis', 'y', 'field', 'Re(Ez)');
+  close(h);
 
 end
 
 function testCasts(testCase)
 
-  dipole = ott.beam.abstract.Dipole('polarization', [0;0;1]);
+  abs_beam = ott.beam.abstract.Dipole('polarization', [0;0;1]);
 
   beam = ott.beam.Beam(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.Dipole');
@@ -32,9 +37,16 @@ function testCasts(testCase)
   testCase.verifyClass(beam, 'ott.beam.Dipole');
   verifyProperties(testCase, ?ott.beam.abstract.Dipole, ...
       beam, abs_beam);
+    
+  % VSWF
 
   beam = ott.beam.vswf.Bsc(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.vswf.Bsc');
+  testCase.verifyClass(beam, 'ott.beam.vswf.Dipole');
+  verifyProperties(testCase, ?ott.beam.abstract.Dipole, ...
+      beam, abs_beam);
+
+  beam = ott.beam.vswf.Dipole(abs_beam);
+  testCase.verifyClass(beam, 'ott.beam.vswf.Dipole');
   verifyProperties(testCase, ?ott.beam.abstract.Dipole, ...
       beam, abs_beam);
 end
