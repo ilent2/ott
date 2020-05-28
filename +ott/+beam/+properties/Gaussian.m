@@ -1,6 +1,9 @@
-classdef Gaussian < ott.beam.properties.MaterialBeam
+classdef Gaussian < ott.beam.properties.Material
 % Properties of a paraxial Gaussian beam.
 % Inherits from :class:`ott.beam.properties.Beam`.
+%
+% Methods
+%   - isGaussian    -- Returns true
 %
 % Properties
 %   - waist         -- Beam waist radius
@@ -48,9 +51,15 @@ classdef Gaussian < ott.beam.properties.MaterialBeam
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.properties.MaterialBeam(unmatched{:});
+      beam = beam@ott.beam.properties.Material(unmatched{:});
       beam.polarisation = p.Results.polarisation;
       beam.waist = p.Results.waist;
+    end
+  end
+
+  methods (Hidden)
+    function b = isGaussian(~)
+      b = true;
     end
   end
 

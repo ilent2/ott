@@ -21,8 +21,8 @@
 %
 % Base classes
 %   Beam              -- Abstract base class for abstract beams.
-%   BeamFarfield      -- Abstract base class with casts for near-field.
-%   BeamNearfield     -- Abstract base class with casts for far-field
+%   CastNearfield     -- Abstract base class with casts for near-field.
+%   CastFarfield      -- Abstract base class with casts for far-field
 %   CastBoth          -- Base class with casts for near and far-fields.
 %
 % Generic beams (Beam)

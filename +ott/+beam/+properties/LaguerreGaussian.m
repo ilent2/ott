@@ -46,6 +46,12 @@ classdef LaguerreGaussian < ott.beam.properties.Gaussian
     end
   end
 
+  methods (Hidden)
+    function b = isGaussian(beam)
+      b = beam.lmode == 0 && beam.pmode == 0;
+    end
+  end
+
   methods % Getters/setters
     % waist       % Beam waist at focus
     % lmode       % Azimuthal Laguerre mode order

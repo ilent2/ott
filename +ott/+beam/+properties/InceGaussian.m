@@ -57,6 +57,13 @@ classdef InceGaussian < ott.beam.properties.Gaussian
     end
   end
 
+  methods (Hidden)
+    function b = isGaussian(beam)
+      % TODO: Implement
+      error('Not yet implemented');
+    end
+  end
+
   methods % Getters/setters
     % lmode        % Azimuthal mode number
     % pmode        % Paraxial mode order.

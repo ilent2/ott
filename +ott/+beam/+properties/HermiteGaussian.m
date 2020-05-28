@@ -51,6 +51,12 @@ classdef HermiteGaussian < ott.beam.properties.Gaussian
     end
   end
 
+  methods (Hidden)
+    function b = isGaussian(beam)
+      b = beam.mmode == 0 && beam.nmode == 0;
+    end
+  end
+
   methods % Getters/setters
     % mmode       % Hermite mode order
     % nmode       % Hermite mode order

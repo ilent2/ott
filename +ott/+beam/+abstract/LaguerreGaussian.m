@@ -1,22 +1,16 @@
 classdef LaguerreGaussian < ott.beam.properties.LaguerreGaussian ...
-    & ott.beam.abstract.Beam ...
-    & ott.beam.utils.VariablePower
+    & ott.beam.abstract.Paraxial
 % Abstract representation of a Laguerre-Gaussian beam.
-% Inherits from :class:`Gaussian` and
+% Inherits from :class:`CastBoth` and
 % :class:`ott.beam.properties.LaguerreGaussian`.
 %
-% Supported casts
-%   - Beam            -- Default Beam cast, uses paraxial.LaguerreGaussian
-%   - vswf.Bsc        -- Default Bsc cast, uses vswf.LaguerreGaussian
-%   - vswf.LaguerreGaussian
-%   - vswf.Gaussian             -- Only for LG00, via abstract.Gaussian
-%   - vswf.HermiteGaussian      -- Only for LG00, via abstract.Gaussian
-%   - vswf.InceGaussian         -- Only for LG00, via abstract.Gaussian
+% Casts
+%   - vswf.Bsc            -- Cast to vswf.LaguerreGaussian
+%   - paraxial.Paraxial   -- Cast to paraxial.LaguerreGaussian
 %   - paraxial.LaguerreGaussian
-%   - paraxial.Gaussian         -- Only for LG00, via abstract.Gaussian
-%   - paraxial.HermiteGaussian  -- Only for LG00, via abstract.Gaussian
-%   - abstract.Gaussian
+%   - vswf.LaguerreGaussian
 %
+% Additional casts inherited from base.
 % See also :class:`ott.beam.properties.LaguerreGaussian` for properties.
 
 % Copyright 2020 Isaac Lenton
@@ -66,57 +60,14 @@ classdef LaguerreGaussian < ott.beam.properties.LaguerreGaussian ...
       beam = beam@ott.beam.properties.LaguerreGaussian(args{:});
     end
 
-    function beam = ott.beam.Beam(varargin)
-      % Default Beam cast, uses paraxial.LaguerreGaussian
-      beam = ott.beam.paraxial.LaguerreGaussian(varargin{:});
-    end
-
     function beam = ott.beam.vswf.Bsc(varargin)
       % Default Bsc cast, uses vswf.LaguerreGaussian
       beam = ott.beam.vswf.LaguerreGaussian(varargin{:});
     end
 
-    function beam = ott.beam.vswf.Gaussian(beam, varargin)
-      % Cast to vswf.Gaussian via abstract.Gaussian
-      beam = ott.beam.abstract.Gaussian(beam, varargin{:});
-      beam = ott.beam.vswf.Gaussian(beam, varargin{:});
-    end
-
-    function beam = ott.beam.vswf.HermiteGaussian(beam, varargin)
-      % Cast to vswf.HermiteGaussian via abstract.Gaussian
-      beam = ott.beam.abstract.Gaussian(beam, varargin{:});
-      beam = ott.beam.vswf.HermiteGaussian(beam, varargin{:});
-    end
-
-    function beam = ott.beam.vswf.InceGaussian(beam, varargin)
-      % Cast to vswf.InceGaussian via abstract.Gaussian
-      beam = ott.beam.abstract.Gaussian(beam, varargin{:});
-      beam = ott.beam.vswf.InceGaussian(beam, varargin{:});
-    end
-
-    function beam = ott.beam.paraxial.Gaussian(beam, varargin)
-      % Cast to paraxial.Gaussian via abstract.Gaussian
-      beam = ott.beam.abstract.Gaussian(beam, varargin{:});
-      beam = ott.beam.paraxial.Gaussian(beam, varargin{:});
-    end
-
-    function beam = ott.beam.paraxial.HermiteGaussian(beam, varargin)
-      % Cast to paraxial.HermiteGaussian via abstract.Gaussian
-      beam = ott.beam.abstract.Gaussian(beam, varargin{:});
-      beam = ott.beam.paraxial.HermiteGaussian(beam, varargin{:});
-    end
-
-    function beam = ott.beam.abstract.Gaussian(beam, varargin)
-      % Cast the beam to an abstract.Gaussian
-
-      assert(isa(beam, 'ott.beam.abstract.LaguerreGaussian'), ...
-          'first argument must be a abtract.LaguerreGaussian');
-
-      assert(beam.lmode == 0 && beam.pmode == 0, ...
-          'Beam must be LG00 for cast to Gaussian');
-
-      beam = castHelper(@ott.beam.abstract.Gaussian.like, ...
-          beam, varargin{:});
+    function beam = ott.beam.paraxial.Paraxial(varargin)
+      % Default Bsc cast, uses paraxial.LaguerreGaussian
+      beam = ott.beam.paraxial.LaguerreGaussian(varargin{:});
     end
 
     function beam = ott.beam.vswf.LaguerreGaussian(beam, varargin)
