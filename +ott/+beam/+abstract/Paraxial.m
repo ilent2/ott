@@ -55,7 +55,8 @@ classdef Paraxial < ott.beam.abstract.CastBoth ...
       % Check if the beam isa Gaussian
       assert(beam.isGaussian(), 'Beam must be a Gaussian beam');
 
-      beam = castHelper(@ott.beam.abstract.Gaussian.like, beam, varargin{:});
+      beam = castAbstractHelper(@ott.beam.abstract.Gaussian.like, ...
+          beam, varargin{:});
     end
 
     function beam = ott.beam.GaussianDavis5(beam, varargin)
@@ -128,14 +129,14 @@ classdef Paraxial < ott.beam.abstract.CastBoth ...
     function beam = ott.beam.abstract.LaguerreGaussian(beam, varargin)
       % Cast using abstract.Gaussian
       beam = castGaussian(beam);
-      beam = castHelper(@ott.beam.abstract.LaguerreGaussian.like, ...
+      beam = castAbstractHelper(@ott.beam.abstract.LaguerreGaussian.like, ...
           beam, 'lmode', 0, 'pmode', 0, varargin{:});
     end
 
     function beam = ott.beam.abstract.HermiteGaussian(beam, varargin)
       % Cast using abstract.Gaussian
       beam = castGaussian(beam);
-      beam = castHelper(@ott.beam.abstract.HermiteGaussian.like, ...
+      beam = castAbstractHelper(@ott.beam.abstract.HermiteGaussian.like, ...
           beam, 'mmode', 0, 'nmode', 0, varargin{:});
     end
 
@@ -143,7 +144,7 @@ classdef Paraxial < ott.beam.abstract.CastBoth ...
       % Cast using abstract.Gaussian
       error('Not yet implemented');
       beam = castGaussian(beam);
-      beam = castHelper(@ott.beam.abstract.InceGaussian.like, ...
+      beam = castAbstractHelper(@ott.beam.abstract.InceGaussian.like, ...
           beam, varargin{:});
     end
   end
@@ -152,6 +153,8 @@ classdef Paraxial < ott.beam.abstract.CastBoth ...
     function beam = castGaussian(beam)
       % Cast to abstract.Gaussian helper
 
+      assert(isa(beam, 'ott.beam.abstract.Beam'), ...
+          'First argument must be a abstract.Beam');
       ott.utils.nargoutCheck(beam, nargout);
 
       % Check we have work to do

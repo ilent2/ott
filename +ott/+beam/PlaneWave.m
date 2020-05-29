@@ -16,6 +16,10 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
 %   - FromNearfield -- Discrete plane wave spectrum from near-field slice
 %   - FromFarfield  -- Discrete plane wave spectrum from a beam's far-field
 %   - FromParaxial  -- Discrete plane wave spectrum from paraxial far-field
+%   - like            -- Create a beam like another
+%   - FromDirection   -- Construct from direction/polarisation
+%   - DirectionSet    -- Construct a directionSet
+%   - empty           -- Construct an empty array
 %
 % Methods
 %   - rotate      -- Rotate the direction and polarisation
@@ -70,20 +74,53 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
       beam = ott.beam.PlaneWave(args{:});
     end
 
+    function beam = FromDirection(varargin)
+      % Construct beam from direction/polarisation vectors.
+      %
+      % Usage
+      %   beam = FromDirection(origin, direction, polarisation, field)
+      %   Parameters can also be passed as named arguments.
+      %
+      % Parameters
+      %   - origin (3xN numeric) -- Origin (for phase offset) of wave.
+      %   - direction (3xN numeric) -- Propagation direction of wave.
+      %   - polarisation (3xN numeric) -- Primary polarisation direction.
+      %   - field (2xN numeric) -- Field in two polarisation directions.
+      %
+      % Additional parameters passed to base.
+
+      p = inputParser;
+      p.addOptional('origin', [], @isnumeric);
+      p.addOptional('direction', [], @isnumeric);
+      p.addOptional('polarisation1', [], @isnumeric);
+      p.addOptional('field', [], @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+
+      % Construct direction set
+      directionSet = ott.beam.properties.PlaneWave.DirectionSet(...
+          p.Reults.direction, p.Results.polarisation1);
+
+      % Construct beam
+      beam = ott.beam.PlaneWave(...
+          'origin', p.Results.origin, ...
+          'directionSet', directionSet, ...
+          'field', p.Results.field, ...
+          unmatched{:});
+    end
+
     function beam = empty(varargin)
-      % Construct an emtpy beam array
+      % Construct an empty beam array
       %
       % Usage
       %   beam = ott.beam.PlaneWave.empty(...)
       %
       % Additional parameters are passed to the constructor.
-      
-      empt = zeros(3, 0);
-      beam = ott.beam.PlaneWave('direction', empt, ...
-        'polarisation', empt, ...
-        'field', empt(1, :), 'origin', empt, varargin{:});
+
+      beam = ott.beam.PlaneWave('directionSet', zeros(3, 0), ...
+        'field', zeros(2, 0), 'origin', zeros(3, 0), varargin{:});
     end
-    
+
     function beam = FromFieldVectors(E, H)
       % Construct a new Ray from E and H field vectors
       %
@@ -123,19 +160,11 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
       Ey = imag(Exyz(:, ~mask));
       Exnorm = vecnorm(Ex, 2, 1) ./ vecnorm(abs(Exyz(:, ~mask)), 2, 1);
       Eynorm = vecnorm(Ey, 2, 1) ./ vecnorm(abs(Exyz(:, ~mask)), 2, 1);
-      Snorm = [Snorm, Snorm] .* [Exnorm, Eynorm];
-
-      % Filter properties (and duplicate as required)
-      xyz = [xyz(:, Exnorm ~= 0), xyz(:, Eynorm ~= 0)];
-      S = [S(:, Exnorm ~= 0), S(:, Eynorm ~= 0)];
-      Snorm = Snorm(:, [Exnorm ~= 0, Eynorm ~= 0]);
-      pol = [Ex(:, Exnorm ~= 0), Ey(:, Eynorm ~= 0)];
+      Snorm = [Snorm; Snorm] .* [Exnorm; Eynorm];
 
       % Construct beam object
-      % TODO: Should use use a 2xN field instead of a 1xN field?
-      %       This was leftover from when it was in the Ray class
-      beam = ott.beam.PlaneWave('origin', xyz, ...
-        'direction', S, 'field', Snorm, 'polarisation', pol);
+      beam = ott.beam.PlaneWave.FromDirection('origin', xyz, ...
+        'direction', S, 'field', Snorm, 'polarisation', Ex);
     end
 
     function beam = FromFarfield(oldbeam)
@@ -214,40 +243,40 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
       % Construct plane wave array properties
       %
       % Usage
-      %   beam = PlaneWave(origin, direction, polarisation1, ...)
+      %   beam = PlaneWave(origin, directionSet, field, ...)
       %
-      %   beam = PlaneWave(origin, 'directionSet', directionSet, ...)
+      % See also :meth:`FromDirection` for construction from
+      % direction/polarisation vectors.
       %
       % Parameters
       %   - origin (3xN numeric) -- Plane wave origins.
-      %   - direction (3xN numeric) -- Plane wave direction.
-      %   - polarisation1 (3xN numeric) -- Primary polarisation direction.
       %
       %   - directionSet (3x3N numeric) -- Array formed by combining
       %     direction/polarisation vectors into rotation matrices.  The
       %     direction vector should be the last column of the matrix.
-      %     Default: ``eye(3)``.
       %
-      % Optional named arguments
       %   - field (2xN numeric) -- Field parallel and perpendicular to
       %     plane wave polarisation direction.
       %     Default: ``[1, 1i]``.
       %
+      % Optional named arguments
       %   - array_type (enum) -- Beam array type.  Can be
       %     'coherent', 'incoherent' or 'array'.  Default: ``'coherent'``.
-      
-      [origin, directionSet, field, unmatched] = ...
-          ott.beam.properties.PlaneWaveArray.parseArgs(varargin{:});
 
       p = inputParser;
+      p.addOptional('origin', [], @isnumeric);
+      p.addOptional('directionSet', [], @isnumeric);
+      p.addOptional('field', [], @isnumeric);
       p.addParameter('array_type', 'coherent');
       p.KeepUnmatched = true;
-      p.parse(unmatched{:});
+      p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
       bm = bm@ott.beam.properties.AnyArrayType(p.Results.array_type);
       bm = bm@ott.beam.properties.PlaneWaveArray(...
-          origin, 'directionSet', directionSet, 'field', field, ...
+          'origin', p.Results.origin, ...
+          'directionSet', p.Results.directionSet, ...
+          'field', p.Results.field, ...
           unmatched{:});
     end
   end
@@ -278,20 +307,20 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
       p = inputParser;
       p.addParameter('method', 'inf');
       p.parse(varargin{:});
-      
+
       assert(ismatrix(xyz) && size(xyz, 1) == 3 && isnumeric(xyz), ...
         'xyz must be 3xN numeric matrix');
-      
+
       E = zeros([3, numel(beam), size(xyz, 2)]);
       H = zeros([3, numel(beam), size(xyz, 2)]);
-      
+
       % Get dependent properties from beam
       Edir = beam.polarisation1;
       Hdir = beam.polarisation2;
       wavenumber = beam.wavenumber;
       origin = beam.origin;
       direction = beam.direction;
-      
+
       % Get method from properties outside loop (opt R2018a)
       method = p.Results.method;
 
@@ -324,22 +353,22 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
         E(:, :, ii) = scale .* P0 .* exp(1i.*wavenumber.*dist);
         H(:, :, ii) = scale .* H0 .* exp(1i.*wavenumber.*dist);
       end
-      
+
       if strcmpi(beam.array_type, 'coherent') || numel(beam) == 1
         E = squeeze(sum(E, 2));
         H = squeeze(sum(H, 2));
-        
+
         % Package output
         E = ott.utils.FieldVector(xyz, E, 'cartesian');
         H = ott.utils.FieldVector(xyz, H, 'cartesian');
       else
         E = mat2cell(E, 3, ones(1, numel(beam)), size(xyz, 2));
         H = mat2cell(H, 3, ones(1, numel(beam)), size(xyz, 2));
-        
+
         % Remove single dimension
         E = cellfun(@(x) squeeze(x), E, 'UniformOutput', false);
         H = cellfun(@(x) squeeze(x), H, 'UniformOutput', false);
-        
+
         % Package output
         E = cellfun(@(x) ott.utils.FieldVector(xyz, x, 'cartesian'), ...
             E, 'UniformOutput', false);
@@ -355,17 +384,17 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
     function H = hfarfieldInternal(beam, rtp, varargin)
       [~, H] = beam.ehfarfieldInternal(rtp, varargin{:});
     end
-    
+
     function force = forceInternal(beam, incident, varargin)
       % Calculate the from the change in poynting vectors
-      
+
       [E1, H1] = beam.ehfieldInternal([0;0;0]);
       S1 = beam.arrayApply(@(E, H) real(cross(E.vxyz, conj(H.vxyz))), E1, H1);
       S1 = beam.combineIncoherentArray(S1, 2);
       if iscell(S1)
         S1 = cell2mat(S1);
       end
-      
+
       [E2, H2] = incident.ehfieldInternal([0;0;0]);
       S2 = incident.arrayApply(@(E, H) real(cross(E.vxyz, conj(H.vxyz))), E2, H2);
       S2 = incident.combineIncoherentArray(S2, 2);
@@ -407,7 +436,7 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
         E0 = E0 + Hdir .* beam.field(2, :);
         H0 = H0 + Edir .* beam.field(2, :);
       end
-      
+
       E = zeros(size(xyz));
       H = zeros(size(xyz));
 

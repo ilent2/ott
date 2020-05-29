@@ -135,6 +135,8 @@ classdef (Abstract) Beam < ott.beam.Beam ...
   methods (Access=protected)
     function beam = castHelper(cast, beam, varargin)
       % Helper for casts
+      %
+      % This cast converts native arrays to ott.beam.Array
 
       assert(isa(beam, 'ott.beam.abstract.Beam'), ...
           'First argument must be a abstract.Beam');
@@ -150,6 +152,29 @@ classdef (Abstract) Beam < ott.beam.Beam ...
       else
         beam = cast(beam, varargin{:});
       end
+    end
+
+    function beam = castArrayHelper(cast, beam, varargin)
+      % Helper for array casts
+      %
+      % Checks the argument and applies the cast
+
+      assert(isa(beam, 'ott.beam.abstract.Beam'), ...
+          'First argument must be a abstract.Beam');
+      ott.utils.nargoutCheck(beam, nargout);
+
+      beam = cast(beam, varargin{:});
+    end
+
+    function beam = castAbstractHelper(cast, beam, varargin)
+      % Helper for casts to other abstract beams
+      %
+      % This cast doesn't remove native arrays.
+
+      assert(isa(beam, 'ott.beam.abstract.Beam'), ...
+          'First argument must be a abstract.Beam');
+
+      beam = cast(beam, varargin{:});
     end
   end
 

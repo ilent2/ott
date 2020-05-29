@@ -5,6 +5,9 @@ classdef Dipole < ott.beam.properties.Dipole ...
 %
 % For arrays of dipoles, see :class:`ott.beam.Dipole`.
 %
+% Static methods
+%   - like            -- Create a beam like another
+%
 % Properties
 %   - location      -- Alias for dipole position
 %   - polarization  -- Polarization of the dipole
@@ -34,6 +37,20 @@ classdef Dipole < ott.beam.properties.Dipole ...
 
   properties
     power           % Power of dipole
+  end
+
+  methods (Static)
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = Dipole.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.abstract.Dipole.likeProperties(other, varargin);
+      beam = ott.beam.abstract.Dipole(args{:});
+    end
   end
 
   methods
@@ -85,7 +102,7 @@ classdef Dipole < ott.beam.properties.Dipole ...
 
     function beam = ott.beam.Dipole(beam, varargin)
       % Construct a new Dipole instance
-      beam = castHelper(@ott.beam.vswf.Dipole.like, beam, varargin{:});
+      beam = castArrayHelper(@ott.beam.vswf.Dipole.like, beam, varargin{:});
     end
 
     function beam = ott.beam.vswf.Bsc(beam, varargin)
@@ -95,12 +112,12 @@ classdef Dipole < ott.beam.properties.Dipole ...
 
     function beam = ott.beam.vswf.Dipole(beam, varargin)
       % Cast to vswf.Dipole
-      beam = castHelper(@ott.beam.vswf.Dipole.like, beam, varargin{:});
+      beam = castArrayHelper(@ott.beam.vswf.Dipole.like, beam, varargin{:});
     end
   end
 
   methods (Access=protected)
-    function beam = castHelper(cast, beam, varargin)
+    function beam = castArrayHelper(cast, beam, varargin)
       % Construct a new Dipole instance
       %
       % Arrays of dipoles are assumed to be coherent.  Use the
@@ -115,8 +132,8 @@ classdef Dipole < ott.beam.properties.Dipole ...
       location = [beam.position];
       polarization = reshape([beam.polarization], [], 1);
 
-      beam = ott.beam.Dipole.like(beam, 'location', location, ...
-          'polarization', polarization, varargin{:});
+      beam = cast(beam, 'position', [0;0;0], 'rotation', eye(3), ...
+          'location', location, 'polarization', polarization, args{:});
     end
   end
 

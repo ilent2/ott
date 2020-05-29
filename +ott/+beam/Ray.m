@@ -6,6 +6,12 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
 % The main differences between :class:`PlaneWave` and :class:`Ray` are
 % finite power and more ray-orientated defaults for methods.
 %
+% Static methods
+%   - like            -- Create a beam like another
+%   - FromDirection   -- Construct from direction/polarisation
+%   - DirectionSet    -- Construct a directionSet
+%   - empty           -- Construct an empty array
+%
 % Properties
 %   - origin        -- Ray origins, 3xN array (default [0;0;0])
 %   - direction     -- Direction of propagation (3xN Cartesian)
@@ -43,6 +49,41 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       beam = ott.beam.Ray(args{:});
     end
 
+    function beam = FromDirection(varargin)
+      % Construct beam from direction/polarisation vectors.
+      %
+      % Usage
+      %   beam = FromDirection(origin, direction, polarisation, field)
+      %   Parameters can also be passed as named arguments.
+      %
+      % Parameters
+      %   - origin (3xN numeric) -- Origin (for phase offset) of wave.
+      %   - direction (3xN numeric) -- Propagation direction of wave.
+      %   - polarisation (3xN numeric) -- Primary polarisation direction.
+      %   - field (2xN numeric) -- Field in two polarisation directions.
+      %
+      % Additional parameters passed to base.
+
+      p = inputParser;
+      p.addOptional('origin', [], @isnumeric);
+      p.addOptional('direction', [], @isnumeric);
+      p.addOptional('polarisation1', [], @isnumeric);
+      p.addOptional('field', [], @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+
+      % Construct direction set
+      directionSet = ott.beam.properties.PlaneWave.DirectionSet(...
+          p.Reults.direction, p.Results.polarisation1);
+
+      % Construct beam
+      beam = ott.beam.Ray(...
+          'origin', p.Results.origin, ...
+          'directionSet', directionSet, ...
+          'field', p.Results.field, ...
+          unmatched{:});
+    end
+
     function beam = empty(varargin)
       % Construct an emtpy beam array
       %
@@ -50,10 +91,9 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       %   beam = ott.beam.Ray.empty(...)
       %
       % Additional parameters are passed to the constructor.
-      
-      empt = zeros(3, 0);
-      beam = ott.beam.Ray('direction', empt, 'polarisation', empt, ...
-        'field', empt(1, :), 'origin', empt, varargin{:});
+
+      beam = ott.beam.Ray('directionSet', zeros(3, 0), ...
+        'field', zeros(2, 0), 'origin', zeros(3, 0), varargin{:});
     end
   end
 
@@ -62,14 +102,13 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       % Construct a collection of Rays
       %
       % Usage
-      %   beam = Ray(origin, direction, polarisation1, ...)
+      %   beam = Ray(origin, directionSet, ...)
       %
-      %   beam = Ray(origin, 'directionSet', directionSet, ...)
+      % See also :meth:`FromDirection` for construction from
+      % direction/polarisation vectors.
       %
       % Parameters
       %   - origin (3xN numeric) -- Plane wave origins.
-      %   - direction (3xN numeric) -- Plane wave direction.
-      %   - polarisation1 (3xN numeric) -- Primary polarisation direction.
       %
       %   - directionSet (3x3N numeric) -- Array formed by combining
       %     direction/polarisation vectors into rotation matrices.  The
@@ -79,23 +118,25 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       % Optional named arguments
       %   - field (2xN numeric) -- Field parallel and perpendicular to
       %     plane wave polarisation direction.
-      %     Default: ``[1, 1i]``.
+      %     Default: ``[1; 1i]``.
       %
       %   - array_type (enum) -- Beam array type.  Can be
       %     'coherent', 'incoherent' or 'array'.  Default: ``'coherent'``.
-      
-      [origin, directionSet, field, unmatched] = ...
-          ott.beam.properties.PlaneWaveArray.parseArgs(varargin{:});
 
       p = inputParser;
+      p.addOptional('origin', [], @isnumeric);
+      p.addOptional('directionSet', [], @isnumeric);
+      p.addParameter('field', [1;1i]);
       p.addParameter('array_type', 'coherent');
       p.KeepUnmatched = true;
-      p.parse(unmatched{:});
+      p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
       bm = bm@ott.beam.properties.AnyArrayType(p.Results.array_type);
       bm = bm@ott.beam.properties.PlaneWaveArray(...
-          origin, 'directionSet', directionSet, 'field', field, ...
+          'origin', p.Results.origin, ...
+          'directionSet', p.Results.directionSet, ...
+          'field', p.Results.field, ...
           unmatched{:});
     end
 
@@ -117,6 +158,8 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       ray = ray.rotate(rmat);
     end
 
+    % TODO: Visualise far-field methods with points
+
     function varargout = visualise(vec, varargin)
       % Plots the vector set in 3-D.
       %
@@ -124,7 +167,7 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       % vector set.
       %
       % Usage
-      %   h = beam.visualiseRays(...)
+      %   h = beam.visualise(...)
       %
       % Optional named arguments
       %   - Scale (numeric) -- rescales the coordinates and components
@@ -200,11 +243,11 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       p = inputParser;
       p.addParameter('method', 'ray_invr');
       p.parse(varargin{:});
-      
+
       beam = ott.beam.PlaneWave(beam, 'position', [0;0;0]);
       E = beam.efield(xyz, 'method', p.Results.method);
     end
-    
+
     function H = hfieldInternal(beam, xyz, varargin)
       % Cast to PlaneWave for visualisation
 
@@ -212,21 +255,21 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       p = inputParser;
       p.addParameter('method', 'ray_invr');
       p.parse(varargin{:});
-      
+
       beam = ott.beam.PlaneWave(beam, 'position', [0;0;0]);
       H = beam.hfield(xyz, 'method', p.Results.method);
     end
-    
+
     function E = efarfieldInternal(beam, rtp, varargin)
       % Cast to PlaneWave for visualisation
-      
+
       beam = ott.beam.PlaneWave(beam, 'position', [0;0;0]);
       E = beam.efarfield(rtp, 'method', p.Results.method);
     end
-    
+
     function H = hfarfieldInternal(beam, rtp, varargin)
       % Cast to PlaneWave for visualisation
-      
+
       beam = ott.beam.PlaneWave(beam, 'position', [0;0;0]);
       H = beam.hfarfield(rtp, 'method', p.Results.method);
     end

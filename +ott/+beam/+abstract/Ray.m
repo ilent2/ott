@@ -1,5 +1,4 @@
-classdef Ray < ott.beam.properties.PlaneWaveScalar ...
-    & ott.beam.abstract.Beam
+classdef Ray < ott.beam.abstract.PlaneWaveStem
 % Specialisation describing abstract geometric ray beams.
 % Inherits from :class:`ott.beam.properties.Ray` and :class:`Beam`.
 %
@@ -11,10 +10,18 @@ classdef Ray < ott.beam.properties.PlaneWaveScalar ...
 %   beam = ott.beam.abstract.Gaussian(1.0);
 %   rays = ott.beam.Ray(beam);
 %
-% Supported casts
-%   - Beam                -- Default Beam cast, uses Ray
-%   - Ray
-%   - abstract.PlaneWave
+% Static methods
+%   - like            -- Create a beam like another
+%   - FromDirection   -- Construct from direction/polarisation
+%   - DirectionSet    -- Construct a directionSet
+%
+% Dependent properties
+%   - power      -- Power of ray
+%
+% Casts
+%   - Beam       -- Uses Ray
+%
+% All other casts inherited from base.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -24,60 +31,69 @@ classdef Ray < ott.beam.properties.PlaneWaveScalar ...
     power
   end
 
-  methods
-    function beam = Ray(varargin)
-      % Construct a new abstract single ray representation.
+  methods (Static)
+    function beam = like(other, varargin)
+      % Create a beam like another beam
       %
       % Usage
-      %   beam = Ray(...)
+      %   beam = Ray.like(other, ...)
       %
-      % Optional named arguments
-      %   - position (3 numeric) -- Position of the beam.
-      %     Default: ``[0;0;0]``.
-      %
-      %   - rotation (3x3 numeric) -- Rotation of the beam.
-      %     Default: ``eye(3)``.
-      %
-      %   - field (2 numeric) -- Field parallel and perpendicular to
-      %     plane wave polarisation direction.
-      %     Default: ``[1, 1i]``.
+      % See constructor for arguments.
 
-      beam = beam@ott.beam.properties.PlaneWaveScalar(varargin{:});
+      args = ott.beam.abstract.Ray.likeProperties(other, varargin);
+      beam = ott.beam.abstract.Ray(args{:});
+    end
+
+    function beam = FromDirection(varargin)
+      % Construct beam from direction/polarisation vectors.
+      %
+      % Usage
+      %   beam = FromDirection(origin, direction, polarisation, field)
+      %   Parameters can also be passed as named arguments.
+      %
+      % Parameters
+      %   - origin (3xN numeric) -- Origin (for phase offset) of wave.
+      %   - direction (3xN numeric) -- Propagation direction of wave.
+      %   - polarisation (3xN numeric) -- Primary polarisation direction.
+      %   - field (2xN numeric) -- Field in two polarisation directions.
+      %
+      % Additional parameters passed to base.
+
+      p = inputParser;
+      p.addOptional('origin', [], @isnumeric);
+      p.addOptional('direction', [], @isnumeric);
+      p.addOptional('polarisation1', [], @isnumeric);
+      p.addOptional('field', [], @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+
+      % Construct direction set
+      directionSet = ott.beam.properties.PlaneWave.DirectionSet(...
+          p.Reults.direction, p.Results.polarisation1);
+
+      % Construct beam
+      beam = ott.beam.abstract.Ray(...
+          'origin', p.Results.origin, ...
+          'directionSet', directionSet, ...
+          'field', p.Results.field, ...
+          unmatched{:});
+    end
+  end
+
+  methods
+    function varargout = visualise(beam, varargin)
+      % Cast abstract.Ray to Ray and visualise
+      %
+      % Usage
+      %   [...] = beam.visualise(...)
+
+      beam = ott.beam.Ray(beam);
+      beam.visualise(varargin{:});
     end
 
     function beam = ott.beam.Beam(varargin)
       % Cast to Ray
       beam = ott.beam.Ray(varargin{:});
-    end
-
-    function beam = ott.beam.Ray(beam, varargin)
-      % Cast to Ray
-      beam = castHelperArray(@ott.beam.Ray.like, beam, varargin{:});
-    end
-
-    function beam = ott.beam.abstract.PlaneWave(beam, varargin)
-      % Cast to abstract.PlaneWave
-      beam = castHelper(@ott.beam.abstract.PlaneWave.like, beam, varargin{:});
-    end
-  end
-
-  methods (Access=protected)
-    function beam = castHelperArray(cast, beam, varargin)
-      % Helper for casts
-
-      assert(isa(beam, 'ott.beam.abstract.Ray'), ...
-          'First argument must be a abstract.Ray');
-      ott.utils.nargoutCheck(beam, nargout);
-
-      % All other types are PlaneWaveArray's, so add properties
-      args = ott.utils.addDefaultParameter('position', [0;0;0], varargin);
-      args = ott.utils.addDefaultParameter('rotation', eye(3), args);
-      args = ott.utils.addDefaultParameter('origin', [beam.position], args);
-      args = ott.utils.addDefaultParameter('field', [beam.field], args);
-      args = ott.utils.addDefaultParameter(...
-          'directionSet', [beam.rotation], args);
-
-      beam = cast(beam(1), args{:});
     end
   end
 

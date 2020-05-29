@@ -1,4 +1,4 @@
-function tests = testBessel
+function tests = testPlaneWave
   tests = functiontests(localfunctions);
 end
 
@@ -27,28 +27,6 @@ function testConvertBeam(testCase)
 
   beam = ott.beam.Beam(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.PlaneWave');
-  verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
-
-  beam = ott.beam.PlaneWave(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.PlaneWave');
-  verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
-
-  beam = ott.beam.Ray(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.Ray');
-  verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
-
-  % VSWF Casts
-
-  beam = ott.beam.vswf.Bsc(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.vswf.PlaneWave');
-  verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
-
-  beam = ott.beam.vswf.PlaneWave(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.vswf.PlaneWave');
-  verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
-
-  beam = ott.beam.vswf.PlaneBasis(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.vswf.PlaneBasis');
   verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
 
 end
