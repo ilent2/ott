@@ -8,8 +8,7 @@ classdef Empty < ott.beam.properties.Empty ...
 % element for abstract beam hetrogeneous arrays.
 %
 % Supported casts
-%   - Beam        -- Default beam cast, uses Empty
-%   - Empty
+%   - Beam        -- Creates an empty Array
 %   - Array       -- (Inherited from abstract.Beam)
 %   - Coherent    -- (Inherited from abstract.Beam)
 %   - Incoherent  -- (Inherited from abstract.Beam)
@@ -32,57 +31,40 @@ classdef Empty < ott.beam.properties.Empty ...
       beam = beam@ott.beam.properties.Empty(varargin{:});
     end
 
-    function beam = ott.beam.Beam(varargin)
-      beam = ott.beam.Empty(varargin{:});
-    end
-
-    function beam = ott.beam.Empty(beam, varargin)
-      % Cast to a Empty or coherent array of empties
-
-      assert(isa(beam, 'ott.beam.abstract.Empty'), ...
-          'First argument must be a abstract.Empty');
-
-      if numel(beam) > 1
-        beam = ott.beam.Coherent(beam, varargin{:})
-      else
-        beam = ott.beam.Empty.like(beam, varargin{:});
-      end
+    function beam = ott.beam.Beam(beam, varargin)
+      beam = castArrayHelper(@ott.beam.Array.like, beam, ...
+          'array_type', 'coherent', varargin{:});
     end
 
     function beam = ott.beam.vswf.Bsc(beam, varargin)
-      % Cast to an empty Bsc, discard meta for arrays of beams
-
-      assert(isa(beam, 'ott.beam.abstract.Empty'), ...
-          'First argument must be a abstract.Empty');
-
-      beam = ott.beam.vswf.Bsc.like(beam(1), varargin{:});
+      beam = castArrayHelper(@ott.beam.vswf.Bsc.like, beam, ...
+          'array_type', 'coherent', varargin{:});
     end
 
     function beam = ott.beam.PlaneWave(beam, varargin)
-      % Cast to an empty PlaneWave, discard meta for arrays of beams
-
-      assert(isa(beam, 'ott.beam.abstract.Empty'), ...
-          'First argument must be a abstract.Empty');
-
-      beam = ott.beam.PlaneWave.like(beam(1), varargin{:});
+      beam = castArrayHelper(@ott.beam.PlaneWave.like, beam, ...
+          'array_type', 'coherent', varargin{:});
     end
 
     function beam = ott.beam.Ray(beam, varargin)
-      % Cast to an empty PlaneWave, discard meta for arrays of beams
-
-      assert(isa(beam, 'ott.beam.abstract.Empty'), ...
-          'First argument must be a abstract.Empty');
-
-      beam = ott.beam.Ray.like(beam(1), varargin{:});
+      beam = castArrayHelper(@ott.beam.Ray.like, beam, ...
+          'array_type', 'coherent', varargin{:});
     end
 
     function beam = ott.beam.Dipole(beam, varargin)
-      % Cast to an empty Dipole, discard meta for arrays of beams
+      beam = castArrayHelper(@ott.beam.Dipole.like, beam, varargin{:});
+    end
+  end
+
+  methods (Access=protected)
+    function beam = castArrayHelper(cast, beam, varargin)
+      % Helper for casts
 
       assert(isa(beam, 'ott.beam.abstract.Empty'), ...
           'First argument must be a abstract.Empty');
+      ott.utils.nargoutCheck(beam, nargout);
 
-      beam = ott.beam.Dipole.like(beam(1), varargin{:});
+      beam = cast(beam(1), varargin{:});
     end
   end
 end

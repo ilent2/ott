@@ -12,16 +12,11 @@ end
 
 function testCasts(testCase)
 
-  beam = ott.beam.abstract.Empty();
+  abs_beam = ott.beam.abstract.Empty();
 
   % Beam casts
 
   beam = ott.beam.Beam(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.Empty');
-  verifyProperties(testCase, ?ott.beam.abstract.Empty, ...
-      beam, abs_beam);
-
-  beam = ott.beam.Empty(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.Empty');
   verifyProperties(testCase, ?ott.beam.abstract.Empty, ...
       beam, abs_beam);

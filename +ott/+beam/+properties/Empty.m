@@ -1,4 +1,5 @@
-classdef Empty < ott.beam.properties.MaterialBeam & ott.beam.utils.ZeroPower
+classdef Empty < ott.beam.properties.Material ...
+    & ott.beam.properties.ZeroPower
 % Properties of scattered beams
 %
 % Properties
@@ -10,7 +11,29 @@ classdef Empty < ott.beam.properties.MaterialBeam & ott.beam.utils.ZeroPower
 
   methods
     function beam = Empty(varargin)
-      beam = beam@ott.beam.properties.Beam(varargin{:});
+      beam = beam@ott.beam.properties.Material(varargin{:});
+    end
+  end
+
+  methods (Hidden)
+    function E = efieldInternal(beam, xyz, varargin)
+      % Returns zeros
+      E = ott.utils.FieldVector(xyz, 0*xyz, 'cartesian');
+    end
+
+    function H = hfieldInternal(beam, xyz, varargin)
+      % Returns zeros
+      H = ott.utils.FieldVector(xyz, 0*xyz, 'cartesian');
+    end
+
+    function E = efarfieldInternal(beam, rtp, varargin)
+      % Returns zeros
+      E = ott.utils.FieldVector(rtp, 0*rtp, 'spherical');
+    end
+
+    function H = hfarfieldInternal(beam, rtp, varargin)
+      % Returns zeros
+      H = ott.utils.FieldVector(rtp, 0*rtp, 'spherical');
     end
   end
 end
