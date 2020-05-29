@@ -24,7 +24,7 @@ classdef UniformParaxial < ott.beam.abstract.CastNearfield ...
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
-      if isa(other, 'ott.beam.abstract.UniformFarfield')
+      if isa(other, 'ott.beam.abstract.UniformParaxial')
         args = ott.utils.addDefaultParameter(...
             'polarisation', other.polarisation, args);
       end
@@ -57,12 +57,12 @@ classdef UniformParaxial < ott.beam.abstract.CastNearfield ...
       %     paraxial far-field.
       %
       % Optional named arguments
-      %   - mapping (enum) -- 'sintheta' or 'tantheta'.  Default: 'tantheta'
+      %   - mapping (enum) -- 'sin' or 'tan' or 'theta'.  Default: 'tan'
       %   - hemisphere (enum) -- 'pos' or 'neg'.  Default: 'pos'
 
       p = inputParser;
       p.addOptional('polarisation', [], @isnumeric);
-      p.addParameter('mapping', 'tantheta');
+      p.addParameter('mapping', 'tan');
       p.addParameter('hemisphere', 'pos');
       p.KeepUnmatched = true;
       p.parse(varargin{:});
@@ -79,15 +79,41 @@ classdef UniformParaxial < ott.beam.abstract.CastNearfield ...
     function E = efarfieldInternal(beam, rtp, varargin)
       % Uniform polarisation across paraxial plane
 
-      % TODO: Implement
-      error('Not yet implemented');
+      [~, dA] = beam.farfield2paraxial(rtp, ...
+          'mapping', beam.mapping, 'direction', beam.hemisphere);
+
+      Ex = beam.polarisation(1);
+      Ey = beam.polarisation(2);
+      Etheta = -Ex .* cos(phi) - Ey .* sin(phi);
+      Ephi = -Ex .* sin(phi) + Ey .* cos(phi);
+
+      Etheta = Etheta .* dA;
+      Ephi = Ephi .* dA;
+
+      Ertp = [0*Etheta; Etheta; Ephi];
+
+      E = ott.utils.FieldVector(rtp, Ertp, 'spherical');
     end
 
     function H = hfarfieldInternal(beam, rtp, varargin)
       % Uniform polarisation across sphere
 
-      % TODO: Implement
-      error('Not yet implemented');
+      [~, dA] = beam.farfield2paraxial(rtp, ...
+          'mapping', beam.mapping, 'direction', beam.hemisphere);
+
+      % TODO: Unit conversion factor?
+      Hy = beam.polarisation(1);
+      Hx = beam.polarisation(2);
+      phi = rtp(3, :);
+      Htheta = -Hx .* cos(phi) - Hy .* sin(phi);
+      Hphi = -Hx .* sin(phi) + Hy .* cos(phi);
+
+      Htheta = Htheta .* dA;
+      Hphi = Hphi .* dA;
+
+      Hrtp = [0*Htheta; Htheta; Hphi];
+
+      H = ott.utils.FieldVector(rtp, Hrtp, 'spherical');
     end
   end
 

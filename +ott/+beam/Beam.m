@@ -466,7 +466,8 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
       %     Must be 'neg' or 'pos'.  Default: ``pos``.
 
       % Convert normalized coordinates to rtp
-      rtp = beam.paraxial2farfield(nxyz, varargin{:});
+      rtp = ott.beam.properties.FarfieldMapping.paraxial2farfield(...
+          nxyz, varargin{:});
 
       % Calculate fields
       E = beam.efarfield(rtp, varargin{:});
@@ -483,7 +484,8 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
       % See :meth:`eparaxial` for parameters.
 
       % Convert normalized coordinates to rtp
-      rtp = beam.paraxial2farfield(nxyz, varargin{:});
+      rtp = ott.beam.properties.FarfieldMapping.paraxial2farfield(...
+          nxyz, varargin{:});
 
       % Calculate fields
       H = beam.hfarfield(rtp, varargin{:});
@@ -500,7 +502,8 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
       % See :meth:`eparaxial` for parameters.
 
       % Convert normalized coordinates to rtp
-      rtp = beam.paraxial2farfield(nxyz, varargin{:});
+      rtp = ott.beam.properties.FarfieldMapping.paraxial2farfield(...
+          nxyz, varargin{:});
 
       % Calculate fields
       E = beam.efarfield(rtp, varargin{:});
@@ -659,7 +662,8 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
       nxyz = [xx(:), yy(:), zeros(size(xx(:)))].';
 
       % Convert coordinates to spherical
-      rtp = beam.paraxial2farfield(nxyz, 'mapping', p.Results.mapping);
+      rtp = ott.beam.properties.FarfieldMapping.paraxial2farfield(...
+          nxyz, 'mapping', p.Results.mapping);
       rtp(imag(rtp) ~= 0) = nan;
 
       % Apply direction coordinate transformation
@@ -1411,71 +1415,6 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
         xlabel(our_axes, labels{1});
         ylabel(our_axes, labels{2});
         axis(our_axes, 'image');
-      end
-    end
-
-    function rtp = paraxial2farfield(nxyz, varargin)
-      % Convert from paraxial coordinates to far-field coordinates
-      %
-      % Usage
-      %   rtp = paraxial2farfield(nxyz, ...)
-      %
-      % Optional named arguments
-      %   - mapping (enum) -- Mapping from theta-phi to far-field.
-      %     Must be one of 'sin', 'tan' or 'theta'.
-      %     Default: ``'sin'``.
-      %
-      %   - direction (enum) -- Beam hemisphere to calculate.
-      %     Must be 'neg' or 'pos'.  Default: ``pos``.
-      %
-      %   - keepr (logical) -- If true, the output is a 3xN matrix.
-      %     Radial dimension is ones.  Default: ``size(nxyz, 1) == 3``.
-
-      p = inputParser;
-      p.addParameter('mapping', 'sin');
-      p.addParameter('direction', 'pos');
-      p.addParameter('keepr', size(nxyz, 1) == 3);
-      p.parse(varargin{:});
-
-      assert(isnumeric(nxyz) && any(size(nxyz, 1) == [2, 3]), ...
-        'nxyz must be 2xN or 3xN numeric matrix');
-
-      % Get phi/rr coordinates
-      phi = atan2(nxyz(2, :), nxyz(1, :));
-      rr = sqrt(nxyz(2, :).^2 + nxyz(1, :).^2);
-
-      % Apply mapping
-      switch p.Results.mapping
-        case 'sin'
-          theta = asin(rr);
-        case 'tan'
-          theta = atan(rr);
-        case 'theta'
-          theta = rr;
-        otherwise
-          error('Unknown mapping argument value, must be sin, tan or theta');
-      end
-      
-      % Filter out non-real theta
-      mask = imag(theta) ~= 0;
-      theta(mask) = nan;
-      phi(mask) = nan;
-
-      % Flip direction if needed
-      switch p.Results.direction
-        case 'neg'
-          theta = pi - theta;
-        case 'pos'
-          % Nothing to do
-        otherwise
-          error('Unknown direction argument value, must be pos or neg');
-      end
-
-      % Package output
-      if p.Results.keepr
-        rtp = [ones(size(rr)); theta; phi];
-      else
-        rtp = [theta; phi];
       end
     end
   end
