@@ -196,7 +196,8 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
 
     function beam = ott.beam.Ray(beam, varargin)
 
-      % TODO: Multiple beams and type check
+      % TODO: Multiple beams and type check (look at abstract.Bessel)
+      % TODO: Should FocussedTopHat have a specialisation of this?
 
       theta = linspace(0, beam.angle, 50);
       phi = linspace(0, 2*pi, 100);

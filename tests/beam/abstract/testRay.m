@@ -6,7 +6,6 @@ function setupOnce(testCase)
   addpath('../../../');
 end
 
-
 function testConstructor(testCase)
 
   beam = ott.beam.abstract.Ray();

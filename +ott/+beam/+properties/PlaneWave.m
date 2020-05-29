@@ -72,6 +72,9 @@ classdef (Abstract) PlaneWave < ott.beam.properties.Material
       assert(isnumeric(polarisation1) && ismatrix(polarisation1) ...
           && all(size(polarisation1) == size(direction)), ...
           'polarisation1 must be 3xN numeric with same size as direction');
+        
+      direction = direction ./ vecnorm(direction, 2, 1);
+      polarisation1 = polarisation1 ./ vecnorm(polarisation1, 2, 1);
 
       % Calculate secondary polarisation direction
       polarisation2 = cross(direction, polarisation1);

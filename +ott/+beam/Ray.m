@@ -71,6 +71,7 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       p.addOptional('field', [], @isnumeric);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Construct direction set
       directionSet = ott.beam.properties.PlaneWave.DirectionSet(...
