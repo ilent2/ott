@@ -148,7 +148,7 @@ classdef (Abstract) RotationPositionEntity < ...
           'position must be 3 element numeric vector');
       obj.positionInternal = val;
     end
-    function val = get.position(obj, val)
+    function val = get.position(obj)
       val = obj.positionInternal;
     end
 
@@ -157,7 +157,7 @@ classdef (Abstract) RotationPositionEntity < ...
           'position must be 3x3 numeric matrix');
       obj.rotationInternal = val;
     end
-    function val = get.rotation(obj, val)
+    function val = get.rotation(obj)
       val = obj.rotationInternal;
     end
   end

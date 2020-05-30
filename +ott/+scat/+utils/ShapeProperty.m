@@ -1,6 +1,5 @@
-classdef ShapeProperty < ott.scat.utils.Particle
+classdef ShapeProperty
 % Declares a shape property and dependent properties for shapes.
-% Inherits from :class:`ott.scat.utils.Particle`.
 %
 % Use this class when the scattering method (particle) can describe
 % multiple geometric shapes.  If the particle only describes one type of
@@ -10,8 +9,8 @@ classdef ShapeProperty < ott.scat.utils.Particle
 %   - shape         -- The encapsulated shape object.
 %
 % Dependent properties
-%   - position      -- Uses the shapes location.
-%   - rotation      -- Uses the shapes rotation.
+%   - positionInternal      -- Uses the shapes location.
+%   - rotationInternal      -- Uses the shapes rotation.
 %
 % Dependent methods
 %   - rotate        -- Uses the shapes rotate method.
@@ -36,9 +35,9 @@ classdef ShapeProperty < ott.scat.utils.Particle
     shape         % The encapsulated shape object.
   end
 
-  properties (Dependent)
-    position      % Uses the shapes location.
-    rotation      % Uses the shapes rotation.
+  properties (Dependent, Hidden)
+    positionInternal      % Uses the shapes location.
+    rotationInternal      % Uses the shapes rotation.
   end
 
   methods
@@ -50,18 +49,10 @@ classdef ShapeProperty < ott.scat.utils.Particle
 
       particle.shape = shape;
     end
-
-    function particle = rotate(particle, varargin)
-      % Apply rotation to the particle (and shape)
-      %
-      % See also :class:`ott.shapes.Shape/rotate`.
-
-      particle.shape = particle.shape.rotate(varargin{:});
-    end
   end
 
   methods (Hidden)
-    function shape = validateShape(particle, shape)
+    function shape = validateShape(~, shape)
       % Method called to validate the shape.
       %
       % If your scattering method requires a specific shape,
@@ -77,17 +68,17 @@ classdef ShapeProperty < ott.scat.utils.Particle
       particle.shape = particle.validateShape(val);
     end
 
-    function position = get.position(particle)
-      position = particle.position;
+    function position = get.positionInternal(particle)
+      position = particle.shape.position;
     end
-    function particle = set.position(particle, val)
+    function particle = set.positionInternal(particle, val)
       particle.shape.position = val;
     end
 
-    function rotation = get.rotation(particle)
-      rotation = particle.rotation;
+    function rotation = get.rotationInternal(particle)
+      rotation = particle.shape.rotation;
     end
-    function particle = set.rotation(particle, val)
+    function particle = set.rotationInternal(particle, val)
       particle.shape.rotation = val;
     end
   end

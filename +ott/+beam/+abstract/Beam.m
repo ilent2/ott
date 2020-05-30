@@ -19,6 +19,9 @@ classdef (Abstract) Beam < ott.beam.Beam ...
 %
 % Methods
 %   - contains      -- Query if a array_type is contained in the array
+%   - plus          -- Form coherent array
+%   - minus         -- Form coherent array
+%   - uminus        -- Negative fields
 %
 % Supported casts
 %   - Beam             -- Default beam cast for arrays, uses Coherent/Bsc
@@ -72,6 +75,29 @@ classdef (Abstract) Beam < ott.beam.Beam ...
         % Other cases handled by ott.beam.abstract.Array etc.
         b = false;
       end
+    end
+
+    function beam = plus(a, b)
+      % Form coherent array from pair of beams
+
+      if numel(a) > 1 || numel(b) > 1
+        beam = ott.beam.abstract.Coherent([1, 2]);
+        beam.beams(1) = a;
+        beam.beams(2) = b;
+      else
+        beam = [a, b];
+      end
+    end
+
+    function beam = minus(a, b)
+      % Form coherent array from pair of beams
+
+      beam = a + (-b);
+    end
+
+    function beam = uminus(beam)
+      % Negate the fields of the beam
+      beam = ott.beam.abstract.Negative(beam);
     end
 
     function beam = ott.beam.Beam(beam, varargin)

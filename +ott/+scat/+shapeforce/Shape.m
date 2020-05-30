@@ -47,8 +47,8 @@ classdef Shape < ott.scat.utils.ZeroScattered ...
       p = inputParser;
       p.parse(varargin{:});
 
-      particle = particle@ott.scat.utils.HomogeneousRelative(index_relative);
       particle = particle@ott.scat.utils.ShapeProperty(shape);
+      particle = particle@ott.scat.utils.HomogeneousRelative(index_relative);
     end
   end
 

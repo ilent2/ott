@@ -1,6 +1,6 @@
-classdef BeamForce < ott.scat.utils.Particle
+classdef BeamForce < ott.scat.Particle
 % Provides force calculation methods using scatter and beam calculation.
-% Inherits from :class:`ott.scat.utils.Particle`.
+% Inherits from :class:`ott.scat.Particle`.
 %
 % This class is useful for particles which calculate how a beam is
 % scattered and where the force should be calculated from the change
@@ -23,7 +23,7 @@ classdef BeamForce < ott.scat.utils.Particle
 %   - rotate      -- Apply rotation to particle
 %   - scatter     -- Calculate scattered beam
 %
-% For full methods and properties, see :class:`ott.scat.utils.Particle`.
+% For full methods and properties, see :class:`ott.scat.Particle`.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

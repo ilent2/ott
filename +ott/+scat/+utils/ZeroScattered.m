@@ -1,6 +1,6 @@
-classdef (Abstract) ZeroScattered < ott.scat.utils.Particle
+classdef (Abstract) ZeroScattered < ott.scat.Particle
 % Base class for particles which produce Zero-scattered beams.
-% Inherits from :class:`ott.scat.utils.Particle`.
+% Inherits from :class:`ott.scat.Particle`.
 % This class is incompatible with :class:`ott.scat.utils.BeamForce`.
 %
 % Abstract properties

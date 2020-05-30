@@ -1,4 +1,4 @@
-classdef HomogeneousRelative < ott.scat.utils.Particle
+classdef HomogeneousRelative < ott.scat.Particle
 % Declares a index_relative property for homogeneous particles.
 %
 % Properties

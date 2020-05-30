@@ -97,6 +97,11 @@ classdef (Abstract) PlaneWaveStem < ott.beam.properties.PlaneWave ...
           'field', p.Results.field);
     end
 
+    function beam = uminus(beam)
+      % Negate beam field
+      beam.field = -beam.field;
+    end
+
     function beam = ott.beam.Beam(varargin)
       % Cast to PlaneWave
       error('Method should be overloaded in sub-class');

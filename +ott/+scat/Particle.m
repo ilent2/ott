@@ -1,6 +1,6 @@
-classdef (Abstract) Particle < ott.utils.RotateHelper
+classdef (Abstract) Particle < ott.utils.RotationPositionEntity
 % Describes the abstract interface for particle.
-% Inherits from :class:`ott.utils.RotateHelper`.
+% Inherits from :class:`ott.utils.RotationPositionEntity`.
 %
 % Particle-centric scattering methods should inherit from this class.
 % Particles which describe geometric shapes can choose to inherit from
@@ -8,8 +8,8 @@ classdef (Abstract) Particle < ott.utils.RotateHelper
 % :class:`ShapeProperty` to declare a `shape` property in the class.
 %
 % Abstract properties
-%   - position    -- Position of the particle [3xN]
-%   - rotation    -- Orientation of the particle [3x3]
+%   - positionInternal    -- Position of the particle [3xN]
+%   - rotationInternal    -- Orientation of the particle [3x3]
 %
 % Methods
 %   - force       -- Calculate force on particle in beam
@@ -29,11 +29,6 @@ classdef (Abstract) Particle < ott.utils.RotateHelper
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file
-
-  properties (Abstract)
-    position    % Position of the particle [3xN]
-    rotation    % Orientation of the particle [3x3]
-  end
 
   methods (Abstract, Hidden)
     scatterInternal      % Calculate scattered beam
