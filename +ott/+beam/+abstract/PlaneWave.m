@@ -57,10 +57,11 @@ classdef PlaneWave < ott.beam.abstract.PlaneWaveStem ...
       p.addOptional('field', [], @isnumeric);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Construct direction set
       directionSet = ott.beam.properties.PlaneWave.DirectionSet(...
-          p.Reults.direction, p.Results.polarisation1);
+          p.Results.direction, p.Results.polarisation1);
 
       % Construct beam
       beam = ott.beam.abstract.PlaneWave(...

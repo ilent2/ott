@@ -101,7 +101,7 @@ classdef Array < ott.beam.Beam ...
         beam.beams = arg;
       else
         % Argument is size
-        beam.beams = repmat({ott.beam.Empty}, arg);
+        beam.beams = repmat({ott.beam.abstract.Empty}, arg);
       end
     end
 

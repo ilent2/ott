@@ -1,5 +1,5 @@
-classdef MaskedParaxial < ott.beam.abstract.MaskedFarfield ...
-    & ott.beam.properties.FarfieldMapping
+classdef MaskedParaxial < ott.beam.abstract.CastNearfield ...
+    & ott.beam.properties.MaskedParaxial
 % Describes a composite beam with a masked paraxial field.
 % Inherits from :class:`MaskedFarfield``.
 %
@@ -50,7 +50,7 @@ classdef MaskedParaxial < ott.beam.abstract.MaskedFarfield ...
   end
 
   methods
-    function beam = MaskedParaxial(mask, masked_beam, varargin)
+    function beam = MaskedParaxial(varargin)
       % Construct a masked paraxial beam
       %
       % Usage
@@ -66,17 +66,7 @@ classdef MaskedParaxial < ott.beam.abstract.MaskedFarfield ...
       %   - mapping (enum) -- 'sintheta' or 'tantheta'.  Default: 'tantheta'
       %   - hemisphere (enum) -- 'pos' or 'neg'.  Default: 'pos'
 
-      p = inputParser;
-      p.addParameter('mapping', 'tantheta');
-      p.addParameter('hemisphere', 'pos');
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      beam = beam@ott.beam.abstract.MaskedFarfield(...
-          mask, masked_beam, unmatched{:});
-      beam = beam@ott.beam.properties.FarfieldMapping(...
-          'mapping', p.Results.mapping, 'hemisphere', p.Results.hemisphere);
+      beam = beam@ott.beam.properties.MaskedParaxial(varargin{:});
     end
   end
 
@@ -88,12 +78,14 @@ classdef MaskedParaxial < ott.beam.abstract.MaskedFarfield ...
       E = beam.beam.efarfield(rtp, varargin{:});
 
       % Compute mask
-      xy = beam.farfield2paraxial(rtp, 'mapping', beam.mapping, ...
+      [xyz, dA] = beam.farfield2paraxial(rtp, 'mapping', beam.mapping, ...
           'direction', beam.hemisphere);
-      mask = beam.mask(xy);
+      mask = beam.mask(xyz(1:2, :));
 
       % Zero fields outside mask
-      vrtp = E.vrtp(:, ~mask) = 0.0;
+      vrtp = E.vrtp;
+      vrtp(:, ~mask) = 0.0;
+      vrtp = vrtp .* dA;
       E = ott.utils.FieldVector(E.locations, vrtp, 'spherical');
     end
 
@@ -104,12 +96,14 @@ classdef MaskedParaxial < ott.beam.abstract.MaskedFarfield ...
       H = beam.beam.efarfield(rtp, varargin{:});
 
       % Compute mask
-      xy = beam.farfield2paraxial(rtp, 'mapping', beam.mapping, ...
+      [xyz, dA] = beam.farfield2paraxial(rtp, 'mapping', beam.mapping, ...
           'direction', beam.hemisphere);
-      mask = beam.mask(xy);
+      mask = beam.mask(xyz(1:2, :));
 
       % Zero fields outside mask
-      vrtp = H.vrtp(:, ~mask) = 0.0;
+      vrtp = H.vrtp;
+      vrtp(:, ~mask) = 0.0;
+      vrtp = vrtp .* dA;
       H = ott.utils.FieldVector(H.locations, vrtp, 'spherical');
     end
   end

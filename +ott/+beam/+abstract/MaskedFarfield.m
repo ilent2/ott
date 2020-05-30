@@ -1,4 +1,4 @@
-classdef MaskedFarfield < ott.beam.properties.Beam ...
+classdef MaskedFarfield < ott.beam.properties.MaskedBeam ...
     & ott.beam.abstract.CastNearfield
 % Describes composite beam with a masked far-field.
 % Inherits from :class:`CastNearfield` and :class:`ott.beam.properties.Beam`.
@@ -16,17 +16,6 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
-
-  properties
-    beam
-    mask
-  end
-
-  properties (Dependent)
-    omega
-    medium
-    power
-  end
 
   methods (Static)
     function beam = TopHat(angle, masked_beam, varargin)
@@ -51,7 +40,7 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
   end
 
   methods
-    function beam = MaskedFarfield(mask, masked_beam, varargin)
+    function beam = MaskedFarfield(varargin)
       % Construct a masked far-field beam
       %
       % Usage
@@ -63,9 +52,7 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
       %
       %   - masked_beam -- Beam to use for paraxial field calculations.
 
-      beam = beam@ott.beam.properties.Beam(varargin{:});
-      beam.mask = mask;
-      beam.beam = masked_beam;
+      beam = beam@ott.beam.properties.MaskedBeam(varargin{:});
     end
   end
 
@@ -74,7 +61,7 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
       % Calculate the internal beam far field and then mask
 
       % Calculate field at locations
-      E = beam.beam.efarfield(rtp, varargin{:});
+      E = beam.masked_beam.efarfield(rtp, varargin{:});
 
       % Compute mask
       mask = beam.mask(rtp(2:3, :));
@@ -89,7 +76,7 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
       % Calculate the internal beam far field and then mask
 
       % Calculate field at locations
-      H = beam.beam.efarfield(rtp, varargin{:});
+      H = beam.masked_beam.efarfield(rtp, varargin{:});
 
       % Compute mask
       mask = beam.mask(rtp(2:3, :));
@@ -98,20 +85,6 @@ classdef MaskedFarfield < ott.beam.properties.Beam ...
       vrtp = H.vrtp;
       vrtp(:, ~mask) = 0.0;
       H = ott.utils.FieldVector(H.locations, vrtp, 'spherical');
-    end
-  end
-
-  methods % Getters/setters
-    function p = get.power(beam)
-      % How should we do this?  We did something fancy in the old TopHat?
-      error('Not yet implemented');
-    end
-
-    function m = get.medium(beam)
-      m = beam.beam.medium;
-    end
-    function m = get.omega(beam)
-      m = beam.beam.omega;
     end
   end
 end

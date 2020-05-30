@@ -27,7 +27,7 @@ function testCasts(testCase)
 
   beam = ott.beam.Ray(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.Ray');
-  verifyProperties(testCase, ?ott.beam.abstract.Bessel, beam, abs_beam);
+  verifyProperties(testCase, ?ott.beam.Beam, beam, abs_beam);
 
   % VSWF
   
@@ -41,5 +41,5 @@ function testCasts(testCase)
   
   beam = ott.beam.vswf.BessilBasis(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.vswf.BesselBasis');
-  verifyProperties(testCase, ?ott.beam.abstract.Bessel, beam, abs_beam);
+  verifyProperties(testCase, ?ott.beam.Beam, beam, abs_beam);
 end

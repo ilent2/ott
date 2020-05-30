@@ -101,23 +101,4 @@ classdef Incoherent < ott.beam.properties.AbstractArray ...
       beam.array_type = 'incoherent';
     end
   end
-
-  methods (Access=private)
-    function beam = castHelper(cast, beam, varargin)
-      % Helper for casts
-
-      assert(isa(beam, 'ott.beam.abstract.Incoherent'), ...
-          'First argument should be a abstract.Incoherent');
-
-      if numel(beam) > 1
-        oldbeam = beam;
-        beam = ott.beam.Array('coherent', size(beam));
-        for ii = 1:numel(oldbeam)
-          beam(ii) = cast(beam, varargin{:});
-        end
-      else
-        beam = cast(beam, varargin{:});
-      end
-    end
-  end
 end

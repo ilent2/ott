@@ -29,27 +29,27 @@ function testCasts(testCase)
 
   beam = ott.beam.Beam(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.abstract.MaskedNearfield3d');
-  verifyProperties(testCase, ?ott.beam.abstract.TopHat, beam, abs_beam);
+  verifyProperties(testCase, ?ott.beam.abstract.Beam, beam, abs_beam);
 
   beam = ott.beam.Ray(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.Ray');
-  verifyProperties(testCase, ?ott.beam.abstract.TopHat, beam, abs_beam);
+  verifyProperties(testCase, ?ott.beam.abstract.Beam, beam, abs_beam);
 
   % VSWF
   
   beam = ott.beam.vswf.Pointmatch(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.vswf.NearfieldPm');
-  verifyProperties(testCase, ?ott.beam.abstract.TopHat, beam, abs_beam);
+  verifyProperties(testCase, ?ott.beam.abstract.Beam, beam, abs_beam);
   
   beam = ott.beam.vswf.NearfieldPm(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.vswf.NearfieldPm');
-  verifyProperties(testCase, ?ott.beam.abstract.TopHat, beam, abs_beam);
+  verifyProperties(testCase, ?ott.beam.abstract.Beam, beam, abs_beam);
   
   % Abstract
   
   beam = ott.beam.abstract.MaskedNearfield3d(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.abstract.MaskedNearfield3d');
-  verifyProperties(testCase, ?ott.beam.abstract.TopHat, beam, abs_beam);
+  verifyProperties(testCase, ?ott.beam.abstract.Beam, beam, abs_beam);
 
 end
 

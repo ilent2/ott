@@ -24,13 +24,18 @@
 %   CastNearfield     -- Abstract base class with casts for near-field.
 %   CastFarfield      -- Abstract base class with casts for far-field
 %   CastBoth          -- Base class with casts for near and far-fields.
+%   PlaneWaveStem     -- Base class for plane-wave beams
+%   ScatteredStem     -- Base class for scattered beams
+%   Paraxial          -- Base class for paraxial beams
 %
 % Generic beams (Beam)
 %   Scattered         -- Represents generic scattered beams
+%   ZeroScattered     -- Represents beams from zero-scattering methods
 %   Array             -- Represents generic arrays of beams
 %   Coherent          -- Represents arrays of coherent beams
 %   Incoherent        -- Represents arrays of incoherent beams
 %   Empty             -- Empty beam array element
+%   Negative          -- Negates fields of encapsulated beam
 %
 % No-field beams (CastBoth)
 %   TopHat            -- Collimated top-hat beam
@@ -53,15 +58,8 @@
 %
 % Masked beams (CastNear/CastFar)
 %   MaskedFarfield    -- Combination beam with far-field mask
-%   MaskedNearfield2d -- Combination beam with 2-D near-field mask
+%   MaskedParaxial    -- Combination beam with paraxial far-field mask
 %   MaskedNearfield3d -- Combination beam with 3-D near-field mask
-%   MaskedParaxial    -- Combination beam with paraxial mask
-%
-% Interpolated beams (CastNear/CastFar)
-%   InterpParaxial    -- Interpolated beam for paraxial-field
-%   InterpNearfield2d -- Interpolated beam for near-field
-%   InterpNearfield3d -- Interpolated beam for near-field
-%   InterpFarfield    -- Interpolated beam for far-field
 %
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

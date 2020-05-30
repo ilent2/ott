@@ -124,7 +124,7 @@ classdef (Abstract) Beam < ott.beam.Beam ...
       assert(isa(beam, 'ott.beam.abstract.Beam'), ...
           'First argument must be abstract.Beam');
 
-      beam_array = ott.beam.Array(size(beam));
+      beam_array = ott.beam.Array('array', size(beam));
 
       for ii = numel(beam)
         beam_array(ii) = ott.beam.Beam(beam(ii));
@@ -137,7 +137,7 @@ classdef (Abstract) Beam < ott.beam.Beam ...
       assert(isa(beam, 'ott.beam.abstract.Beam'), ...
           'First argument must be abstract.Beam');
 
-      beam_array = ott.beam.Coherent(size(beam));
+      beam_array = ott.beam.Array('coherent', size(beam));
 
       for ii = numel(beam)
         beam_array(ii) = ott.beam.Beam(beam(ii));
@@ -150,7 +150,7 @@ classdef (Abstract) Beam < ott.beam.Beam ...
       assert(isa(beam, 'ott.beam.abstract.Beam'), ...
           'First argument must be abstract.Beam');
 
-      beam_array = ott.beam.Incoherent(size(beam));
+      beam_array = ott.beam.Array('incoherent', size(beam));
 
       for ii = numel(beam)
         beam_array(ii) = ott.beam.Beam(beam(ii));

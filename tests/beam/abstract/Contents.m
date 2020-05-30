@@ -12,24 +12,26 @@
 %   testCoherent.m
 %   testDipole.m
 %   testEmpty.m
-%   testFarfieldMasked.m
 %   testFocussedTopHat.m
 %   testGaussian.m
 %   testHermiteGaussian.m
 %   testInceGaussian.m
 %   testIncoherent.m
-%   testInterpFarfield.m
-%   testInterpNearfield2d.m
-%   testInterpNearfield3d.m
-%   testInterpParaxial.m
 %   testLaguerreGaussian.m
-%   testNearfieldMasked2d.m
-%   testNearfieldMasked3d.m
+%   testMaskedNearfield3d.m
+%   testMaskedFarfield.m
+%   testMaskedParaxial.m
+%   testNegative.m
+%   testParaxial.m
 %   testParaxialMasked.m
 %   testPlaneWave.m
+%   testPlaneWaveStem.m
 %   testRay.m
 %   testScattered.m
 %   testTopHat.m
+%   testUniformFarfield.m
+%   testUniformParaxial.m
+%   testZeroScattered.m
 %
 % Support functions
 %   verifyProperties.m

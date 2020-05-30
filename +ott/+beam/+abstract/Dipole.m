@@ -105,7 +105,7 @@ classdef Dipole < ott.beam.properties.Dipole ...
       beam = castArrayHelper(@ott.beam.vswf.Dipole.like, beam, varargin{:});
     end
 
-    function beam = ott.beam.vswf.Bsc(beam, varargin)
+    function beam = ott.beam.vswf.Bsc(varargin)
       % Cast to vswf.Dipole
       beam = ott.beam.vswf.Dipole(varargin{:});
     end
@@ -129,11 +129,12 @@ classdef Dipole < ott.beam.properties.Dipole ...
       ott.utils.nargoutCheck(beam, nargout);
 
       % Handle coherent beam arrays
-      location = [beam.position];
-      polarization = reshape([beam.polarization], [], 1);
+      arg_location = [beam.position];
+      arg_polarization = reshape([beam.polarization], [], 1);
 
       beam = cast(beam, 'position', [0;0;0], 'rotation', eye(3), ...
-          'location', location, 'polarization', polarization, args{:});
+          'location', arg_location, 'polarization', arg_polarization, ...
+          varargin{:});
     end
   end
 
@@ -151,7 +152,7 @@ classdef Dipole < ott.beam.properties.Dipole ...
       beam.position = val;
     end
 
-    function p = get.power(beam)
+    function p = get.power(~)
       error('Not yet implemented');
     end
   end

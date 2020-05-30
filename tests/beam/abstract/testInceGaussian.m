@@ -35,7 +35,7 @@ end
 
 function testConvertBeam(testCase)
 
-  beam = ott.beam.abstract.InceGaussian('waist', 1.0, 'lmode', 1, ...
+  abs_beam = ott.beam.abstract.InceGaussian('waist', 1.0, 'lmode', 1, ...
       'porder', 5, 'parity', 'even', 'ellipticity', 1.0);
 
   % VSWF Casts

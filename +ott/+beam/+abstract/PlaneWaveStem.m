@@ -114,16 +114,19 @@ classdef (Abstract) PlaneWaveStem < ott.beam.properties.PlaneWave ...
     function beam = ott.beam.Coherent(varargin)
       % Cast to PlaneWave
       beam = ott.beam.Beam(varargin{:});
+      beam.array_type = 'coherent';
     end
 
     function beam = ott.beam.Incoherent(varargin)
       % Cast to PlaneWave
       beam = ott.beam.Beam(varargin{:});
+      beam.array_type = 'incoherent';
     end
 
     function beam = ott.beam.Array(varargin)
       % Cast to PlaneWave
       beam = ott.beam.Beam(varargin{:});
+      beam.array_type = 'array';
     end
 
     %
