@@ -84,6 +84,7 @@ classdef UniformParaxial < ott.beam.abstract.CastNearfield ...
 
       Ex = beam.polarisation(1);
       Ey = beam.polarisation(2);
+      phi = rtp(3, :);
       Etheta = -Ex .* cos(phi) - Ey .* sin(phi);
       Ephi = -Ex .* sin(phi) + Ey .* cos(phi);
 
@@ -125,6 +126,10 @@ classdef UniformParaxial < ott.beam.abstract.CastNearfield ...
     end
 
     function power = get.power(beam, val)
+      % TODO: Implement
+      error('Not yet implemented');
+    end
+    function beam = set.power(beam, val)
       % TODO: Implement
       error('Not yet implemented');
     end

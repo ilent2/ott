@@ -15,11 +15,14 @@ classdef Ray < ott.beam.abstract.PlaneWaveStem
 %   - FromDirection   -- Construct from direction/polarisation
 %   - DirectionSet    -- Construct a directionSet
 %
+% Methods
+%   - visualise  -- (Sealed) Casts to Ray.
+%
 % Dependent properties
 %   - power      -- Power of ray
 %
 % Casts
-%   - Beam       -- Uses Ray
+%   - Beam       -- (Sealed) Uses Ray
 %
 % All other casts inherited from base.
 
@@ -80,7 +83,7 @@ classdef Ray < ott.beam.abstract.PlaneWaveStem
     end
   end
 
-  methods
+  methods (Sealed)
     function varargout = visualise(beam, varargin)
       % Cast abstract.Ray to Ray and visualise
       %

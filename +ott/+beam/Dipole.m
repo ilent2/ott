@@ -121,6 +121,32 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       beam.z_rotation = p.Results.z_rotation;
     end
 
+    function beam = defaultArrayType(beam, array_type, elements)
+      % Construct a new array for this type
+
+      if beam.contains('array')
+        assert(strcmpi(array_type, 'array'), ...
+            'type must be array for beams containing generic arrays');
+      elseif beam.contains('incoherent')
+        assert(strcmpi(array_type, {'array', 'incoherent'}), ...
+            'type must be array/incoherent for incoherent content');
+      end
+
+      if nargin == 2
+        if strcmpi(array_type, 'coherent')
+          beam = @(arg) ott.beam.Dipole(arg);
+        else
+          beam = @(arg) ott.beam.Array(array_type, arg);
+        end
+      else
+        if strcmpi(array_type, 'coherent')
+          beam = ott.beam.Dipole(elements);
+        else
+          beam = ott.beam.Array(array_type, elements);
+        end
+      end
+    end
+
     function F = efarfield_matrix(beam, rtp, varargin)
       % Evaluates the electric far-field matrix for a set of points
       %

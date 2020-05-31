@@ -80,19 +80,21 @@ classdef Annular < ott.beam.properties.Annular ...
       %   - masked_beam -- Beam to use for mask.
       %     Default: ``UniformFarfield([1;0])``.
 
+      assert(isa(beam, 'ott.beam.abstract.Annular'), ...
+          'First argument must be a abstract.Annular');
+      ott.utils.nargoutCheck(beam, nargout);
+
       p = inputParser;
       p.addParameter('masked_beam', []);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      % TODO: Multiple beams and type check
-      % TODO: Use beam power (needs to be scaled by mask area)
-
       % Get beam to mask
       masked_beam = p.Results.masked_beam;
       if isempty(masked_beam)
         masked_beam = ott.beam.abstract.UniformFarfield([1;0]);
+        masked_beam.power = 4*pi./(2*pi*diff(beam.angles)).*beam.power;
       end
 
       beam = ott.beam.abstract.MaskedFarfield.Annular(beam.angles, ...

@@ -69,28 +69,20 @@ classdef TopHat < ott.beam.properties.TopHat ...
       assert(isa(beam, 'ott.beam.abstract.TopHat'), ...
           'First argument must be abstract.TopHat');
 
-      if numel(beam) > 1
-        oldbeam = beam;
-        beam = ott.beam.Array('coherent', size(beam));
-        for ii = 1:numel(oldbeam)
-          beam(ii) = ott.beam.Ray(oldbeam(ii), varargin{:});
-        end
-      else
-        radius = linspace(0, beam.radius, 100);
-        phi = linspace(0, 2*pi, 100);
-        [R, P, Z] = meshgrid(radius, phi, 0);
-        X = R .* sin(P);
-        Y = R .* cos(P);
-        xyz = [X(:), Y(:), Z(:)].';
+      radius = linspace(0, beam.radius, 100);
+      phi = linspace(0, 2*pi, 100);
+      [R, P, Z] = meshgrid(radius, phi, 0);
+      X = R .* sin(P);
+      Y = R .* cos(P);
+      xyz = [X(:), Y(:), Z(:)].';
 
-        vdir = [0;0;1].*ones(1, size(xyz, 2));
-        vpol = [1;0;0].*ones(1, size(xyz, 2));
+      vdir = [0;0;1].*ones(1, size(xyz, 2));
+      vpol = [1;0;0].*ones(1, size(xyz, 2));
 
-        directionSet = ott.beam.Ray.DirectionSet(vdir, vpol);
-        beam = ott.beam.Ray.like(beam, 'origin', xyz, ...
-            'directionSet', directionSet, ...
-            'field', beam.polarisation, varargin{:});
-      end
+      directionSet = ott.beam.Ray.DirectionSet(vdir, vpol);
+      beam = ott.beam.Ray.like(beam, 'origin', xyz, ...
+          'directionSet', directionSet, ...
+          'field', beam.polarisation, varargin{:});
     end
 
     function beam = ott.beam.abstract.MaskedNearfield3d(beam, varargin)
@@ -99,22 +91,13 @@ classdef TopHat < ott.beam.properties.TopHat ...
       assert(isa(beam, 'ott.beam.abstract.TopHat'), ...
           'First argument must be abstract.TopHat');
 
-      if numel(beam) > 1
-        oldbeam = beam;
-        beam = ott.beam.Array('coherent', size(beam));
-        for ii = 1:numel(oldbeam)
-          beam(ii) = ott.beam.abstract.MaskedNearfield3d(...
-              oldbeam(ii), varargin{:});
-        end
-      else
-        plane = ott.beam.abstract.PlaneWave.FromDirection(...
-            'origin', [0;0;0], 'direction', [0;0;1], ...
-            'polarisation', [1;0;0], 'field', beam.polarisation);
+      plane = ott.beam.abstract.PlaneWave.FromDirection(...
+          'origin', [0;0;0], 'direction', [0;0;1], ...
+          'polarisation', [1;0;0], 'field', beam.polarisation);
 
-        mask = @(xyz) vecnorm(xyz(2:3, :)) <= beam.radius;
+      mask = @(xyz) vecnorm(xyz(2:3, :)) <= beam.radius;
 
-        beam = ott.beam.abstract.MaskedNearfield3d(mask, plane);
-      end
+      beam = ott.beam.abstract.MaskedNearfield3d(mask, plane);
     end
   end
 

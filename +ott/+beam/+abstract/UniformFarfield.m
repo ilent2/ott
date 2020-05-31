@@ -97,9 +97,14 @@ classdef UniformFarfield < ott.beam.abstract.CastNearfield ...
       beam.polarisation = val(:);
     end
 
-    function power = get.power(beam, val)
+    function power = get.power(beam)
       % TODO: Check this
       power = 4*pi*sum(abs(beam.polarisation).^2);
+    end
+    function beam = set.power(beam, val)
+      % Scale polarisation
+      beam.polarisation = beam.polarisation ...
+          ./ abs(beam.polarisation) .* sqrt(val ./ (4*pi));
     end
   end
 end

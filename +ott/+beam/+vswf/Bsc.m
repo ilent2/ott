@@ -220,28 +220,22 @@ classdef Bsc < ott.beam.Beam ...
 
       bsc = ott.beam.vswf.Array(array_type, beam_data);
     end
-    
-    function beam = defaultArrayType(~, array_type, elements)
+
+    function beam = defaultArrayType(beam, array_type, elements)
       % Construct a new array for this type
-      
-      if iscell(elements)
-        isCompatible = true;
-        for ii = 1:numel(elements)
-          isCompatible = isCompatible & isa(elements{ii}, 'ott.beam.vswf.Bsc');
-        end
-        
-        if ~ismatrix(elements) || min(size(elements)) ~= 1 || ~isCompatible
-          beam = ott.beam.vswf.Array(array_type, elements);
-        else
-          error('Not yet implemented');
-        end
+
+      if beam.contains('array')
+        assert(strcmpi(array_type, 'array'), ...
+            'type must be array for beams containing generic arrays');
+      elseif beam.contains('incoherent')
+        assert(strcmpi(array_type, {'array', 'incoherent'}), ...
+            'type must be array/incoherent for incoherent content');
+      end
+
+      if nargin == 2
+        beam = @(arg) ott.beam.vswf.Array(array_type, arg);
       else
-        if numel(elements) > 2 || min(elements) ~= 1
-          beam = ott.beam.vswf.Array(array_type, elements);
-        else
-          beam = ott.beam.vswf.Bsc.empty(elements, ...
-            'array_type', array_type);
-        end
+        beam = ott.beam.vswf.Array(array_type, elements);
       end
     end
 

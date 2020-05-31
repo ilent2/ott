@@ -14,7 +14,7 @@ classdef PlaneWave < ott.beam.abstract.PlaneWaveStem ...
 %   - DirectionSet    -- Construct a directionSet
 %
 % Casts
-%   - Beam      -- Uses PlaneWave
+%   - Beam      -- (Sealed) Uses PlaneWave
 %
 % All other casts inherited from base.
 
@@ -72,7 +72,7 @@ classdef PlaneWave < ott.beam.abstract.PlaneWaveStem ...
     end
   end
 
-  methods
+  methods (Sealed)
     function beam = ott.beam.Beam(varargin)
       % Cast to PlaneWave
       beam = ott.beam.PlaneWave(varargin{:});

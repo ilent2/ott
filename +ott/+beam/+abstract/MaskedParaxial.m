@@ -17,11 +17,7 @@ classdef MaskedParaxial < ott.beam.abstract.CastNearfield ...
 %   - mapping       -- Mapping for far-field to paraxial conversion
 %   - direction     -- Mask direction (positive or negative hemisphere)
 %
-% Supported casts
-%   - Beam
-%   - Bsc
-%   - abstract.InterpParaxial
-%   - abstract.InterpFarfield -- (Inherited)
+% All casts inherited from base.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

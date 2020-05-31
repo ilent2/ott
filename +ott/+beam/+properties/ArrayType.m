@@ -7,7 +7,6 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
 %
 % Methods
 %   - contains        -- Query if a type is contained in the array
-%   - isa             -- Determine if input matches specified class
 %   - plus            -- Provides addition of coherent beams
 %   - cat             -- Concatenation of beams and arrays
 %   - vertcat         -- Vertical concatenation of beams and arrays
@@ -73,27 +72,8 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
       b = strcmpi(beam.array_type, type);
     end
 
-    function b = isa(beam, strType)
-      % Determine if input is object of specified class.
-      %
-      % In addition to the builtin-functionality provided by isa,
-      % this method returns true for types
-      %
-      %    - ott.beam.Coherent  --   if `array_type = 'cohereht'`
-      %    - ott.beam.Incoherent  -- if `array_type = 'incohereht'`
-
-      if strcmpi(strType, 'ott.beam.Coherent')
-        b = strcmpi(beam.array_type, 'coherent');
-      elseif strcmpi(strType, 'ott.beam.Incoherent')
-        b = strcmpi(beam.array_type, 'incoherent');
-      else
-        b = builtin('isa', beam, strType);
-      end
-    end
-    
-    function beam = defaultArrayType(~, array_type, elements)
-      % Construct a new array for this type
-      beam = ott.beam.Array(array_type, elements);
+    function beam = ott.beam.abstract.Beam(beam)
+      beam = ott.beam.abstract.ArrayAdapter(beam);
     end
 
     function beam = plus(b1, b2)

@@ -141,6 +141,24 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
           unmatched{:});
     end
 
+    function beam = defaultArrayType(beam, array_type, elements)
+      % Construct a new array for this type
+
+      if beam.contains('array')
+        assert(strcmpi(array_type, 'array'), ...
+            'type must be array for beams containing generic arrays');
+      elseif beam.contains('incoherent')
+        assert(strcmpi(array_type, {'array', 'incoherent'}), ...
+            'type must be array/incoherent for incoherent content');
+      end
+
+      if nargin == 2
+        beam = @(arg) ott.beam.Ray(arg, 'array_type', array_type);
+      else
+        beam = ott.beam.Ray(elements, 'array_type', array_type);
+      end
+    end
+
     function ray = focus(ray, location)
       % Focus rays to a point
       %

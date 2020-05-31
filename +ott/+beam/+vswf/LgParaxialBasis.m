@@ -353,9 +353,9 @@ classdef LgParaxialBasis < ott.beam.vswf.Bsc
       %     ``multiple_bsc = bsc .* weights``.
       %
       %   - mapping (enum) -- Mapping method for paraxial far-field.
-      %     Can be either 'sintheta' or 'tantheta' (small angle).
+      %     Can be either 'sin' or 'tan' (small angle).
       %     For a discussion of this parameter, see Documentation
-      %     (:ref:`conception-angular-scaling`).  Default: ``'sintheta'``.
+      %     (:ref:`conception-angular-scaling`).  Default: ``'sin'``.
       %
       %   - truncation_angle (numeric) -- Truncation angle (in radians)
       %     for input aperture cut-off.  Default: ``pi/2``,
@@ -367,7 +367,7 @@ classdef LgParaxialBasis < ott.beam.vswf.Bsc
       p.addOptional('arg3', [], @isnumeric);
       p.addOptional('arg4', [], @isnumeric);
       p.addParameter('weights', []);
-      p.addParameter('mapping', 'sintheta');
+      p.addParameter('mapping', 'sin');
       p.addParameter('truncation_angle', pi/2);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
@@ -505,10 +505,10 @@ classdef LgParaxialBasis < ott.beam.vswf.Bsc
       waist = bsc.waist;
 
       switch bsc.mapping
-        case 'sintheta'
+        case 'sin'
           rw = 2*(waist).^2 .* sin(theta).^2;
           dr = waist .* abs(cos(theta));
-        case 'tantheta'
+        case 'tan'
           rw = 2*(waist).^2 .* tan(theta).^2;
           dr = waist .* (sec(theta)).^2;
         otherwise
@@ -560,13 +560,12 @@ classdef LgParaxialBasis < ott.beam.vswf.Bsc
   end
 
   methods % Getters/setters
-    % mapping  -- set the paraxial mapping function
     % truncation_angle  -- set the truncation angle
     % waist  -- set the beam waist
 
     function bsc = set.mapping(bsc, val)
-      assert(any(strcmpi(val, {'sintheta', 'tantheta'})), ...
-          'mapping must be ''sintheta'' or ''tantheta''');
+      assert(any(strcmpi(val, {'sin', 'tan'})), ...
+          'mapping must be ''sin'' or ''tan''');
       assert(numel(bsc) == 0, ...
           'Can''t change mapping once beams have been added');
       bsc.mapping = val;

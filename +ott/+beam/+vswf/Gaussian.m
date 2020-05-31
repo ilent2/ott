@@ -1,6 +1,6 @@
 classdef Gaussian < ott.beam.vswf.BscScalar ...
     & ott.beam.properties.Gaussian ...
-    & ott.beam.utils.FarfieldMapping
+    & ott.beam.properties.FarfieldMapping
 % Gaussian beam VSWF representation using LG-paraxial point matching.
 % Inherits from :class:`ott.beam.vswf.BscScalar`,
 % :class:`ott.beam.properties.Gaussian`.
@@ -24,7 +24,7 @@ classdef Gaussian < ott.beam.vswf.BscScalar ...
       % Construct an array of like-properties
 
       % Direct base class likeProperties methods
-      args = ott.beam.utils.FarfieldMapping.likeProperties(other, args);
+      args = ott.beam.properties.FarfieldMapping.likeProperties(other, args);
       args = ott.beam.vswf.BscScalar.likeProperties(other, args);
       args = ott.beam.properties.Gaussian.likeProperties(other, args);
 
@@ -64,23 +64,25 @@ classdef Gaussian < ott.beam.vswf.BscScalar ...
       %     Default: ``1.0``.
       %
       %   - mapping (enum) -- Mapping method for paraxial far-field.
-      %     Can be either 'sintheta' or 'tantheta' (small angle).
+      %     Can be either 'sin', 'tan' (small angle) or 'theta'.
       %     For a discussion of this parameter, see Documentation
-      %     (:ref:`conception-angular-scaling`).  Default: ``'sintheta'``.
+      %     (:ref:`conception-angular-scaling`).  Default: ``'sin'``.
 
       p = inputParser;
       p.addOptional('waist', [], @isnumeric);
-      p.addParameter('mapping', 'sintheta');
+      p.addParameter('mapping', 'sin');
       p.addParameter('polarisation', [1, 1i]);
       p.addParameter('power', 1.0);
+      p.addParameter('basis', 'regular');
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      bsc = bsc@ott.beam.utils.FarfieldMapping(p.Results.mapping);
+      bsc = bsc@ott.beam.properties.FarfieldMapping(...
+          p.Results.mapping, 'hemisphere', 'neg');
       bsc = bsc@ott.beam.properties.Gaussian(p.Results.waist, ...
           'polarisation', p.Results.polarisation, unmatched{:});
-      bsc = bsc@ott.beam.vswf.BscScalar();
+      bsc = bsc@ott.beam.vswf.BscScalar('basis', p.Results.basis);
 
       % Construct a beam LgParaxialBasis beam
       data = ott.beam.vswf.LgParaxialBasis.FromLgMode(...

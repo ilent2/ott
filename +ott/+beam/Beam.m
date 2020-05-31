@@ -223,13 +223,13 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
       beam = ott.beam.vswf.FarfieldPm(varargin{:});
     end
 
-    function beam = ott.beam.vswf.FarfieldPm(varargin)
+    function beam = ott.beam.vswf.FarfieldPm(beam, varargin)
       % TODO: implement
+
+      error('Not yet implemented');
 
       % For abstract beams, this invokes the Beam cast.
       [Etp, Htp] = beam.ehfarfield(tp);
-
-      error('Not yet implemented');
     end
 
     function beam = ott.beam.abstract.InterpFarfield(beam, varargin)
@@ -411,7 +411,7 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
       %   - rtp (2xN | 3xN numeric) -- Far-field locations.
       %     radial coordinate is ignored by most methods.
 
-      E = beam.hfarfieldInternal(rtp, varargin{:});
+      E = beam.efarfieldInternal(rtp, varargin{:});
     end
 
     function H = hfarfield(beam, rtp, varargin)
@@ -424,7 +424,7 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
       %
       % See :meth:`efarfield` for parameters.
 
-      H = beam.efarfieldInternal(rtp, varargin{:});
+      H = beam.hfarfieldInternal(rtp, varargin{:});
     end
 
     function [E, H] = ehfarfield(beam, rtp, varargin)

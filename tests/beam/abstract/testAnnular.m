@@ -1,8 +1,8 @@
-function tests = testBessel
+function tests = testAnnular
   tests = functiontests(localfunctions);
 end
 
-function setupOnce(testCase)
+function setupOnce(~)
   addpath('../../../');
 end
 

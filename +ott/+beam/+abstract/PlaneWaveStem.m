@@ -11,16 +11,14 @@ classdef (Abstract) PlaneWaveStem < ott.beam.properties.PlaneWave ...
 %
 % Supported casts
 %   - Beam            -- Raises an error, should be overloaded in sub-class
-%   - Coherent        -- Uses Beam, sets array_type
-%   - Incoherent      -- Uses Beam, sets array_type
-%   - Array           -- Uses Beam, sets array_type
-%   - PlaneWave
-%   - Ray
+%   - PlaneWave       -- (Sealed)
+%   - Ray             -- (Sealed)
 %   - abstract.Ray
 %   - abstract.PlaneWave
 %   - vswf.Bsc        -- Uses vswf.PlaneWave
 %   - vswf.PlaneWave
-%   - vswf.PlaneBasis
+%   - vswf.PlaneBasis -- (Sealed)
+%   - Negative        -- (Sealed) Negates fields
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -97,36 +95,9 @@ classdef (Abstract) PlaneWaveStem < ott.beam.properties.PlaneWave ...
           'field', p.Results.field);
     end
 
-    function beam = uminus(beam)
-      % Negate beam field
-      beam.field = -beam.field;
-    end
-
     function beam = ott.beam.Beam(varargin)
       % Cast to PlaneWave
       error('Method should be overloaded in sub-class');
-    end
-
-    %
-    % Array types
-    %
-
-    function beam = ott.beam.Coherent(varargin)
-      % Cast to PlaneWave
-      beam = ott.beam.Beam(varargin{:});
-      beam.array_type = 'coherent';
-    end
-
-    function beam = ott.beam.Incoherent(varargin)
-      % Cast to PlaneWave
-      beam = ott.beam.Beam(varargin{:});
-      beam.array_type = 'incoherent';
-    end
-
-    function beam = ott.beam.Array(varargin)
-      % Cast to PlaneWave
-      beam = ott.beam.Beam(varargin{:});
-      beam.array_type = 'array';
     end
 
     %
@@ -135,27 +106,13 @@ classdef (Abstract) PlaneWaveStem < ott.beam.properties.PlaneWave ...
 
     function beam = ott.beam.abstract.Ray(varargin)
       % Cast to abstract ray
-      beam = castAbstractHelper(@ott.beam.abstract.Ray.like, varargin{:});
+      beam = castHelper(@ott.beam.abstract.Ray.like, varargin{:});
     end
 
     function beam = ott.beam.abstract.PlaneWave(varargin)
       % Cast to abstract ray
-      beam = castAbstractHelper(@ott.beam.abstract.PlaneWave.like, ...
+      beam = castHelper(@ott.beam.abstract.PlaneWave.like, ...
           varargin{:});
-    end
-
-    %
-    % Generic beams
-    %
-
-    function beam = ott.beam.PlaneWave(beam, varargin)
-      % Cast to PlaneWave
-      beam = castArrayHelper(@ott.beam.PlaneWave.like, beam, varargin{:});
-    end
-
-    function beam = ott.beam.Ray(beam, varargin)
-      % Cast to Ray
-      beam = castArrayHelper(@ott.beam.Ray.like, beam, varargin{:});
     end
 
     %
@@ -169,7 +126,24 @@ classdef (Abstract) PlaneWaveStem < ott.beam.properties.PlaneWave ...
 
     function beam = ott.beam.vswf.PlaneWave(beam, varargin)
       % Cast to PlaneWave
-      beam = castArrayHelper(@ott.beam.vswf.PlaneWave.like, beam, varargin{:});
+      beam = castHelper(@ott.beam.vswf.PlaneWave.like, beam, varargin{:});
+    end
+  end
+
+  methods (Sealed)
+    function beam = ott.beam.abstract.Negative(beam, varargin)
+      % Negate fields
+      beam.field = -beam.field;
+    end
+
+    function beam = ott.beam.PlaneWave(beam, varargin)
+      % Cast to PlaneWave
+      beam = castArrayHelper(@ott.beam.PlaneWave.like, beam, varargin{:});
+    end
+
+    function beam = ott.beam.Ray(beam, varargin)
+      % Cast to Ray
+      beam = castArrayHelper(@ott.beam.Ray.like, beam, varargin{:});
     end
 
     function beam = ott.beam.vswf.PlaneBasis(varargin)
@@ -183,7 +157,7 @@ classdef (Abstract) PlaneWaveStem < ott.beam.properties.PlaneWave ...
     end
   end
 
-  methods (Access=protected)
+  methods (Sealed, Access=protected)
     function beam = castArrayHelper(cast, beam, varargin)
       % Helper for casts
 

@@ -1,6 +1,6 @@
 classdef Gaussian < ott.beam.paraxial.Paraxial ...
     & ott.beam.properties.Gaussian ...
-    & ott.beam.utils.VariablePower
+    & ott.beam.properties.VariablePower
 % Paraxial approximation of a Gaussian beam
 % Inherits from :class:`Paraxial` and :class:`ott.beam.properties.Gaussian`.
 %
@@ -45,7 +45,7 @@ classdef Gaussian < ott.beam.paraxial.Paraxial ...
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
-      args = ott.beam.utils.VariablePower.likeProperties(other, varargin);
+      args = ott.beam.properties.VariablePower.likeProperties(other, args);
       args = ott.beam.properties.Gaussian.likeProperties(other, args);
     end
 
@@ -57,13 +57,13 @@ classdef Gaussian < ott.beam.paraxial.Paraxial ...
       %
       % See constructor for arguments.
 
-      args = ott.beam.abstract.Gaussian.likeProperties(other, varargin);
+      args = ott.beam.paraxial.Gaussian.likeProperties(other, varargin);
       beam = ott.beam.paraxial.Gaussian(args{:});
     end
   end
 
   methods
-    function beam = Gaussian(waist, varargin)
+    function beam = Gaussian(varargin)
       % Construct a new Gaussian paraxial beam representation
       %
       % Usage

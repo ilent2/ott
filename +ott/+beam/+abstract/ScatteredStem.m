@@ -15,14 +15,14 @@ classdef (Abstract) ScatteredStem < ott.beam.abstract.CastBoth
   methods
     function beam = ott.beam.Beam(beam, varargin)
       % Get total or scattered beam
-      
+
       assert(isa(beam, 'ott.beam.abstract.ScatteredStem'), ...
         'First argument must be a beam');
-      
+
       if strcmpi(beam.type, 'scattered')
-        beam = [beam.scattered_beam];
+        beam = beam.scattered_beam;
       else
-        beam = [beam.total_beam];
+        beam = beam.total_beam;
       end
     end
   end

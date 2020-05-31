@@ -18,7 +18,7 @@ classdef Gaussian < ott.beam.properties.Gaussian ...
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
-      args = ott.beam.utils.VariablePower.likeProperties(other, args);
+      args = ott.beam.properties.VariablePower.likeProperties(other, args);
       args = ott.beam.properties.Gaussian.likeProperties(other, args);
     end
 

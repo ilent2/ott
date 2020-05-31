@@ -1,14 +1,61 @@
-function tests = testBessel
+function tests = testBeam
   tests = functiontests(localfunctions);
 end
 
-function setupOnce(testCase)
+function setupOnce(~)
   addpath('../../../');
 end
 
 % Abstract class, no constructor
 
-function testVisualise(testCase)
+function testContains(testCase)
+
+  beam1 = ott.beam.abstract.Gaussian(1.0);
+  beam2 = ott.beam.abstract.Gaussian(1.0);
+
+  testCase.verifyEqual(beam1.arrayContains('incoherent'), false);
+  testCase.verifyEqual(beam1.arrayContains('coherent'), false);
+  testCase.verifyEqual(beam1.arrayContains('array'), false);
+
+  beam = [beam1, beam2];
+  testCase.verifyEqual(beam.arrayContains('incoherent'), false);
+  testCase.verifyEqual(beam.arrayContains('coherent'), true);
+  testCase.verifyEqual(beam.arrayContains('array'), false);
+
+  beam = [beam1, beam2, ott.beam.Array('incoherent', [1, 1])];
+  testCase.verifyEqual(beam.arrayContains('incoherent'), true);
+  testCase.verifyEqual(beam.arrayContains('coherent'), true);
+  testCase.verifyEqual(beam.arrayContains('array'), false);
+
+end
+
+function testArrayCast(testCase)
+
+  beam1 = ott.beam.abstract.Gaussian(1.0);
+  beam2 = ott.beam.abstract.Gaussian(1.0);
+
+  cbeam = beam1.arrayCast(@ott.beam.paraxial.Gaussian);
+  testCase.verifyClass(cbeam, 'ott.beam.paraxial.Gaussian');
+
+  beam = [beam1, beam2];
+  cbeam = beam.arrayCast(@ott.beam.paraxial.Gaussian);
+  testCase.verifyClass(cbeam, 'ott.beam.Array');
+  testCase.verifyEqual(cbeam.array_type, 'coherent');
+
+  beam = [beam1, beam2, ott.beam.Array('incoherent', [1, 1])];
+  testCase.verifyWarning(@() beam.arrayCast(@ott.beam.Beam), ...
+    'ott:beam:abstract:Beam:not_coherent_array');
+
+  S = warning('off', 'ott:beam:abstract:Beam:not_coherent_array');
+  cbeam = beam.arrayCast(@ott.beam.Beam);
+  warning(S);
+
+  testCase.verifyClass(cbeam, 'ott.beam.Array');
+  testCase.verifyEqual(cbeam.array_type, 'array');
+
+end
+
+function testVisualise(~)
 
   beam = ott.beam.abstract.Gaussian(1.0);
 
@@ -18,35 +65,21 @@ function testVisualise(testCase)
   beam.visualise();
 
   % Test visualise far-field
-  beam.visualiseFarfield();
+  ott.beam.vswf.Bsc(beam, 'basis', 'incoming').visualiseFarfield();
 
   close(h);
 
 end
 
-function testCastArrayOfBeams(testCase)
+function testOperators(testCase)
 
-  % Cast with two beams
-  beam1 = ott.beam.abstract.Gaussian(1.0);
-  beam2 = ott.beam.abstract.HermiteGaussian(1.0, 1, -1);
-  beam_array = [beam1, beam2];
+  beam = ott.beam.abstract.Gaussian(1.0);
 
-  beam = ott.beam.Beam(beam_array);
-  testCase.assertClass(beam, 'ott.beam.Array');
-  testCase.verifyEqual(beam.array_type, 'coherent');
+  testCase.verifyClass(-beam, 'ott.beam.abstract.Negative', 'uminus');
 
-end
+  testCase.verifyEqual(beam + beam, [beam, beam], 'plus');
 
-function testCastArrayOfIncoherentArrays(testCase)
-
-  % Cast with coherent and incoherent beams
-  beam1 = ott.beam.abstract.Gaussian(1.0);
-  beam2 = ott.beam.abstract.Incoherent([1, 1]);
-  beam_array = [beam1, beam2];
-
-  beam = ott.beam.Beam(beam_array);
-  testCase.assertClass(beam, 'ott.beam.Array');
-  testCase.verifyEqual(beam.array_type, 'array');
+  testCase.verifyEqual(beam - beam, [beam, -beam], 'minus');
 
 end
 
@@ -55,29 +88,8 @@ function testCastArray(testCase)
   beam = ott.beam.abstract.Gaussian(1.0);
 
   beam = ott.beam.Array(beam);
-  testCase.assertClass('ott.beam.Array');
-  testCase.verifyEqual(beam.array_type, 'array');
-
-end
-
-
-function testCastCoherent(testCase)
-
-  beam = ott.beam.abstract.Gaussian(1.0);
-
-  beam = ott.beam.Coherent(beam);
-  testCase.assertClass('ott.beam.Array');
+  testCase.assertClass(beam, 'ott.beam.Array');
   testCase.verifyEqual(beam.array_type, 'coherent');
-
-end
-
-function testCastIncoherent(testCase)
-
-  beam = ott.beam.abstract.Gaussian(1.0);
-
-  beam = ott.beam.Incoherent(beam);
-  testCase.assertClass('ott.beam.Array');
-  testCase.verifyEqual(beam.array_type, 'incoherent');
 
 end
 

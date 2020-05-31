@@ -15,9 +15,8 @@ classdef Dipole < ott.beam.properties.Dipole ...
 %   - rotation      -- Orientation of the dipole
 %
 % Casts
-%   - Beam          -- Uses Dipole
-%   - Coherent      -- Uses Dipole (no need for beam.Array)
-%   - Dipole
+%   - Beam          -- (Sealed) Uses Dipole
+%   - Dipole        -- (Sealed)
 %   - vswf.Bsc      -- Uses vswf.Dipole
 %   - vswf.Dipole
 %
@@ -90,21 +89,6 @@ classdef Dipole < ott.beam.properties.Dipole ...
           'location', location, 'polarization', p.Results.polarization);
     end
 
-    function beam = ott.beam.Beam(varargin)
-      % Construct a new Dipole instance
-      beam = ott.beam.Dipole(varargin{:});
-    end
-
-    function beam = ott.beam.Coherent(varargin)
-      % Convert to Dipole
-      beam = ott.beam.Dipole(varargin{:});
-    end
-
-    function beam = ott.beam.Dipole(beam, varargin)
-      % Construct a new Dipole instance
-      beam = castArrayHelper(@ott.beam.vswf.Dipole.like, beam, varargin{:});
-    end
-
     function beam = ott.beam.vswf.Bsc(varargin)
       % Cast to vswf.Dipole
       beam = ott.beam.vswf.Dipole(varargin{:});
@@ -116,25 +100,26 @@ classdef Dipole < ott.beam.properties.Dipole ...
     end
   end
 
-  methods (Access=protected)
-    function beam = castArrayHelper(cast, beam, varargin)
+  methods (Sealed)
+    function beam = ott.beam.Beam(varargin)
       % Construct a new Dipole instance
-      %
-      % Arrays of dipoles are assumed to be coherent.  Use the
-      % Array or Incoherent classes if this is not the case.
+      beam = ott.beam.Dipole(varargin{:});
+    end
+
+    function beam = ott.beam.Dipole(beam, varargin)
+      % Construct a new Dipole instance
 
       assert(isa(beam, 'ott.beam.abstract.Dipole'), ...
           'First argument must be abstract.Dipole');
-
       ott.utils.nargoutCheck(beam, nargout);
 
       % Handle coherent beam arrays
       arg_location = [beam.position];
       arg_polarization = reshape([beam.polarization], [], 1);
 
-      beam = cast(beam, 'position', [0;0;0], 'rotation', eye(3), ...
-          'location', arg_location, 'polarization', arg_polarization, ...
-          varargin{:});
+      beam = ott.beam.Dipole.like(beam, 'position', [0;0;0], ...
+          'rotation', eye(3), 'location', arg_location, ...
+          'polarization', arg_polarization, varargin{:});
     end
   end
 

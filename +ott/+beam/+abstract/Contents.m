@@ -31,9 +31,6 @@
 % Generic beams (Beam)
 %   Scattered         -- Represents generic scattered beams
 %   ZeroScattered     -- Represents beams from zero-scattering methods
-%   Array             -- Represents generic arrays of beams
-%   Coherent          -- Represents arrays of coherent beams
-%   Incoherent        -- Represents arrays of incoherent beams
 %   Empty             -- Empty beam array element
 %   Negative          -- Negates fields of encapsulated beam
 %

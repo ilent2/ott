@@ -30,6 +30,10 @@ classdef Array < ott.beam.Beam ...
 %   - CombineCoherent   -- Combine coherent data from cell arrays
 %   - empty         -- Create an empty array
 
+% Copyright 2020 Isaac Lenton
+% This file is part of OTT, see LICENSE.md for information about
+% using/distributing this file.
+
   properties
     beams           % Internal cell array of beam objects
   end
@@ -49,6 +53,26 @@ classdef Array < ott.beam.Beam ...
 
       sz = [0, 0];
       beam = ott.beam.Array('array', sz);
+    end
+
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      if isa(other, 'ott.beam.Array')
+        ott.utils.addDefaultParameter('beams', other.beams, args);
+      end
+      args = ott.beam.properties.AnyArrayType.likeProperties(other, args);
+      args = ott.beam.Beam.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Construct an array like another
+
+      args = ott.beam.Array.likeProperties(other, varargin);
+      if isa(other, 'ott.beam.abstract.Empty') || isempty(other)
+        beam = ott.beam.Array.empty(args{:});
+      else
+        beam = ott.beam.Array(args{:});
+      end
     end
 
     function D = CombineCoherent(D)
@@ -77,11 +101,11 @@ classdef Array < ott.beam.Beam ...
   end
 
   methods
-    function beam = Array(array_type, arg)
+    function beam = Array(varargin)
       % Construct a new abstract beam array
       %
       % Usage
-      %   beam = Array(array_type, dim)
+      %   beam = Array(array_type, size)
       %
       %   beam = Array(array_type, beams)
       %
@@ -89,19 +113,42 @@ classdef Array < ott.beam.Beam ...
       %   - array_type (enum) -- Type of beam array.  Either
       %     'array', 'coherent' or 'incoherent'.
       %
-      %   - sz (N numeric) -- Size of the beam array.
+      %   - size (N numeric) -- Size of the beam array.
       %
       %   - beams (cell) -- Cell array of beams to form beam array.
 
-      beam = beam@ott.beam.properties.AnyArrayType(array_type);
+      p = inputParser;
+      p.addOptional('array_type', [], ...
+        @(x) any(strcmpi(x, {'coherent', 'incoherent', 'array'})));
+      p.addOptional('arg', [], @(x) isnumeric(x) | iscell(x));
+      p.addParameter('beams', [], @iscell);
+      p.addParameter('size', [], @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      % Store beams or create empty
-      if iscell(arg)
-        % Argument is beams
-        beam.beams = arg;
+      beam = beam@ott.beam.properties.AnyArrayType(p.Results.array_type);
+
+      hasArg = ~isempty(p.Results.arg);
+      hasBeams = ~isempty(p.Results.beams);
+      hasSz = ~isempty(p.Results.size);
+      assert(hasArg + hasBeams + hasSz == 1, ...
+          'Must provide only one of beams/size');
+
+      if hasBeams
+        beam.beams = p.Results.beams;
+      elseif hasSz
+        beam.beams = repmat({ott.beam.abstract.Empty}, p.Results.size);
       else
-        % Argument is size
-        beam.beams = repmat({ott.beam.abstract.Empty}, arg);
+        arg = p.Results.arg;
+
+        if iscell(arg)
+          % Argument is beams
+          beam.beams = arg;
+        else
+          % Argument is size
+          beam.beams = repmat({ott.beam.abstract.Empty}, arg);
+        end
       end
     end
 

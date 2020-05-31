@@ -9,9 +9,7 @@ classdef Empty < ott.beam.properties.Empty ...
 %
 % Supported casts
 %   - Beam        -- Creates an empty Array
-%   - Array       -- (Inherited from abstract.Beam)
-%   - Coherent    -- (Inherited from abstract.Beam)
-%   - Incoherent  -- (Inherited from abstract.Beam)
+%   - Array       -- (Sealed) Inherited from base
 %   - PlaneWave   -- Plane-wave array with no beams
 %   - Bsc         -- Bsc array with no beams
 %   - Ray         -- Empty array with no beams
@@ -32,39 +30,27 @@ classdef Empty < ott.beam.properties.Empty ...
     end
 
     function beam = ott.beam.Beam(beam, varargin)
-      beam = castArrayHelper(@ott.beam.Array.like, beam, ...
+      beam = castHelper(@ott.beam.Array.like, beam, ...
           'array_type', 'coherent', varargin{:});
     end
 
     function beam = ott.beam.vswf.Bsc(beam, varargin)
-      beam = castArrayHelper(@ott.beam.vswf.Bsc.like, beam, ...
+      beam = castHelper(@ott.beam.vswf.Bsc.like, beam, ...
           'array_type', 'coherent', varargin{:});
     end
 
     function beam = ott.beam.PlaneWave(beam, varargin)
-      beam = castArrayHelper(@ott.beam.PlaneWave.like, beam, ...
+      beam = castHelper(@ott.beam.PlaneWave.like, beam, ...
           'array_type', 'coherent', varargin{:});
     end
 
     function beam = ott.beam.Ray(beam, varargin)
-      beam = castArrayHelper(@ott.beam.Ray.like, beam, ...
+      beam = castHelper(@ott.beam.Ray.like, beam, ...
           'array_type', 'coherent', varargin{:});
     end
 
     function beam = ott.beam.Dipole(beam, varargin)
-      beam = castArrayHelper(@ott.beam.Dipole.like, beam, varargin{:});
-    end
-  end
-
-  methods (Access=protected)
-    function beam = castArrayHelper(cast, beam, varargin)
-      % Helper for casts
-
-      assert(isa(beam, 'ott.beam.abstract.Empty'), ...
-          'First argument must be a abstract.Empty');
-      ott.utils.nargoutCheck(beam, nargout);
-
-      beam = cast(beam(1), varargin{:});
+      beam = castHelper(@ott.beam.Dipole.like, beam, varargin{:});
     end
   end
 end

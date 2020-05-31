@@ -6,17 +6,14 @@
 %
 % Tests
 %   testAnnular.m
-%   testArray.m
 %   testBeam.m
 %   testBessel.m
-%   testCoherent.m
 %   testDipole.m
 %   testEmpty.m
 %   testFocussedTopHat.m
 %   testGaussian.m
 %   testHermiteGaussian.m
 %   testInceGaussian.m
-%   testIncoherent.m
 %   testLaguerreGaussian.m
 %   testMaskedNearfield3d.m
 %   testMaskedFarfield.m

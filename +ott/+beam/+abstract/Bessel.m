@@ -6,9 +6,9 @@ classdef Bessel < ott.beam.properties.Bessel ...
 %
 % Casts
 %   Ray
-%   vswf.Bsc           -- Default Bsc cast, uses vswf.Bessel
+%   vswf.Bsc
 %   vswf.Bessel
-%   vswf.BesselBasis
+%   vswf.BesselBasis   -- (Sealed) Cast to array of Bsc
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -38,38 +38,37 @@ classdef Bessel < ott.beam.properties.Bessel ...
       beam = castHelper(@ott.beam.vswf.Bessel.like, varargin{:});
     end
 
-    function beam = ott.beam.vswf.BesselBasis(varargin)
-      % Cast to vswf.Bessel beam
-      beam = castArrayHelper(@ott.beam.vswf.BesselBasis.like, varargin{:});
-    end
-
     function beam = ott.beam.Ray(beam, varargin)
       % Construct a Ray beam
 
       assert(isa(beam, 'ott.beam.abstract.Bessel'), ...
           'First argument must be abstract.Bessel');
 
-      if numel(beam) > 1
-        oldbeam = beam;
-        beam = ott.beam.Array('coherent', size(beam));
-        for ii = 1:numel(oldbeam)
-          beam(ii) = ott.beam.Ray(oldbeam(ii), varargin{:});
-        end
-      else
-        phi = linspace(0, 2*pi, 100);
-        theta = beam.angle.*ones(size(phi));
-        radius = 10.*ones(size(phi));
+      phi = linspace(0, 2*pi, 100);
+      theta = beam.angle.*ones(size(phi));
+      radius = 10.*ones(size(phi));
 
-        rtp = [radius(:), theta(:), phi(:)].';
-        vrtp = [0*radius(:), ones(size(theta(:))), 0*phi(:)].';
-        [vxyz, xyz] = ott.utils.rtpv2xyzv(vrtp, rtp);
+      rtp = [radius(:), theta(:), phi(:)].';
+      vrtp = [0*radius(:), ones(size(theta(:))), 0*phi(:)].';
+      [vxyz, xyz] = ott.utils.rtpv2xyzv(vrtp, rtp);
 
-        Etp = [1;0].*ones(1, size(xyz, 2));
+      Etp = [1;0].*ones(1, size(xyz, 2));
 
-        directionSet = ott.beam.Ray.DirectionSet(-xyz, vxyz);
-        beam = ott.beam.Ray.like(beam, 'origin', xyz, ...
-            'directionSet', directionSet, 'field', Etp, varargin{:});
-      end
+      directionSet = ott.beam.Ray.DirectionSet(-xyz, vxyz);
+      beam = ott.beam.Ray.like(beam, 'origin', xyz, ...
+          'directionSet', directionSet, 'field', Etp, varargin{:});
+    end
+  end
+
+  methods (Sealed)
+    function beam = ott.beam.vswf.BesselBasis(beam, varargin)
+      % Cast to vswf.Bessel beam
+
+      assert(isa(beam, 'ott.beam.abstract.Beam'), ...
+          'First argument must be a abstract.Beam');
+      ott.utils.nargoutCheck(beam, nargout);
+
+      beam = ott.beam.vswf.BesselBasis.like(beam, varargin{:});
     end
   end
 end

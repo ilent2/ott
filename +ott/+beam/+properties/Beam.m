@@ -110,6 +110,38 @@ classdef (Abstract) Beam < ott.utils.RotationPositionProp
       beam.rotation = p.Results.rotation;
     end
 
+    function b = contains(beam, array_type)
+      % Query if a array_type is contained in the array.
+      %
+      % Usage
+      %   b = beam.contains(array_type)
+      %
+      % Parameters
+      %   - array_type (enum) -- An array type, must be one of
+      %     'array', 'coherent' or 'incoherent'.
+
+      % Terminal case: not an array.
+      b = false;
+    end
+
+    function beam = defaultArrayType(beam, array_type, elements)
+      % Construct a new array for this type
+
+      if beam.contains('array')
+        assert(strcmpi(array_type, 'array'), ...
+            'type must be array for beams containing generic arrays');
+      elseif beam.contains('incoherent')
+        assert(any(strcmpi(array_type, {'array', 'incoherent'})), ...
+            'type must be array/incoherent for incoherent content');
+      end
+
+      if nargin == 2
+        beam = @(arg) ott.beam.Array(array_type, arg);
+      else
+        beam = ott.beam.Array(array_type, elements);
+      end
+    end
+
     function beam = setWavelength(beam, val, mode)
       % Change the wavelength of the beam
       %

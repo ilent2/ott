@@ -19,23 +19,6 @@ function testConvertBeam(testCase)
   beam = ott.beam.PlaneWave(abs_beam);
   testCase.verifyClass(beam, 'ott.beam.PlaneWave');
   verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
-
-  % Array types (should match ott.beam.Beam cast)
-  
-  beam = ott.beam.Array(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.PlaneWave');
-  testCase.verifyEqual(beam.array_type, 'array', 'atype');
-  verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
-
-  beam = ott.beam.Incoherent(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.PlaneWave');
-  testCase.verifyEqual(beam.array_type, 'incoherent', 'atype');
-  verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
-
-  beam = ott.beam.Coherent(abs_beam);
-  testCase.verifyClass(beam, 'ott.beam.PlaneWave');
-  testCase.verifyEqual(beam.array_type, 'coherent', 'atype');
-  verifyProperties(testCase, ?ott.beam.abstract.PlaneWave, beam, abs_beam);
   
   % VSWF
   

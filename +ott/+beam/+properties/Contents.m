@@ -36,7 +36,6 @@
 %
 % Array types
 %   ArrayType           -- Base class for arrays of beams (non-abstract)
-%   AbstractArray       -- Base class for abstract arrays of beams
 %   CoherentArrayType   -- Specialisation for coherent array types
 %   IncoherentArrayType -- Specialisation for incoherent array types
 %   ArrayArrayType      -- Specialisation for generic array types
