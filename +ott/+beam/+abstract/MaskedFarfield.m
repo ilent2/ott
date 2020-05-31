@@ -8,7 +8,7 @@ classdef MaskedFarfield < ott.beam.properties.MaskedBeam ...
 %   - Annular       -- Creates a annular profile
 %
 % Properties
-%   - beam          -- The masked beam (any ott.beam.Beam)
+%   - masked_beam   -- The masked beam (any ott.beam.Beam)
 %   - mask          -- Function defining the mask
 %
 % All casts inherited from base.

@@ -38,7 +38,6 @@ classdef MaskedBeam < ott.beam.properties.Beam
     end
   end
 
-
   methods
     function beam = MaskedBeam(varargin)
       % Construct masked paraxial properties
@@ -62,6 +61,21 @@ classdef MaskedBeam < ott.beam.properties.Beam
       beam = beam@ott.beam.properties.Beam(unmatched{:});
       beam.mask = p.Results.mask;
       beam.masked_beam = p.Results.masked_beam;
+    end
+
+    function b = contains(beam, array_type)
+      % Query if a array_type is contained in the array.
+      %
+      % Applies contains to the masked beam.
+      %
+      % Usage
+      %   b = beam.contains(array_type)
+      %
+      % Parameters
+      %   - array_type (enum) -- An array type, must be one of
+      %     'array', 'coherent' or 'incoherent'.
+
+      b = beam.masked_beam.contains(array_type);
     end
   end
 

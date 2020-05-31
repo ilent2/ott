@@ -25,6 +25,21 @@ classdef Negative < ott.beam.abstract.Beam
 
       beam.data = other;
     end
+
+    function b = contains(beam, array_type)
+      % Query if a array_type is contained in the array.
+      %
+      % Applies contains to the data.
+      %
+      % Usage
+      %   b = beam.contains(array_type)
+      %
+      % Parameters
+      %   - array_type (enum) -- An array type, must be one of
+      %     'array', 'coherent' or 'incoherent'.
+
+      b = beam.data.contains(array_type);
+    end
   end
 
   methods (Hidden)

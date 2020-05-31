@@ -18,6 +18,28 @@ function testConstructor(testCase)
 
 end
 
+function testContains(testCase)
+
+  beam1 = ott.beam.abstract.Gaussian(1.0);
+  masked_beam = ott.beam.Array('incoherent', {beam1});
+  mask = @(x) true(size(x, 2));
+  beam = ott.beam.abstract.MaskedFarfield(mask, masked_beam);
+
+  testCase.verifyEqual(beam.contains('incoherent'), true, '1incoherent');
+  testCase.verifyEqual(beam.contains('coherent'), false, '1coherent');
+  testCase.verifyEqual(beam.contains('array'), false, '1array');
+
+  beam1 = ott.beam.abstract.Gaussian(1.0);
+  masked_beam = ott.beam.Array('coherent', {beam1});
+  mask = @(x) true(size(x, 2));
+  beam = ott.beam.abstract.MaskedFarfield(mask, masked_beam);
+
+  testCase.verifyEqual(beam.contains('incoherent'), false, '2incoherent');
+  testCase.verifyEqual(beam.contains('coherent'), true, '2coherent');
+  testCase.verifyEqual(beam.contains('array'), false, '2array');
+
+end
+
 function testTopHat(testCase)
 
   background = ott.beam.abstract.UniformFarfield([1;0]);

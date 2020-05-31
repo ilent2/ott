@@ -29,5 +29,19 @@ function testConstructor(testCase)
 
 end
 
+function testContains(testCase)
+
+  beam1 = ott.beam.abstract.Gaussian(1.0);
+  array_beam = ott.beam.Array('incoherent', {beam1});
+  shape = ott.shapes.Sphere(1.0);
+  particle = ott.scat.shapeforce.Shape(shape, 1.2);
+  beam = ott.beam.abstract.ZeroScattered(particle, array_beam);
+
+  testCase.verifyEqual(beam.contains('incoherent'), true, '1incoherent');
+  testCase.verifyEqual(beam.contains('coherent'), false, '1coherent');
+  testCase.verifyEqual(beam.contains('array'), false, '1array');
+
+end
+
 % ott.beam.Beam cast tested in testScattered.
 

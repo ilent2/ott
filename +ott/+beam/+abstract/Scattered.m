@@ -63,6 +63,21 @@ classdef Scattered < ott.beam.abstract.ScatteredStem ...
       beam = beam@ott.beam.properties.Scattered(varargin{:});
     end
 
+    function b = contains(beam, array_type)
+      % Query if a array_type is contained in the array.
+      %
+      % Casts the beam and applies the contains method.
+      %
+      % Usage
+      %   b = beam.contains(array_type)
+      %
+      % Parameters
+      %   - array_type (enum) -- An array type, must be one of
+      %     'array', 'coherent' or 'incoherent'.
+
+      b = ott.beam.Beam(beam).contains(array_type);
+    end
+
     function varargout = force(ibeam, varargin)
       % Calculate change in linear momentum between beams.
       % For details on usage/arguments see :meth:`forcetorque`.

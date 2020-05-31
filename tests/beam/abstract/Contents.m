@@ -20,7 +20,6 @@
 %   testMaskedParaxial.m
 %   testNegative.m
 %   testParaxial.m
-%   testParaxialMasked.m
 %   testPlaneWave.m
 %   testPlaneWaveStem.m
 %   testRay.m

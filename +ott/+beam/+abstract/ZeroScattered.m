@@ -52,6 +52,21 @@ classdef ZeroScattered < ott.beam.properties.ZeroScattered ...
       beam = beam@ott.beam.properties.ZeroScattered(varargin{:});
     end
 
+    function b = contains(beam, array_type)
+      % Query if a array_type is contained in the array.
+      %
+      % Applies contains to the incident beam.
+      %
+      % Usage
+      %   b = beam.contains(array_type)
+      %
+      % Parameters
+      %   - array_type (enum) -- An array type, must be one of
+      %     'array', 'coherent' or 'incoherent'.
+
+      b = beam.incident_beam.contains(array_type);
+    end
+
     function force = force(beam, varargin)
       % Calculate force on a particle.
       % For details on usage/arguments see :meth:`forcetorque`.
