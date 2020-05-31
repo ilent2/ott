@@ -24,6 +24,11 @@ if nmax == 0
   D = [];
   return;
 end
+if all(all(R == eye(3)))
+  nlength = ott.utils.combined_index(nmax, nmax);
+  D = speye(nlength);
+  return;
+end
 
 % Transform cartesian rotation matrix to spinor(?) rotation matrix
 %

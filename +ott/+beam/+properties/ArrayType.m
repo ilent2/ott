@@ -336,11 +336,15 @@ classdef (Abstract) ArrayType < ott.beam.properties.Beam
       % each cell in data if the beam is not coherent.
         
       areCells = cellfun(@iscell, varargin);
-      assert(xor(all(areCells), strcmpi(beam.array_type, 'coherent')), ...
-        'Inputs must be cells if array is not coherent');
+      assert(xor(all(areCells), ~any(areCells)), ...
+        'Either all or no inputs must be cell arrays');
 
       % Apply visualisatio funtion to sub-beams
-      if ~strcmpi(beam.array_type, 'coherent')
+      if all(areCells)
+        lenCells = cellfun(@numel, varargin);
+        assert(all(lenCells == numel(beam)), ...
+            'all cells must be same length and match length of beam');
+
         data = cell(size(beam));
         for ii = 1:numel(beam)
           sub_data = cellfun(@(x) x{ii}, varargin, 'UniformOutput', false);

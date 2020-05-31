@@ -47,7 +47,7 @@ classdef (Abstract) PlaneWave < ott.beam.properties.Material
   methods (Static)
     function args = likeProperties(other, args)
       % Add like-properties to argument list
-      if isa(other, 'ott.beam.PlaneWave')
+      if isa(other, 'ott.beam.properties.PlaneWave')
         args = ott.utils.addDefaultParameter('field', other.field, args);
         args = ott.utils.addDefaultParameter('origin', other.origin, args);
         args = ott.utils.addDefaultParameter(...

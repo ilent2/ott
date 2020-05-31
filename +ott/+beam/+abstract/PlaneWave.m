@@ -72,6 +72,34 @@ classdef PlaneWave < ott.beam.abstract.PlaneWaveStem ...
     end
   end
 
+  methods
+    function beam = PlaneWave(varargin)
+      % Construct a new abstract plane wave or ray representation
+      %
+      % Usage
+      %   beam = PlaneWaveStem(...)
+      %
+      % Optional named arguments
+      %   - position (3 numeric) -- Position of the beam.
+      %     Default: ``[0;0;0]``.
+      %
+      %   - rotation (3x3 numeric) -- Rotation of the beam.
+      %     Default: ``eye(3)``.
+      %
+      %   - field (2 numeric) -- Field parallel and perpendicular to
+      %     plane wave polarisation direction.
+      %     Default: ``[1; 1i]``.
+      %
+      %   - directionSet -- Alias for rotation.
+      %   - origin -- Alias for position.
+      %
+      % See also :meth:`FromDirection` and :meth:`DirectionSet`.
+
+      % This function is just for documentation
+      beam = beam@ott.beam.abstract.PlaneWaveStem(varargin{:});
+    end
+  end
+
   methods (Sealed)
     function beam = ott.beam.Beam(varargin)
       % Cast to PlaneWave

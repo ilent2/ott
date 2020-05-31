@@ -1,6 +1,6 @@
 classdef LaguerreGaussian < ott.beam.paraxial.Paraxial ...
     & ott.beam.properties.LaguerreGaussian ...
-    & ott.beam.utils.VariablePower
+    & ott.beam.properties.VariablePower
 % Laguerre-Gaussian beam in the paraxial approximation.
 % Inherits from :class:`ott.beam.paraxial.Paraxial` and
 % :class:`ott.beam.properties.LaguerreGaussian`.
@@ -35,7 +35,7 @@ classdef LaguerreGaussian < ott.beam.paraxial.Paraxial ...
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
-      args = ott.beam.utils.VariablePower.likeProperties(other, args);
+      args = ott.beam.properties.VariablePower.likeProperties(other, args);
       args = ott.beam.properties.LaguerreGaussian.likeProperties(other, args);
     end
 

@@ -1,29 +1,41 @@
-classdef PlaneBasis < ott.beam.vswf.Bsc
-%BscPlane representation of a plane wave in VSWF coefficients
+classdef PlaneBasis < ott.beam.vswf.Bsc ...
+    & ott.beam.properties.PlaneWaveArray
+% Bsc array using a plane-wave basis set.
+% Inherits from :class:`Bsc` and :class:`PlaneWaveArray`.
 %
-% BscPlane properties:
-%   theta           Beam direction (polar angle)
-%   phi             Beam direction (azimuthal angle)
-%   polarisation    Beam polarisation [ Etheta Ephi ]
+% Inherited properties
+%   - field         -- Field parallel and perpendicular to polarisation
+%   - directionSet  -- Set of direction vectors describing orientation
+%   - origin        -- Position used to calculate beam phase offset
+%   - position      -- Beam position
+%   - rotation      -- Beam rotation
+%   - a             -- Beam shape coefficients a vector
+%   - b             -- Beam shape coefficients b vector
+%   - basis         -- VSWF beam basis (incoming, outgoing or regular)
+%   - absdz         -- Absolute cumulative distance the beam has moved
+%   - Nmax          -- Truncation number for VSWF coefficients
+%   - power         -- The power of the beam (may be infinite)
+%   - omega         -- Beam optical frequency
+%   - medium        -- Medium where beam is propagating
 %
-% BscPlane methods:
-%   translateZ      Translates the beam and checks within beam range
+% Methods
+%   - applyTranslation  -- Apply phase shift to plane waves.
+%   - applyZTranslation -- Apply phase shift to plane waves.
+%   - setData           -- Set data and update VSWF coefficients
 %
 % Static methods
-%   - empty       -- Construct an empty beam array.
+%   - empty         -- Construct an empty beam array.
+%   - likeProperties -- Form argument list of like-properties
+%   - like          -- Construct object like another beam
+%   - FromDirection -- Construct array from direction vectors
 %
-% Based on bsc_plane.m from ottv1.
+% Hidden methods
 %
-% See also BscPlane and ott.Bsc.
-%
+% All other methods inherited from base.
+
+% Based on code by Alexander Stilgoe.
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
-
-  properties (SetAccess=protected)
-    theta           % Beam direction (polar angle)
-    phi             % Beam direction (azimuthal angle)
-    polarisation    % Beam polarisation [ Etheta Ephi ]
-  end
 
   methods (Static)
     function bsc = empty(varargin)
@@ -34,91 +46,164 @@ classdef PlaneBasis < ott.beam.vswf.Bsc
 
       bsc = ott.beam.vswf.PlaneBasis();
     end
+
+    function args = likeProperties(other, args)
+      % Construct an array of like-properties
+      args = ott.beam.vswf.Bsc.likeProperties(other, args);
+      args = ott.beam.properties.PlaneWaveArray.likeProperties(other, args);
+    end
+
+    function beam = like(other, varargin)
+      % Create a beam like another beam
+      %
+      % Usage
+      %   beam = PlaneBasis.like(other, ...)
+      %
+      % See constructor for arguments.
+
+      args = ott.beam.vswf.PlaneBasis.likeProperties(other, varargin);
+      beam = ott.beam.vswf.PlaneBasis(args{:});
+    end
+
+    function beam = FromDirection(varargin)
+      % Construct beam from direction/polarisation vectors.
+      %
+      % Usage
+      %   beam = FromDirection(origin, direction, polarisation, field, ...)
+      %   Parameters can also be passed as named arguments.
+      %
+      % Parameters
+      %   - origin (3xN numeric) -- Origin (for phase offset) of wave.
+      %   - direction (3xN numeric) -- Propagation direction of wave.
+      %   - polarisation (3xN numeric) -- Primary polarisation direction.
+      %   - field (2xN numeric) -- Field in two polarisation directions.
+      %
+      % Additional parameters passed to base.  See class constructor
+      % for additional information on parameters.
+
+      % TODO: This method is duplicated quite a lot
+      %   There are other methods we would like too, perhaps there
+      %   is a better way to do this?
+
+      p = inputParser;
+      p.addOptional('origin', [], @isnumeric);
+      p.addOptional('direction', [], @isnumeric);
+      p.addOptional('polarisation', [], @isnumeric);
+      p.addOptional('field', [], @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Construct direction set
+      directionSet = ott.beam.properties.PlaneWave.DirectionSet(...
+          p.Results.direction, p.Results.polarisation);
+
+      % Construct beam
+      beam = ott.beam.vswf.PlaneBasis(...
+          'origin', p.Results.origin, ...
+          'directionSet', directionSet, ...
+          'field', p.Results.field, ...
+          'Nmax', p.Results.Nmax, ...
+          unmatched{:});
+    end
   end
 
   methods
     function beam = PlaneBasis(varargin)
-      %BSCPLANE construct a new plane wave beam
+      % Construct a new VSWF plane wave beam basis set.
       %
-      %  BSCPLANE(theta, phi) creates a new circularly polarised plane
-      %  wave beam in a direction specified by theta and phi.
-      %     theta polar angle from +z axis (rad)
-      %     phi   azimuthal angle, measured from +x towards +y axes (rad)
+      % Stores properties and calls :meth:`updateCoefficients` to
+      % generate the coefficients.  Setting `Nmax = 0` results in
+      % empty beam vectors.
       %
-      % theta and phi can be arrays, in which case multiple VSWF
-      % expansions are calculated for each angle.
+      % Usage
+      %   beam = PlaneBasis(origin, directionSet, field, ...)
       %
-      %  BSCPLANE(..., 'k_medium', k) specifies the wavenumber in the
-      %  medium.  Defaults to 2*pi, i.e. wavelength = 1.
+      % See also :meth:`FromDirection` for construction from
+      % direction/polarisation vectors.
       %
-      %  BSCPLANE(..., 'Nmax', Nmax) and BSCPLANE(..., 'radius', a)
-      %  specify the region where the plane wave beam is valid.
+      % Parameters
+      %   - origin (3xN numeric) -- Plane wave origins.
       %
-      %  BSCPLANE(..., 'polarisation', [ Etheta Ephi ]) specifies
-      %  the polarisation in the theta and phi directions.
+      %   - directionSet (3x3N numeric) -- Array formed by combining
+      %     direction/polarisation vectors into rotation matrices.  The
+      %     direction vector should be the last column of the matrix.
+      %
+      %   - field (2xN numeric) -- Field parallel and perpendicular to
+      %     plane wave polarisation direction.
+      %
+      % Optional named arguments
+      %   - array_type (enum) -- Beam array type.  Can be
+      %     'coherent', 'incoherent' or 'array'.  Default: ``'coherent'``.
+      %
+      %   - basis (enum) -- VSWF basis: incoming, outgoing or regular.
+      %     Default: ``'regular'``.
+      %
+      %   - Nmax (numeric) -- Truncation for VSWF coefficients.
+      %     For a simpler interface for creating beams without explicit
+      %     `Nmax`, see :class:`vswf.PlaneWave`.  Default: ``0``.
 
-
-      % Parse inputs
       p = inputParser;
+      p.addOptional('origin', [], @isnumeric);
+      p.addOptional('directionSet', [], @isnumeric);
+      p.addOptional('field', [], @isnumeric);
+      p.addParameter('Nmax', 0, @isnumeric);
+      p.addParameter('array_type', 'coherent');
+      p.addParameter('basis', 'regular');
       p.KeepUnmatched = true;
-      p.addOptional('theta', [], @isnumeric);
-      p.addOptional('phi', [], @isnumeric);
-      p.addParameter('polarisation', [ 1 1i ]);
-      p.addParameter('Nmax', 0);
-      p.addParameter('radius', []);
-      p.addParameter('power', []);
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      theta = p.Results.theta;
-      phi = p.Results.phi;
-      
-      beam = beam@ott.beam.vswf.Bsc(unmatched{:});
-      beam.basis = 'regular';
+      beam = beam@ott.beam.vswf.Bsc('basis', p.Results.basis, ...
+          'array_type', p.Results.array_type);
+      beam = beam@ott.beam.properties.PlaneWaveArray(...
+          'origin', p.Results.origin, ...
+          'directionSet', p.Results.directionSet, ...
+          'field', p.Results.field, ...
+          unmatched{:});
 
-      % If points aren't specified explicitly, use meshgrid
-      if length(theta) ~= length(phi)
-        [theta, phi] = meshgrid(theta, phi);
-        theta = theta(:);
-        phi = phi(:);
-      end
+      % Generate coefficients
+      beam = beam.updateCoefficients(p.Results.Nmax);
+    end
 
-      % Store inputs
-      beam.theta = theta;
-      beam.phi = phi;
+    function beam = updateCoefficients(beam, Nmax)
+      % Update the VSWF coefficients
+      %
+      % Usage
+      %   beam = beam.updateCoefficients(Nmax)
+      %
+      % Parameters
+      %   - Nmax (numeric) -- Truncation for VSWF coefficients.
+      %     For a simpler interface for creating beams without explicit
+      %     `Nmax`, see :class:`vswf.PlaneWave`.
 
-      % Store polarisation
-      beam.polarisation = p.Results.polarisation;
-      if size(p.Results.polarisation, 1) ~= length(phi) ...
-          && size(p.Results.polarisation, 1) ~= 1
-        error('Polarisation must be either 1x2 or Nx2 (N = # beams)');
-      end
-      if size(p.Results.polarisation, 1) ~= length(phi)
-        beam.polarisation = repmat(beam.polarisation, length(phi), 1);
-      end
+      assert(isnumeric(Nmax) && isscalar(Nmax) ...
+          && Nmax >= 0 && round(Nmax) == Nmax, ...
+          'Nmax should be an single positive integer');
 
-      Nmax = p.Results.Nmax;
+      % Get theta/phi field/coordinates
+      [rtpv1, rtp] = ott.utils.xyzv2rtpv(beam.polarisation1, beam.direction);
+      [rtpv2, ~] = ott.utils.xyzv2rtpv(beam.polarisation2, beam.direction);
+      Ertp = rtpv1 .* beam.field(1, :) + rtpv2 .* beam.field(2, :);
+
       ablength = ott.utils.combined_index(Nmax, Nmax);
 
-      a = zeros(ablength, length(beam.theta));
-      b = zeros(ablength, length(beam.theta));
-
-      Etheta = beam.polarisation(:, 1);
-      Ephi = beam.polarisation(:, 2);
+      a = zeros(ablength, size(rtp, 2));
+      b = zeros(ablength, size(rtp, 2));
 
       for n = 1:Nmax
-        iter=[(n-1)*(n+1)+1:n*(n+2)];
+        iter= (n-1)*(n+1)+1:n*(n+2);
         leniter=2*n+1;
 
         %expand theta and phi components of field to match spherical harmonics
-        ET=repmat(Etheta,[1,leniter]);
-        EP=repmat(Ephi,[1,leniter]);
+        ET=repmat(Ertp(2, :), [1,leniter]);
+        EP=repmat(Ertp(3, :), [1,leniter]);
 
         %power normalisation.
         Nn = 1/sqrt(n*(n+1));
 
         %Generate the farfield components of the VSWFs
-        [~,dtY,dpY] = ott.utils.spharm(n,[-n:n],theta,phi);
+        [~,dtY,dpY] = ott.utils.spharm(n, -n:n, rtp(2, :), rtp(3, :));
 
         %equivalent to dot((1i)^(n+1)*C,E);
         a(iter,:) = 4*pi*Nn*(-1i)^(n+1)*(conj(dpY).*ET - conj(dtY).*EP).';
@@ -126,67 +211,201 @@ classdef PlaneBasis < ott.beam.vswf.Bsc
         b(iter,:) = 4*pi*Nn*(-1i)^(n)  *(conj(dtY).*ET + conj(dpY).*EP).';
       end
 
-      pw = abs(a).^2 + abs(b).^2;
-      non_zeros = pw > 1e-15*max(pw);
+      beam = beam.setCoefficients(a, b);
+      beam = beam.makeSparse();
+    end
 
-      a(~non_zeros) = 0;
-      b(~non_zeros) = 0;
+    function varargout = size(varargin)
+      % Get the number of beams contained in this object
+      %
+      % Usage
+      %   sz = size(beam)   or    sz = beam.size()
+      %   For help on arguments, see builtin ``size``.
+      %
+      % The leading dimension is always 1.  May change in future.
 
-      % Store the coefficients
-      beam.a = sparse(a);
-      beam.b = sparse(b);
+      [varargout{1:nargout}] = ...
+          size@ott.beam.properties.PlaneWaveArray(varargin{:});
+    end
 
-      % Normalize the beam power
-      if ~isempty(p.Results.power)
-        beam.power = p.Results.power;
+    function varargout = applyTranslation(beam, varargin)
+      % Apply translation by applying phase shift to the beam.
+      %
+      % Calculates the component of the translation in the beam
+      % direction and applies a phase shift to the beam shape coefficients.
+      %
+      % Leaves the beam type unchanged.
+      %
+      % Usage
+      %   bsc = bsc.applyTranslation(...)
+      %   Applies ``bsc.position`` to the beam shape coefficients.
+      %
+      %   bsc = bsc.applyTranslation(P, ...)
+      %   Applies a specific rotation.  P should be a 3xN matrix.
+      %
+      %   [bsc, Az, Bz, D] = bsc.applyRotation(...)
+      %   Additionally returns the translation matrices.
+      %
+      % Optional named arguments
+      %   - Nmax (numeric) -- Requested minimum Nmax for translated beam.
+      %     Only used when AB is passed as an input instead of P.
+      %     The Nmax limit is applied during the translation. The first
+      %     rotation step uses the full Nmax, the last uses the new Nmax.
+      %     Ignored when multiple outputs are requested.
+      %     Default: ``bsc.Nmax``.
+      %
+      %   - AB (2xN|3xN cell) -- Cell array of translation matrices to
+      %     apply.  For 2xN cell array, assumes {A; B}, for 3xN cell
+      %     array {Az; Bz; D} where D is the rotation to the z axis.
+
+      p = inputParser;
+      p.addOptional('P', []);
+      p.addParameter('Nmax', beam.Nmax);
+      p.addParameter('AB', {});
+      p.parse(varargin{:});
+
+      ott.utils.nargoutCheck(beam, nargout);
+
+      if isempty(p.Results.AB)
+        P = p.Results.P;
+        if isempty(P)
+          P = beam.position;
+        else
+          assert(isnumeric(P) && ismatrix(P) && size(P, 1) == 3, ...
+              'P must be 3xN numeric matrix');
+        end
+
+        ibeam = beam;
+        beam = ott.beam.vswf.Array.empty([1, size(P, 2)]);
+
+        for ii = 1:size(P, 2)
+          dz = dot(repmat(P(:, ii), 1, ...
+              size(ibeam.direction, 2)), ibeam.direction);
+          dz = exp(1i.*dz.*ibeam.wavenumber);
+
+          % Apply translation
+          beam(ii) = ibeam .* dz;
+          beam(ii).position = [0;0;0];
+        end
+
+        if numel(beam) == 1
+          beam = beam(1);
+        end
+
+        varargout{1} = beam;
+      else
+        [varargout{1:nargout}] = applyTranslation@ott.beam.vswf.Bsc(...
+            beam, varargin{:});
       end
     end
 
-    function [beam, A, B] = translateZ(beam, varargin)
-      %TRANSLATEZ translate a beam along the z-axis
+    function beam = applyZTranslation(beam, z, varargin)
+      % Apply Z translation by applying phase shift to beam.
       %
-      % TRANSLATEZ(z) translates by a distance z along z axis.
+      % Calls :meth:`applyTranslation`.
       %
-      % [beam, A, B] = TRANSLATEZ(z) returns the translation matrices
-      % and translated beam.
+      % Usage
+      %   bsc = bsc.applyZTranslation(z, ...)
       %
-      % [beam, AB] = TRANSLATEZ(z) returns the A, B matricies packed
-      % so they can be directly applied to the beam: tbeam = AB * beam
-      
-      % TODO: This could be implemented as a phase shift, or should
-      % it be implementedin translateXyz instead?
+      % Optional named arguments
+      %   - Nmax (numeric) -- Ignored.
 
       p = inputParser;
-      p.addOptional('z', []);
-      p.addParameter('Nmax', beam.Nmax);
+      p.addParameter('Nmax', []);
       p.parse(varargin{:});
 
-      if ~isempty(p.Results.z)
-        z = p.Results.z;
+      xyz = [0*z(:), 0*z(:), z(:)].';
+      beam = beam.applyTranslation(xyz);
+    end
+  end
 
-        % Add a warning when the beam is translated outside nmax2ka(Nmax)
-        beam.dz = beam.dz + abs(z);
-        if beam.dz > ott.utils.nmax2ka(beam.Nmax)/beam.wavenumber
-          warning('ott:BscPlane:translateZ:outside_nmax', ...
-              'Repeated translation of beam outside Nmax region');
-        end
+  methods (Hidden)
+    function beam = catInternal(dim, beam, varargin)
+      % Concatenate beams
 
-        % Convert to beam units
-        z = z ./ beam.wavelength;
+      assert(dim == 2, 'Only 1xN arrays supported (may change in future)');
 
-        [A, B] = beam.translateZ_type_helper(z, [p.Results.Nmax, beam.Nmax]);
-
-      else
-        error('Wrong number of arguments');
+      other_origin = cell(1, length(varargin));
+      other_field = other_origin;
+      other_set = other_origin;
+      other_a = other_origin;
+      other_b = other_origin;
+      for ii = 1:length(varargin)
+        other_origin{ii} = varargin{ii}.origin;
+        other_field{ii} = varargin{ii}.field;
+        other_set{ii} = varargin{ii}.directionSet;
+        other_a{ii} = varargin{ii}.a;
+        other_b{ii} = varargin{ii}.b;
       end
 
-      % Apply the translation
-      beam = beam.translate(A, B);
-      beam.basis = 'regular';
+      beam.origin = cat(dim, beam.origin, other_origin{:});
+      beam.field = cat(dim, beam.field, other_field{:});
+      beam.directionSet = cat(dim, beam.directionSet, other_set{:});
+      beam.a = cat(dim, beam.a, other_a{:});
+      beam.b = cat(dim, beam.b, other_b{:});
+    end
 
-      % Pack the rotated matricies into a single ABBA object
-      if nargout == 2
-        A = [ A B ; B A ];
+    function beam = plusInternal(beam1, beam2)
+      %PLUS add two beams together
+      beam = plusInternal@ott.beam.vswf.Bsc(beam1, beam2);
+    end
+
+    function beam = subsrefInternal(beam, subs)
+      % Get the subscripted beam
+
+      if numel(subs) > ndims(beam.origin)
+        if subs(1) == 1
+          subs = subs(2:end);
+        end
+        assert(numel(subs) > ndims(beam.origin), ...
+            'Too many subscript indices');
+      end
+
+      beam.origin = beam.origin(:, subs{:});
+      beam.field = beam.field(:, subs{:});
+      beam.a = beam.a(:, subs{:});
+      beam.b = beam.b(:, subs{:});
+
+      idx = (1:3).' + 3*(subs{1}-1);
+      beam.directionSet = beam.directionSet(:, idx(:));
+    end
+
+    function beam = subsasgnInternal(beam, subs, rem, other)
+      % Assign to the subscripted beam
+
+      if numel(subs) > 1
+        if subs{1} == 1
+          subs = subs(2:end);
+        end
+        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
+      end
+
+      assert(isempty(rem), 'Assignment to parts of beams not supported');
+
+      idx = (1:3).' + 3*(subs{1}-1);
+
+      if isempty(other)
+        % Delete data
+        beam.a(:, subs{:}) = [];
+        beam.b(:, subs{:}) = [];
+        beam.origin(:, subs{:}) = [];
+        beam.field(:, subs{:}) = [];
+        beam.directionSet(:, idx) = [];
+
+      else
+        % Ensure we have same type
+        assert(isa(other, 'ott.beam.vswf.PlaneBasis'), ...
+            'Only PlaneBasis beams supported for now');
+
+        % Ensure array sizes match
+        beam.Nmax = max(beam.Nmax, other.Nmax);
+        other.Nmax = beam.Nmax;
+
+        beam.a(:, subs{:}) = other.a;
+        beam.b(:, subs{:}) = other.b;
+        beam.origin(:, subs{:}) = other.origin;
+        beam.field(:, subs{:}) = other.field;
+        beam.directionSet(:, idx) = other.directionSet;
       end
     end
   end

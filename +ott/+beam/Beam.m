@@ -1202,7 +1202,7 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
         @(x) beam.VisualisationData(field_type, x), data);
       
       % Combine incoherent components
-      if isa(beam, 'ott.beam.utils.ArrayType')
+      if isa(beam, 'ott.beam.properties.ArrayType')
         data = beam.combineIncoherentArray(data, 3);
       end
     end

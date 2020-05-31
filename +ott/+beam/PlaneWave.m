@@ -92,14 +92,15 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
       p = inputParser;
       p.addOptional('origin', [], @isnumeric);
       p.addOptional('direction', [], @isnumeric);
-      p.addOptional('polarisation1', [], @isnumeric);
+      p.addOptional('polarisation', [], @isnumeric);
       p.addOptional('field', [], @isnumeric);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Construct direction set
       directionSet = ott.beam.properties.PlaneWave.DirectionSet(...
-          p.Reults.direction, p.Results.polarisation1);
+          p.Results.direction, p.Results.polarisation);
 
       % Construct beam
       beam = ott.beam.PlaneWave(...
@@ -257,7 +258,6 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
       %
       %   - field (2xN numeric) -- Field parallel and perpendicular to
       %     plane wave polarisation direction.
-      %     Default: ``[1, 1i]``.
       %
       % Optional named arguments
       %   - array_type (enum) -- Beam array type.  Can be
@@ -278,6 +278,21 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
           'directionSet', p.Results.directionSet, ...
           'field', p.Results.field, ...
           unmatched{:});
+    end
+
+    function beam = ott.beam.vswf.PlaneBasis(varargin)
+      % Cast to PlaneBasis
+      beam = ott.beam.vswf.PlaneBasis.like(varargin{:});
+    end
+
+    function beam = ott.beam.PlaneWave(varargin)
+      % Cast to PlaneWave
+      beam = ott.beam.PlaneWave.like(varargin{:});
+    end
+
+    function beam = ott.beam.Ray(varargin)
+      % Cast to Ray
+      beam = ott.beam.Ray.like(varargin{:});
     end
 
     function beam = defaultArrayType(beam, array_type, elements)
@@ -363,9 +378,9 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
             error('Unknown method specified');
         end
 
-        % Calculate the polarisation (possibly in two directions)
-        P0 = Edir .* beam.field(1, :) + Hdir .* beam.field(2, :);
-        H0 = Hdir .* beam.field(1, :) + Edir .* beam.field(2, :);
+        % Calculate the polarisation (uses same convention as VSWF)
+        P0 = Edir .* beam.field(2, :) + Hdir .* beam.field(1, :);
+        H0 = Hdir .* beam.field(2, :) + Edir .* beam.field(1, :);
 
         % Calculate the field at the location
         E(:, :, ii) = scale .* P0 .* exp(1i.*wavenumber.*dist);

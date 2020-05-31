@@ -1,6 +1,6 @@
 classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
     & ott.beam.properties.HermiteGaussian ...
-    & ott.beam.utils.VariablePower
+    & ott.beam.properties.VariablePower
 % Hermite-Gaussian beam in the paraxial approximation.
 % Inherits from :class:`Paraxial`
 % and :class:`ott.beam.properties.HermiteGaussian`.
@@ -24,7 +24,7 @@ classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
-      args = ott.beam.utils.VariablePower.likeProperties(other, varargin);
+      args = ott.beam.properties.VariablePower.likeProperties(other, args);
       args = ott.beam.properties.HermiteGaussian.likeProperties(other, args);
     end
 
@@ -36,7 +36,7 @@ classdef HermiteGaussian < ott.beam.paraxial.Paraxial ...
       %
       % See constructor for arguments.
 
-      args = ott.beam.abstract.HermiteGaussian.likeProperties(...
+      args = ott.beam.paraxial.HermiteGaussian.likeProperties(...
           other, varargin);
       beam = ott.beam.paraxial.HermiteGaussian(args{:});
     end

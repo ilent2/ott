@@ -22,6 +22,11 @@ classdef (Abstract) PlaneWaveArray < ott.beam.properties.PlaneWave ...
 %   - size        -- Size of PlaneWave array
 %   - rotate*     -- Rotate the particle around the X,Y,Z axis
 %   - translate*  -- Apply a phase offset (translation) to the beam
+%
+% Casts
+%   - ott.beam.vswf.PlaneBasis
+%   - Ray
+%   - PlaneWave
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

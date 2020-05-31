@@ -190,8 +190,6 @@ classdef Array < ott.beam.Beam ...
   end
 
   methods (Hidden)
-
-
     function E = deferWithCoherent(beam, func)
       % Helper for defer to beam with combine coherent check
 
@@ -230,16 +228,20 @@ classdef Array < ott.beam.Beam ...
       end
     end
 
-    function beam = subsasgnInternal(beam, subs, ~, other)
+    function beam = subsasgnInternal(beam, subs, rem, other)
       % Assign to the subsripted beam
 
       % TODO: Should this support varargin
       % TODO: Should this have remaining subscripts?
 
-      if isa(other, 'ott.beam.Array')
-        beam.beams(subs{:}) = other.beams;
+      if isempty(rem)
+        if isa(other, 'ott.beam.Array')
+          beam.beams(subs{:}) = other.beams;
+        else
+          [beam.beams{subs{:}}] = deal(other);
+        end
       else
-        [beam.beams{subs{:}}] = deal(other);
+        beam.beams{subs{:}} = subsasgn(beam.beams{subs{:}}, rem, other);
       end
     end
 

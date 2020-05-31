@@ -1,6 +1,6 @@
 classdef GaussianDavis5 < ott.beam.Beam ...
     & ott.beam.properties.Gaussian ...
-    & ott.beam.utils.VariablePower
+    & ott.beam.properties.VariablePower
 % Fifth-order Davis approximation of a Gaussian beam
 % Inherits from :class:`Beam` and :class:`Gaussian`.
 %
@@ -41,7 +41,7 @@ classdef GaussianDavis5 < ott.beam.Beam ...
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
-      args = ott.beam.utils.VariablePower.likeProperties(other, args);
+      args = ott.beam.properties.VariablePower.likeProperties(other, args);
       args = ott.beam.properties.Gaussian.likeProperties(other, args);
     end
 
@@ -53,7 +53,7 @@ classdef GaussianDavis5 < ott.beam.Beam ...
       %
       % See constructor for arguments.
 
-      args = ott.beam.abstract.Gaussian.likeProperties(other, varargin);
+      args = ott.beam.GaussianDavis5.likeProperties(other, varargin);
       beam = ott.beam.GaussianDavis5(args{:});
     end
   end

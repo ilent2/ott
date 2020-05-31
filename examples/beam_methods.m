@@ -27,34 +27,33 @@ paraxial_waist = 0.5;
 abstract_beam = ott.beam.abstract.Gaussian(paraxial_waist, ...
     'polarisation', [1, 0]);
 
-% The default abstract visualisation method is GaussianDavis5
-% Alternatively, we could explicitly pick GaussianDavis5 using
-% ott.beam.GaussianDavis5(abstract_beam).visualise()
-subplot(1, 4, 1);
-abstract_beam.visualise('range', [1, 1]);
-title('5-th order Davis');
-
-% Paraxial beam approximation produces slightly different fields
-subplot(1, 4, 2);
-paraxial = ott.beam.paraxial.Paraxial(abstract_beam);
-paraxial.visualise('range', [1, 1]);
-title('Paraxial');
-
+% The default abstract visualisation method is the default vswf.Gaussian
 % There are two kinds of VSWF representations of a Gaussian beam,
 % they differ by the paraxial-to-farfield mapping used for point-matching.
 % The default is 'sintheta' mapping, which produces results similar to
 % many high-NA microscope objectives
-bsc_sintheta = ott.beam.vswf.Bsc(abstract_beam);
-subplot(1, 4, 3);
-bsc_sintheta.visualise('range', [1, 1]);
-title('VSWF: sintheta');
+subplot(1, 4, 1);
+abstract_beam.visualise('range', [1, 1]);
+title('Default: VSWF (mapping:sin)');
 
-% The other mapping is 'tantheta', which should produce similar results
+% The other mapping is 'tan', which should produce similar results
 % for lower focussing (larger paraxial beam waist).
-bsc_tantheta = ott.beam.vswf.Bsc(abstract_beam, 'mapping', 'tantheta');
-subplot(1, 4, 4);
+bsc_tantheta = ott.beam.vswf.Bsc(abstract_beam, 'mapping', 'tan');
+subplot(1, 4, 2);
 bsc_tantheta.visualise('range', [1, 1]);
-title('VSWF: tantheta');
+title('VSWF (mapping:tan)');
+
+% Paraxial beam approximation produces slightly different fields
+subplot(1, 4, 3);
+paraxial = ott.beam.paraxial.Paraxial(abstract_beam);
+paraxial.visualise('range', [1, 1]);
+title('Paraxial');
+
+% We can also use a 5th order Davis approximation for the beam
+davis = ott.beam.GaussianDavis5(abstract_beam);
+subplot(1, 4, 4);
+davis.visualise('range', [1, 1]);
+title('5-th order Davis');
 
 %% Laguerre-Gaussian beams
 
@@ -65,15 +64,15 @@ paraxial_waist = 2;
 abstract_beam = ott.beam.abstract.LaguerreGaussian(paraxial_waist, ...
     'lmode', -5, 'pmode', 3, 'polarisation', [1, 1i]);
 
-% Default visualisation method is Paraxial
+% Default visualisation method is VSWF
 subplot(1, 2, 1);
 abstract_beam.visualise('range', 2*[1, 1]);
-title('Paraxial');
+title('Default: VSWF');
 
-% Can also construct a VSWF representation
+% Can also construct a paraxial representation
 subplot(1, 2, 2);
-ott.beam.vswf.Bsc(abstract_beam).visualise('range', 2*[1, 1]);
-title('VSWF');
+ott.beam.paraxial.Paraxial(abstract_beam).visualise('range', 2*[1, 1]);
+title('Paraxial');
 
 %% Hermite-Gaussian beams
 
@@ -86,15 +85,15 @@ abstract_beam = ott.beam.abstract.HermiteGaussian(paraxial_waist, ...
   
 range = [1,1] * 2.5*paraxial_waist;
 
-% Default visualisation method is Paraxial
+% Default visualisation method is VSWF
 subplot(1, 2, 1);
 abstract_beam.visualise('range', range);
-title('Paraxial');
+title('Default: VSWF');
 
-% Can also construct a VSWF representation
+% Can also construct a paraxial representation
 subplot(1, 2, 2);
-ott.beam.vswf.Bsc(abstract_beam).visualise('range', range);
-title('VSWF');
+ott.beam.paraxial.Paraxial(abstract_beam).visualise('range', range);
+title('Paraxial');
 
 %% Ince-Gaussian beam
 
@@ -113,32 +112,44 @@ abstract_beam.visualise('range', [3, 3]);
 figure();
 
 % A single plane wave can be constructed using the abstract class
+% The visualisation method casts to the ott.beam.PlaneWave class
 subplot(1, 4, 1);
 abstract_beam = ott.beam.abstract.PlaneWave();
-abstract_beam.visualise('axis', 'y', 'field', 'Re(Ex)');
+abstract_beam.visualise('range', [2, 2], 'axis', 'y', 'field', 'Re(Ex)');
+title('Single');
 
-% For arrays it is better to invoke the PlaneWave class directly
+% For arrays it is better to invoke ott.beam.PlaneWave directly
+% The plane wave class has two constructors, one using directionSet
+% and the other (used here) with a direction/polarisation vector.
 origin = zeros(3, 5);
 directions = randn(3, 5);
+field = [ones(1, 5); zeros(1, 5)];
 polarisation = cross(directions, randn(3, 5));
-plane_waves = ott.beam.PlaneWave(origin, ...
-  'direction', directions, 'polarisation', polarisation);
+plane_waves = ott.beam.PlaneWave.FromDirection('origin', origin, ...
+  'direction', directions, 'polarisation', polarisation, ...
+  'field', field);
 
 % Arrays of plane waves can be coherent or incoherent
 subplot(1, 4, 2);
 plane_waves.array_type = 'coherent';
 plane_waves.visualise();
+title('Coherent array');
 
+% Incoherent plane waves doens't look very interesting
 subplot(1, 4, 3);
 plane_waves.array_type = 'incoherent';
 plane_waves.visualise();
+title('Incoherent array');
 
 % Some beam approximations are only valid in a certain range, this is
 % particularly true for PlaneWaves with VSWF representation, as demonstrated
 % by the following visualisation
 subplot(1, 4, 4);
-beam = ott.beam.vswf.Bsc(abstract_beam, 'suggested_Nmax', 10);
-beam.visualise('range', [3, 3]);
+beam = ott.beam.vswf.PlaneBasis(abstract_beam, 'Nmax', 12);
+beam.position = [0;0;2.25];
+beam = beam.applyTransformation();
+beam.visualise('range', [2, 2], 'axis', 'y', 'field', 'Re(Ex)');
+title('VSWF with Nmax=12');
 
 %% Geometric ray beams
 % Geometric rays are similar to Plane waves except their visualisation
@@ -149,20 +160,27 @@ figure();
 
 % As with plane waves, the abstract class can be used to construct a
 % single ray or for many rays it is better to call the Ray class directly
-directions = randn(3, 5);
-origin = zeros(3, 5);
-rays = ott.beam.Ray('direction', directions, 'origin', origins);
+numrays = 5;
+% direction = randn(3, numrays);
+direction = [1;1;0].*randn(3, numrays);
+origin = [1;1;0].*randn(3, numrays);
+polarisation = [0;0;1].*ones(size(direction));
+rays = ott.beam.Ray.FromDirection('direction', direction, ...
+    'origin', origin, 'polarisation', polarisation);
 
 % Default visualisation method draws rays
 % Coherent/incoherent property has no effect for this visualisation
 subplot(1, 2, 1);
 rays.visualise();
+title('Rays');
 
 % A field can be specified, this effectively draws the rays as
 % plane-waves with a transverse intensity fall-off
 % Coherent/incoherent property changes the visualisation
 subplot(1, 2, 2);
-rays.visualise('field', 'Re(Ex)');
+rays.visualise('field', 'Re(Ez)', 'range', 10*[1,1]);
+caxis([-1, 1]);
+title('Rays as Plane Waves');
 
 %% Bessel beam
 

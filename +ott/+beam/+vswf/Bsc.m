@@ -6,11 +6,11 @@ classdef Bsc < ott.beam.Beam ...
 % and :class:`ott.beam.properties.AnyArrayType`.
 %
 % Properties
-%   - a           --  Beam shape coefficients a vector
-%   - b           --  Beam shape coefficients b vector
-%   - basis       --  VSWF beam basis (incoming, outgoing or regular)
-%   - absdz       --  Absolute cumulative distance the beam has moved
-%   - Nmax        --  Truncation number for VSWF coefficients
+%   - a             -- Beam shape coefficients a vector
+%   - b             -- Beam shape coefficients b vector
+%   - basis         -- VSWF beam basis (incoming, outgoing or regular)
+%   - absdz         -- Absolute cumulative distance the beam has moved
+%   - Nmax          -- Truncation number for VSWF coefficients
 %
 % Inherited properties
 %   - power         -- The power of the beam (may be infinite)
@@ -206,6 +206,11 @@ classdef Bsc < ott.beam.Beam ...
       beam = beam.setCoefficients(p.Results.a, p.Results.b);
       beam.basis = p.Results.basis;
       beam.absdz = p.Results.absdz;
+    end
+
+    function beam = ott.beam.vswf.Bsc(varargin)
+      % Cast to vswf.FarfieldPm
+      beam = ott.beam.vswf.Bsc.like(varargin{:});
     end
 
     function bsc = ott.beam.vswf.Array(bsc)
@@ -702,10 +707,64 @@ classdef Bsc < ott.beam.Beam ...
           beam, unmatched{:}, 'range', p.Results.range);
     end
 
-    % TODO: Add a makeSparse method
-    % TODO: Add full and sparse methods
     % TODO: Ensure sparsity is respected
-    % TODO: Add a getDenseBeamVectors function
+    % TODO: Add a getDenseBeamVectors function (add to getCoefficients?)
+
+    function b = issparse(beam)
+      % Returns true if the VSWF data is sparse
+      %
+      % Usage
+      %   b = issparse(beam)
+
+      b = issparse(beam.getCoefficients());
+    end
+
+    function beam = full(beam)
+      % Convert the VSWF data to a full matrix
+      %
+      % Usage
+      %   beam = full(beam)
+
+      beam = beam.setCoefficients(full(beam.getCoefficients()));
+    end
+
+    function beam = sparse(beam)
+      % Convert the VSWF data to a sparse matrix
+      %
+      % This function doesn't change the data.  For a method that removes
+      % near-zeros elements, see :meth:`makeSparse`.
+      %
+      % Usage
+      %   beam = sparse(beam)
+
+      beam = beam.setCoefficients(sparse(beam.getCoefficients()));
+    end
+
+    function beam = makeSparse(beam, varargin)
+      % Make the beam sparse by removing near-zero power elements
+      %
+      % Usage
+      %   beam = beam.makeSparse(...)
+      %
+      % Optional named arguments
+      %   - tolerance (numeric) -- Tolerance for pruning elements.
+      %     Default: ``1.0e-15``.
+
+      ott.utils.nargoutCheck(beam, nargout);
+
+      p = inputParser;
+      p.addParameter('tolerance', 1.0e-15, @isnumeric);
+      p.parse(varargin{:});
+
+      pw = abs(beam.a).^2 + abs(beam.b).^2;
+      non_zero = pw > p.Results.tolerance*max(pw);
+
+      beam.a(~non_zero) = 0;
+      beam.b(~non_zero) = 0;
+
+      beam.a = sparse(beam.a);
+      beam.b = sparse(beam.b);
+    end
 
     function nbeam = shrinkNmax(beam, varargin)
       % Reduces the size of the beam while preserving power
@@ -715,7 +774,8 @@ classdef Bsc < ott.beam.Beam ...
       %
       % Optional named arguments
       %   - tolerance (numeric) -- Tolerance to use for power loss.
-      
+      %     Default: ``1.0e-6``.
+
       ott.utils.nargoutCheck(beam, nargout);
 
       p = inputParser;
@@ -816,6 +876,10 @@ classdef Bsc < ott.beam.Beam ...
       % wavelength in units of meters, distances here should also be
       % in units of meters).
       %
+      % By default, this operation demotes the beam type to vswf.Bsc if a
+      % transformation is applied.  Otherwise the beam is unchanged.
+      % The position and rotation are set to itendity after transformation.
+      %
       % Usage
       %   bsc = bsc.applyTransformation(...)
       %
@@ -841,6 +905,9 @@ classdef Bsc < ott.beam.Beam ...
 
     function [bsc, D] = applyRotation(bsc, varargin)
       % Apply rotation to the beam shape coefficients.
+      %
+      % This operation demotes the beam type to vswf.Bsc if a
+      % rotation is applied.  Otherwise the beam is unchanged.
       %
       % Usage
       %   bsc = bsc.applyRotation(...)
@@ -917,17 +984,35 @@ classdef Bsc < ott.beam.Beam ...
 
       % Apply wigner rotation matrices
       if iscell(D)
-        ibsc = bsc;
-        bsc = ott.beam.abstract.Empty();
-        sz = size(bsc.a, 1);
 
+        % Check for work to do
+        hasWork = false;
         for ii = 1:numel(D)
-          bsc = [bsc, D{ii}(:, 1:sz) * ibsc];
+          hasWork = hasWork | any(any(D ~= eye(size(D))));
+        end
+
+        if hasWork
+          ibsc = bsc;
+          bsc = ott.beam.vswf.Bsc.empty([1, numel(D)]);
+          sz = size(bsc.a, 1);
+
+          for ii = 1:numel(D)
+            bsc(ii) = D{ii}(:, 1:sz) * ibsc;
+          end
+        else
+          % Nothing to do (leave type unchanged)
         end
       else
-        sz = size(bsc.a, 1);
-        bsc = D(:, 1:sz) * bsc;
+        if ~all(all(D == eye(size(D))))
+          sz = size(bsc.a, 1);
+          bsc = ott.beam.vswf.Bsc(D(:, 1:sz) * bsc);
+        else
+          % Nothing to do (leave type unchanged)
+        end
       end
+
+      % Set the rotation to identity
+      bsc.rotation = eye(3);
     end
 
     function [bsc, Az, Bz, D] = applyTranslation(bsc, varargin)
@@ -941,6 +1026,9 @@ classdef Bsc < ott.beam.Beam ...
       % beam wave number (i.e., if the beam was created by specifying
       % wavelength in units of meters, distances here should also be
       % in units of meters).
+      %
+      % This operation demotes the beam type to vswf.Bsc if a
+      % translation is applied.  Otherwise the beam is unchanged.
       %
       % Usage
       %   bsc = bsc.applyTranslation(...)
@@ -975,7 +1063,7 @@ classdef Bsc < ott.beam.Beam ...
 
         P = p.Results.P;
         if isempty(P)
-          R = bsc.position;
+          P = bsc.position;
         else
           assert(isnumeric(P) && ismatrix(P) && size(P, 1) == 3, ...
               'P must be 3xN numeric matrix');
@@ -995,29 +1083,43 @@ classdef Bsc < ott.beam.Beam ...
 
         % TODO: Optimisation: Unique rotation directions
 
-        ibsc = bsc;
-        bsc = ott.beam.abstract.Empty();
+        % Check for work to do
+        hasWork = false;
+        for ii = 1:numel(Nrots)
+          hasWork = hasWork | any(P(:, ii) ~= [0;0;0]);
+        end
 
         Az = cell(1, Nrots);
         Bz = cell(1, Nrots);
         D = cell(1, Nrots);
 
-        for ii = 1:Nrots
+        if hasWork
 
-          rtp = ott.utils.xyz2rtp(P(:, ii));
-          R = ott.utils.rotz(rtp(3)*180/pi) * ott.utils.roty(rtp(2)*180/pi);
+          ibsc = bsc;
+          bsc = ott.beam.vswf.Bsc.empty([1, Nrots]);
 
-          [newbeam, D{ii}] = ibsc.applyRotation(R);
-          [newbeam, Az{ii}, Bz{ii}] = newbeam.applyZTranslation(...
-              rtp(1), 'Nmax', Nmax);
+          for ii = 1:Nrots
 
-          if nargout > 1
-            newbeam = D{ii}' * newbeam;
-          else
-            newbeam = newbeam.applyRotation(R.');
+            rtp = ott.utils.xyz2rtp(P(:, ii));
+            R = ott.utils.rotz(rtp(3)*180/pi) * ott.utils.roty(rtp(2)*180/pi);
+
+            [newbeam, D{ii}] = ibsc.applyRotation(R);
+            [newbeam, Az{ii}, Bz{ii}] = newbeam.applyZTranslation(...
+                rtp(1), 'Nmax', Nmax);
+
+            if nargout > 1
+              newbeam = D{ii}' * newbeam;
+            else
+              newbeam = newbeam.applyRotation(R.');
+            end
+
+            bsc(ii) = newbeam;
           end
-
-          bsc = [bsc, newbeam];
+        else
+          bsc = repmat(bsc, 1, Nrots);
+          Az = repmat({1}, 1, Nrots);
+          Bz = repmat({0}, 1, Nrots);
+          D = repmat({1}, 1, Nrots);
         end
         
         if Nrots == 1
@@ -1046,7 +1148,7 @@ classdef Bsc < ott.beam.Beam ...
             'Number of AB must match number of beams or be scalar');
 
         ibsc = bsc;
-        bsc = ott.beam.abstract.Empty();
+        bsc = ott.beam.vswf.Bsc.empty([1, numel(A)]);
         sz = size(ibsc.a, 1);
 
         if size(AB, 1) == 2
@@ -1055,7 +1157,7 @@ classdef Bsc < ott.beam.Beam ...
             A2 = A{ii}(:, 1:sz);
             B2 = B{ii}(:, 1:sz);
 
-            bsc = [bsc, [A2 B2; B2 A2] * ibsc];
+            bsc(ii) = [A2 B2; B2 A2] * ibsc;
           end
         else
           D = AB(3, :);
@@ -1070,6 +1172,9 @@ classdef Bsc < ott.beam.Beam ...
           end
         end
       end
+
+      % Set the position to 0
+      bsc.position = [0;0;0];
     end
 
     function [bsc, A, B] = applyZTranslation(bsc, z, varargin)
@@ -1103,7 +1208,7 @@ classdef Bsc < ott.beam.Beam ...
           'Number of positions and beams must be equal or scalar');
 
       ibsc = bsc;
-      bsc = ott.beam.vswf.Bsc();
+      bsc = ott.beam.vswf.Bsc.empty([1, numel(z)]);
 
       % Add a warning when the beam is translated outside nmax2ka(Nmax)
       % The first time may be OK, the second time does not have enough
@@ -1124,7 +1229,7 @@ classdef Bsc < ott.beam.Beam ...
 
         [A{ii}, B{ii}] = ibsc.applyZTranslationInternal(...
             z(ii), [p.Results.Nmax, ibsc.Nmax]);
-        bsc = [bsc, [A{ii}, B{ii}; B{ii}, A{ii}] * ibsc];
+        bsc(ii) = [A{ii}, B{ii}; B{ii}, A{ii}] * ibsc;
 
       end
       
@@ -1247,6 +1352,22 @@ classdef Bsc < ott.beam.Beam ...
           beam.b = a * beam.b;
         end
       end
+    end
+
+    function beam = times(beam, rv)
+      % Provides element-wise multiplication of BSC coefficients.
+      %
+      % Usage
+      %   beam = beam .* row_vec
+      %   Multiplies each beam by the elements of `row_vec`.
+
+      assert(isa(beam, 'ott.beam.vswf.Bsc'), 'first argument must be Bsc');
+      assert(isnumeric(rv) && ismatrix(rv) && size(rv, 1) == 1 ...
+          && size(rv, 2) == numel(beam), ...
+          'second argument must be row vector matching N-beams');
+
+      beam.a = beam.a .* rv;
+      beam.b = beam.b .* rv;
     end
 
     function beam = minus(beam1, beam2)

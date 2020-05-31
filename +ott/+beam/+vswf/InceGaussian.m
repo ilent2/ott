@@ -1,6 +1,6 @@
 classdef InceGaussian < ott.beam.vswf.BscScalar ...
     & ott.beam.properties.InceGaussian ...
-    & ott.beam.utils.FarfieldMapping
+    & ott.beam.properties.FarfieldMapping
 % Ince-Gaussian beam VSWF representation using LG-paraxial point matching.
 % Inherits from :class:`ott.beam.vswf.BscScalar` and
 % :class:`ott.beam.abstract.InceGaussian`.
@@ -26,7 +26,7 @@ classdef InceGaussian < ott.beam.vswf.BscScalar ...
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
-      args = ott.beam.utils.FarfieldMapping.likeProperties(other, args);
+      args = ott.beam.properties.FarfieldMapping.likeProperties(other, args);
       args = ott.beam.vswf.BscScalar.likeProperties(other, args);
       args = ott.beam.properties.InceGaussian.likeProperties(other, args);
     end
@@ -63,9 +63,9 @@ classdef InceGaussian < ott.beam.vswf.BscScalar ...
       %     2 element Jones vector.  Default: ``[1, 1i]``.
       %
       %   - mapping (enum) -- Mapping method for paraxial far-field.
-      %     Can be either 'sintheta' or 'tantheta' (small angle).
+      %     Can be either 'sin' or 'tan' (small angle).
       %     For a discussion of this parameter, see Documentation
-      %     (:ref:`conception-angular-scaling`).  Default: ``'sintheta'``.
+      %     (:ref:`conception-angular-scaling`).  Default: ``'sin'``.
 
       p = inputParser;
       p.addOptional('waist', [], @isnumeric);
@@ -73,13 +73,14 @@ classdef InceGaussian < ott.beam.vswf.BscScalar ...
       p.addOptional('porder', [], @isnumeric);
       p.addOptional('parity', [], @(x) any(strcmpi(x, {'odd', 'even'})));
       p.addOptional('ellipticity', [], @isnumeric);
-      p.addParameter('mapping', 'sintheta');
+      p.addParameter('mapping', 'sin');
       p.addParameter('polarisation', [1, 1i]);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      bsc = bsc@ott.beam.utils.FarfieldMapping(p.Results.mapping);
+      bsc = bsc@ott.beam.properties.FarfieldMapping(...
+          p.Results.mapping, 'hemisphere', 'neg');
       bsc = bsc@ott.beam.properties.InceGaussian(...
           p.Results.waist, p.Results.lmode, p.Results.porder, ...
           p.Results.parity, p.Results.ellipticity, ...

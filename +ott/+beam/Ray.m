@@ -68,14 +68,14 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       p.addOptional('origin', [], @isnumeric);
       p.addOptional('direction', [], @isnumeric);
       p.addOptional('polarisation1', [], @isnumeric);
-      p.addOptional('field', [], @isnumeric);
+      p.addOptional('field', [1;1i], @isnumeric);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
       % Construct direction set
       directionSet = ott.beam.properties.PlaneWave.DirectionSet(...
-          p.Reults.direction, p.Results.polarisation1);
+          p.Results.direction, p.Results.polarisation1);
 
       % Construct beam
       beam = ott.beam.Ray(...
@@ -141,6 +141,21 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
           unmatched{:});
     end
 
+    function beam = ott.beam.vswf.PlaneBasis(varargin)
+      % Cast to PlaneBasis
+      beam = ott.beam.vswf.PlaneBasis.like(varargin{:});
+    end
+
+    function beam = ott.beam.PlaneWave(varargin)
+      % Cast to PlaneWave
+      beam = ott.beam.PlaneWave.like(varargin{:});
+    end
+
+    function beam = ott.beam.Ray(varargin)
+      % Cast to Ray
+      beam = ott.beam.Ray.like(varargin{:});
+    end
+
     function beam = defaultArrayType(beam, array_type, elements)
       % Construct a new array for this type
 
@@ -188,6 +203,10 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       % Usage
       %   h = beam.visualise(...)
       %
+      %   h = beam.visualise('field', field, ...)
+      %   Casts the beam to a plane wave and uses a transverse
+      %   intensity fall-off.  Ignores ray-specific optional parameters.
+      %
       % Optional named arguments
       %   - Scale (numeric) -- rescales the coordinates and components
       %     of the vector before plotting.  Can either be a scalar
@@ -206,7 +225,20 @@ classdef Ray < ott.beam.properties.PlaneWaveArray ...
       p.addParameter('Scale', [1, 1]);
       p.addParameter('ray_lengths', []);
       p.addParameter('show_polarisation', true);
+      p.addParameter('field', []);
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Handle field visualisation
+      if ~isempty(p.Results.field)
+        beam = ott.beam.PlaneWave(vec);
+        [varargout{1:nargout}] = beam.visualise(...
+            'field', p.Results.field, 'method', 'ray_invr', unmatched{:});
+        return
+      else
+        assert(isempty(unmatched), 'Unrecognized arguments');
+      end
 
       S1 = p.Results.Scale(1);
       S2 = p.Results.Scale(2);

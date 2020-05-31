@@ -1,6 +1,6 @@
 classdef HermiteGaussian < ott.beam.vswf.BscScalar ...
     & ott.beam.properties.HermiteGaussian ...
-    & ott.beam.utils.FarfieldMapping
+    & ott.beam.properties.FarfieldMapping
 % Hermite-Gaussian beam VSWF representation using LG-paraxial point matching.
 % Inherits from :class:`ott.beam.vswf.BscScalar`,
 % :class:`ott.beam.abstract.HermiteGaussian`.
@@ -23,7 +23,7 @@ classdef HermiteGaussian < ott.beam.vswf.BscScalar ...
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
-      args = ott.beam.utils.FarfieldMapping.likeProperties(other, args);
+      args = ott.beam.properties.FarfieldMapping.likeProperties(other, args);
       args = ott.beam.vswf.BscScalar.likeProperties(other, args);
       args = ott.beam.properties.HermiteGaussian.likeProperties(other, args);
     end
@@ -62,21 +62,22 @@ classdef HermiteGaussian < ott.beam.vswf.BscScalar ...
       %     2 element Jones vector.  Default: ``[1, 0]``.
       %
       %   - mapping (enum) -- Mapping method for paraxial far-field.
-      %     Can be either 'sintheta' or 'tantheta' (small angle).
+      %     Can be either 'sin' or 'tan' (small angle).
       %     For a discussion of this parameter, see Documentation
-      %     (:ref:`conception-angular-scaling`).  Default: ``'sintheta'``.
+      %     (:ref:`conception-angular-scaling`).  Default: ``'sin'``.
 
       p = inputParser;
       p.addOptional('waist', [], @isnumeric);
       p.addOptional('mmode', [], @isnumeric);
       p.addOptional('nmode', [], @isnumeric);
-      p.addParameter('mapping', 'sintheta');
+      p.addParameter('mapping', 'sin');
       p.addParameter('polarisation', [1, 0]);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      bsc = bsc@ott.beam.utils.FarfieldMapping(p.Results.mapping);
+      bsc = bsc@ott.beam.properties.FarfieldMapping(...
+          p.Results.mapping, 'hemisphere', 'neg');
       bsc = bsc@ott.beam.properties.HermiteGaussian(...
           p.Results.waist, p.Results.mmode, p.Results.nmode, ...
           'polarisation', p.Results.polarisation, unmatched{:});
