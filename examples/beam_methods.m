@@ -205,10 +205,10 @@ abstract_beam.visualise();
 % Describes the radiation field of a single dipole
 % beam.abstract.Dipole creates a single dipole, or many dipoles can be
 % created with beam.Dipole
-polarizations = randn(3*5);
+polarizations = randn(3*5, 1);
 positions = randn(3, 5);
-dipoles = ott.beam.Dipole('dipole_xyz', positions, ...
-    'polarizations', polarizations);
+dipoles = ott.beam.Dipole('location', positions, ...
+    'polarization', polarizations);
 
 % The default visualisation sets the color range so that dipoles
 % in the visualisation plane don't over-saturate the image.  This causes

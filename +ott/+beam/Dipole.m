@@ -1,14 +1,17 @@
 classdef Dipole < ott.beam.properties.DipoleArray ...
-    & ott.beam.properties.CoherentArrayType ...
+    & ott.beam.properties.AnyArrayType ...
     & ott.beam.Beam
 % Describes the field produced by a polarisable dipole.
 % Inherits from :class:`ott.beam.Beam`, :class:`ott.beam.properties.Dipole`
-% and :class:`ott.beam.utils.CoherentArrayType`.
+% and :class:`ott.beam.utils.AnyArrayType`.
 %
 % Stores the dipole locations and polarisabiities.  The scattered fields
 % are evaluated using::
 %
 %   Es = F p
+%
+% This class can be used to describe coherent arrays of dipoles and
+% arrays of beams from coherent dipoles collections.
 %
 % This class supports rotational symmetry about the z-axis and
 % and mirror symmetry about the xy-plane.
@@ -29,6 +32,8 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
 %   - z_rotation      -- Order of z-rotational symmetry (0 - infinite)
 %   - parity          -- Parity of incident beam
 %   - rorder          -- Rotational order of incident beam
+%   - ndipoles        -- Number of dipoles in the array `size(beam, 1)`
+%   - nbeams          -- Number of beams in the array `size(beam, 2)`
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -97,6 +102,8 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       %     xy-rotational symmetry.  Default: ``1``.
       %     If ``0``, uses fourth order rotational symmetry (might change
       %     in a future release).
+      %
+      %   - array_type (enum) -- Type of beam array.  Default: ``array``.
 
       p = inputParser;
       p.addOptional('location', [], @isnumeric);
@@ -105,11 +112,13 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       p.addParameter('rorder', 1);
       p.addParameter('z_mirror', false);
       p.addParameter('z_rotation', 1);
+      p.addParameter('array_type', 'array');
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
       % Construct base
+      beam = beam@ott.beam.properties.AnyArrayType(p.Results.array_type);
       beam = beam@ott.beam.properties.DipoleArray(unmatched{:}, ...
           'polarization', p.Results.polarization, ...
           'location', p.Results.location);
@@ -255,7 +264,7 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       %     :meth:`nearfield_matrix` or :meth:`farfield_matrix`.
 
       assert(isa(beam, 'ott.beam.Dipole'), ...
-          'Second argument to mtimes must be Dipole bam');
+          'Second argument to mtimes must be Dipole beam');
 
       assert(size(F, 2) == size(beam.polarization, 1), ...
           'Matrix dimensions must agree');
@@ -282,7 +291,7 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       % This could be moved to the setter instead
       polarization = beam.polarization;
       if size(polarization, 1) == 3
-        polarization = repmat(polarization, size(beam, 2), 1);
+        polarization = repmat(polarization, beam.ndipoles, 1);
       end
 
       % Calculate fields
@@ -470,7 +479,7 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       % Get sizes of xyz and dipoles
       npts = size(locs, 2);
       nrows = 3 * npts;
-      ndipoles = size(beam, 2);
+      ndipoles = beam.ndipoles;
 
       % Allocate memory for F
       F = zeros(nrows, 3, mirror_sz, rotsym_sz, ndipoles);
@@ -496,7 +505,7 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
           M_sph2cart = ott.utils.sph2cart_mat(...
               rtp(2, ii), rtp(3, ii) + 2*pi*(jj-1)/beam.z_rotation);
 
-          dipole_xyz = ott.utils.rtp2xyz(rtp(ii, 1), ...
+          dipole_xyz = ott.utils.rtp2xyz(rtp(1, ii), ...
             rtp(2, ii), rtp(3, ii) + 2*pi*(jj-1)/beam.z_rotation);
 
           for kk = 1:full_mirror_sz     % duplicates for z rotational symmetry
@@ -538,14 +547,9 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       F = beam.enearfield_matrix(xyz);
 
       E = F * beam;
-      
-      % Add dipole fields coherently
-      E = reshape(E, 3, size(beam, 2), []);
-      E = squeeze(sum(E, 2));
-      
+
       % Package output
-      E = reshape(E, 3, size(beam, 2), []);
-      E = ott.utils.FieldVector(xyz, E, 'cartesian');
+      E = beam.packageArrayOutput(E, xyz, 'cartesian');
     end
 
     function H = hfieldInternal(beam, xyz, varargin)
@@ -555,13 +559,9 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       F = beam.hnearfield_matrix(xyz);
 
       H = F * beam;
-      
-      % Add dipole fields coherently
-      H = reshape(H, 3, size(beam, 2), []);
-      H = squeeze(sum(H, 2));
-      
+
       % Package output
-      H = ott.utils.FieldVector(xyz, H, 'cartesian');
+      H = beam.packageArrayOutput(H, xyz, 'cartesian');
     end
 
     function E = efarfieldInternal(beam, rtp, varargin)
@@ -571,15 +571,11 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       F = beam.efarfield_matrix(rtp);
 
       E = F * beam;
-      
-      % Add dipole fields coherently
-      E = reshape(E, 3, size(beam, 2), []);
-      E = squeeze(sum(E, 2));
-      
+
       % Package output
       rtp(1, :) = 1.0;
       xyz = ott.utils.rtp2xyz(rtp);
-      E = ott.utils.FieldVector(xyz, E, 'cartesian');
+      E = beam.packageArrayOutput(E, xyz, 'cartesian');
     end
 
     function H = hfarfieldInternal(beam, rtp, varargin)
@@ -589,15 +585,25 @@ classdef Dipole < ott.beam.properties.DipoleArray ...
       F = beam.hfarfield_matrix(rtp);
 
       H = F * beam;
-      
-      % Add dipole fields coherently
-      H = reshape(H, 3, size(beam, 2), []);
-      H = squeeze(sum(H, 2));
-      
+
       % Package output
       rtp(1, :) = 1.0;
       xyz = ott.utils.rtp2xyz(rtp);
-      H = ott.utils.FieldVector(xyz, H, 'cartesian');
+      H = beam.packageArrayOutput(H, xyz, 'cartesian');
+    end
+
+    function E = packageArrayOutput(beam, E, cords, cords_type)
+      % Package output for array types
+      E = reshape(E, 3, beam.nbeams, []);
+      if strcmpi(beam.array_type, 'coherent') || beam.nbeams == 1
+        E = squeeze(sum(E, 2));
+        E = ott.utils.FieldVector(cords, E, cords_type);
+      else
+        E = mat2cell(E, 3, ones(1, size(E, 2)), size(E, 3));
+        E = cellfun(@squeeze, E, 'UniformOutput', false);
+        E = cellfun(@(x) ott.utils.FieldVector(cords, x, cords_type), ...
+            E, 'UniformOutput', false);
+      end
     end
   end
 
