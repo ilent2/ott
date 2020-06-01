@@ -29,8 +29,6 @@ classdef PlaneBasis < ott.beam.vswf.Bsc ...
 %   - like          -- Construct object like another beam
 %   - FromDirection -- Construct array from direction vectors
 %
-% Hidden methods
-%
 % All other methods inherited from base.
 
 % Based on code by Alexander Stilgoe.
@@ -322,27 +320,9 @@ classdef PlaneBasis < ott.beam.vswf.Bsc ...
   methods (Hidden)
     function beam = catInternal(dim, beam, varargin)
       % Concatenate beams
-
-      assert(dim == 2, 'Only 1xN arrays supported (may change in future)');
-
-      other_origin = cell(1, length(varargin));
-      other_field = other_origin;
-      other_set = other_origin;
-      other_a = other_origin;
-      other_b = other_origin;
-      for ii = 1:length(varargin)
-        other_origin{ii} = varargin{ii}.origin;
-        other_field{ii} = varargin{ii}.field;
-        other_set{ii} = varargin{ii}.directionSet;
-        other_a{ii} = varargin{ii}.a;
-        other_b{ii} = varargin{ii}.b;
-      end
-
-      beam.origin = cat(dim, beam.origin, other_origin{:});
-      beam.field = cat(dim, beam.field, other_field{:});
-      beam.directionSet = cat(dim, beam.directionSet, other_set{:});
-      beam.a = cat(dim, beam.a, other_a{:});
-      beam.b = cat(dim, beam.b, other_b{:});
+      beam = catInternal@ott.beam.vswf.Bsc(dim, beam, varargin{:});
+      beam = catInternal@ott.beam.properties.PlaneWaveArray(dim, ...
+          beam, varargin{:});
     end
 
     function beam = plusInternal(beam1, beam2)
@@ -352,61 +332,15 @@ classdef PlaneBasis < ott.beam.vswf.Bsc ...
 
     function beam = subsrefInternal(beam, subs)
       % Get the subscripted beam
-
-      if numel(subs) > ndims(beam.origin)
-        if subs(1) == 1
-          subs = subs(2:end);
-        end
-        assert(numel(subs) > ndims(beam.origin), ...
-            'Too many subscript indices');
-      end
-
-      beam.origin = beam.origin(:, subs{:});
-      beam.field = beam.field(:, subs{:});
-      beam.a = beam.a(:, subs{:});
-      beam.b = beam.b(:, subs{:});
-
-      idx = (1:3).' + 3*(subs{1}-1);
-      beam.directionSet = beam.directionSet(:, idx(:));
+      beam = subsrefInternal@ott.beam.vswf.Bsc(beam, subs);
+      beam = subsrefInternal@ott.beam.properties.PlaneWaveArray(beam, subs);
     end
 
     function beam = subsasgnInternal(beam, subs, rem, other)
       % Assign to the subscripted beam
-
-      if numel(subs) > 1
-        if subs{1} == 1
-          subs = subs(2:end);
-        end
-        assert(numel(subs) == 1, 'Only 1-D indexing supported for now');
-      end
-
-      assert(isempty(rem), 'Assignment to parts of beams not supported');
-
-      idx = (1:3).' + 3*(subs{1}-1);
-
-      if isempty(other)
-        % Delete data
-        beam.a(:, subs{:}) = [];
-        beam.b(:, subs{:}) = [];
-        beam.origin(:, subs{:}) = [];
-        beam.field(:, subs{:}) = [];
-        beam.directionSet(:, idx) = [];
-
-      else
-        % Ensure we have same type
-        assert(isa(other, 'ott.beam.vswf.PlaneBasis'), ...
-            'Only PlaneBasis beams supported for now');
-
-        % Ensure array sizes match
-        beam.Nmax = max(beam.Nmax, other.Nmax);
-        other.Nmax = beam.Nmax;
-
-        beam.a(:, subs{:}) = other.a;
-        beam.b(:, subs{:}) = other.b;
-        beam.origin(:, subs{:}) = other.origin;
-        beam.field(:, subs{:}) = other.field;
-        beam.directionSet(:, idx) = other.directionSet;
-      end
+      beam = subsasgnInternal@ott.beam.vswf.Bsc(beam, subs, rem, other);
+      beam = subsasgnInternal@ott.beam.properties.PlaneWaveArray(...
+          beam, subs, rem, other);
     end
   end
 end

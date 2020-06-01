@@ -14,6 +14,12 @@ classdef Bessel < ott.beam.properties.Bessel ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+  properties (SetAccess=protected)
+    angle  % Far-field angle of Bessel beam (radians)
+    field  % Field in theta and phi directions
+    lmode  % Azimuthal angular momentum number
+  end
+
   methods
     function beam = Bessel(varargin)
       % Construct a new abstract Bessel beam
@@ -69,6 +75,24 @@ classdef Bessel < ott.beam.properties.Bessel ...
       ott.utils.nargoutCheck(beam, nargout);
 
       beam = ott.beam.vswf.BesselBasis.like(beam, varargin{:});
+    end
+  end
+
+  methods % Getters/setters
+    function beam = set.angle(beam, val)
+      assert(isnumeric(val) && isscalar(val), 'angle must be numeric scalar');
+      beam.angle = val;
+    end
+
+    function beam = set.lmode(beam, val)
+      assert(isnumeric(val) && isscalar(val), 'lmode must be numeric scalar');
+      beam.lmode = val;
+    end
+
+    function beam = set.field(beam, val)
+      assert(isnumeric(val) && numel(val) == 2, ...
+          'field must be 2 element numeric');
+      beam.field = val(:);
     end
   end
 end

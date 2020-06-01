@@ -1180,13 +1180,14 @@ classdef Bsc < ott.beam.Beam ...
             rtp = ott.utils.xyz2rtp(P(:, ii));
             R = ott.utils.rotz(rtp(3)*180/pi) * ott.utils.roty(rtp(2)*180/pi);
 
-            [newbeam, D{ii}] = ibsc.applyRotation(R);
-            [newbeam, Az{ii}, Bz{ii}] = newbeam.applyZTranslation(...
-                rtp(1), 'Nmax', Nmax);
-
             if nargout > 1
+              [newbeam, D{ii}] = ibsc.applyRotation(R);
+              [newbeam, Az{ii}, Bz{ii}] = newbeam.applyZTranslation(...
+                  rtp(1), 'Nmax', Nmax);
               newbeam = D{ii}' * newbeam;
             else
+              newbeam = ibsc.applyRotation(R);
+              newbeam = newbeam.applyZTranslation(rtp(1), 'Nmax', Nmax);
               newbeam = newbeam.applyRotation(R.');
             end
 
@@ -1198,8 +1199,8 @@ classdef Bsc < ott.beam.Beam ...
           Bz = repmat({0}, 1, Nrots);
           D = repmat({1}, 1, Nrots);
         end
-        
-        if Nrots == 1
+
+        if Nrots == 1 && nargout > 1
           Az = Az{1};
           Bz = Bz{1};
           D = D{1};
