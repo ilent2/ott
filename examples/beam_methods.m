@@ -243,73 +243,33 @@ title('Focussed Top-hat');
 figure();
 
 % Paraxial beam to be masked
-gaussian = ott.beam.abstract.Gaussian('waist', 0.5);
-subplot(1, 4, 1);
-gaussian.visualiseFarfield();
+gaussian = ott.beam.abstract.Gaussian('waist', 1.0);
+subplot(1, 3, 1);
+gaussian.visualiseFarfield('direction', 'neg', 'basis', 'incoming');
+title('Gaussian Far-field');
+caxis([0, 2]);
+colorbar();
 
 % Annular mask (and visualisation using sin-theta mapping
-mask = @(theta, phi) theta < pi/4 & theta > pi/8;
-subplot(1, 4, 2);
+% Mask function taks a [theta; phi] array as argument.
+mask = @(tp) tp(1, :) > 3*pi/4 & tp(1, :) < 7*pi/8;
+subplot(1, 3, 2);
 [X, Y] = meshgrid(linspace(-1, 1), linspace(-1, 1));
-T = asin(sqrt(X.^2 + Y.^2));
+T = pi - asin(sqrt(X.^2 + Y.^2));
 P = atan2(Y, X);
-pcolor(X, Y, mask(T, P));
+h = pcolor(X, Y, reshape(double(mask([T(:), P(:)].')), size(X)));
+axis image;
+h.EdgeColor = 'none';
+colorbar();
+title('Mask');
 
 % Combined beam + mask
-beam = ott.beam.abstract.FarfieldMasked('mask', mask, ...
-    'beam', gaussian, 'mapping', 'sintheta');
+beam = ott.beam.abstract.MaskedFarfield('mask', mask, ...
+    'masked_beam', gaussian);
 
 % Far-field visualisation simply shows the mask applied to the beam
-subplot(1, 4, 3);
-beam.visualiseFarfield();
-title('Far-field');
-
-% Near-field visualisation converts the beam to a VSWF beam first
-subplot(1, 4, 4);
-beam.visualise();
-title('Near-field');
-
-%% Point-matching and plane-wave basis beams
-% Beams can also be created by point-matching a near-field or far-field
-% image of the beam intensity or by constructing a plane-wave basis
-% representation of the beam.  This section includes three different
-% methods for simulating the near-field of a paraxial far-field beam:
-%
-%   - Fast Fourier transform
-%   - VSWF Far-field point-matching
-%   - VSWF plane wave basis
-
-% Generate a paraxial field
-[X, Y] = meshgrid(linspace(-1, 1, 20), linspace(-1, 1, 20));
-Ex = X.^2 + Y.^2;
-Ey = zeros(size(Ex));
-E = cat(3, Ex, Ey);
-
-% Construct a abstract representation of this field
-% This uses interpolation over the paraxial far-field.
-paraxial_beam = ott.beam.abstract.InterpParaxial.FromGrid(X, Y, E);
-
-figure();
-
-% Visualise the far-field
-subplot(1, 4, 1);
-paraxial_beam.visualiseFarfield();
-
-% Visualise the near-field
-% This implicitly casts the beam to a paraxial.Fft for calculating fields
-% around the focal plane.  Note: Additional control over the cast can be
-% achieved by using an explicit cast instead of an implicit cast.
-subplot(1, 4, 2);
-paraxial_beam.visualise();
-
-% Alternatively, we can also cast the beam to a VSWF point-matched beam
-vswf_beam = ott.beam.vswf.Pointmatch(paraxial_beam);
-subplot(1, 4, 3);
-vswf_beam.visualise();
-
-% Or a VSWF plane wave basis beam
-% This creates one plane wave for each non-zero paraxial field point
-vswf_beam = ott.beam.vswf.PlaneBasis(paraxial_beam);
-subplot(1, 4, 4);
-vswf_beam.visualise();
-
+subplot(1, 3, 3);
+beam.visualiseFarfield('direction', 'neg');
+title('Masked Far-field');
+caxis([0, 2]);
+colorbar();

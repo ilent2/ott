@@ -701,10 +701,87 @@ classdef Bsc < ott.beam.Beam ...
       p.addParameter('range', [1,1].*nmax2ka(max([beam.Nmax])) ...
           ./abs(min([beam.wavenumber])));
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      unmatched = [fieldnames(p.Unmatched).'; struct2cell(p.Unmatched).'];
       [varargout{1:nargout}] = visualise@ott.beam.Beam(...
           beam, unmatched{:}, 'range', p.Results.range);
+    end
+
+    function varargout = visualiseFarfield(beam, varargin)
+      % Create a visualisation of the beam by projecting the far-field
+      % onto a plane.
+      %
+      % Usage
+      %   beam.visualiseFarfield(...) displays an image of the beam
+      %   in the current axes.
+      %
+      % Optional named arguments
+      %   - basis (enum) -- Basis to use for visualisation.  Can either
+      %     be 'incoming' or 'outgoing'.  Defaults to the beam basis
+      %     unless 'regular', in which case uses 'incoming' basis.
+      %
+      % See :class:`ott.beam.Beam` for usage/parameters.
+
+      [beam, unmatched] = beam.farfieldVisHelper(varargin{:});
+      [varargout{1:nargout}] = visualiseFarfield@ott.beam.Beam(...
+          beam, unmatched{:});
+    end
+
+    function varargout = visualiseFarfieldSphere(beam, varargin)
+      % Generate a spherical surface visualisation of the far-field
+      %
+      % Usage
+      %   beam.visualiseFarfieldSphere(...)
+      %   Generate a visualisation of the far-field in the current axes.
+      %
+      % Optional named arguments
+      %   - basis (enum) -- Basis to use for visualisation.  Can either
+      %     be 'incoming' or 'outgoing'.  Defaults to the beam basis
+      %     unless 'regular', in which case uses 'incoming' basis.
+      %
+      % See :class:`ott.beam.Beam` for usage/parameters.
+
+      [beam, unmatched] = beam.farfieldVisHelper(varargin{:});
+      [varargout{1:nargout}] = visualiseFarfieldSphere@ott.beam.Beam(...
+          beam, unmatched{:});
+    end
+
+    function varargout = visualiseFarfieldSlice(beam, phi, varargin)
+      % Generate a 2-D slice through the far-field
+      %
+      % Usage
+      %   beam.visualiseFarfieldSlice(phi, ...)
+      %   Generates a 2-D slice at angle phi around the z-axis.
+      %   Plots into the current axes.
+      %
+      % Optional named arguments
+      %   - basis (enum) -- Basis to use for visualisation.  Can either
+      %     be 'incoming' or 'outgoing'.  Defaults to the beam basis
+      %     unless 'regular', in which case uses 'incoming' basis.
+      %
+      % See :class:`ott.beam.Beam` for usage/parameters.
+
+      [beam, unmatched] = beam.farfieldVisHelper(varargin{:});
+      [varargout{1:nargout}] = visualiseFarfieldSlice@ott.beam.Beam(...
+          beam, unmatched{:});
+    end
+
+    function [moments, ints] = intensityMoment(beam, varargin)
+      % Calculate moment of the beam intensity in the far-field
+      %
+      % Usage
+      %   [moment, int] = beam.intensityMoment(...)
+      %
+      % Optional named arguments
+      %   - basis (enum) -- Basis to use for visualisation.  Can either
+      %     be 'incoming' or 'outgoing'.  Defaults to the beam basis
+      %     unless 'regular', in which case uses 'incoming' basis.
+      %
+      % See :class:`ott.beam.Beam` for parameters/usage.
+
+      [beam, unmatched] = beam.farfieldVisHelper(varargin{:});
+      [varargout{1:nargout}] = intensityMoment@ott.beam.Beam(...
+          beam, unmatched{:});
     end
 
     % TODO: Ensure sparsity is respected
@@ -1799,11 +1876,29 @@ classdef Bsc < ott.beam.Beam ...
 
     function [E, data] = efarfieldInternal(beam, rtp, varargin)
       % Method used by efield(xyz)
-      [E, ~, data] = beam.ehfarfield(rtp, varargin{:});
+      %
+      % Optional parameters
+      %   - basis (enum) -- Basis to use for visualisation.  Can either
+      %     be 'incoming' or 'outgoing'.  Defaults to the beam basis
+      %     unless 'regular', in which case uses 'incoming' basis.
+      %
+      % See :class:`ott.beam.Beam` for usage/parameters.
+
+      [beam, unmatched] = beam.farfieldVisHelper(varargin{:});
+      [E, ~, data] = beam.ehfarfield(rtp, unmatched{:});
     end
     function [H, data] = hfarfieldInternal(beam, rtp, varargin)
       % Method used by hfield(xyz)
-      [~, H, data] = beam.ehfarfield(rtp, varargin{:});
+      %
+      % Optional parameters
+      %   - basis (enum) -- Basis to use for visualisation.  Can either
+      %     be 'incoming' or 'outgoing'.  Defaults to the beam basis
+      %     unless 'regular', in which case uses 'incoming' basis.
+      %
+      % See :class:`ott.beam.Beam` for usage/parameters.
+
+      [beam, unmatched] = beam.farfieldVisHelper(varargin{:});
+      [~, H, data] = beam.ehfarfield(rtp, unmatched{:});
     end
 
     function [a, b, p, q, n, m, ...
@@ -1928,6 +2023,23 @@ classdef Bsc < ott.beam.Beam ...
         incN = Nbeams;
       end
     end
+
+    function [beam, unmatched] = farfieldVisHelper(beam, varargin)
+      % Helper for far-field visualisation functions
+
+      p = inputParser;
+      p.addParameter('basis', []);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Change basis
+      if isempty(p.Results.basis) && strcmpi(beam.basis, 'regular')
+        beam.basis = 'incoming';
+      elseif ~isempty(p.Results.basis)
+        beam.basis = p.Results.basis;
+      end
+    end
   end
 
   methods % Getters/setters
@@ -1958,7 +2070,7 @@ classdef Bsc < ott.beam.Beam ...
     function beam = set.basis(beam, val)
       assert(any(strcmpi(val, {'incoming', 'outgoing', 'regular'})), ...
         'ott:beam:vswf:Bsc:set_basis:invalid_value', ...
-        'basis must be one of ''incomming'' ''outgoing'' or ''regular''');
+        'basis must be one of ''incoming'' ''outgoing'' or ''regular''');
 
       beam.basis = val;
     end
