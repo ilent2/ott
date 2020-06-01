@@ -19,7 +19,7 @@ classdef CastFarfield < ott.beam.properties.CastFarfield ...
   methods
     function beam = ott.beam.vswf.Pointmatch(varargin)
       % Cast to vswf.FarfieldPm
-      beam = ott.beam.vswf.FarfieldPm(varargin{:});
+      beam = ott.beam.vswf.NearfieldPm(varargin{:});
     end
   end
 end

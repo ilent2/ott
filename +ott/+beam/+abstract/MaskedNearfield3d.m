@@ -62,7 +62,7 @@ classdef MaskedNearfield3d < ott.beam.properties.MaskedBeam ...
           'all points must be maxRadius (for now)');
 
       % Calculate field at locations
-      E = beam.beam.efield(xyz, varargin{:});
+      E = beam.masked_beam.efield(xyz, varargin{:});
 
       % Compute mask
       mask = beam.mask(xyz);
@@ -81,7 +81,7 @@ classdef MaskedNearfield3d < ott.beam.properties.MaskedBeam ...
           'all points must be maxRadius (for now)');
 
       % Calculate field at locations
-      H = beam.beam.hfield(rtp, varargin{:});
+      H = beam.masked_beam.hfield(rtp, varargin{:});
 
       % Compute mask
       mask = beam.mask(xyz);

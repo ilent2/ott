@@ -60,6 +60,10 @@ classdef MaskedFarfield < ott.beam.properties.MaskedBeam ...
     function E = efarfieldInternal(beam, rtp, varargin)
       % Calculate the internal beam far field and then mask
 
+      if size(rtp, 1) == 2
+        rtp = [ones(1, size(rtp, 2)); rtp];
+      end
+
       % Calculate field at locations
       E = beam.masked_beam.efarfield(rtp, varargin{:});
 
@@ -69,11 +73,15 @@ classdef MaskedFarfield < ott.beam.properties.MaskedBeam ...
       % Zero fields outside mask
       vrtp = E.vrtp;
       vrtp(:, ~mask) = 0.0;
-      E = ott.utils.FieldVector(E.locations, vrtp, 'spherical');
+      E = ott.utils.FieldVector(rtp, vrtp, 'spherical');
     end
 
     function H = hfarfieldInternal(beam, rtp, varargin)
       % Calculate the internal beam far field and then mask
+
+      if size(rtp, 1) == 2
+        rtp = [ones(1, size(rtp, 2)); rtp];
+      end
 
       % Calculate field at locations
       H = beam.masked_beam.efarfield(rtp, varargin{:});
@@ -84,7 +92,7 @@ classdef MaskedFarfield < ott.beam.properties.MaskedBeam ...
       % Zero fields outside mask
       vrtp = H.vrtp;
       vrtp(:, ~mask) = 0.0;
-      H = ott.utils.FieldVector(H.locations, vrtp, 'spherical');
+      H = ott.utils.FieldVector(rtp, vrtp, 'spherical');
     end
   end
 end

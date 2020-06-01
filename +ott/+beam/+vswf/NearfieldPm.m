@@ -94,14 +94,14 @@ classdef NearfieldPm < ott.beam.vswf.Pointmatch
       % Construct a BSC instance using far-field point matching.
       %
       % Usage
-      %   bsc = FarfieldPm(nn, mm, rtp, E_farfield)
+      %   bsc = NearfieldPm(nn, mm, rtp, E_farfield)
       %
-      %   bsc = FarfieldPm(nn, mm, coefficient_matrix, E_farfield)
+      %   bsc = NearfieldPm(nn, mm, coefficient_matrix, E_farfield)
       %
-      %   bsc = FarfieldPm(coefficient_matrix, E_farfield)
+      %   bsc = NearfieldPm(coefficient_matrix, E_farfield)
       %   Assumes coefficient matrix is a full matrix (all nn/mm values).
       %
-      %   bsc = FarfieldPm(...) Constructs an empty Bsc object.
+      %   bsc = NearfieldPm(...) Constructs an empty Bsc object.
       %
       % Parameters
       %   - nn, mm (N-numeric|H-cell) -- VSWF mode indices.  Either vectors

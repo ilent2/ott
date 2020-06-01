@@ -219,17 +219,31 @@ classdef (Abstract) Beam < ott.beam.properties.Beam
     end
 
     function beam = ott.beam.vswf.Bsc(varargin)
-      % Cast to vswf.FarfieldPm
-      beam = ott.beam.vswf.FarfieldPm(varargin{:});
+      % Cast to vswf.Pointmatch
+      beam = ott.beam.vswf.Pointmatch(varargin{:});
     end
 
     function beam = ott.beam.vswf.FarfieldPm(beam, varargin)
-      % TODO: implement
+      % Construct a far-field point matched beam
 
-      error('Not yet implemented');
+      Nmax = 20;
+      ntheta = 2*(Nmax+1);
+      nphi = 2*(Nmax+1);
+
+      % Sample point in far-field
+      theta = linspace(0, pi, ntheta);
+      phi = linspace(0, 2*pi, nphi);
+      [T, P] = meshgrid(theta, phi);
+      tp = [T(:), P(:)].';
 
       % For abstract beams, this invokes the Beam cast.
-      [Etp, Htp] = beam.ehfarfield(tp);
+      E = beam.efarfield(tp);
+      Etp = [E.vrtp(2, :).'; E.vrtp(3, :).'];
+
+      ci = ott.utils.combined_index(Nmax, Nmax);
+      [nn, mm] = ott.utils.combined_index(1:ci);
+      beam = ott.beam.vswf.FarfieldPm(nn, mm, tp, Etp);
+
     end
 
     function beam = ott.beam.abstract.InterpFarfield(beam, varargin)

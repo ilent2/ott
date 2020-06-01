@@ -13,15 +13,16 @@ classdef Pointmatch < ott.beam.vswf.Bsc
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-% TODO: The original had shrinking and filtering near-zero coefficients
-%   Do we want either of these features in this version?
-%   Should they be added to the Bsc class instead or here?
-
   methods
     function beam = Pointmatch(varargin)
       % Construct a new Bsc using point matching.
       %
       % Usage
+      %   bsc = Pointmatch(nn, mm, locations, Efield)
+      %   Builds coefficient matrix for modes at specified locations
+      %   and applies point matching with Efield.  Only supported
+      %   when sub-classed.
+      %
       %   bsc = Pointmatch(nn, mm, coefficient_matrix, Efield)
       %
       %   bsc = Pointmatch(coefficient_matrix, Efield)
@@ -137,8 +138,8 @@ classdef Pointmatch < ott.beam.vswf.Bsc
       % This should be overloaded by your sub-class.  This implementation
       % simply raises and error when called.
 
-      error('Building coefficient matrix not supported', newline, ...
-          'Use an overloaded class instead');
+      error(['Building coefficient matrix not supported', newline, ...
+          'Use an overloaded class instead']);
     end
 
     function [a, b] = unpack_coefficients(beam, fab, nn, mm)

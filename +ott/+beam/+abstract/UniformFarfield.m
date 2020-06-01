@@ -103,8 +103,7 @@ classdef UniformFarfield < ott.beam.abstract.CastNearfield ...
     end
     function beam = set.power(beam, val)
       % Scale polarisation
-      beam.polarisation = beam.polarisation ...
-          ./ abs(beam.polarisation) .* sqrt(val ./ (4*pi));
+      beam.polarisation = beam.polarisation .* sqrt(val ./ beam.power);
     end
   end
 end

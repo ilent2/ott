@@ -141,10 +141,10 @@ classdef GaussianDavis5 < ott.beam.Beam ...
       [~, H] = beam.ehfieldInternal(xyz);
     end
 
-    function E = efarfieldInternal(beam)
+    function E = efarfieldInternal(beam, varargin)
       error('Not yet implemented');
     end
-    function H = hfarfieldInternal(beam)
+    function H = hfarfieldInternal(beam, varargin)
       error('Not yet implemented');
     end
   end

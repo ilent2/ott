@@ -217,20 +217,21 @@ figure();
 dipoles.visualise();
 
 %% Top-Hat beams
-% The toolbox includes two top-hat beams: a collimated top-hat beam
-% implemented using NearfieldMasked3d, and a focussed top-hat
-% implemented using ParaxialMasked.
+% The toolbox includes two abstract top-hat beams: a collimated top-hat beam
+% and a focussed top-hat beam.  There are no implementations for these
+% beams, isntead the fields are calculated by casting to other beams
+% such as vswf.FarfieldPm or Ray.  Be careful using these beams, the accuracy
+% depends on the accuracy of the cast/approximation.
 
 figure();
 
 beam = ott.beam.abstract.TopHat('radius', 1.0);
 subplot(1, 2, 1);
-beam.visualise('axis', 'y');
+beam.visualise('range', 2*[1,1]);
 title('Collimated Top-hat');
 
-beam = ott.beam.abstract.FocussedTopHat('radius', 1.0, ...
-    'paraxial_waist', 0.5);
-subplot(1, 2, 1);
+beam = ott.beam.abstract.FocussedTopHat('angle', pi/4);
+subplot(1, 2, 2);
 beam.visualise('axis', 'y');
 title('Focussed Top-hat');
 

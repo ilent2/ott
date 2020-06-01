@@ -95,7 +95,7 @@ classdef TopHat < ott.beam.properties.TopHat ...
           'origin', [0;0;0], 'direction', [0;0;1], ...
           'polarisation', [1;0;0], 'field', beam.polarisation);
 
-      mask = @(xyz) vecnorm(xyz(2:3, :)) <= beam.radius;
+      mask = @(xyz) vecnorm(xyz(1:2, :)) <= beam.radius;
 
       beam = ott.beam.abstract.MaskedNearfield3d(mask, plane);
     end
