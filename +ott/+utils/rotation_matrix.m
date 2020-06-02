@@ -11,16 +11,29 @@ function R = rotation_matrix(rot_axis,rot_angle)
 % See LICENSE.md for information about using/distributing this file.
 
 if nargin < 2
-	rot_angle= norm(rot_axis);
-    	rot_axis = rot_axis / norm(rot_axis);
+	rot_angle = vecnorm(rot_axis);
+  rot_axis = rot_axis ./ rot_angle;
 end
 
-if rot_angle==0 || norm(rot_axis)==0
-	R=eye(3);
-	return
+assert(isnumeric(rot_angle) && isscalar(rot_angle), ...
+    'rot_angle must be numeric scalar');
+assert(isnumeric(rot_axis) && isvector(rot_axis) ...
+  && numel(rot_axis) == 3, ...
+  'rot_axis should be 3 element numeric vector');
+
+% Check for small angle
+tol = 1.0e-8;
+if abs(rot_angle) < tol
+  R = eye(3);
+  return;
 end
 
-rot_axis=rot_axis / norm(rot_axis);
+% Check axis is unit vector
+if abs(vecnorm(rot_axis)-1) > 2*eps(1)
+  warning('ott:utils:rotation_matrix:unit_vector', ...
+    'Rotation axis (with two inputs) should be unit vector, rescaling');
+  rot_axis = rot_axis ./ vecnorm(rot_axis);
+end
 
 % Euler-Rodrigues formula, might be unstable for small angles :(
 
