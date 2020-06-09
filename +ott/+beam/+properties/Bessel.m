@@ -125,13 +125,13 @@ classdef Bessel < ott.beam.properties.Material
           'lmode must be scalar or inputs must have matching size');
 
       % Duplicate as needed
-      if Ntheta == 1, angle = repmat(angle, Nwork, 1); end
-      if Npol == 1, field = repmat(field, Nwork, 1); end
+      if Ntheta == 1, angle = repmat(angle, 1, Nwork); end
+      if Npol == 1, field = repmat(field, 1, Nwork); end
       if Nlmode == 1, lmode = repmat(lmode, Nwork, 1); end
 
-      beam.angle = angle;
+      beam.angle = angle(:).';
       beam.field = field;
-      beam.lmode = lmode;
+      beam.lmode = lmode(:).';
     end
   end
 end

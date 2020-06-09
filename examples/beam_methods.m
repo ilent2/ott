@@ -146,8 +146,6 @@ title('Incoherent array');
 % by the following visualisation
 subplot(1, 4, 4);
 beam = ott.beam.vswf.PlaneBasis(abstract_beam, 'Nmax', 12);
-beam.position = [0;0;2.25];
-beam = beam.applyTransformation();
 beam.visualise('range', [2, 2], 'axis', 'y', 'field', 'Re(Ex)');
 title('VSWF with Nmax=12');
 
@@ -186,8 +184,9 @@ title('Rays as Plane Waves');
 
 figure();
 
-theta = pi/4;
-abstract_beam = ott.beam.abstract.Bessel(theta);
+theta = pi/4;    % Incomming angle
+field = [1; 0];  % Spherical coordinate field vector
+abstract_beam = ott.beam.abstract.Bessel(theta, field);
 
 abstract_beam.visualise();
 

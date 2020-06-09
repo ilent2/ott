@@ -35,6 +35,8 @@ classdef PlaneBasis < ott.beam.vswf.Bsc ...
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% TODO: Rotation should leave type unchanged
+
   methods (Static)
     function bsc = empty(varargin)
       % Construct an empty beam array
