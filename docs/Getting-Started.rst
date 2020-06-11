@@ -10,9 +10,7 @@ including information on `installation <#installation>`__,
 `using the GUIs <#exploring-the-toolbox-with-the-gui>`__
 and `running the example files <#running-the-examples>`__.
 This section also contains a brief
-`overview of the toolbox <#toolbox-overview>`__, further
-information can be found in the papers listed in
-:ref:`further-reading`.
+`overview of the toolbox structure <#toolbox-overview>`__.
 
 Installation
 ============

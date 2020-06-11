@@ -1,16 +1,43 @@
 
+.. _introduction:
+
 ############
 Introduction
 ############
 
-The optical tweezers toolbox can be used to calculate optical forces and
-torques of particles using the T-matrix formalism in a vector spherical
-wave basis. The toolbox includes codes for calculating T-matrices, beams
-described by vector spherical wave functions, functions for calculating
-forces and torques, simple codes for simulating dynamics and examples.
+The optical tweezers toolbox (OTT) includes a collection of methods
+for simulating particles held in optical traps including methods for
+force calculation, simulating tightly focused beams and simulating
+particle dynamics.
+The toolbox is implemented as a Matlab package, consisting of several
+sub-packages collecting related methods together.
+The original version of the toolbox focussed on force calculation using
+the T-matrix method; this version extends the original toolbox to
+include several methods for calculating forces and torques as well as
+methods for simulating dynamics in several common configurations.
+This documentation describes the toolbox and is split into four main
+chapters:
 
-To get started using the toolbox, checkout the `Getting
-Started <Getting-Started>`__ page.
+   * :ref:`getting-started` contains information for setting up
+     the toolbox and running the examples along with a more detailed
+     overview of the toolbox structure and unit conventions.
+
+   * :ref:`examples` describes some of the toolbox functionality in
+     more details including examples of the most commonly performed
+     tasks with the toolbox.
+
+   * :ref:`package-overview` provides an overview of the main toolbox
+     packages including basic comparisons between different methods.
+
+   * :ref:`reference` provides a more detailed description of each
+     package/class/function with usage, examples and discussion of
+     parameters.  This section is mostly generated from the source
+     code documentation which can be accessed by typing
+     ``help ott`` in the Matlab console.
+
+Additional information on more specific topics can be found on the
+`GitHub page <https://github.com/ilent2/ott>`__ or in the
+:ref:`conceptual-notes` and :ref:`further-reading` sections.
 
 License
 =======
@@ -22,33 +49,17 @@ contact us. The toolbox includes some third-party components,
 information about these components can be found in the documentation and
 corresponding file in the thirdparty directory.
 
-This version of the toolbox can be referenced by citing the following
-paper
+If you publish work using the toolbox, please consider citing it.
+Version 2 of the toolbox is described in:
+
+.. todo:: add citation
+
+Or for the original optical tweezers toolbox (version 1):
 
     T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe, G. Knöner, A. M.
     Branczyk, N. R. Heckenberg, and H. Rubinsztein-Dunlop, "Optical
     tweezers computational toolbox", `Journal of Optics A 9, S196-S203
     (2007) <http://iopscience.iop.org/1464-4258/9/8/S12/>`__
-
-or by directly citing the toolbox
-
-    I. C. D. Lenton, T. A. Nieminen, V. L. Y. Loke, A. B. Stilgoe,
-    Y. Hu, G. Knöner, A. M. Branczyk, N. R. Heckenberg, and H.
-    Rubinsztein-Dunlop, "Optical tweezers toolbox",
-    https://github.com/ilent2/ott
-
-and the respective Bibtex entry
-
-.. code:: latex
-
-   @misc{Lenton2020,
-     author = {Lenton, Isaac C. D. and Nieminen, Timo A. and Loke, Vincent L. Y. and Stilgoe, Alexander B. and Y. Hu and Kn{\ifmmode\ddot{o}\else\"{o}\fi}ner, Gregor and Bra{\ifmmode\acute{n}\else\'{n}\fi}czyk, Agata M. and Heckenberg, Norman R. and Rubinsztein-Dunlop, Halina},
-     title = {Optical Tweezers Toolbox},
-     year = {2020},
-     publisher = {GitHub},
-     howpublished = {\url{https://github.com/ilent2/ott}},
-     commit = {A specific commit or version (optional)}
-   }
 
 Contributing
 ============
@@ -67,4 +78,5 @@ Contact us
 ==========
 
 The best person to contact for inquiries about the toolbox or licensing
-is `Isaac Lenton <mailto:uqilento@uq.edu.au>`__
+is `Isaac Lenton <mailto:uqilento@uq.edu.au>`__.
+

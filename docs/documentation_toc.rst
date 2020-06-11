@@ -9,6 +9,7 @@
    Introduction.rst
    Getting-Started.rst
    Examples.rst
+   Package-Overview.rst
    Reference.rst
    Conceptual-Notes.rst
    Further-Reading.rst
