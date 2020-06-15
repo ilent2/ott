@@ -1,11 +1,13 @@
 classdef Cylinder < ott.shapes.Shape ...
     & ott.shapes.mixin.AxisymStarShape ...
     & ott.shapes.mixin.IsosurfSurfPoints
-%Cylinder a simple cylinder shape
+% A simple cylindrical shape.
+% Inherits from :class:`Shape`, :class:`mixin.AxisymStarShape` and
+% :class:`mixin.IsosurfSurfPoints`.
 %
-% properties:
-%   radius        % Radius of the cylinder
-%   height        % Height of the cylinder
+% Properties
+%  - radius       -- Radius of the cylinder
+%  - height       -- Height of the cylinder
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -30,6 +32,8 @@ classdef Cylinder < ott.shapes.Shape ...
       % Usage
       %   shape = Cylinder(radius, height, ...)
       %   Parameters can also be passed as named arguments.
+      %
+      % Additional parameters passed to base :class:`Shape`.
 
       p = inputParser;
       p.addOptional('radius', 1.0);

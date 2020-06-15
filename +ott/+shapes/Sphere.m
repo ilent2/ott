@@ -26,17 +26,12 @@ classdef Sphere < ott.shapes.Shape ...
 
   methods
     function shape = Sphere(radius, varargin)
-      % SPHERE construct a new sphere
+      % Construct a new sphere
       %
       % Usage
       %   shape = Sphere(radius, ...)
       %
-      % Optional named arguments
-      %   - position (3xN numeric) -- Position of the plane.
-      %     Default: ``[0;0;0]``.
-      %
-      %   - rotation (3x3N numeric) -- Plane orientations.
-      %     Default: ``eye(3)``.
+      % Additional parameters passed to base class.
 
       p = inputParser;
       p.addOptional('radius', 1.0);

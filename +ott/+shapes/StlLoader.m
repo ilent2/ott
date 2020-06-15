@@ -1,19 +1,11 @@
 classdef StlLoader < ott.shapes.TriangularMesh
-% StlLoader load a shape from a STL file
+% Load a shape from a STL file.
+% Inherits from :class:`TriangularMesh`.
 %
-% Properties:
-%   filename   name of the file this object loaded
-%   verts      (TriangularMesh) 3xN matrix of vertex locations
-%   faces      (TriangularMesh) 3xN matrix of vertex indices describing faces
-%   maxRadius  (Shape) maximum distance from shape origin
-%   volume     (Shape) volume of shape
+% Properties
+%   - filename  -- Name of the file this object loaded
 %
-% Inherited methods:
-%   writeWavefrontObj(shape, ...) write shape to Wavefront OBJ file.
-%   insideXyz(shape, ...) determine if Cartesian point is inside shape.
-%   voxels(shape, ...) xyz coordinates for voxels inside the shape.
-%   surf(shape, ...) shape surface representation.
-%
+% Additional properties inherited from base class.
 % See also StlLoader, ott.shapes.TriangularMesh, ott.shapes.WavefrontObj.
 %
 % This class uses a 3rd party STL file reader:
@@ -94,18 +86,19 @@ classdef StlLoader < ott.shapes.TriangularMesh
   end
 
   methods
-    function shape = StlLoader(filename)
+    function shape = StlLoader(filename, varargin)
       % Construct a new shape from a STL file
       %
-      % StlLoader(filename) loads the face and vertex information
-      % contained in the file.
+      % Usage
+      %   shape = StlLoader(filename, ...)
+      %   Loads the face and vertex information contained in the file.
       %
       % Only supports binary STL files.
       %
       % This function uses 3rd party code,
       % see tplicenses/stl_EricJohnson.txt for licensing information.
 
-      assert(nargin == 1, 'Filename not supplied');
+      assert(nargin >= 1, 'Filename not supplied');
 
       %
       % Begin third-party code
@@ -139,7 +132,7 @@ classdef StlLoader < ott.shapes.TriangularMesh
       faces = new_idx(faces);
 
       % Setup object
-      shape = shape@ott.shapes.TriangularMesh(uverts.', faces.');
+      shape = shape@ott.shapes.TriangularMesh(uverts.', faces.', varargin{:});
       shape.filename = filename;
 
     end

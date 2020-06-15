@@ -5,7 +5,7 @@ classdef (Abstract) Set < ott.shapes.Shape ...
     & ott.shapes.mixin.VarStarShaped ...
     & ott.shapes.mixin.IsosurfSurf
 % Collection of shapes
-% Inherits from :class:`Shapes` and :class:`mixin.VoxelsOnly` (may change).
+% Inherits from :class:`Shape`.
 %
 % This is the base class for collections of shapes including
 % :class:`Union` and :class:`Intersection`.

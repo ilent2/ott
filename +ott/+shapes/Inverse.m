@@ -1,5 +1,6 @@
 classdef Inverse < ott.shapes.Shape
 % Inverts the geometry of a shape.
+% Inherits from :class:`Shape`.
 %
 % Properties
 %   - internal    -- Internal shape that is inversed
@@ -8,6 +9,10 @@ classdef Inverse < ott.shapes.Shape
 %
 % Methods
 %   - operator~   -- Smart inverse
+
+% Copyright 2020 Isaac Lenton
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
   properties
     internal      % Internal shape that is unversed

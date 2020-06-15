@@ -4,9 +4,11 @@ classdef Superellipsoid < ott.shapes.Shape ...
     & ott.shapes.mixin.IsosurfSurfPoints
 % Superellipsoid shape
 %
-% In Cartesian coordinates, a superellipsoid is defined by::
+% In Cartesian coordinates, a superellipsoid is defined by
 %
-%     ( |x/a|^(2/e) + |y/b|^(2/e) )^(e/n) + |z/c|^(2/n) = 1
+% .. math::
+%
+%     ( |x/a|^{2/e} + |y/b|^{2/e} )^{e/n} + |z/c|^{2/n} = 1
 %
 % where :math:`a,b,c` are the radii along Cartesian directions,
 % and :math:`e,n` are the east-west and north-south smoothness parameters.

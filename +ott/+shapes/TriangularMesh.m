@@ -4,7 +4,10 @@ classdef TriangularMesh < ott.shapes.Shape ...
     & ott.shapes.mixin.VarXySymmetry ...
     & ott.shapes.mixin.VarZRotSymmetry ...
     & ott.shapes.mixin.Patch
-% TriangularMesh base class for triangular mesh objects (such as file loaders)
+% Describes a mesh formed by triangular patches.
+%
+% This class is similar to :class:`PatchMesh` except the patches
+% must be triangles (described by three vertices).
 %
 % Properties
 %   - verts     -- 3xN matrix of vertex locations
@@ -16,6 +19,7 @@ classdef TriangularMesh < ott.shapes.Shape ...
 % Faces vertices should be ordered so normals face outwards for
 % volume and inside functions to work correctly.
 
+% Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 

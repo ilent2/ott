@@ -6,7 +6,15 @@ classdef PatchMesh < ott.shapes.Shape ...
     & ott.shapes.mixin.Patch
 % A surface resembling Matlab polygon patches.
 %
-% This surface casts to triangular mesh for most operations.
+% This surface casts to :class:`TriangularMesh` for most operations.
+%
+% Properties
+%   - verts     -- (3xN numeric) Array of vertices for forming faces
+%   - faces     -- (mxN numeric) Vertex indices for polygons
+
+% Copyright 2020 Isaac Lenton
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
   properties
     verts
