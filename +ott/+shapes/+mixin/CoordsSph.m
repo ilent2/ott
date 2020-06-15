@@ -9,18 +9,24 @@ classdef (Abstract) CoordsSph
 %   - insideXyzInternal     -- Cartesian coordinate inputs, calls insideRtp
 %   - normalsXyzInternal    -- Calculate normals, calls normalsRtp
 
+% Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+  methods (Abstract)
+    insideRtpInternal(obj)
+    normalsRtpInternal(obj)
+  end
 
   methods (Hidden)
     function b = insideXyzInternal(shape, xyz, varargin)
       % Determine if point is inside the shape (Cartesian coordinates)
 
-      % For planes, it's easier to work in Cartesian coordinates
+      % Transform to spherical
       rtp = ott.utils.xyz2rtp(xyz);
 
       % Call Cartesian method
-      b = shape.insideRtpInternal(rtp, 'origin', 'shape');
+      b = shape.insideRtpInternal(rtp, varargin{:});
     end
 
     function nxyz = normalsXyzInternal(shape, xyz, varargin)

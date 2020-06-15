@@ -1,4 +1,6 @@
-classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
+classdef Cylinder < ott.shapes.Shape ...
+    & ott.shapes.mixin.AxisymStarShape ...
+    & ott.shapes.mixin.IsosurfSurfPoints
 %Cylinder a simple cylinder shape
 %
 % properties:
@@ -13,45 +15,100 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
     height        % Height of the cylinder
   end
 
+  properties (Dependent)
+    maxRadius          % Maximum particle radius
+    volume             % Particle volume
+    boundingBox        % Cartesian coordinate bounding box (no rot/pos)
+    xySymmetry         % True if the particle is xy-plane mirror symmetric
+    perimeter          % Perimeter from in axis plane
+  end
+
   methods
-    function shape = Cylinder(radius, height)
-      % CYLINDER construct a new cylinder
+    function shape = Cylinder(varargin)
+      % Construct a new cylinder
       %
-      % CYLINDER(radius, height) or CYLINDER([radius, height]) creates
-      % a new cylinder with the specified radius and height.
+      % Usage
+      %   shape = Cylinder(radius, height, ...)
+      %   Parameters can also be passed as named arguments.
 
-      shape = shape@ott.shapes.StarShape();
+      p = inputParser;
+      p.addOptional('radius', 1.0);
+      p.addOptional('height', 1.0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      if nargin == 2
-        shape.radius = radius;
-        shape.height = height;
+      shape = shape@ott.shapes.Shape(unmatched{:});
+      shape.radius = p.Results.radius;
+      shape.height = p.Results.height;
+    end
+
+    function surf(shape, varargin)
+      % Generate a visualisation of the shape
+      %
+      % Converts the shape to a PatchMesh and calls surf.
+      %
+      % Usage
+      %   shape.surf(...)
+      %
+      % Optional named parameters
+      %   - resolution ([ntheta, nphi]) -- Number of faces in theta/phi
+      %     directions.  Default: ``[0, 20]`` uses cylinder corners for
+      %     theta direction unless otherwise set.
+      %
+      % Additional named parameters are passed to PatchMesh.surf.
+
+      p = inputParser;
+      p.addParameter('resolution', [0, 20]);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      surf@ott.shapes.mixin.AxisymStarShape(shape, ...
+          'resolution', p.Results.resolution, unmatched{:});
+    end
+
+    function shape = ott.shapes.PatchMesh(shape, varargin)
+      % Cast shape to a PatchMesh
+      %
+      % Usage
+      %   shape = ott.shapes.PatchMesh(shape, ...)
+      %
+      % Optional named parameters
+      %   - resolution ([ntheta, nphi]) -- Number of faces in theta/phi
+      %     directions.  Default: ``[0, 20]`` uses cylinder corners for
+      %     theta direction unless otherwise set.
+      %
+      % Additional named parameters are passed to constructor.
+
+      p = inputParser;
+      p.addParameter('resolution', [0, 20]);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      res = p.Results.resolution;
+      if res(1) == 0
+        edge_angle = atan(shape.height/(2*shape.radius));
+        theta = [0, pi/2 - edge_angle, pi/2 + edge_angle, pi];
       else
-        shape.radius = radius(1);
-        shape.height = radius(2);
+        theta = linspace(0, 2*pi, res(1)+1);
       end
+      phi = linspace(0, 2*pi, res(2)+1);
+      [T, P] = meshgrid(theta, phi);
+
+      R = shape.starRadii(T, P);
+      [X, Y, Z] = ott.utils.rtp2xyz(R, T, P);
+
+      shape = ott.shapes.PatchMesh.FromSurfMatrix(X, Y, Z, ...
+          'position', shape.position, 'rotation', shape.rotation);
     end
 
-    function r = get_maxRadius(shape)
-      % Calculate the maximum particle radius
-      r = sqrt(shape.radius.^2 + (shape.height/2).^2);
-    end
-
-    function v = get_volume(shape)
-      % Calculate the volume
-      v = pi*shape.radius.^2*shape.height;
-    end
-
-    function p = get_perimiter(shape)
-      % Calculate the perimiter of the object
-      p = 2.0 * (2.0*shape.radius + shape.height);
-    end
-
-    function r = radii(shape, theta, phi)
-      % RADII returns the radius for each requested point
-
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
+    function r = starRadii(shape, theta, phi)
+      % Return the radii of the requested points
+      %
+      % Usage
+      %   r = shape.starRadii(theta, phi)
 
       % Find angle of edges from xy plane
       edge_angle = atan(shape.height/(2*shape.radius));
@@ -65,30 +122,6 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
       r = zeros(size(theta));
       r(sides) = shape.radius ./ sin(theta(sides));
       r(ends) = (shape.height/2) ./ abs(cos(theta(ends)));
-    end
-
-    function n = normalsRtpInternal(shape, rtp)
-      % Calculate the normals for the specified points.
-
-      theta = rtp(2, :);
-      phi = rtp(3, :);
-
-      % Find angle of edges from xy plane
-      edge_angle = atan(shape.height/(2*shape.radius));
-
-      sides = ( theta >= pi/2 - edge_angle ) ...
-          & ( theta <= pi/2 + edge_angle ) ;
-      top = theta < pi/2 - edge_angle;
-      bottom = theta > pi/2 + edge_angle;
-      ends = top | bottom;
-
-      n = zeros(3, size(theta, 1));
-      n(1, sides) = sin(theta(sides));
-      n(2, sides) = cos(theta(sides));
-      n(1, ends) = abs(cos(theta(ends)));
-      n(2, ends) = - sin(theta(ends)) .* sign(cos(theta(ends)));
-
-      n = ott.utils.rtpv2xyzv(n, rtp);
     end
 
     function [rtp, n, ds] = boundarypoints(shape, varargin)
@@ -106,68 +139,50 @@ classdef Cylinder < ott.shapes.StarShape & ott.shapes.AxisymShape
 
       [rtp, n, ds] = shape.boundarypoints_rhoz(rho, z, varargin{:});
     end
+  end
 
-    function varargout = axialSymmetry(shape)
-      % Return the axial symmetry for the particle
+  methods (Hidden)
+    function nxz = normalsTInternal(shape, theta)
 
-      if nargout == 1
-        varargout{1} = [ 2, 2, 0 ];
-      else
-        varargout{1} = 2;
-        varargout{2} = 2;
-        varargout{3} = 0;
-      end
+      % Find angle of edges from xy plane
+      edge_angle = atan(shape.height/(2*shape.radius));
+
+      sides = ( theta >= pi/2 - edge_angle ) ...
+          & ( theta <= pi/2 + edge_angle ) ;
+      top = theta < pi/2 - edge_angle;
+      bottom = theta > pi/2 + edge_angle;
+      ends = top | bottom;
+
+      nxz = zeros(2, numel(theta));
+      nxz(1, sides) = sin(theta(sides));
+      nxz(2, sides) = cos(theta(sides));
+      nxz(1, ends) = abs(cos(theta(ends)));
+      nxz(2, ends) = - sin(theta(ends)) .* sign(cos(theta(ends)));
+    end
+  end
+
+  methods % Getters/setters
+    function r = get.maxRadius(shape)
+      % Calculate the maximum particle radius
+      r = sqrt(shape.radius.^2 + (shape.height/2).^2);
     end
 
-    function varargout = surf(shape, varargin)
-      % SURF generate a visualisation of the shape
-      %
-      % SURF() displays a visualisation of the shape in the current figure.
-      %
-      % [X, Y, Z] = surf() calculates the coordinates and arranges them
-      % in a grid.
+    function v = get.volume(shape)
+      % Calculate the volume
+      v = pi*shape.radius.^2*shape.height;
+    end
 
-      p = inputParser;
-      
-      % Options for StarShape
-      p.addParameter('points', []);
-      p.addParameter('npoints', 20);    % changed from StarShape
-      p.addParameter('surfoptions', {});
-      p.addParameter('position', []);
-      p.addParameter('rotation', []);
-      p.addParameter('axes', []);
-      
-      p.addParameter('noendcap', false);
-      p.parse(varargin{:});
+    function p = get.perimeter(shape)
+      % Calculate the perimeter of the object
+      p = 2.0 * (2.0*shape.radius + shape.height);
+    end
 
-      if isempty(p.Results.points)
+    function b = get.xySymmetry(shape)
+      b = true;
+    end
 
-        % Calculate the locations of the interesting points
-        edge_angle = atan(shape.height/(2*shape.radius));
-        theta = [ 0, pi/2 - edge_angle, pi/2 + edge_angle, pi ];
-        [~, phi] = ott.utils.angulargrid(1, p.Results.npoints(1));
-
-        % Remove endcaps if requested
-        if p.Results.noendcap
-          theta = theta(2:end-1);
-        end
-
-        [varargout{1:nargout}] = surf@ott.shapes.StarShape(shape, ...
-            'points', { theta,  phi }, ...
-            'npoints', [], ...
-            'surfoptions', p.Results.surfoptions, ...
-            'position', p.Results.position, ...
-            'rotation', p.Results.rotation, ...
-            'axes', p.Results.axes);
-      else
-        [varargout{1:nargout}] = surf@ott.shapes.StarShape(shape, ...
-            'point', p.Results.points, ...
-            'npoints', [], ...
-            'surfoptions', p.Results.surfoptions, ...
-            'position', p.Results.position, ...
-            'rotation', p.Results.rotation, ...
-            'axes', p.Results.axes);
-      end
+    function bb = get.boundingBox(shape)
+      bb = [[-1, 1; -1, 1].*shape.radius; [-1, 1].*shape.height./2];
     end
   end
 end

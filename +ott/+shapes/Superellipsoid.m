@@ -1,88 +1,81 @@
-classdef Superellipsoid < ott.shapes.StarShape
-%Superellipsoid a simple superellipsoid shape
+classdef Superellipsoid < ott.shapes.Shape ...
+    & ott.shapes.mixin.StarShape ...
+    & ott.shapes.mixin.NumericalVolume ...
+    & ott.shapes.mixin.IsosurfSurfPoints
+% Superellipsoid shape
 %
-% properties:
-%   a         % x-axis scaling
-%   b         % y-axis scaling
-%   c         % z-axis scaling
-%   ew        % East-West smoothness (ew = 1 for ellipsoid)
-%   ns        % North-South smoothness (sw = 1 for ellipsoid)
+% In Cartesian coordinates, a superellipsoid is defined by::
+%
+%     ( |x/a|^(2/e) + |y/b|^(2/e) )^(e/n) + |z/c|^(2/n) = 1
+%
+% where :math:`a,b,c` are the radii along Cartesian directions,
+% and :math:`e,n` are the east-west and north-south smoothness parameters.
+% For more details see https://en.wikipedia.org/wiki/Superellipsoid
+%
+% Properties
+%   - radii     -- Radii along Cartesian axes [X; Y; Z]
+%   - ew        -- East-West smoothness (ew = 1 for ellipsoid)
+%   - ns        -- North-South smoothness (sw = 1 for ellipsoid)
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
   properties
-    a
-    b
-    c
-    ew
-    ns
+    radii      % Radii along Cartesian axes [X; Y; Z]
+    ew         % East-West smoothness (ew = 1 for ellipsoid)
+    ns         % North-South smoothness (sw = 1 for ellipsoid)
+  end
+
+  properties (Dependent)
+    maxRadius          % Maximum particle radius
+    boundingBox        % Cartesian coordinate bounding box (no rot/pos)
+    zRotSymmetry       % Degree of z rotational symmetry
+    xySymmetry         % True if the particle is xy-plane mirror symmetric
   end
 
   methods
-    function shape = Superellipsoid(a, b, c, ew, ns)
-      % SUPERELLIPSOID construct a new superellipsoid
+    function shape = Superellipsoid(varargin)
+      % Construct a new superellipsoid
       %
-      % SUPERELLIPSOID(a, b, c, e, n) or SUPERELLIPSOID([a, b, c, e, n])
-      % specifies the scaling in the x, y and z directions.
+      % Usage
+      %   shape = Superellipsoid(radii, ew, ns, ...)
       %
-      % Defined by (cartesian)
-      %   { (x/a)^(2/e) + (y/b)^(2/e) }^(e/n) + (z/c)^(2/n) = 1
-      % where n = NS roundedness, e = EW roundedness
+      % Parameters
+      %   - radii (3 numeric) -- Radii along Cartesian axes.
+      %   - ew (numeric) -- East-west smoothness (xy-plane)  Default: 0.8
+      %   - ns (numeric) -- North-south smoothness (z-axis)  Default: 1.2
 
-      shape = shape@ott.shapes.StarShape();
+      p = inputParser;
+      p.addOptional('radii', [1, 2, 3]);
+      p.addOptional('ew', 0.8);
+      p.addOptional('ns', 1.2);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      if nargin == 1
-        shape.a = a(1);
-        shape.b = a(2);
-        shape.c = a(3);
-        shape.ew = a(4);
-        shape.ns = a(5);
-      else
-        shape.a = a;
-        shape.b = b;
-        shape.c = c;
-        shape.ew = ew;
-        shape.ns = ns;
-      end
-
+      shape = shape@ott.shapes.Shape(unmatched{:});
+      shape.radii = p.Results.radii;
+      shape.ew = p.Results.ew;
+      shape.ns = p.Results.ns;
     end
 
-    function r = get_maxRadius(shape)
-      % Calculate the maximum particle radius
-      r = max([shape.a, shape.b, shape.c]);
-    end
+    function r = starRadii(shape, theta, phi)
+      % Return the ellipsoid radii at specified angles
+      %
+      % Usage
+      %   r = shape.starRadii(theta, phi)
 
-    function v = get_volume(shape)
-      % Calculate the volume of the particle
-      error('Not yet implemented');
-    end
-
-    function b = isSphere(shape)
-      % ISSPHERE Returns true if the shape is a sphere
-      b = shape.a == shape.b && shape.a == shape.c ...
-          && shape.ew == 1 && shape.ns == 1;
-    end
-
-    function b = isEllipsoid(shape)
-      % ISSPHERE Returns true if the shape is a sphere
-      b = shape.ew == 1 && shape.ns == 1;
-    end
-
-    function r = radii(shape, theta, phi)
-      % RADII returns the radius for each requested point
-
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
+      assert(all(size(theta) == size(phi)), ...
+          'theta and phi must have same size');
 
       acp = abs(cos(phi));
       asp = abs(sin(phi));
       act = abs(cos(theta));
       ast = abs(sin(theta));
-      cpsp = (acp/shape.a).^(2/shape.ew) + (asp/shape.b).^(2/shape.ew);
+      cpsp = (acp/shape.radii(1)).^(2/shape.ew) ...
+          + (asp/shape.radii(2)).^(2/shape.ew);
       r = ( ast.^(2/shape.ns) .* cpsp.^(shape.ew/shape.ns) ...
-          + (act/shape.c).^(2/shape.ns) ).^(-shape.ns/2);
+          + (act/shape.radii(3)).^(2/shape.ns) ).^(-shape.ns/2);
     end
 
     function n = normalsRtpInternal(shape, rtp)
@@ -129,30 +122,39 @@ classdef Superellipsoid < ott.shapes.StarShape
 
       n = ott.utils.rtpv2xyzv(n, rtp);
     end
+  end
 
-    function varargout = axialSymmetry(shape)
-      % Return the axial symmetry for the particle
+  methods % Getters/setters
+    function shape = set.radii(shape, val)
+      assert(isnumeric(val) && numel(val) == 3 && all(val >= 0), ...
+          'radii must be positive numeric 3-vector');
+      shape.radii = val(:);
+    end
 
-      % TODO: Does this shape need a mirrorSymmetry function?
+    function r = get.maxRadius(shape)
+      % Calculate the maximum particle radius
 
-      % TODO: Fix these up
-      bc = 1;
-      ac = 1;
-      ab = 1;
-      if shape.ew == 1 && shape.a == shape.b
-        ab = 0;
-        if shape.ns == 1 && shape.a == shape.c
-          bc = 0;
-          ac = 0;
+      % This is likely an over-estimate for most particles, the lower
+      % bounds of this would be max(shape.radii).
+      r = vecnorm(shape.radii);
+    end
+
+    function bb = get.boundingBox(shape)
+      bb = [-1, 1; -1, 1; -1, 1].*shape.radii;
+    end
+
+    function b = get.xySymmetry(shape)
+      b = true;
+    end
+    function q = get.zRotSymmetry(shape)
+      if shape.radii(1) == shape.radii(2)
+        if shape.ew == 1.0
+          q = 0;
+        else
+          q = 4;
         end
-      end
-
-      if nargout == 1
-        varargout{1} = [ bc, ac, ab ];
       else
-        varargout{1} = bc;
-        varargout{2} = ac;
-        varargout{3} = ab;
+        q = 2;
       end
     end
   end

@@ -1,7 +1,12 @@
-classdef WavefrontObj < ott.shapes.TriangularMesh
-% WavefrontObj load a shape from a Wavefront OBJ file
+classdef ObjLoader < ott.shapes.TriangularMesh
+% Load a shape from a Wavefront OBJ file.
+% Inherits from :class:`TriangularMesh`.
 %
-% The file format is described on the Wikipedia page.
+% Properties
+%   - filename      -- Filename for loaded OBJ file
+%
+% The file format is described at
+% https://en.wikipedia.org/wiki/Wavefront_.obj_file
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -11,11 +16,14 @@ classdef WavefrontObj < ott.shapes.TriangularMesh
   end
 
   methods
-    function shape = WavefrontObj(filename)
+    function shape = ObjLoader(filename)
       % Construct a new shape from a Wavefront OBJ file
       %
-      % WavefrontObj(filename) loads the face and vertex information
+      % Loads the face and vertex information
       % contained in the file.  Faces are converted to triangles.
+      %
+      % Usage
+      %   shape = ObjLoader(filename)
 
       assert(nargin == 1, 'Filename not supplied');
 

@@ -1,99 +1,62 @@
-classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
-%Ellipsoid a simple ellipsoid shape
+classdef Ellipsoid < ott.shapes.Shape ...
+    & ott.shapes.mixin.StarShape ...
+    & ott.shapes.mixin.IsosurfSurfPoints
+% Ellipsoid shape
 %
-% properties:
-%   a         % x-axis scaling
-%   b         % y-axis scaling
-%   c         % z-axis scaling
+% Properties:
+%   - radii       -- Radii along Cartesian axes [X; Y; Z]
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
   properties
-    a
-    b
-    c
+    radii
+  end
+
+  properties (Dependent)
+    maxRadius          % Maximum particle radius
+    volume             % Particle volume
+    boundingBox        % Cartesian coordinate bounding box (no rot/pos)
+    zRotSymmetry       % Degree of z rotational symmetry
+    xySymmetry         % True if the particle is xy-plane mirror symmetric
   end
 
   methods
-    function shape = Ellipsoid(a, b, c)
-      % ELLIPSOID construct a new ellipsoid
+    function shape = Ellipsoid(varargin)
+      % Construct a new ellipsoid
       %
-      % ELLIPSOID(a, b, c) or ELLIPSOID([a, b, c]) specifies the
-      % scaling in the x, y and z directions.
-
-      shape = shape@ott.shapes.StarShape();
-
-      if nargin == 1
-        shape.a = a(1);
-        shape.b = a(2);
-        shape.c = a(3);
-      else
-        shape.a = a;
-        shape.b = b;
-        shape.c = c;
-      end
-
-    end
-
-    function r = get_maxRadius(shape)
-      % Calculate the maximum particle radius
-      r = max([shape.a, shape.b, shape.c]);
-    end
-
-    function v = get_volume(shape)
-      % Calculate the particle volume
-      v = 4./3.*pi.*shape.a.*shape.b.*shape.c;
-    end
-
-    function b = isSphere(shape)
-      % ISSPHERE Returns true if the shape is a sphere
-      b = shape.a == shape.b && shape.a == shape.c;
-    end
-
-    function p = get_perimiter(shape)
-      % Calculate the perimiter of the object
+      % Usage
+      %   shape = Ellipsoid(radii, ...)
+      %   Parameters can be passed as named arguments.
       %
-      % Only works if the shape is rotationally symmetric about z.
+      % Additional parameters passed to base.
 
-      % Check that the particle is axisymmetric
-      axisym = shape.axialSymmetry();
-      if axisym(3) ~= 0
-        p = NaN;
-        return;
-      end
+      p = inputParser;
+      p.addOptional('radii', [1, 2, 3]);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      a = max(shape.a, shape.c);
-      b = min(shape.a, shape.c);
-
-      % From mathsisfun.com/geometry/ellipse-perimiter.html
-      h = (a - b).^2 ./ (a + b).^2;
-      p = 1.0;
-      nmax = 100;
-      tol = 1.0e-3;
-      nchooseks = @(n, k) gamma(n)./(gamma(n - k).*gamma(k));
-      for ii = 1:nmax
-        newp = nchooseks(0.5, ii).^2.*h.^ii;
-        p = p + newp;
-        if abs(newp) < tol
-          break;
-        end
-      end
-      p = p .* pi .* (a + b);
-
+      shape = shape@ott.shapes.Shape(unmatched{:});
+      shape.radii = p.Results.radii;
     end
 
-    function r = radii(shape, theta, phi)
-      % RADII returns the radius for each requested point
+    function r = starRadii(shape, theta, phi)
+      % Return the ellipsoid radii at specified angles
+      %
+      % Usage
+      %   r = shape.starRadii(theta, phi)
 
-      theta = theta(:);
-      phi = phi(:);
-      [theta,phi] = ott.utils.matchsize(theta,phi);
+      assert(all(size(theta) == size(phi)), ...
+          'theta and phi must have same size');
 
-      r = 1 ./ sqrt( (cos(phi).*sin(theta)/shape.a).^2 + ...
-          (sin(phi).*sin(theta)/shape.b).^2 + (cos(theta)/shape.c).^2 );
+      r = 1 ./ sqrt( (cos(phi).*sin(theta)/shape.radii(1)).^2 + ...
+          (sin(phi).*sin(theta)/shape.radii(2)).^2 ...
+          + (cos(theta)/shape.radii(3)).^2 );
     end
+  end
 
+  methods (Hidden)
     function n = normalsRtpInternal(shape, rtp)
       % calculates the normals for each requested point
 
@@ -112,30 +75,48 @@ classdef Ellipsoid < ott.shapes.StarShape & ott.shapes.AxisymShape
       r = shape.radii(theta, phi);
       sigma_r = ones(size(r));
       sigma_theta = r.^2 .* sin(theta) .* cos(theta) .* ...
-          ( (cos(phi)/shape.a).^2 + (sin(phi)/shape.b).^2 - 1/shape.c^2 );
+          ( (cos(phi)/shape.radii(1)).^2 ...
+          + (sin(phi)/shape.radii(2)).^2 - 1/shape.radii(3)^2 );
       sigma_phi = r.^2 .* sin(theta) .* sin(phi) .* cos(phi) .* ...
-          (1/shape.b^2 - 1/shape.a^2);
+          (1/shape.radii(2)^2 - 1/shape.radii(1)^2);
       sigma_mag = sqrt( sigma_r.^2 + sigma_theta.^2 + sigma_phi.^2 );
-      
+
       n = [ sigma_r./sigma_mag, sigma_theta./sigma_mag, ...
           sigma_phi./sigma_mag ].';
 
       n = ott.utils.rtpv2xyzv(n, rtp);
     end
+  end
 
-    function varargout = axialSymmetry(shape)
-      % Return the axial symmetry for the particle
+  methods % Getters/setters
+    function shape = set.radii(shape, val)
+      assert(isnumeric(val) && numel(val) == 3 && all(val >= 0), ...
+          'radii must be positive numeric 3-vector');
+      shape.radii = val(:);
+    end
 
-      if shape.a == shape.b; ab = 0; else; ab = 2; end
-      if shape.a == shape.c; ac = 0; else; ac = 2; end
-      if shape.b == shape.c; bc = 0; else; bc = 2; end
+    function r = get.maxRadius(shape)
+      % Calculate the maximum particle radius
+      r = max(shape.radii);
+    end
 
-      if nargout == 1
-        varargout{1} = [ bc, ac, ab ];
+    function v = get.volume(shape)
+      % Calculate the particle volume
+      v = 4./3.*pi.*prod(shape.radii);
+    end
+
+    function bb = get.boundingBox(shape)
+      bb = [-1, 1; -1, 1; -1, 1].*shape.radii;
+    end
+
+    function b = get.xySymmetry(shape)
+      b = true;
+    end
+    function q = get.zRotSymmetry(shape)
+      if shape.radii(1) == shape.radii(2)
+        q = 0;
       else
-        varargout{1} = bc;
-        varargout{2} = ac;
-        varargout{3} = ab;
+        q = 2;
       end
     end
   end

@@ -1,11 +1,17 @@
-classdef Slab < ott.shapes.Plane
+classdef Slab < ott.shapes.Shape ...
+    & ott.shapes.mixin.CoordsCart ...
+    & ott.shapes.mixin.InfVolume
 % Shape describing a slab with infinite extent in two directions
-% Inherits from :class:`ott.shapes.Plane`.
+% Inherits from :class:`ott.shapes.Shape`.
 %
 % Properties
 %   - normal      -- Vector representing surface normal
-%   - offset      -- Offset of surface from coordinate origin
 %   - depth       -- Depth of the slab
+%
+% Supported casts
+%   - TriangularMesh    -- (Inherited) Uses PatchMesh
+%   - PatchMesh         -- Uses Strata
+%   - Strata
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -14,71 +20,96 @@ classdef Slab < ott.shapes.Plane
     depth         % Depth of the slab
   end
 
+  properties (Dependent)
+    normal             % Vector representing surface normal
+    boundingBox        % Bounding box surrounding mesh (semi-infinite)
+    starShaped         % Always false
+    xySymmetry         % Always false
+    zRotSymmetry       % Always 0
+  end
+
   methods
-    function shape = Slab(normal, depth, varargin)
+    function shape = Slab(varargin)
       % Construct a new infinite slab
       %
       % Usage
       %   shape = Slab(normal, depth, ...)
       %
-      % Parameters
-      %   - normal (3xN numeric) -- Surface normal
-      %   - depth (N numeric) -- Depth of surface
-      %
       % Optional named arguments
-      %   - offset (N numeric) -- Offset of first surface to origin.
-      %     Default: ``0``.
+      %   - depth (N numeric) -- Depth of surface.  Default: 0.5.
       %
-      %   - position (3 numeric) -- Position of the shape.
+      %   - normal (3xN numeric) -- Normals to planes.  Default: ``[]``.
+      %     Overwrites any values set with `rotation`.
+      %
+      %   - position (3xN numeric) -- Position of the plane.
       %     Default: ``[0;0;0]``.
       %
-      %   - rotation (3x3 numeric) -- Orientation of the shape.
+      %   - rotation (3x3N numeric) -- Plane orientations.
       %     Default: ``eye(3)``.
 
-      shape = shape@ott.shapes.Plane(normal, varargin{:});
-      shape.depth = depth;
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addOptional('normal', []);
+      p.addOptional('depth', 0.5);
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      shape = shape@ott.shapes.Shape(unmatched{:});
+      shape.depth = p.Results.depth;
+
+      if ~isempty(p.Results.normal)
+        shape.normal = p.Results.normal;
+      end
     end
 
-    function shape = ott.shapes.Strata(oldshape)
-      % Can be cast to a Strata
-
-      shape = ott.shapes.Strata(oldshape.normal, oldshape.offset, ...
-          oldshape.depth);
-    end
-
-    function varargout = surf(shape, varargin)
-      % Generate a visualisation of the shape
+    function shape = ott.shapes.PatchMesh(shape, varargin)
+      % Cast to PatchMesh via Strata
       %
       % Usage
-      %   shape.surf(...) displays a visualisation of the shape in
-      %   the current figure.
+      %   shape = ott.shapes.PatchMesh(shape, ...)
       %
-      %   [X, Y, Z] = shape.surf() calculates the coordinates and
-      %   arranges them in a grid suitable for use with matlab surf function.
+      % Optional named parameters
+      %   - scale (numeric) -- Scale of the patch. Default: 1.0.
+      
+      p = inputParser;
+      p.addParameter('scale', 1.0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      shape = ott.shapes.Strata(shape, unmatched{:});
+      shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
+    end
+
+    function shape = ott.shapes.Strata(shape, varargin)
+      % Can be cast to a Strata
+
+      shape = ott.shapes.Strata('normal', shape.normal, ...
+          'depths', shape.depth, ...
+          'position', shape.position-shape.depth./2, varargin{:});
+    end
+
+    function surf(shape, varargin)
+      % Generate a visualisation of the shape
       %
-      % Optional named arguments
-      %   - scale (numeric) -- Scaling factor for the plane.
+      % Converts the shape to a PatchMesh and calls surf.
       %
-      %   - axes ([] | axes handle) -- axis to draw in.  Default: ``gca``.
+      % Usage
+      %   shape.surf(...)
       %
-      %   - surfoptions (cell array) -- options to be passed to surf.
-      %     Default: ``{}``.
+      % Optional named parameters
+      %   - scale (numeric) -- Size of patch.  Default: ``1.0``.
+      %
+      % Additional named parameters are passed to PatchMesh.surf.
 
       p = inputParser;
-      shape.surfAddArgs(p);
+      p.addParameter('scale', 1.0);
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      % Calculate the X, Y, Z coordinates for a plane surface
-      [X, Y, Z] = shape.calculateSurface(p);
-
-      % Duplicate plane for second surface
-      offset = shape.normal*(shape.offset+shape.depth);
-      X = [X, nan(size(X, 1), 1), X + offset(1)];
-      Y = [Y, nan(size(X, 1), 1), Y + offset(2)];
-      Z = [Z, nan(size(X, 1), 1), Z + offset(3)];
-
-      % Draw the figure and handle rotations/translations
-      [varargout{1:nargout}] = shape.surfCommon(p, size(X), X, Y, Z);
+      shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
+      shape.surf(unmatched{:});
     end
   end
 
@@ -89,6 +120,52 @@ classdef Slab < ott.shapes.Plane
       % Determine if points are inside slab
       dist = sum(xyz .* shape.normal, 1) - shape.offset;
       b = dist > 0 & (dist - shape.depth < 0);
+    end
+
+    function nxyz = normalsXyzInternal(shape, xyz)
+      nxyz = repmat(shape.normal, 1, size(xyz, 2));
+    end
+  end
+
+  methods % Getters/setters
+    function shape = set.depth(shape, val)
+      assert(isnumeric(val) && isscalar(val) && val > 0, ...
+          'depth must be positive numeric scalar');
+      shape.depth = val;
+    end
+
+    function plane = set.normal(plane, val)
+      assert(isnumeric(val) && numel(val) == 3, ...
+          'Normal must be 3 element numeric vector');
+
+      val = val ./ vecnorm(val);
+
+      n1 = cross(val, [0;0;1]);
+      if vecnorm(n1) < 0.1
+        n1 = cross(val, [1;0;0]);
+      end
+      n2 = cross(val, n1);
+
+      plane.rotation = [n1./vecnorm(n1), n2./vecnorm(n2), val];
+    end
+    function n = get.normal(shape)
+      n = shape.rotation(:, 3);
+    end
+
+    function bb = get.boundingBox(shape)
+      bb = [-Inf, Inf; -Inf; Inf; -shape.depth./2; shape.depth./2];
+    end
+
+    function b = get.starShaped(~)
+      % Finite depth, so it is star shaped
+      b = true;
+    end
+    function b = get.xySymmetry(~)
+      % Origin is at centre of slab
+      b = true;
+    end
+    function q = get.zRotSymmetry(~)
+      q = 0;
     end
   end
 end

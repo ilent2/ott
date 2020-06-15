@@ -1,99 +1,114 @@
-classdef Plane < ott.shapes.Shape & ott.shapes.utils.CoordsCart
+classdef Plane < ott.shapes.Shape ...
+    & ott.shapes.mixin.CoordsCart ...
+    & ott.shapes.mixin.InfVolume
 % Shape describing a plane with infinite extent
 % Inherits from :class:`ott.shapes.Shape`.
 %
-% Properties
+% Dependent properties
 %   - normal      -- Vector representing surface normal
 %   - offset      -- Offset of surface from coordinate origin
+%
+% Supported casts
+%   - TriangularMesh    -- (Inherited) Uses PatchMesh
+%   - PatchMesh
+%   - Strata
+%   - Slab
 
+% Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties
+  properties (Dependent)
     normal       % Vector representing surface normal
     offset       % Offset of surface from coordinate origin
+
+    boundingBox        % Bounding box surrounding mesh (semi-infinite)
+    starShaped         % Always false
+    xySymmetry         % Always false
+    zRotSymmetry       % Always 0
   end
 
   methods
-    function shape = Plane(normal, varargin)
+    function shape = Plane(varargin)
       % Construct a new infinite plane
       %
       % Usage
       %   shape = Plane(normal, ...)
       %
-      % Parameters
-      %   - normal (3xN numeric) -- Normals to planes.
-      %
       % Optional named arguments
+      %   - normal (3xN numeric) -- Normals to planes.  Default: ``[]``.
+      %     Overwrites any values set with `rotation`.
+      %
+      %   - offset (1xN numeric) -- Offset of the plane from the position.
+      %     Default: ``[]``.  Overwrites any values set with `position`.
+      %
       %   - position (3xN numeric) -- Position of the plane.
       %     Default: ``[0;0;0]``.
       %
       %   - rotation (3x3N numeric) -- Plane orientations.
       %     Default: ``eye(3)``.
-      %
-      %   - offset (1xN numeric) -- Offset of the plane from the position.
-      %     Default: ``0.0``.
 
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addParameter('offset', 0.0);
+      p.addOptional('normal', []);
+      p.addParameter('offset', []);
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
       shape = shape@ott.shapes.Shape(unmatched{:});
 
-      Nnormal = size(normal, 2);
-      Noffset = numel(p.Results.offset);
-
-      assert(Nnormal == 1 || numel(shape) == 1 || Nnormal == numel(shape), ...
-          'length of normal must match length of position');
-      assert(Noffset == 1 || numel(shape) == 1 || Noffset == numel(shape), ...
-          'length of offset must match length of position');
-
-      if numel(shape) == 1 && (Nnormal ~= 1 || Noffset ~= 1)
-        shape = repelem(shape, 1, max([Nnormal, Noffset]));
+      if ~isempty(p.Results.normal)
+        shape.normal = p.Results.normal;
       end
-      
-      % Normalise normals
-      norm_length = vecnorm(normal);
-      assert(~any(norm_length == 0.0), 'Normals must be finite length');
-      normal = normal ./ norm_length;
-
-      % Assign normal
-      if Nnormal > 1  
-        for ii = 1:Nnormal
-          shape(ii).normal = normal(:, ii);
-        end
-      else
-        [shape.normal] = deal(normal);
+      if ~isempty(p.Results.offset)
+        shape.offset = p.Results.offset;
       end
+    end
 
-      % Assign offset
-      if Noffset > 1
-        for ii = 1:Noffset
-          shape(ii).offset = p.Results.offset(ii);
-        end
-      else
-        [shape.offset] = deal(p.Results.offset);
-      end
+    function shape = ott.shapes.PatchMesh(shape, varargin)
+      % Convert the plane into a patch
+      %
+      % Usage
+      %   shape = ott.shapes.PatchMesh(shape, ...)
+      %
+      % Optional named parameters
+      %   - scale (numeric) -- Size of the generated patch.
+      %
+      % Unmatched parameters are passed to patch constructor.
+
+      p = inputParser;
+      p.addParameter('scale', 1.0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      v1 = shape.rotation(:, 1);
+      v2 = shape.rotation(:, 2);
+
+      v1 = v1 ./ vecnorm(v1) .* p.Results.scale ./ 2;
+      v2 = v2 ./ vecnorm(v2) .* p.Results.scale ./ 2;
+
+      verts = [v1 + v2, v1 - v2, -v1 - v2, -v1 + v2];
+      faces = [1; 2; 3; 4];
+
+      shape = ott.shapes.PatchMesh(verts, faces, ...
+          'position', shape.position, 'rotation', eye(3), unmatched{:});
     end
 
     function shape = ott.shapes.Strata(planearray)
       % Array of planes can be cast to Strata if normals align
 
       % Check normals
-      normal = planearray(1).normal;
-      for ii = 2:numel(planearray)
-        assert(all(normal == planearray(ii).normal), ...
-            'All normals must match');
-      end
+      normals = [planearray.normal];
+      assert(all(normals(1) == normals), 'all normals must match');
 
       % Calculate depth of each slab
       offsets = [shape.offset];
       depth = diff(offsets);
 
       % Create shape
-      shape = ott.shapes.Strata(normal, planearray(1).offset, depth);
+      shape = ott.shapes.Strata(normal, depth, ...
+          'offset', planearray(1).offset);
     end
 
     function shape = ott.shapes.Slab(planearray)
@@ -101,16 +116,6 @@ classdef Plane < ott.shapes.Shape & ott.shapes.utils.CoordsCart
 
       stratashape = ott.shapes.Strata(planearray);
       shape = ott.shapes.Slab(stratashape);
-    end
-
-    function r = get_maxRadius(shape)
-      % Infinite plane has infinite maximum radius
-      r = Inf;
-    end
-
-    function v = get_volume(shape)
-      % Infinite plane has infinite volume
-      v = Inf;
     end
 
     function [locs, norms] = intersect(shape, vecs)
@@ -151,33 +156,27 @@ classdef Plane < ott.shapes.Shape & ott.shapes.utils.CoordsCart
       locs(~isfinite(locs)) = nan;
     end
 
-    function varargout = surf(shape, varargin)
+    function surf(shape, varargin)
       % Generate a visualisation of the shape
       %
+      % Converts the shape to a PatchMesh and calls surf.
+      %
       % Usage
-      %   shape.surf(...) displays a visualisation of the shape in
-      %   the current figure.
+      %   shape.surf(...)
       %
-      %   [X, Y, Z] = shape.surf() calculates the coordinates and
-      %   arranges them in a grid suitable for use with matlab surf function.
+      % Optional named parameters
+      %   - scale (numeric) -- Size of patch.  Default: ``1.0``.
       %
-      % Optional named arguments
-      %   - scale (numeric) -- Scaling factor for the plane.
-      %
-      %   - axes ([] | axes handle) -- axis to draw in.  Default: ``gca``.
-      %
-      %   - surfoptions (cell array) -- options to be passed to surf.
-      %     Default: ``{}``.
+      % Additional named parameters are passed to PatchMesh.surf.
 
       p = inputParser;
-      shape.surfAddArgs(p);
+      p.addParameter('scale', 1.0);
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      % Calculate the X, Y, Z coordinates for a plane surface
-      [X, Y, Z] = shape.calculateSurface(p);
-
-      % Draw the figure and handle rotations/translations
-      [varargout{1:nargout}] = shape.surfCommon(p, size(X), X, Y, Z);
+      shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
+      shape.surf(unmatched{:});
     end
   end
 
@@ -192,55 +191,50 @@ classdef Plane < ott.shapes.Shape & ott.shapes.utils.CoordsCart
     function nxyz = normalsXyzInternal(shape, xyz)
       nxyz = repmat(shape.normal, 1, size(xyz, 2));
     end
-
-    function surfAddArgs(beam, p)
-      % Add surface drawing args to the input parser for surf
-      p.addParameter('scale', 1.0);
-      surfAddArgs@ott.shapes.Shape(beam, p);
-    end
-    
-    function [X, Y, Z] = calculateSurface(shape, p)
-      % Calculate the X, Y, Z coordinates for a plane surface
-
-      % Apply rotation to normal
-      normal = shape.rotation * shape.normal;
-
-      % Calculate two orthogonal vectors
-      v = normal;
-      [~, I] = min(abs(v));
-      v(I) = max(abs(v));
-      c1 = cross(v, normal);
-      c2 = cross(c1, normal);
-
-      % Apply scale to c1 and c2
-      c1 = c1 ./ vecnorm(c1) .* p.Results.scale;
-      c2 = c2 ./ vecnorm(c2) .* p.Results.scale;
-
-      % Calculate 4 corners of plane
-      v1 = c1 + c2 + normal*shape.offset;
-      v2 = c1 - c2 + normal*shape.offset;
-      v3 = -c1 + c2 + normal*shape.offset;
-      v4 = -c1 - c2 + normal*shape.offset;
-
-      % Reshape into surf form
-      data = [v1, v2, v3, v4];
-      X = reshape(data(1, :), [2, 2]) + shape.position(1);
-      Y = reshape(data(2, :), [2, 2]) + shape.position(2);
-      Z = reshape(data(3, :), [2, 2]) + shape.position(3);
-    end
   end
 
   methods % Getters/setters
     function plane = set.normal(plane, val)
       assert(isnumeric(val) && numel(val) == 3, ...
           'Normal must be 3 element numeric vector');
-      plane.normal = val(:);
+
+      val = val ./ vecnorm(val);
+
+      n1 = cross(val, [0;0;1]);
+      if vecnorm(n1) < 0.1
+        n1 = cross(val, [1;0;0]);
+      end
+      n2 = cross(val, n1);
+
+      plane.rotation = [n1./vecnorm(n1), n2./vecnorm(n2), val];
+    end
+
+    function n = get.normal(shape, val)
+      n = shape.rotation(:, 3);
     end
 
     function plane = set.offset(plane, val)
       assert(isnumeric(val) && isscalar(val), ...
           'offset must be numeric scalar');
-      plane.offset = val;
+      plane.position = val .* plane.normal;
+    end
+
+    function o = get.offset(plane)
+      o = dot(plane.position, plane.normal);
+    end
+
+    function bb = get.boundingBox(shape)
+      bb = [-Inf, Inf; -Inf; Inf; -Inf; 0];
+    end
+
+    function b = get.starShaped(shape)
+      b = false;
+    end
+    function b = get.xySymmetry(shape)
+      b = false;
+    end
+    function q = get.zRotSymmetry(shape)
+      q = 0;
     end
   end
 end

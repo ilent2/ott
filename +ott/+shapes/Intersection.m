@@ -1,15 +1,15 @@
-classdef Union < ott.shapes.Set
-% Represents union between two shapes (| operator).
+classdef Intersection < ott.shapes.Set
+% Represents intersection between two shapes (& operator).
 % Inherits from :class:`Set`.
 %
 % Properties
 %   - shapes        -- Shapes forming the set
 %   - maxRadius     -- Estimated from bounding box
 %   - volume        -- Calculated numerically
-%   - boundingBox   -- Surrounding all shapes
+%   - boundingBox   -- Surrounding intersection
 %
 % Methods
-%   - operator|     -- (Overloaded) Allow daisy chains
+%   - operator&     -- (Overloaded) Allow daisy chains
 
 % Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
@@ -20,36 +20,37 @@ classdef Union < ott.shapes.Set
   end
 
   methods
-    function shape = Union(varargin)
-      % Construct a union shape set.
+    function shape = Intersection(varargin)
+      % Construct a intersection shape set.
       %
       % Usage
-      %   shape = Union(shapes, ...)
+      %   shape = Intersection(shapes, ...)
       %
       % All parameters are passed to base class.
 
       shape = shape@ott.shapes.Set(varargin{:});
     end
 
-    function sset = or(a, b)
-      % Combine unions together smartly
+    function sset = and(a, b)
+      % Combine intersections together smartly
       %
       % If position/rotation are different, creates a new union, otherwise
       % uses the existing union(s).
       % All other properties are copied from the first union.
 
-      if isa(a, 'ott.shapes.Union') && isa(b, 'ott.shapes.Union') ...
+      if isa(a, 'ott.shapes.Intersection') ...
+          && isa(b, 'ott.shapes.Intersection') ...
           && a.hasMoved == false && b.hasMoved == false
         sset = a;
         sset.shapes = [sset.shapes, b.shapes];
-      elseif isa(a, 'ott.shapes.Union') && a.hasMoved == false
+      elseif isa(a, 'ott.shapes.Intersection') && a.hasMoved == false
         sset = a;
         sset.shapes = [sset.shapes, b];
-      elseif isa(b, 'ott.shapes.Union') && b.hasMoved == false
+      elseif isa(b, 'ott.shapes.Intersection') && b.hasMoved == false
         sset = b;
         sset.shapes = [a, sset.shapes];
       else
-        sset = ott.shapes.Union([a, b]);
+        sset = ott.shapes.Intersection([a, b]);
       end
     end
   end
@@ -60,8 +61,7 @@ classdef Union < ott.shapes.Set
 
       b = shape.shapes(1).insideRtp(rtp, 'origin', 'global');
       for ii = 2:numel(shape.shapes)
-        % TODO: We only need to check points that are not inside
-        b = b | shape.shapes(ii).insideRtp(rtp, 'origin', 'global');
+        b = b & shape.shapes(ii).insideRtp(rtp, 'origin', 'global');
       end
     end
 
@@ -70,8 +70,7 @@ classdef Union < ott.shapes.Set
 
       b = shape.shapes(1).insideXyz(xyz, 'origin', 'global');
       for ii = 2:numel(shape.shapes)
-        % TODO: We only need to check points that are not inside
-        b = b | shape.shapes(ii).insideXyz(xyz, 'origin', 'global');
+        b = b & shape.shapes(ii).insideXyz(xyz, 'origin', 'global');
       end
     end
   end
@@ -85,7 +84,7 @@ classdef Union < ott.shapes.Set
         bbs(:, (1:2)+(ii-1)*2) = obb;
       end
 
-      bb = [min(bbs, [], 2), max(bbs, [], 2)];
+      bb = [max(bbs(:, 1:2:end), [], 2), min(bbs(:, 2:2:end), [], 2)];
     end
   end
 end
