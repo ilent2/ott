@@ -1,6 +1,7 @@
 classdef Plane < ott.shapes.Shape ...
     & ott.shapes.mixin.CoordsCart ...
-    & ott.shapes.mixin.InfVolume
+    & ott.shapes.mixin.InfVolume ...
+    & ott.shapes.mixin.IntersectMinAll
 % Shape describing a plane with infinite extent
 % Inherits from :class:`ott.shapes.Shape`.
 %
@@ -118,45 +119,7 @@ classdef Plane < ott.shapes.Shape ...
       shape = ott.shapes.Slab(stratashape);
     end
 
-    function [locs, norms] = intersect(shape, vecs)
-      % Calculate the intersection point on the plane surface.
-      %
-      % Rays will intersect the plane as long as they are traveling
-      % towards the surface.  The normal will always be the surface
-      % normal.
-      %
-      % Usage
-      %   [locs, norms] = shape.intersect(vec)
-      %   Returns a 3xN matrix of intersection locations or nan.
-      %
-      % Parameters
-      %   - vec (utils.Vector) -- A vector or type that can be cast
-      %     to a Vector.
-
-      % Apply rotation to normal
-      normal = shape.rotation * shape.normal;
-
-      % Duplicate the normals
-      sz = size(vecs);
-      norms = repmat(normal, [1, sz(2:end)]);
-
-      % Calculate intersection location relative to ray origin
-      dirs = vecs.direction ./ vecnorm(vecs.direction);
-      ndirs = dot(dirs, norms);
-      locs = -(dot(vecs.origin - shape.position, norms) ...
-          - shape.offset) .* dirs ./ ndirs;
-
-      % Remove rays traveling away from the plane
-      locs(:, dot(locs, dirs) < 0) = nan;
-
-      % Translate to vector origin
-      locs = vecs.origin + locs;
-
-      % Ensure infs are also nans
-      locs(~isfinite(locs)) = nan;
-    end
-
-    function surf(shape, varargin)
+    function varargout = surf(shape, varargin)
       % Generate a visualisation of the shape
       %
       % Converts the shape to a PatchMesh and calls surf.
@@ -176,7 +139,7 @@ classdef Plane < ott.shapes.Shape ...
       unmatched = ott.utils.unmatchedArgs(p);
 
       shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
-      shape.surf(unmatched{:});
+      [varargout{1:nargout}] = shape.surf(unmatched{:});
     end
   end
 
@@ -191,6 +154,42 @@ classdef Plane < ott.shapes.Shape ...
     function nxyz = normalsXyzInternal(shape, xyz)
       nxyz = repmat(shape.normal, 1, size(xyz, 2));
     end
+
+    function [locs, norms, dist] = intersectAllInternal(shape, vecs)
+      % Calculate the intersection point on the plane surface.
+      %
+      % Rays will intersect the plane as long as they are traveling
+      % towards the surface.  The normal will always be the surface
+      % normal.
+      %
+      % Usage
+      %   [locs, norms] = shape.intersect(vec)
+      %   Returns a 3xN matrix of intersection locations or nan.
+      %
+      % Parameters
+      %   - vec (utils.Vector) -- A vector or type that can be cast
+      %     to a Vector.
+
+      normal = [0;0;1];
+
+      % Duplicate the normals
+      sz = size(vecs);
+      norms = repmat(normal, [1, sz(2:end)]);
+
+      % Calculate intersection location relative to ray origin
+      dirs = vecs.direction ./ vecnorm(vecs.direction);
+      dist = -vecs.origin(3, :) ./ dirs(3, :);
+
+      % Remove rays traveling away from the plane
+      dist(:, dist < 0) = nan;
+
+      % Translate to vector origin
+      locs = dist .* dirs + vecs.origin;
+
+      % Ensure infs are also nans
+      locs(~isfinite(locs)) = nan;
+    end
+
   end
 
   methods % Getters/setters
@@ -209,7 +208,7 @@ classdef Plane < ott.shapes.Shape ...
       plane.rotation = [n1./vecnorm(n1), n2./vecnorm(n2), val];
     end
 
-    function n = get.normal(shape, val)
+    function n = get.normal(shape)
       n = shape.rotation(:, 3);
     end
 

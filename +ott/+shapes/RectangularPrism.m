@@ -1,6 +1,7 @@
 classdef RectangularPrism < ott.shapes.Shape ...
     & ott.shapes.mixin.CoordsCart ...
-    & ott.shapes.mixin.Patch
+    & ott.shapes.mixin.Patch ...
+    & ott.shapes.mixin.IntersectMinAll
 % Simple geometric rectangular prism.
 % Inherits from :class:`Shape`.
 %
@@ -69,6 +70,31 @@ classdef RectangularPrism < ott.shapes.Shape ...
       % Normalise vectors (creates nans for interior points)
       n = n ./ vecnorm(n);
 
+    end
+
+    function [locs, norms, dist] = intersectAllInternal(shape, vecs)
+      % Defer to cube after scaling coordinates
+
+      % Scale coordinates
+      tvecs = ott.utils.Vector('origin', vecs.origin./shape.widths, ...
+          'direction', vecs.direction./shape.widths);
+
+      cube = ott.shapes.Cube(1.0);
+      [locs, norms] = cube.intersectAllInternal(tvecs);
+
+      % Rescale locations (normals are fine)
+      locs = locs .* shape.widths;
+
+      % Compute distances
+      O = reshape(vecs.origin, 3, 1, []);
+      D = reshape(vecs.direction, 3, 1, []);
+      dist = sum((locs - O).*D, 1)./vecnorm(D);
+    end
+
+    function varargout = intersectInternal(shape, varargin)
+      % Disambiguate
+      [varargout{1:nargout}] = intersectInternal@ ...
+          ott.shapes.mixin.IntersectMinAll(shape, varargin{:});
     end
   end
 

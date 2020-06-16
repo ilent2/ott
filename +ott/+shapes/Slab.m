@@ -70,13 +70,13 @@ classdef Slab < ott.shapes.Shape ...
       %
       % Optional named parameters
       %   - scale (numeric) -- Scale of the patch. Default: 1.0.
-      
+
       p = inputParser;
       p.addParameter('scale', 1.0);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
-      
+
       shape = ott.shapes.Strata(shape, unmatched{:});
       shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
     end
@@ -89,7 +89,7 @@ classdef Slab < ott.shapes.Shape ...
           'position', shape.position-shape.depth./2, varargin{:});
     end
 
-    function surf(shape, varargin)
+    function varargout = surf(shape, varargin)
       % Generate a visualisation of the shape
       %
       % Converts the shape to a PatchMesh and calls surf.
@@ -109,7 +109,7 @@ classdef Slab < ott.shapes.Shape ...
       unmatched = ott.utils.unmatchedArgs(p);
 
       shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
-      shape.surf(unmatched{:});
+      [varargout{1:nargout}] = shape.surf(unmatched{:});
     end
   end
 
@@ -118,12 +118,27 @@ classdef Slab < ott.shapes.Shape ...
       % Determine if a point is on one side of the plane or the other
 
       % Determine if points are inside slab
-      dist = sum(xyz .* shape.normal, 1) - shape.offset;
-      b = dist > 0 & (dist - shape.depth < 0);
+      dist = sum(xyz .* shape.normal, 1);
+      b = abs(dist) <= shape.depth./2;
     end
 
     function nxyz = normalsXyzInternal(shape, xyz)
-      nxyz = repmat(shape.normal, 1, size(xyz, 2));
+      sgn = sign(sum(xyz .* shape.normal, 1));
+      nxyz = sgn.*repmat(shape.normal, 1, size(xyz, 2));
+    end
+
+    function varargout = intersectAllInternal(shape, vecs)
+      % Defer to Strata
+
+      shape = ott.shapes.Strata(shape);
+      [varargout{1:nargout}] = shape.intersectAllInternal(vecs);
+    end
+
+    function varargout = intersectInternal(shape, vecs)
+      % Defer to Strata
+
+      shape = ott.shapes.Strata(shape);
+      [varargout{1:nargout}] = shape.intersectInternal(vecs);
     end
   end
 

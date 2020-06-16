@@ -90,6 +90,23 @@ classdef Strata < ott.shapes.Plane
     end
   end
 
+  methods (Hidden)
+    function [locs, norms, dist] = intersectAllInternal(shape, vecs)
+      % Call plane method for each layer
+
+      locs = zeros(3, length(shape.depths), length(vecs));
+      norms = zeros(3, length(shape.depths), length(vecs));
+      dist = zeros(1, length(shape.depths), length(vecs));
+
+      for ii = 1:length(shape.depths)
+        tvecs = ott.utils.Vector('origin', vecs.origin - shape.depths(ii), ...
+            'direction', vecs.direction);
+        [locs(:, ii, :), norms(:, ii, :), dist(:, ii, :)] = ...
+            intersectAllInternal@ott.shapes.Plane(shape, tvecs);
+      end
+    end
+  end
+
   methods % Getters/setters
     function shape = set.depths(shape, val)
       assert(isvector(val) && all(val > 0), ...

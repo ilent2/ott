@@ -60,8 +60,12 @@ classdef Union < ott.shapes.Set
 
       b = shape.shapes(1).insideRtp(rtp, 'origin', 'global');
       for ii = 2:numel(shape.shapes)
-        % TODO: We only need to check points that are not inside
-        b = b | shape.shapes(ii).insideRtp(rtp, 'origin', 'global');
+
+        % We only need to check points that are not inside
+        mask = ~b;
+
+        b(mask) = b(mask) ...
+            | shape.shapes(ii).insideRtp(rtp(:, mask), 'origin', 'global');
       end
     end
 
@@ -70,8 +74,11 @@ classdef Union < ott.shapes.Set
 
       b = shape.shapes(1).insideXyz(xyz, 'origin', 'global');
       for ii = 2:numel(shape.shapes)
-        % TODO: We only need to check points that are not inside
-        b = b | shape.shapes(ii).insideXyz(xyz, 'origin', 'global');
+        % We only need to check points that are not inside
+        mask = ~b;
+
+        b(mask) = b(mask) ...
+            | shape.shapes(ii).insideXyz(xyz(:, mask), 'origin', 'global');
       end
     end
   end

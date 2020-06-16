@@ -1,6 +1,7 @@
 classdef AxisymInterp < ott.shapes.Shape ...
     & ott.shapes.mixin.AxisymShape ...
-    & ott.shapes.mixin.NumericalVolume
+    & ott.shapes.mixin.NumericalVolume ...
+    & ott.shapes.mixin.IntersectRayMarch
 % Rotationally symmetric shape described by discrete set of points.
 %
 % Shape produced when converting this object to a patch uses linear
@@ -51,9 +52,9 @@ classdef AxisymInterp < ott.shapes.Shape ...
       % Additional parameters passed to class constructor.
 
       p = inputParser;
-      p.addOptional('height', 2.0);
-      p.addOptional('radius', 1.0);
-      p.addOptional('coneHeight', 0.5);
+      p.addOptional('height', 2.0, @isnumeric);
+      p.addOptional('radius', 1.0, @isnumeric);
+      p.addOptional('coneHeight', 0.5, @isnumeric);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -91,8 +92,8 @@ classdef AxisymInterp < ott.shapes.Shape ...
       % Additional parameters passed to class constructor.
 
       p = inputParser;
-      p.addOptional('height', 2.0);
-      p.addOptional('radius', 1.0);
+      p.addOptional('height', 2.0, @isnumeric);
+      p.addOptional('radius', 1.0, @isnumeric);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -124,7 +125,7 @@ classdef AxisymInterp < ott.shapes.Shape ...
       % Additional parameters passed to base.
 
       p = inputParser;
-      p.addOptional('points', []);
+      p.addOptional('points', [], @isnumeric);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -304,14 +305,14 @@ classdef AxisymInterp < ott.shapes.Shape ...
     end
 
     function b = get.starShaped(shape)
-      angles = atan2(shape.z, shape.rho);
-      b = issorted(angles);
+      angles = atan2(shape.points(2, :), shape.points(1, :));
+      b = issorted(angles, 'monotonic');
     end
 
     function b = get.xySymmetry(shape)
       pts = shape.points;
       npts = fliplr([shape.points(1, :); -shape.points(2, :)]);
-      b = all(pts == npts);
+      b = all(all(pts == npts));
     end
   end
 end

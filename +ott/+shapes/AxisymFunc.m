@@ -1,6 +1,7 @@
 classdef AxisymFunc < ott.shapes.Shape ...
     & ott.shapes.mixin.AxisymShape ...
-    & ott.shapes.mixin.NumericalVolume
+    & ott.shapes.mixin.NumericalVolume ...
+    & ott.shapes.mixin.IntersectRayMarch
 % Rotationally symmetry shape described by a function
 %
 % Properties
@@ -95,7 +96,7 @@ classdef AxisymFunc < ott.shapes.Shape ...
       %
       % Parameters
       %   - height (numeric) -- Total height of pill including
-      %     end caps.  Default: ``1.0``.
+      %     end caps.  Default: ``2.0``.
       %
       %   - radius (numeric) -- Radius of rod segment.  Default: ``0.5``.
       %
@@ -159,9 +160,9 @@ classdef AxisymFunc < ott.shapes.Shape ...
       % Additional parameters passed to base.
 
       p = inputParser;
-      p.addOptional('func', []);
-      p.addOptional('type', []);
-      p.addParameter('range', []);
+      p.addOptional('func', [], @(x) isa(x, 'function_handle'));
+      p.addOptional('type', [], @ischar);
+      p.addParameter('range', [], @isnumeric);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -463,17 +464,17 @@ classdef AxisymFunc < ott.shapes.Shape ...
         case 'radial'
           [~, R] = fminbnd(@(x) -shape.func(x), ...
               shape.range(1), shape.range(2));
-          bb = [-R, R; -R, R; shape.range(1:2)];
+          bb = [R, -R; R, -R; shape.range(1:2)];
         case 'axial'
           [~, Z] = fminbnd(@(x) -shape.func(x), ...
               shape.range(1), shape.range(2));
           R = shape.range(2);
-          bb = [-R, R; -R, R; 0, Z];
+          bb = [-R, R; -R, R; 0, -Z];
         case 'axialSym'
           [~, Z] = fminbnd(@(x) -shape.func(x), ...
               shape.range(1), shape.range(2));
           R = shape.range(2);
-          bb = [-R, R; -R, R; -Z, Z];
+          bb = [-R, R; -R, R; Z, -Z];
         case 'angular'
           [~, R] = fminbnd(@(x) -shape.func(x).*cos(x), ...
               shape.range(1), shape.range(2));
@@ -481,7 +482,7 @@ classdef AxisymFunc < ott.shapes.Shape ...
               shape.range(1), shape.range(2));
           [~, mZ] = fminbnd(@(x) shape.func(x).*sin(x), ...
               shape.range(1), shape.range(2));
-          bb = [-R, R; -R, R; mZ, pZ];
+          bb = -[-R, R; -R, R; mZ, pZ];
         otherwise
           error('Unknown shape type');
       end

@@ -2,42 +2,54 @@ function tests = testSlab
   tests = functiontests(localfunctions);
 end
 
-function setupOnce(testCase)
+function setupOnce(~)
   addpath('../../');
 end
 
-function testConstruction(testCase)
+function testConstructor(testCase)
 
   normal = [0;0;1];
-  offset = 0.0;
   depth = 0.5;
 
-  plane = ott.shapes.Slab(normal, depth, 'offset', offset);
-  
+  slab = ott.shapes.Slab(normal, depth);
+
   % Check properties
-  testCase.verifyEqual(plane.normal, normal);
-  testCase.verifyEqual(plane.offset, offset);
-  testCase.verifyEqual(plane.depth, depth);
-  testCase.verifyEqual(plane.maxRadius, Inf);
-  testCase.verifyEqual(plane.volume, Inf);
+  testCase.verifyEqual(slab.normal, normal);
+  testCase.verifyEqual(slab.depth, depth);
+  testCase.verifyEqual(slab.maxRadius, Inf);
+  testCase.verifyEqual(slab.volume, Inf);
+
+end
+
+function testInsideXyz(testCase)
+
+  slab = ott.shapes.Slab();
   
-  % Check point above and bellow plane
   xyz = [0, 0, 0; 0, 0, 0; 1, 0.25, -1];
-  b = plane.insideXyz(xyz);
+  b = slab.insideXyz(xyz);
   testCase.verifyEqual(b, [false, true, false]);
+
+end
+
+function testNormalsXyz(testCase)
+
+  slab = ott.shapes.Slab();
+
+  testCase.verifyEqual(slab.normalsXyz([0;0;1]), [0;0;1], 'pos');
+  testCase.verifyEqual(slab.normalsXyz([0;0;-1]), [0;0;-1], 'neg');
+
 end
 
 function testSurf(testCase)
 
-  normal = rand(3, 1);
-  offset = 0.0;
-  depth = 0.5;
+  plane = ott.shapes.Slab();
 
-  plane = ott.shapes.Slab(normal, depth, 'offset', offset);
-  
   h = figure();
-  plane.surf('scale', 2.0);
+
+  p = plane.surf('scale', 2.0);
+  testCase.verifyClass(p, 'matlab.graphics.primitive.Patch');
+
   close(h);
 
 end
-  
+

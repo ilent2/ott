@@ -1,6 +1,7 @@
 classdef Sphere < ott.shapes.Shape ...
     & ott.shapes.mixin.AxisymStarShape ...
-    & ott.shapes.mixin.IsosurfSurfPoints
+    & ott.shapes.mixin.IsosurfSurfPoints ...
+    & ott.shapes.mixin.IntersectMinAll
 % Spherical particle.
 % Inherits from :class:`Shape`.
 %
@@ -25,7 +26,7 @@ classdef Sphere < ott.shapes.Shape ...
   end
 
   methods
-    function shape = Sphere(radius, varargin)
+    function shape = Sphere(varargin)
       % Construct a new sphere
       %
       % Usage
@@ -111,6 +112,40 @@ classdef Sphere < ott.shapes.Shape ...
 
     function nxz = normalsTInternal(shape, theta)
       nxz = [sin(theta); cos(theta)];
+    end
+
+    function [locs, norms, dist] = intersectAllInternal(shape, vecs)
+      % Based on OTGO Spherical.m/intersectionpoint
+
+      D = vecs.direction;
+      Q1 = vecs.origin;
+
+      A = dot(D, D);
+      B = 2.*dot(Q1, D);
+      C = dot(Q1, Q1) - shape.radius.^2;
+
+      delta = B.^2 - 4*A.*C;
+
+      t1 = (-B - sqrt(delta))./(2*A);
+      t2 = (-B + sqrt(delta))./(2*A);
+
+      % Remove rays that don't intersect
+      t1(delta < 0) = nan;
+      t2(delta < 0) = nan;
+
+      % Remove rays in negative direction
+      t1(t1 < 0) = nan;
+      t2(t2 < 0) = nan;
+
+      dist = cat(3, t1, t2);
+      locs = Q1 + dist.*D;
+      norms = shape.normalsXyz(reshape(locs, 3, []));
+      
+      % Ensure outputs have correct shape/size
+      dist = permute(dist, [1, 3, 2]);
+      locs = permute(locs, [1, 3, 2]);
+      norms = permute(reshape(norms, 3, [], 2), [1, 3, 2]);
+
     end
   end
 

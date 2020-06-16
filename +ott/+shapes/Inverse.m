@@ -87,6 +87,14 @@ classdef Inverse < ott.shapes.Shape
     function nxyz = normalsXyzInternal(shape, xyz)
       nxyz = -shape.internal.normalsXyz(xyz, 'origin', 'global');
     end
+
+    function varargout = intersectAllInternal(shape, varargin)
+      [varargout{1:nargout}] = shape.internal.intersectAllInternal(varargin{:});
+    end
+
+    function varargout = intersectInternal(shape, varargin)
+      [varargout{1:nargout}] = shape.internal.intersectInternal(varargin{:});
+    end
   end
 
   methods % Getters/setters

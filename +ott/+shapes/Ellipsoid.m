@@ -1,6 +1,7 @@
 classdef Ellipsoid < ott.shapes.Shape ...
     & ott.shapes.mixin.StarShape ...
-    & ott.shapes.mixin.IsosurfSurfPoints
+    & ott.shapes.mixin.IsosurfSurfPoints ...
+    & ott.shapes.mixin.IntersectMinAll
 % Ellipsoid shape
 %
 % Properties:
@@ -85,6 +86,25 @@ classdef Ellipsoid < ott.shapes.Shape ...
           sigma_phi./sigma_mag ].';
 
       n = ott.utils.rtpv2xyzv(n, rtp);
+    end
+
+    function [locs, norms, dist] = intersectAllInternal(shape, vecs)
+
+      % Transform coordinates
+      tvecs = ott.utils.Vector('origin', vecs.origin ./ shape.radii, ...
+          'direction', vecs.direction ./ shape.radii);
+
+      % Call sphere method with transformed coordinates
+      sph = ott.shapes.sphere(1.0);
+      [locs, norms] = sph.intersectAllInternal(tvecs);
+
+      % Transform back to original reference frame
+      locs = locs .* shape.radii;
+      norms = norms .* shape.radii;
+
+      % Compute distances
+      dist = dot(locs - vecs.origin, vecs.direction)./vecnorm(vecs.direction);
+
     end
   end
 

@@ -3,7 +3,8 @@ classdef TriangularMesh < ott.shapes.Shape ...
     & ott.shapes.mixin.VarStarShaped ...
     & ott.shapes.mixin.VarXySymmetry ...
     & ott.shapes.mixin.VarZRotSymmetry ...
-    & ott.shapes.mixin.Patch
+    & ott.shapes.mixin.Patch ...
+    & ott.shapes.mixin.IntersectMinAll
 % Describes a mesh formed by triangular patches.
 %
 % This class is similar to :class:`PatchMesh` except the patches
@@ -12,6 +13,7 @@ classdef TriangularMesh < ott.shapes.Shape ...
 % Properties
 %   - verts     -- 3xN matrix of vertex locations
 %   - faces     -- 3xN matrix of vertex indices describing faces
+%   - norms     -- 3xN matrix of face normal vectors
 %
 % Methods
 %   - subdivide  -- Add an extra vertex to the centre of each face
@@ -23,9 +25,6 @@ classdef TriangularMesh < ott.shapes.Shape ...
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-% TODO: Intersection method
-% TODO: Normals method
-
   properties
     verts           % Matrix of vertices in the object
     faces           % Matrix of faces in the object
@@ -35,6 +34,7 @@ classdef TriangularMesh < ott.shapes.Shape ...
     maxRadius          % Maximum particle radius
     volume             % Particle volume
     boundingBox        % Cartesian coordinate bounding box (no rot/pos)
+    norms              % Matrix of face normal vectors
   end
 
   methods
@@ -138,10 +138,90 @@ classdef TriangularMesh < ott.shapes.Shape ...
       b = ott.utils.inpolyhedron(shape.faces.', shape.verts.', xyz.');
     end
 
-    function nxyz = normalsXyzInternal(shape, xyz)
+    function norms = normalsXyzInternal(shape, xyz)
       % Determine normals for point
+      %
+      % This is a similar procedure to intersection testing except the
+      % vector direction is the normal direction.
 
-      error('Not yet implemented');
+      % Calculate normals (3xN)
+      N = shape.norms;
+
+      % Reshape points array
+      Q1 = reshape(xyz, 3, 1, []);
+
+      % Ensure size of D and N match
+      N = repmat(N, 1, 1, size(Q1, 3));
+      Q1 = repmat(Q1, 1, size(N, 2), 1);
+      
+      % Get vertex coordinates (3xN)
+      P1 = repmat(shape.verts(:, shape.faces(1, :)), 1, 1, size(Q1, 3));
+      P2 = repmat(shape.verts(:, shape.faces(2, :)), 1, 1, size(Q1, 3));
+      P3 = repmat(shape.verts(:, shape.faces(3, :)), 1, 1, size(Q1, 3));
+
+      % Calculate intersection points (3xNxM)
+      dist = dot(P1 - Q1, N);
+      P = Q1 + dist.*N;
+
+      % Determine which points are inside triangles
+      % Add a tolerance to make faces overlap slightly
+      tol = -1.0e-2;
+      I = dot(cross(P2-P1, P-P1), N) >= tol & ...
+          dot(cross(P3-P2, P-P2), N) >= tol & ...
+          dot(cross(P1-P3, P-P3), N) >= tol;
+        
+      % Discard points that don't intersect
+      dist(:, ~I) = nan;
+      N(:, ~I) = nan;
+
+      % Select only nearest face
+      [~, idx] = min(abs(dist), [], 2);
+
+      % Select outputs
+      norms = N(:, idx);
+    end
+
+    function [P, N, dist] = intersectAllInternal(shape, vecs)
+      % Find all face intersections, returns a 3xNxM matrix
+
+      % Reshape points (3x1xM)
+      Q1 = reshape(vecs.origin, 3, 1, []);
+      D = reshape(vecs.direction, 3, 1, []);
+
+      % Calculate normals (3xN)
+      N = shape.norms;
+      
+      % Ensure size of D and N match
+      N = repmat(N, 1, 1, size(D, 3));
+      D = repmat(D, 1, size(N, 2), 1);
+      Q1 = repmat(Q1, 1, size(N, 2), 1);
+
+      % Get vertex coordinates (3xN)
+      P1 = repmat(shape.verts(:, shape.faces(1, :)), 1, 1, size(D, 3));
+      P2 = repmat(shape.verts(:, shape.faces(2, :)), 1, 1, size(D, 3));
+      P3 = repmat(shape.verts(:, shape.faces(3, :)), 1, 1, size(D, 3));
+
+      % Calculate intersection points (3xNxM)
+      dist = dot(P1 - Q1, N)./dot(D, N);
+      P = Q1 + dist.*D;
+
+      % Determine which points are inside triangles
+      I = dot(cross(P2-P1, P-P1), N) >= 0 & ...
+          dot(cross(P3-P2, P-P2), N) >= 0 & ...
+          dot(cross(P1-P3, P-P3), N) >= 0;
+
+      % Remove intersections in the opposite direction
+      found = dist >= 0 & I;
+      dist(~found) = nan;
+      P(:, ~found) = nan;
+      N(:, ~found) = nan;
+
+    end
+
+    function varargout = intersectInternal(shape, varargin)
+      % Disambiguate
+      [varargout{1:nargout}] = intersectInternal@ ...
+          ott.shapes.mixin.IntersectMinAll(shape, varargin{:});
     end
   end
 
@@ -201,6 +281,15 @@ classdef TriangularMesh < ott.shapes.Shape ...
       bb = [min(shape.verts(1, :)), max(shape.verts(1, :));
             min(shape.verts(2, :)), max(shape.verts(2, :));
             min(shape.verts(3, :)), max(shape.verts(3, :))];
+    end
+
+    function nxyz = get.norms(shape)
+      V1 = shape.verts(:, shape.faces(2, :)) ...
+          - shape.verts(:, shape.faces(1, :));
+      V2 = shape.verts(:, shape.faces(3, :)) ...
+          - shape.verts(:, shape.faces(1, :));
+      nxyz = cross(V1, V2);
+      nxyz = nxyz ./ vecnorm(nxyz);
     end
   end
 end

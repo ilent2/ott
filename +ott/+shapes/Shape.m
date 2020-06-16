@@ -27,16 +27,21 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 %   - normalsXyz      -- Calculate normals at surface location
 %   - writeWavefrontObj -- write shape to Wavefront OBJ file
 %   - intersect       -- Calculate intersection between vectors and surface
+%   - intersectAll    -- Calculate intersection between vectors and surface
+%   - intersectBoundingBox -- Calculate intersection with bounding box
 %   - getBoundingBox  -- Get the bounding box with transformations applied
+%   - getBoundingBoxShape -- Get a shape representing the bounding box
 %   - rotate*         -- Functions for rotating the entity
 %   - translate*      -- Functions for translating the entity
 %   - operator|       -- Union operator: creates a new set
 %   - operator&       -- Intersection operator: creates a new set
 %   - operator~       -- Inverse operator: creates a new :class:`Inverse`.
 %
-% Methods (abstract)
+% Abstract methods
 %   - surf                -- Generate surface visualisation
 %   - surfPoints          -- Calculate points for surface integration
+%   - intersectInternal   -- Method called by intersect
+%   - intersectAllInternal -- Method called by intersectAll
 %   - insideRtpInternal   -- Determine if Spherical point is inside shape
 %   - insideXyzInternal   -- Determine if Cartesian point is inside shape
 %   - normalsRtpInternal  -- Calculate normals at surface location
@@ -68,6 +73,8 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
     insideXyzInternal(obj)    % Determine if point is inside shape (Cartesian)
     normalsRtpInternal(obj)   % Calculate normals (Spherical)
     normalsXyzInternal(obj)   % Calculate normals (Cartesian)
+    intersectInternal(obj)    % Method called by intersect
+    intersectAllInternal(obj)    % Method called by intersectAll
   end
 
   methods
@@ -187,6 +194,35 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       end
     end
 
+    function bbshape = getBoundingBoxShape(shape, varargin)
+      % Get shape representing the bounding box.
+      %
+      % Usage
+      %   bb = shape.getBoundingBoxShape(...)
+      %
+      % Optional named arguments
+      %   - origin (enum) -- Coordinate origin.  'local' or 'global'.
+
+      p = inputParser;
+      p.addParameter('origin', 'global');
+      p.parse(varargin{:});
+
+      bb = shape.boundingBox;
+      bbsize = diff(bb, [], 2);
+      bbshape = ott.shapes.RectangularPrism(bbsize);
+
+      % Translate to world coordinates
+      switch p.Results.origin
+        case 'global'
+          bbshape.position = shape.position + bb(:, 1) + bbsize./2;
+          bbshape.rotation = shape.rotation;
+        case 'local'
+          bbshape.position = bb(:, 1) + bbsize./2;
+        otherwise
+          error('Unknown origin specified');
+      end
+    end
+
     function writeWavefrontObj(shape, filename)
       % Write representation of shape to Wavefront OBJ file
       %
@@ -199,82 +235,132 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       shape.writeWavefrontObj(filename);
     end
 
-    function [locs, norms] = intersect(shape, vecs)
-      % Calculate the intersection between the shape and a vector set.
+    function [locs, norms] = intersectBoundingBox(shape, vecs, varargin)
+      % Calculate intersections with bounding box.
       %
-      % If the vector is inside the shape, finds the intersect between
-      % the shapes surface.
+      % Internally, constructs a bounding box shape and calculates
+      % all intersections with :meth:`intersectAll`.
       %
       % Usage
-      %   [locs, norms] = shape.intersect(vec)
+      %   [locs, norms] = shape.intersectBoundingBox(shape, vecs, ...)
+      %
+      % All unmatched arguments are passed to getBoundingBoxShape.
+
+      bbshape = shape.getBoundingBoxShape(varargin{:});
+      [locs, norms] = bbshape.intersectAll(vecs);
+    end
+
+    function [locs, norms, dist] = intersectAll(shape, vecs, varargin)
+      % Calculate intersection with all faces in a direction
+      %
+      % Any rays/faces that don't intersect result in nans being returned.
+      %
+      % Usage
+      %   [locs, norms, dist] = shape.intersectAll(shape, vecs, ...)
       %
       % Parameters
-      %   - vec (utils.Vector) -- A vector or type that can be cast
-      %     to a Vector.
+      %   - vecs (3xM Vector) -- vectors to intersect.  Must be castable
+      %     to a ott.utils.Vector object.
       %
-      % The default implementation uses insideXyz to test when the
-      % rays are inside the shape.  For some shapes there may be
-      % faster methods.  Normals are calculated with the normalsXyz method.
+      % Returns
+      %   - locs (3xNxM numeric) -- intersections with N locations
+      %   - norms (3xNxM numeric) -- surface normals at N intersections
+      %   - dist (1xNxM numeric) -- distance from vector origin
+      %
+      % Optional named arguments
+      %   - origin (enum) -- Coordinate origin.  'local' or 'global'.
+      %
+      % Additional arguments passed to intersectAllInternal.
 
-      % Minimum distance before intersection
-      % TODO: This should be a parameter
-      min_distance = 1.0e-2;
+      p = inputParser;
+      p.addParameter('origin', 'global');
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       if ~isa(vecs, 'ott.utils.Vector')
         vecs = ott.utils.Vector(vecs);
       end
 
-      % TODO: This should be a parameter
-      dx = shape.maxRadius ./ 100;
-      if ~isfinite(dx)
-        dx = 1.0e-3;
+      % Translate to local coordinates
+      switch p.Results.origin
+        case 'global'
+          vecs.origin = shape.global2local(vecs.origin);
+        case 'local'
+          % Nothing to do
+        otherwise
+          error('Unknown origin specified');
       end
 
-      % Start by calculating intersects with bounding box
-      ints = shape.intersectBoundingBox(vecs);
+      % Defer to shape-specific implementation
+      [locs, norms, dist] = shape.intersectAllInternal(vecs, unmatched{:});
 
-      % Handle point inside (or on the edge)
-      mask = isnan(ints(1, :));
-      ints(1:3, mask) = vecs.origin(:, mask) ...
-          + vecs.direction(:, mask) .* min_distance ...
-          ./ vecnorm(vecs.direction(:, mask));
+      % Translate to global coordinatse
+      switch p.Results.origin
+        case 'global'
+          sz = size(locs);
+          locs = reshape(shape.local2global(reshape(locs, 3, [])), sz);
+          norms = reshape(shape.rotation * reshape(norms, 3, []), sz);
+        case 'local'
+          % Nothing to do
+        otherwise
+          error('Unknown origin specified');
+      end
+    end
 
-      % Calculate distance we want to search for each vector
-      search_distance = vecnorm(ints(4:6, :) - ints(1:3, :));
+    function [locs, norms] = intersect(shape, vecs, varargin)
+      % Calculate intersection locations and normals.
+      %
+      % Any rays that don't intersect shape result in nans.
+      %
+      % Usage
+      %   [locs, norms, dist] = shape.intersectAll(shape, vecs, ...)
+      %
+      % Parameters
+      %   - vecs (3xM Vector) -- vectors to intersect.  Must be castable
+      %     to a ott.utils.Vector object.
+      %
+      % Returns
+      %   - locs (3xN numeric) -- intersections with N locations
+      %   - norms (3xN numeric) -- surface normals at N intersections
+      %
+      % Optional named arguments
+      %   - origin (enum) -- Coordinate origin.  'local' or 'global'.
+      %
+      % Additional arguments passed to intersectInternal.
 
-      % Distance from bounding box to intersection
-      locs = zeros(1, numel(vecs));
-      orgs = ints(1:3, :);
-      found = false(1, numel(vecs));
-      dirs = vecs.direction ./ vecnorm(vecs.direction);
+      p = inputParser;
+      p.addParameter('origin', 'global');
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      % Determine which points were already inside
-      was_inside = shape.insideXyz(orgs);
-
-      % Find a point between the intersects in the shape
-      remaining = locs < search_distance & ~found;
-      while any(remaining)
-
-        % March the ray
-        locs(remaining) = locs(remaining) + dx;
-
-        % Determine if new point is inside
-        inside = shape.insideXyz(orgs(:, remaining) ...
-          + locs(remaining).*dirs(:, remaining));
-        found(remaining) = inside ~= was_inside(remaining);
-
-        % Determine which points remain
-        remaining = locs < search_distance & ~found;
+      if ~isa(vecs, 'ott.utils.Vector')
+        vecs = ott.utils.Vector(vecs);
       end
 
-      % Remove logs that weren't found
-      locs(~found) = nan;
+      % Translate to local coordinates
+      switch p.Results.origin
+        case 'global'
+          vecs.origin = shape.global2local(vecs.origin);
+        case 'local'
+          % Nothing to do
+        otherwise
+          error('Unknown origin specified');
+      end
 
-      % Convert length to location vector
-      locs = ints(1:3, :) + locs .* dirs;
+      % Defer to shape-specific implementation
+      [locs, norms] = shape.intersectInternal(vecs, unmatched{:});
 
-      if nargout > 1
-        norms = shape.normalsXyz(locs);
+      % Translate to global coordinatse
+      switch p.Results.origin
+        case 'global'
+          locs = shape.local2global(locs);
+          norms = shape.rotation * norms;
+        case 'local'
+          % Nothing to do
+        otherwise
+          error('Unknown origin specified');
       end
     end
 
@@ -556,7 +642,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       switch p.Results.origin
         case 'global'
           % Translate to local coordinates, the Internal functions use local
-          xyz = shape.local2global(xyz);
+          xyz = shape.global2local(xyz);
         case 'local'
           % Nothing to do
         otherwise
@@ -583,114 +669,13 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
           % Only do work if we need to
           if vecnorm(shape.position) ~= 0
             xyz = ott.utils.rtp2xyz(rtp);
-            xyz = shape.local2global(xyz);
+            xyz = shape.global2local(xyz);
             rtp = ott.utils.xyz2rtp(xyz);
           end
         case 'local'
           % Nothing to do
         otherwise
           error('Unknown origin specified');
-      end
-    end
-
-    function ints = intersectBoundingBox(shape, vecs)
-      % Calculate the bounding box intersections for the vector
-      %
-      % Usage
-      %   ints = intersectBoundingBox(vecs)
-      %   vecs is a ott.utils.Vector
-      %   ints is a 6xN matrix of intersection locations or nan
-
-      dirs = vecs.direction ./ vecnorm(vecs.direction);
-      orgs = vecs.origin;
-
-      R = shape.maxRadius;
-      if ~isfinite(R)
-        ints = nan(6, size(dirs, 2));
-        return;
-      end
-
-      % Calculate intersection with planes
-      lz = orgs - (orgs(3, :) - R) .* dirs ./ dirs(3, :);
-      uz = orgs - (orgs(3, :) + R) .* dirs ./ dirs(3, :);
-      ly = orgs - (orgs(2, :) - R) .* dirs ./ dirs(2, :);
-      uy = orgs - (orgs(2, :) + R) .* dirs ./ dirs(2, :);
-      lx = orgs - (orgs(1, :) - R) .* dirs ./ dirs(1, :);
-      ux = orgs - (orgs(1, :) + R) .* dirs ./ dirs(1, :);
-
-      % Find which planes the ray intersects
-      lxb = all(lx(2:3, :) < R & lx(2:3, :) > -R, 1);
-      uxb = all(ux(2:3, :) < R & ux(2:3, :) > -R, 1);
-      lyb = all(ly([1,3], :) < R & ly([1,3], :) > -R, 1);
-      uyb = all(uy([1,3], :) < R & uy([1,3], :) > -R, 1);
-      lzb = all(lz(1:2, :) < R & lz(1:2, :) > -R, 1);
-      uzb = all(uz(1:2, :) < R & uz(1:2, :) > -R, 1);
-      brr = [lxb; uxb; lyb; uyb; lzb; uzb];
-
-      ints = zeros(6, size(dirs, 2));
-
-      % Assign intersects
-      for ii = 1:size(ints, 2)
-
-        this_ints = zeros(6, 1);
-        jj = 1;
-
-        % Get which vector matched
-        % This feels like KLUDGE
-        if lxb(ii)
-          this_ints(jj:jj+2) = lx(:, ii);
-          jj = jj + 3;
-        end
-        if uxb(ii)
-          this_ints(jj:jj+2) = ux(:, ii);
-          jj = jj + 3;
-        end
-        if lyb(ii)
-          this_ints(jj:jj+2) = ly(:, ii);
-          jj = jj + 3;
-        end
-        if uyb(ii)
-          this_ints(jj:jj+2) = uy(:, ii);
-          jj = jj + 3;
-        end
-        if lzb(ii)
-          this_ints(jj:jj+2) = lz(:, ii);
-          jj = jj + 3;
-        end
-        if uzb(ii)
-          this_ints(jj:jj+2) = uz(:, ii);
-          jj = jj + 3;
-        end
-
-        % Filter out non-intersects
-        if jj == 1
-          ints(:, ii) = nan;
-
-        elseif jj == 4
-
-          % This shouldn't happen since we haven't checked direction yet
-          warning('Unexpected intersection event');
-          ints(1:3, ii) = nan;
-          ints(4:6, ii) = this_ints(1:3);
-
-        else
-
-          % Sort the intercepts
-          l1 = dot(this_ints(1:3) - orgs(:, ii), dirs(:, ii));
-          l2 = dot(this_ints(4:6) - orgs(:, ii), dirs(:, ii));
-          if l2 < l1
-            this_ints = [this_ints(4:6); this_ints(1:3)];
-          end
-
-          % Ray originated from inside, discard other ray
-          if l1 < 0 || l2 < 0
-            this_ints(1:3) = nan;
-          end
-
-          % Store result
-          ints(:, ii) = this_ints;
-        end
-
       end
     end
   end

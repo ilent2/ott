@@ -9,13 +9,23 @@
 %   VarZRotSymmetry   - Variable z rotational symmetry property
 %   VarXySymmetry     - Variable xy mirror symmetry property
 %   NumericalVolume   - Calculate volume numerically
+%   InfVolume         - Shapes with infinite volume
+%
+% Surfaces
+%   IsosurfSurf       - Use isosurf for surf
+%   IsosurfSurfPoints - use isosurf for surfPoints
+%   NoSurfPoints      - Shapes where surfPoints doesn't make sense
+%
+% Intersection
+%   IntersectMinAll   - Declare intersect method that uses intersectAll
+%   IntersectRayMarch - Intersection using ray marching
+%   IntersectTriMesh  - Intersection by casting to a TriangularMesh
 %
 % Shape types
 %   Patch          - Shape described by a discrete set of vertices
 %   StarShape      - Star shaped particles
 %   AxisymShape    - Axis-symmetric particles
-%   PolExtrusion   - Polar coordinate extrusions
-%   CartExtrusion  - Cartesian coordinate extrusions
+%   AxisymStarShape  - Combines AxisymShape with StarShape
 %
 % Copyright 2018-2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.

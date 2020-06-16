@@ -1,6 +1,7 @@
 classdef Cube < ott.shapes.Shape ...
     & ott.shapes.mixin.CoordsCart ...
-    & ott.shapes.mixin.Patch
+    & ott.shapes.mixin.Patch ...
+    & ott.shapes.mixin.IntersectMinAll
 % Simple geometric cube.
 % Inherits from :class:`Shape`.
 %
@@ -69,6 +70,62 @@ classdef Cube < ott.shapes.Shape ...
       % Normalise vectors (creates nans for interior points)
       n = n ./ vecnorm(n);
 
+    end
+
+    function [locs, norms, dist] = intersectAllInternal(shape, vecs)
+      % Calculate intersection with faces, returns 3x2xN locs
+
+      % Reshape points (3x1xM)
+      Q1 = reshape(vecs.origin, 3, 1, []);
+      D = reshape(vecs.direction, 3, 1, []);
+
+      % Calculate normals (3x6)
+      N = [[0;0;1], [0;0;-1], [1;0;0],[-1;0;0], [0;1;0],[0;-1;0]];
+      P0 = shape.width.*N./2;
+
+      % Ensure size of D and N match (3x6xM)
+      N = repmat(N, 1, 1, size(D, 3));
+      D = repmat(D, 1, size(N, 2), 1);
+      Q1 = repmat(Q1, 1, size(N, 2), 1);
+
+      % Calculate distance to intersection
+      dist = dot(P0 - Q1, N)./dot(D, N);
+
+      % Remove points before origin and tangent points
+      dist(dist < 0 | ~isfinite(dist)) = nan;
+      
+      % Calculate intersection points (3x6xM)
+      P = Q1 + dist.*D;
+
+      % Remove points outside faces
+      w = shape.width./2;
+      I = [abs(P(1, 1:2, :)) > w | abs(P(2, 1:2, :)) > w, ...
+           abs(P(2, 3:4, :)) > w | abs(P(3, 3:4, :)) > w, ...
+           abs(P(1, 5:6, :)) > w | abs(P(3, 5:6, :)) > w];
+      dist(:, I) = nan;
+
+      % Find first intersection
+      [~, idx1] = min(dist, [], 2);
+
+      % Find second intersection
+      dist2 = dist;
+      dist2(:, idx1) = nan;
+      [~, idx2] = min(dist2, [], 2);
+
+      % Select our two points
+      dist = dist([idx1, idx2]);
+      norms = N(:, [idx1, idx2]);
+      locs = P(:, [idx1, idx2]);
+
+      % Change norms/locs to nans
+      norms(:, isnan(dist)) = nan;
+      locs(:, isnan(dist)) = nan;
+    end
+
+    function varargout = intersectInternal(shape, varargin)
+      % Disambiguate
+      [varargout{1:nargout}] = intersectInternal@ ...
+          ott.shapes.mixin.IntersectMinAll(shape, varargin{:});
     end
   end
 

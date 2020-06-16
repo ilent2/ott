@@ -28,7 +28,7 @@ classdef Vector < ott.utils.RotateHelper
   end
 
   methods
-    function vec = Vector(origin, direction)
+    function vec = Vector(varargin)
       % Construct a new vector instance
       %
       % Usage
@@ -44,29 +44,28 @@ classdef Vector < ott.utils.RotateHelper
       %   The first three rows should describe the origin.
       %
       % Parameters
-      %   - origin (numeric) -- Origins, n-dimensional array with 3 rows
-      %   - direction (numeric) -- Directions, n-dimensional array with 3 rows
-
-      % Handle no arguments
-      if nargin == 0
-        origin = [];
-        direction = [];
-      elseif nargin == 1
-        if isa(origin, 'ott.utils.Vector')
-          % TODO: Is there a nicer way to copy
-          direction = origin.direction;
-          origin = origin.origin;
-
-        elseif size(origin, 1) == 6
-          sz = size(origin);
-          direction = reshape(origin(4:6, :), [3, sz(2:end)]);
-          origin = reshape(origin(1:3, :), [3, sz(2:end)]);
-
+      %   - origin (3x... numeric) -- Vector origins
+      %   - direction (3x... numeric) -- Vector directions
+      
+      p = inputParser;
+      p.addOptional('origin', [], @isnumeric);
+      p.addOptional('direction', [], @isnumeric);
+      p.parse(varargin{:});
+      
+      if size(p.Results.origin, 1) == 6 && isempty(p.Results.direction)
+        origin = p.Results.origin(1:3, :);
+        direction = p.Results.origin(5:6, :);
+      else
+        if any(strcmpi(p.UsingDefaults, 'origin'))
+          if isempty(p.Results.direction)
+            origin = [];
+          else
+            origin = [0;0;0];
+          end
         else
-          direction = origin;
-          origin = zeros(size(direction));
-
+          origin = p.Results.origin;
         end
+        direction = p.Results.direction;
       end
 
       % Store the data
@@ -431,29 +430,6 @@ classdef Vector < ott.utils.RotateHelper
       end
     end
 
-    function vec = rotate(vec, R, varargin)
-      % Applies a rotation to vectors or vectors and origins
-      %
-      % Usage
-      %   vec = vec.rotate(vec, R)
-      %   Rotates vectors about origins.
-      %
-      %   vec = vec.rotate(vec, R, 'origin', true)
-      %   Rotate vectors and origins.
-
-      p = inputParser;
-      p.addParameter('origin', false);
-      p.parse(varargin{:});
-
-      % Apply rotation to vectors
-      vec = R * vec;
-
-      % Apply rotation to origin too
-      if p.Results.origin
-        vec.origin = R * vec.origin;
-      end
-    end
-
     % TODO: Outer-product?
 
     function vec = rdivide(vec1, vec2)
@@ -481,7 +457,32 @@ classdef Vector < ott.utils.RotateHelper
 
   end
 
-  methods
+  methods (Hidden)
+    function vec = rotateInternal(vec, R, varargin)
+      % Applies a rotation to vectors or vectors and origins
+      %
+      % Usage
+      %   vec = vec.rotate(vec, R)
+      %   Rotates vectors about origins.
+      %
+      %   vec = vec.rotate(vec, R, 'origin', true)
+      %   Rotate vectors and origins.
+
+      p = inputParser;
+      p.addParameter('origin', false);
+      p.parse(varargin{:});
+
+      % Apply rotation to vectors
+      vec = R * vec;
+
+      % Apply rotation to origin too
+      if p.Results.origin
+        vec.origin = R * vec.origin;
+      end
+    end
+  end
+
+  methods % Getters/setters
     function vec = set.origin(vec, val)
 
       assert(size(val, 1) == 3, 'origin must have 3 rows');

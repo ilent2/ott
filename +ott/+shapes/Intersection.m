@@ -16,7 +16,7 @@ classdef Intersection < ott.shapes.Set
 % See LICENSE.md for information about using/distributing this file.
 
   properties (Dependent)
-    boundingBox         % Surrounds all shapes
+    boundingBox         % Surrounding intersection
   end
 
   methods

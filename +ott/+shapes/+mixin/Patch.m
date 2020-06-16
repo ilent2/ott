@@ -1,5 +1,6 @@
-classdef Patch
-% Shapes describes by lists of vertices and faces
+classdef Patch < ott.shapes.mixin.IntersectTriMesh
+% Shapes describes by lists of vertices and faces.
+% Inherits from :class:`IntersectTriMesh`.
 %
 % Abstract properties
 %   - verts     -- 3xN list of N vertices
@@ -8,9 +9,12 @@ classdef Patch
 % Methods
 %   - surf        -- Generate a surface using the patch function
 %   - surfPoints  -- Cast to TriangularMesh and call surfPoints
+%   - intersectInternal -- Casts to TriangularMesh
+%   - intersectAllInternal -- Casts to TriangularMesh
 %
 % Supported casts
-%   - TriangularMesh
+%   - TriangularMesh    -- Inherited (uses PatchMesh)
+%   - PatchMesh
 
 % Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
@@ -19,6 +23,8 @@ classdef Patch
   properties (Abstract)
     verts
     faces
+    position
+    rotation
   end
 
   methods
@@ -131,7 +137,7 @@ classdef Patch
     function shape = ott.shapes.PatchMesh(shape)
       % Convert the shape to a PatchMesh
 
-      shape = ott.shapes.TriangularMesh(shape.verts, shape.faces, ...
+      shape = ott.shapes.PatchMesh(shape.verts, shape.faces, ...
           'position', shape.position, 'rotation', shape.rotation);
     end
   end

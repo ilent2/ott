@@ -105,6 +105,19 @@ classdef Empty < ott.shapes.Shape
       % Normals are nan (no normals for empty shapes)
       nxyz = nan(size(rtp));
     end
+
+    function [locs, norms, dist] = intersectAllInternal(shape, vecs)
+      % All nans
+      locs = nan(3, numel(vecs));
+      norms = nan(3, numel(vecs));
+      dist = nan(1, numel(vecs));
+    end
+
+    function [locs, norms] = intersectInternal(shape, vecs)
+      % All nans
+      locs = nan(3, numel(vecs));
+      norms = nan(3, numel(vecs));
+    end
   end
 
   methods % Getters/setters
