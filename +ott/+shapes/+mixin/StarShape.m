@@ -6,7 +6,7 @@ classdef StarShape < ott.shapes.mixin.CoordsSph
 %   - starShaped -- Constant (true)
 %
 % Methods
-%   - surf      -- Generate a visualisation by casting to a PatchMesh
+%   - surfInternal      -- Generate a visualisation by casting to a PatchMesh
 %   - insideRtpInternal -- Uses starRadii to determine if inside
 %
 % Abstract methods
@@ -29,30 +29,6 @@ classdef StarShape < ott.shapes.mixin.CoordsSph
   end
 
   methods
-    function surf(shape, varargin)
-      % Generate a visualisation of the shape
-      %
-      % Converts the shape to a PatchMesh and calls surf.
-      %
-      % Usage
-      %   shape.surf(...)
-      %
-      % Optional named parameters
-      %   - resolution ([ntheta, nphi]) -- Number of faces in theta/phi
-      %     directions. Default: ``[20, 20]``.
-      %
-      % Additional named parameters are passed to PatchMesh.surf.
-
-      p = inputParser;
-      p.addParameter('resolution', [20, 20]);
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      shape = ott.shapes.PatchMesh(shape, 'resolution', p.Results.resolution);
-      shape.surf(unmatched{:});
-    end
-
     function shape = ott.shapes.PatchMesh(shape, varargin)
       % Cast shape to a PatchMesh
       %
@@ -76,7 +52,18 @@ classdef StarShape < ott.shapes.mixin.CoordsSph
       phi = linspace(0, 2*pi, res(2)+1);
       [T, P] = meshgrid(theta, phi);
 
-      R = shape.starRadii(T, P);
+      % Calculate radii
+      R = shape.starRadii(T(1:end-1, :), P(1:end-1, :));
+
+      % Ensure ends and edge locations match
+      % Reduces work and makes FromSurfMatrix behave nicer
+      R(:, 1) = R(1, 1);
+      R(:, end) = R(1, end);
+      T(end, :) = T(1, :);
+      P(end, :) = P(1, :);
+      R(end+1, :) = R(1, :);
+
+      % Convert to Cartesian coordinates
       [X, Y, Z] = ott.utils.rtp2xyz(R, T, P);
 
       shape = ott.shapes.PatchMesh.FromSurfMatrix(X, Y, Z, ...
@@ -85,6 +72,30 @@ classdef StarShape < ott.shapes.mixin.CoordsSph
   end
 
   methods (Hidden)
+    function S = surfInternal(shape, varargin)
+      % Generate a visualisation of the shape
+      %
+      % Converts the shape to a PatchMesh and calls surf.
+      %
+      % Usage
+      %   S = shape.surfInternal(...)
+      %
+      % Optional named parameters
+      %   - resolution ([ntheta, nphi]) -- Number of faces in theta/phi
+      %     directions. Default: ``[20, 20]``.
+      %
+      % Additional named parameters are passed to PatchMesh.surfInternal.
+
+      p = inputParser;
+      p.addParameter('resolution', [20, 20]);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      shape = ott.shapes.PatchMesh(shape, 'resolution', p.Results.resolution);
+      S = shape.surfInternal(unmatched{:});
+    end
+
     function b = insideRtpInternal(shape, rtp)
       % Determine if point is inside shape
       b = rtp(1, :) <= shape.starRadii(rtp(2, :), rtp(3, :));

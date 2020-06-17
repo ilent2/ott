@@ -48,16 +48,6 @@ classdef Inverse < ott.shapes.Shape
       ishape.position = ishape.position + shape.position;
     end
 
-    function varargout = surf(shape, varargin)
-      % Generate a visualisation of the shape
-      %
-      % Usage
-      %   p = shape.surf(...)
-      %   Calls the corresponding `surf` method of the internal shape.
-
-      [varargout{1:nargout}] = shape.internal.surf(varargin{:});
-    end
-
     function [xyz, nxyz, dA] = surfPoints(shape, varargin)
       % Calculate points for surface integration.
       %
@@ -94,6 +84,16 @@ classdef Inverse < ott.shapes.Shape
 
     function varargout = intersectInternal(shape, varargin)
       [varargout{1:nargout}] = shape.internal.intersectInternal(varargin{:});
+    end
+
+    function S = surfInternal(shape, varargin)
+      % Generate a visualisation of the shape
+      %
+      % Usage
+      %   S = shape.surfInternal(...)
+      %   Calls the corresponding `surfInternal` method of the internal shape.
+
+      S = shape.internal.surfInternal(varargin{:});
     end
   end
 

@@ -20,6 +20,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 %   - zRotSymmetry      -- z-axis rotational symmetry of particle
 %
 % Methods
+%   - surf            -- Generate surface visualisation
 %   - voxels          -- Generate array of voxels or voxel visualisation
 %   - insideRtp       -- Determine if Spherical point is inside shape
 %   - insideXyz       -- Determine if Cartesian point is inside shape
@@ -38,7 +39,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 %   - operator~       -- Inverse operator: creates a new :class:`Inverse`.
 %
 % Abstract methods
-%   - surf                -- Generate surface visualisation
+%   - surfInternal        -- Generate surface visualisation
 %   - surfPoints          -- Calculate points for surface integration
 %   - intersectInternal   -- Method called by intersect
 %   - intersectAllInternal -- Method called by intersectAll
@@ -64,11 +65,11 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
   end
 
   methods (Abstract)
-    surf(obj)            % Generate surface visualisation
     surfPoints(obj)      % Calculate points for surface integration
   end
 
   methods (Abstract, Hidden)
+    surfInternal(obj)         % Generate surface visualisation
     insideRtpInternal(obj)    % Determine if point is inside shape (Spherical)
     insideXyzInternal(obj)    % Determine if point is inside shape (Cartesian)
     normalsRtpInternal(obj)   % Calculate normals (Spherical)
@@ -626,6 +627,126 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       xyz = shape.insideXyzParseArgs(varargin{:});
 
       nxyz = shape.normalsXyzInternal(xyz);
+    end
+  end
+
+  methods (Sealed)
+    function varargout = surf(shape, varargin)
+      % Generate a visualisation of the shape
+      %
+      % Usage
+      %   shape.surf(...)
+      %   Display visualisation of shape(s).
+      %
+      %   S = shape.surf(...)
+      %   Returns a array of handles to the generated patches or when
+      %   no visualisation is enabled, creates a cell array of structures
+      %   that can be passed to patch.
+      %
+      % Optional named parameters
+      %   - axes (handle) -- axis to place surface in (default: gca)
+      %
+      %   - surfOptions (cell) -- options to be passed to patch (default: {})
+      %
+      %   - showNormals (logical) -- Show surface normals (default: false)
+      %
+      %   - origin (enum) -- Coordinate origin for drawing.
+      %     Can be 'global' or 'local'  Default: 'global'.
+      %
+      %   - visualise (logical) -- Show the visualisation.
+      %     Default: ``true``
+      %
+      %   - normalScale (numeric) -- Scale for normal vectors.
+      %     Default: ``0.1``.
+      %
+      % Additional parameters passed to :meth:`surfInternal`.
+
+      p = inputParser;
+      p.addParameter('surfOptions', {});
+      p.addParameter('axes', []);
+      p.addParameter('showNormals', false);
+      p.addParameter('origin', 'global', ...
+          @(x) sum(strcmpi(x, {'local', 'global'}) == 1));
+      p.addParameter('visualise', true);
+      p.addParameter('normalScale', 0.1);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Get patch from child methods
+      pch = cell(1, numel(shape));
+      for ii = 1:numel(shape)
+        pch{ii} = shape(ii).surfInternal(unmatched{:});
+
+        % Translate patch to desired origin
+        if strcmpi(p.Results.origin, 'global')
+          pch{ii}.Vertices = shape(ii).local2global(pch{ii}.Vertices.').';
+        end
+      end
+
+      % Generate visualisation
+      if p.Results.visualise
+
+        % Place the surface in the specified axes
+        our_axes = p.Results.axes;
+        if isempty(our_axes)
+          our_axes = gca();
+        end
+
+        % Patch doesn't watch for hold, so clear it ourselves
+        isholdon = ishold();
+        if ~isholdon
+          cla(our_axes);
+        end
+
+        % Convert patch structures to patches
+        sp = matlab.graphics.primitive.Patch.empty(1, 0);
+        for ii = 1:numel(pch)
+          sp(ii) = patch(pch{ii}, p.Results.surfOptions{:});
+        end
+        pch = sp;
+
+        % Clear the orientation/aspect if hold isn't on
+        if ~isholdon
+          view(our_axes, [60, 30]);
+          daspect(our_axes, [1, 1, 1]);
+        end
+
+        if p.Results.showNormals
+
+          % Preserve hold-no state
+          if ~isholdon
+            hold('on');
+          end
+
+          % Add quiver plot for each patch
+          for ii = 1:numel(pch)
+
+            % Find mean of each patch face
+            mXyz = zeros(3, size(pch(ii).Faces, 1));
+            for jj = 1:size(pch(ii).Faces, 2)
+              mXyz = mXyz + pch(ii).Vertices(shape.Faces(:, ii), :).';
+            end
+            mXyz = mXyz ./ size(pch(ii).Faces, 2);
+
+            % Calculate normals
+            nxyz = shape(ii).normalsXyz(mXyz);
+
+            % Generate plot of surface normals
+            s = p.Results.normalScale;
+            quiver3(mXyz(1, :), mXyz(2, :), mXyz(3, :), ...
+                s.*nxyz(1, :), s.*nxyz(2, :), s.*nxyz(3, :), 0);
+          end
+
+          if ~isholdon
+            hold('off');
+          end
+        end
+      end
+
+      if nargout ~= 0
+        varargout{1} = pch;
+      end
     end
   end
 

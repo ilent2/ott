@@ -100,6 +100,7 @@ shape1 = ott.shapes.Cube();
 shape2 = ott.shapes.Cube().rotateYz(pi/4, pi/4);
 shape = shape1 | shape2;
 shape.surf();
+camlight; lighting gouraud;
 title('Union');
 
 %% Intersection
@@ -110,6 +111,7 @@ shape1 = ott.shapes.Cube();
 shape2 = ott.shapes.Cube().rotateYz(pi/4, pi/4);
 shape = shape1 & shape2;
 shape.surf();
+camlight; lighting gouraud;
 title('Intersection');
 
 %% Inverse
@@ -120,6 +122,7 @@ shape1 = ott.shapes.Cube();
 shape2 = ott.shapes.Cube().rotateYz(pi/4, pi/4);
 shape = shape1 & ~shape2;
 shape.surf();
+camlight; lighting gouraud;
 title('Inverse');
 
 %% STL Loader

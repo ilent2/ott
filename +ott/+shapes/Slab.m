@@ -88,29 +88,6 @@ classdef Slab < ott.shapes.Shape ...
           'depths', shape.depth, ...
           'position', shape.position-shape.depth./2, varargin{:});
     end
-
-    function varargout = surf(shape, varargin)
-      % Generate a visualisation of the shape
-      %
-      % Converts the shape to a PatchMesh and calls surf.
-      %
-      % Usage
-      %   shape.surf(...)
-      %
-      % Optional named parameters
-      %   - scale (numeric) -- Size of patch.  Default: ``1.0``.
-      %
-      % Additional named parameters are passed to PatchMesh.surf.
-
-      p = inputParser;
-      p.addParameter('scale', 1.0);
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
-      [varargout{1:nargout}] = shape.surf(unmatched{:});
-    end
   end
 
   methods (Hidden)
@@ -139,6 +116,29 @@ classdef Slab < ott.shapes.Shape ...
 
       shape = ott.shapes.Strata(shape);
       [varargout{1:nargout}] = shape.intersectInternal(vecs);
+    end
+
+    function S = surfInternal(shape, varargin)
+      % Generate a visualisation of the shape
+      %
+      % Converts the shape to a PatchMesh and calls surf.
+      %
+      % Usage
+      %   shape.surfInternal(...)
+      %
+      % Optional named parameters
+      %   - scale (numeric) -- Size of patch.  Default: ``1.0``.
+      %
+      % Additional named parameters are passed to PatchMesh.surfInternal.
+
+      p = inputParser;
+      p.addParameter('scale', 1.0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
+      S = shape.surfInternal(unmatched{:});
     end
   end
 

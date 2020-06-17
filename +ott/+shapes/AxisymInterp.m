@@ -134,31 +134,6 @@ classdef AxisymInterp < ott.shapes.Shape ...
       shape.points = p.Results.points;
     end
 
-    function varargout = surf(shape, varargin)
-      % Generate a visualisation of the shape
-      %
-      % Converts the shape to a PatchMesh and calls surf.
-      %
-      % Usage
-      %   p = shape.surf(...)
-      %   Returns the patch object.
-      %
-      % Optional named parameters
-      %   - resolution (numeric) -- Number of faces in angular direction.
-      %     Default: ``20``.
-      %
-      % Additional named parameters are passed to PatchMesh.surf.
-
-      p = inputParser;
-      p.addParameter('resolution', 20);
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      shape = ott.shapes.PatchMesh(shape, 'resolution', p.Results.resolution);
-      [varargout{1:nargout}] = shape.surf(unmatched{:});
-    end
-
     function varargout = surfPoints(shape, varargin)
       % Cast to PatchMesh and call surfPoints
       %
@@ -280,6 +255,30 @@ classdef AxisymInterp < ott.shapes.Shape ...
       % Compute formals and normalize
       nz = [m(idx).'; ones(size(idx)).'];
       nz = nz ./ vecnorm(nz);
+    end
+
+    function S = surfInternal(shape, varargin)
+      % Generate a visualisation of the shape
+      %
+      % Converts the shape to a PatchMesh and calls surf.
+      %
+      % Usage
+      %   S = shape.surfInternal(...)
+      %
+      % Optional named parameters
+      %   - resolution (numeric) -- Number of faces in angular direction.
+      %     Default: ``20``.
+      %
+      % Additional named parameters are passed to PatchMesh.surfInternal.
+
+      p = inputParser;
+      p.addParameter('resolution', 20);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      shape = ott.shapes.PatchMesh(shape, 'resolution', p.Results.resolution);
+      S = shape.surfInternal(unmatched{:});
     end
   end
 

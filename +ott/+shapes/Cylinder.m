@@ -48,31 +48,6 @@ classdef Cylinder < ott.shapes.Shape ...
       shape.height = p.Results.height;
     end
 
-    function surf(shape, varargin)
-      % Generate a visualisation of the shape
-      %
-      % Converts the shape to a PatchMesh and calls surf.
-      %
-      % Usage
-      %   shape.surf(...)
-      %
-      % Optional named parameters
-      %   - resolution ([ntheta, nphi]) -- Number of faces in theta/phi
-      %     directions.  Default: ``[0, 20]`` uses cylinder corners for
-      %     theta direction unless otherwise set.
-      %
-      % Additional named parameters are passed to PatchMesh.surf.
-
-      p = inputParser;
-      p.addParameter('resolution', [0, 20]);
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      surf@ott.shapes.mixin.AxisymStarShape(shape, ...
-          'resolution', p.Results.resolution, unmatched{:});
-    end
-
     function shape = ott.shapes.PatchMesh(shape, varargin)
       % Cast shape to a PatchMesh
       %
@@ -102,7 +77,18 @@ classdef Cylinder < ott.shapes.Shape ...
       phi = linspace(0, 2*pi, res(2)+1);
       [T, P] = meshgrid(theta, phi);
 
-      R = shape.starRadii(T, P);
+      % Calculate radii
+      R = shape.starRadii(T(1:end-1, :), P(1:end-1, :));
+
+      % Ensure ends and edge locations match
+      % Reduces work and makes FromSurfMatrix behave nicer
+      R(:, 1) = R(1, 1);
+      R(:, end) = R(1, end);
+      T(end, :) = T(1, :);
+      P(end, :) = P(1, :);
+      R(end+1, :) = R(1, :);
+
+      % Convert to Cartesian coordinates
       [X, Y, Z] = ott.utils.rtp2xyz(R, T, P);
 
       shape = ott.shapes.PatchMesh.FromSurfMatrix(X, Y, Z, ...
@@ -222,6 +208,31 @@ classdef Cylinder < ott.shapes.Shape ...
       dist = permute(dist(:, :, [idx1, idx2]), [1, 3, 2]);
       locs = permute(locs(:, :, [idx1, idx2]), [1, 3, 2]);
       norms = reshape(shape.normalsXyz(reshape(locs, 3, [])), 3, 2, []);
+    end
+
+    function S = surfInternal(shape, varargin)
+      % Generate a visualisation of the shape
+      %
+      % Converts the shape to a PatchMesh and calls surf.
+      %
+      % Usage
+      %   S = shape.surfInternal(...)
+      %
+      % Optional named parameters
+      %   - resolution ([ntheta, nphi]) -- Number of faces in theta/phi
+      %     directions.  Default: ``[0, 20]`` uses cylinder corners for
+      %     theta direction unless otherwise set.
+      %
+      % Additional named parameters are passed to PatchMesh.surf.
+
+      p = inputParser;
+      p.addParameter('resolution', [0, 20]);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      S = surfInternal@ott.shapes.mixin.AxisymStarShape(shape, ...
+          'resolution', p.Results.resolution, unmatched{:});
     end
   end
 

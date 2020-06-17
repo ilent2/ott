@@ -19,32 +19,6 @@ classdef IsosurfSurf
 % See LICENSE.md for information about using/distributing this file.
 
   methods
-    function varargout = surf(shape, varargin)
-      % Cast to PatchMesh and call surf
-      %
-      % Usage
-      %   p = shape.surf(...)
-      %
-      % Optional parameters
-      %   - surfOptions (cell) -- Optional parameters to pass to patch.
-      %     Default: ``{'EdgeColor', 'none'}
-      %
-      % All other parameters are passed to PatchMesh.
-
-      p = inputParser;
-      p.addParameter('surfOptions', {'EdgeColor', 'none'});
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      shape = ott.shapes.PatchMesh(shape);
-      [varargout{1:nargout}] = shape.surf(...
-          'surfOptions', p.Results.surfOptions, unmatched{:});
-
-      % Change the lighting
-      camlight; lighting phong;
-    end
-
     function varargout = surfPoints(shape, varargin)
       % Cast to PatchMesh and call surfPoints
       %
@@ -73,6 +47,19 @@ classdef IsosurfSurf
     function varargout = normalsRtpInternal(shape, varargin)
       shape = ott.shapes.PatchMesh(shape);
       [varargout{1:nargout}] = shape.normalsRtpInternal(varargin{:});
+    end
+
+    function S = surfInternal(shape)
+      % Cast to PatchMesh and call surf.
+      %
+      % Adds an {'EdgeColor', 'none'} field to the structure.
+      %
+      % Usage
+      %   p = shape.surfInternal(...)
+
+      shape = ott.shapes.PatchMesh(shape);
+      S = shape.surfInternal();
+      S.EdgeColor = 'none';
     end
   end
 end

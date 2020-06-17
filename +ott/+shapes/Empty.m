@@ -45,37 +45,6 @@ classdef Empty < ott.shapes.Shape
       shape = shape@ott.shapes.Shape(varargin{:});
     end
 
-    function varargout = surf(shape, varargin)
-      % Constructs a cube for visualisation, turns off the surfaces
-      %
-      % Usage
-      %   p = shape.surf(...)
-      %   Returns a handle to the patch.
-      %
-      % Optional named parameters
-      %   - scale (numeric) -- Scale of the cube
-      %
-      % Unmatched arguments are passed to `cube.surf`.
-
-      p = inputParser;
-      p.addParameter('scale', 1.0);
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      cube = ott.shapes.Cube(p.Results.scale, ...
-          'position', shape.position, 'rotation', shape.rotation);
-      sp = cube.surf(unmatched{:});
-
-      % Make transparent
-      sp.FaceAlpha = 0;
-
-      % Assign outputs
-      if nargout == 1
-        varargout{1} = sp;
-      end
-    end
-
     function [xyz, nxyz, dA] = surfPoints(varargin)
       % Generate empty arrays
 
@@ -86,62 +55,87 @@ classdef Empty < ott.shapes.Shape
   end
 
   methods (Hidden)
-    function b = insideRtpInternal(shape, rtp)
+    function b = insideRtpInternal(~, rtp)
       % No point are inside empty shapes
       b = false(size(rtp(1, :)));
     end
 
-    function b = insideXyzInternal(shape, xyz)
+    function b = insideXyzInternal(~, xyz)
       % No point are inside empty shapes
       b = false(size(xyz(1, :)));
     end
 
-    function nxyz = normalsXyzInternal(shape, xyz)
+    function nxyz = normalsXyzInternal(~, xyz)
       % Normals are nan (no normals for empty shapes)
       nxyz = nan(size(xyz));
     end
 
-    function nxyz = normalsRtpInternal(shape, rtp)
+    function nxyz = normalsRtpInternal(~, rtp)
       % Normals are nan (no normals for empty shapes)
       nxyz = nan(size(rtp));
     end
 
-    function [locs, norms, dist] = intersectAllInternal(shape, vecs)
+    function [locs, norms, dist] = intersectAllInternal(~, vecs)
       % All nans
       locs = nan(3, numel(vecs));
       norms = nan(3, numel(vecs));
       dist = nan(1, numel(vecs));
     end
 
-    function [locs, norms] = intersectInternal(shape, vecs)
+    function [locs, norms] = intersectInternal(~, vecs)
       % All nans
       locs = nan(3, numel(vecs));
       norms = nan(3, numel(vecs));
     end
+
+    function S = surfInternal(~, varargin)
+      % Constructs a cube for visualisation.  Sets face alpha to 0.
+      %
+      % Usage
+      %   p = shape.surfInternal(...)
+      %   Returns a handle to the patch.
+      %
+      % Optional named parameters
+      %   - scale (numeric) -- Scale of the cube
+      %
+      % Unmatched arguments are passed to `Cube.surfInternal`.
+
+      p = inputParser;
+      p.addParameter('scale', 1.0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      cube = ott.shapes.Cube(p.Results.scale);
+      S = cube.surfInternal(unmatched{:});
+
+      % Make transparent
+      S.FaceAlpha = 0;
+    end
   end
 
   methods % Getters/setters
-    function r = get.maxRadius(shape)
+    function r = get.maxRadius(~)
       % Shape has no radius
       r = 0.0;
     end
 
-    function v = get.volume(shape)
+    function v = get.volume(~)
       % Shape has no volume
       v = 0.0;
     end
 
-    function bb = get.boundingBox(shape)
+    function bb = get.boundingBox(~)
       bb = zeros(3, 2);
     end
 
-    function b = get.starShaped(shape)
+    function b = get.starShaped(~)
       b = true;
     end
-    function b = get.xySymmetry(shape)
+    function b = get.xySymmetry(~)
       b = true;
     end
-    function q = get.zRotSymmetry(shape)
+    function q = get.zRotSymmetry(~)
       q = 0;
     end
   end
