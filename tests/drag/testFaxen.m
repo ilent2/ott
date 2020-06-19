@@ -4,6 +4,9 @@ end
 
 function setupOnce(testCase)
   addpath('../../');
+  
+  % Ensure warnings are on
+  warning('on', 'ott:drag:FaxenSphere:small_epsilon');
 end
 
 function testConstruction(testCase)
@@ -42,8 +45,9 @@ function testSmallEpsilonWarning(testCase)
   radius = 1.0;
   viscosity = 1.0;
   separation = radius + 0.5*radius;
+  drag = ott.drag.FaxenSphere(radius, separation, viscosity);
   
-  testCase.verifyWarning(@() ott.drag.FaxenSphere(radius, separation, viscosity), ...
+  testCase.verifyWarning(@() drag.forward, ...
     'ott:drag:FaxenSphere:small_epsilon');
 
 end

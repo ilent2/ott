@@ -1,8 +1,9 @@
-classdef ChaouiSphere < ott.drag.StokesSphere
-% Creeping flow around a sphere in shear flow close to a wall.
+classdef ChaouiSphere < ott.drag.StokesSphereWall
+% Creeping flow around a sphere close to a wall.
+% Inherits from :class:`StokesSphereWall`.
 %
 % This class implements a polynomial fit to the exact solution
-% for spherical particles moving near a planar surface.
+% for spherical particles moving in creeping flow near a planar surface.
 % The approximation should work for spacing between the sphere surface
 % and plane between :math:`10^{-6}\times`radius and 1 radius.
 %
@@ -21,44 +22,48 @@ classdef ChaouiSphere < ott.drag.StokesSphere
 %   - radius      -- Radius of the sphere
 %   - viscosity   -- Viscosity of the medium
 %   - separation  -- Distance between the sphere centre and plane
+%   - forward     -- Computed drag tensor
+%   - inverse     -- Computed from `forward`.
+%
+% See :class:`Stokes` for other methods/parameters.
 
+% Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties (SetAccess=protected)
-    separation     % Distance between the sphere centre and plane
+  properties (Dependent)
+    forwardInternal
   end
 
   methods
-    function obj = ChaouiSphere(radius, separation, varargin)
+    function drag = ChaouiSphere(varargin)
       % Construct a new creeping flow sphere-wall drag tensor.
       %
       % Usage:
-      %   drag = Chaoui2002Sphere(radius, separation, viscosity, ...)
+      %   drag = ChaouiSphere(radius, separation, viscosity, ...)
       %   radius and separation should be specified in the same units.
       %
       % Parameters:
       %   - radius     -- Radius of sphere
       %   - separation -- Separation between sphere centre and surface
       %   - viscosity -- Viscosity of medium (optional, default: 1.0)
-      %
-      % Optional named arguments:
-      %   - finalize (logical) -- calculate inverse drag tensor.
-      %     Default: `true`.
+      % Parameters can also be passed as named arguments.
+      % Unmatched parameters are passed to :class:`Stokes`.
 
-      p = inputParser;
-      p.addOptional('viscosity', 1.0, @(x)isnumeric(x)&&isscalar(x));
-      p.addParameter('finalize', true);
-      p.parse(varargin{:});
+      % Only need a constructor for help/doc functionality
+      drag = drag@ott.drag.StokesSphereWall(varargin{:});
+    end
+  end
 
-      % Construct regular sphere instance
-      obj = obj@ott.drag.StokesSphere(radius, p.Results.viscosity, ...
-          'finalize', false);
-      obj.separation = separation;
+  methods % Getters/setters
+    function D = get.forwardInternal(drag)
+
+      % Calculate stokes sphere drag
+      D = ott.drag.StokesSphere(drag.radius, drag.viscosity).forward;
 
       % l/a: ratio of the distance of the sphere centre from the
       % wall to the sphere radius
-      as = separation ./ radius;
+      as = drag.separation ./ drag.radius;
 
       % Calculate gap width (epsilon): as - 1
       epsilon = as - 1;
@@ -70,9 +75,6 @@ classdef ChaouiSphere < ott.drag.StokesSphere
           ['Apprxomation may be inacurate for large separation', ...
           newline, 'Consider using Faxen or Pade approximation']);
       end
-
-      % TODO: Should we include shear flow?
-      % TODO: What about translations perpendicular to the surface?
 
       % Values from table 11
       phis = [-8/15, -64/375, 0.011595712294862, -0.002559314461340, ...
@@ -98,23 +100,24 @@ classdef ChaouiSphere < ott.drag.StokesSphere
       cyy = sum(gammar.*epsilon.^(0:5).*log(epsilon) + cr.*epsilon.^(0:5));
 
       % Modify diagonal terms (cyy, fxx)
-      obj.forward(1, 1) = obj.forward(1, 1) .* fxx;
-      obj.forward(2, 2) = obj.forward(2, 2) .* fxx;
-      obj.forward(4, 4) = obj.forward(4, 4) .* cyy;
-      obj.forward(5, 5) = obj.forward(5, 5) .* cyy;
+      D(1, 1) = D(1, 1) .* fxx;
+      D(2, 2) = D(2, 2) .* fxx;
+      D(4, 4) = D(4, 4) .* cyy;
+      D(5, 5) = D(5, 5) .* cyy;
 
       % Add cross-terms (cyx)
-      obj.forward(1, 5) = -6*pi*p.Results.viscosity*radius^2*cyx;
-      obj.forward(2, 4) = 6*pi*p.Results.viscosity*radius^2*cyx;
-      obj.forward(5, 1) = -8*pi*p.Results.viscosity*radius^2*cyx;
-      obj.forward(4, 2) = 8*pi*p.Results.viscosity*radius^2*cyx;
+      D(1, 5) = -6*pi*drag.viscosity*drag.radius^2*cyx;
+      D(2, 4) = 6*pi*drag.viscosity*drag.radius^2*cyx;
+      D(5, 1) = -8*pi*drag.viscosity*drag.radius^2*cyx;
+      D(4, 2) = 8*pi*drag.viscosity*drag.radius^2*cyx;
 
-      % czz should have almost no effect
-
-      % If no inverse/forward, calculate them
-      if p.Results.finalize
-        obj = obj.finalize();
-      end
+      % Add warning about using Faxen for D(3, 3) and D(6, 6)
+      warning('ott:drag:ChaouiSphere:faxen_perp_terms', ...
+          'Using Faxen corrections for D(3, 3) and D(6, 6)');
+      gammaS = 1./(1 - (9/8)./as + (1/2)*as^(-3));
+      betaP = 1./(1 - (1/8)*as^(-3));
+      D(3, 3) = D(3, 3)*gammaS;
+      D(6, 6) = D(6, 6)*betaP;
     end
   end
 end

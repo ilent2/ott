@@ -1,5 +1,8 @@
-classdef EccentricSpheresNn < ott.drag.Stokes
+classdef EccentricSpheresNn < ott.drag.Stokes ...
+    & ott.drag.mixin.VarViscosity ...
+    & ott.drag.mixin.CalcInvDrag
 % Calculate drag on an eccentric sphere using Gibson's NN approach.
+% Inherits from :class:`Stokes`.
 %
 % Uses the NN from
 %
@@ -7,84 +10,115 @@ classdef EccentricSpheresNn < ott.drag.Stokes
 %   https://doi.org/10.1103/PhysRevE.99.043304
 %
 % Properties
-%   - innerRadius      -- Radius of inner sphere
-%   - outerRadius      -- Radius of outer sphere
-%   - separation       -- Minimum separation between spheres
-%   - viscosity        -- Viscosity of surrounding fluid (default: 1.0)
+%   - innerRadius   -- Radius of inner sphere
+%   - outerRadius   -- Radius of outer sphere
+%   - separation    -- Minimum separation between spheres
+%   - viscosity     -- Viscosity of surrounding fluid (default: 1.0)
+%   - forward       -- Computed drag tensor
+%   - inverse       -- Computed from `forward`.
+%
+% See :class:`Stokes` for other methods/parameters.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties (SetAccess=protected)
-    innerRadius       % Radius of inner sphere
-    outerRadius       % Radius of outer sphere
-    separation        % Minimum separation between spheres
+  properties
+    % Initial values are for construction/loading only (replaced on construct)
+    innerRadius = 0     % Radius of inner sphere
+    outerRadius = Inf   % Radius of outer sphere
+    separation = 0      % Minimum separation between spheres
+  end
+
+  properties (Dependent)
+    forwardInternal     % Drag on the inner sphere
   end
 
   methods
-    function obj = EccentricSpheresNn(innerRadius, outerRadius, ...
-        separation, varargin)
+    function drag = EccentricSpheresNn(varargin)
       % Calculate the drag on an eccentric sphere.
       %
       % Usage:
       %   drag = EccentricSpheresNn(innerRadius, outerRadius, ...
-      %     separation, viscosity)
+      %     separation, viscosity, ...)
       %
       % Parameters:
       %   - innerRadius -- Radius of inner sphere
       %   - outerRadius -- Radius of outer sphere
       %   - separation -- Minimum separation between inner and outer sphere
-      %   - viscosity -- Viscosity of medium (optional, default: 1.0)
+      %   - viscosity -- Viscosity of medium (default: 1.0)
       %
-      % Optional named arguments:
-      %   - finalize (logical) -- calculate inverse drag tensor.
-      %     Default: `true`.
+      % Additional parameters are passed to corresponding class constructor.
 
       p = inputParser;
-      p.addOptional('viscosity', 1.0, @(x)isnumeric(x)&&isscalar(x));
-      p.addParameter('finalize', true);
+      p.addRequired('innerRadius', @isnumeric);
+      p.addRequired('outerRadius', @isnumeric);
+      p.addRequired('separation', @isnumeric);
+      p.addParameter('viscosity', 1.0);
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      % Construct regular Stokes instance
-      obj = obj@ott.drag.Stokes(...
-        'translation', 6*pi*p.Results.viscosity*innerRadius*eye(3), ...
-        'rotation', 8*pi*p.Results.viscosity*innerRadius.^3*eye(3), ...
-        'viscosity', p.Results.viscosity, 'finalize', false);
-      
-      % Check parameter ranges
-      assert(innerRadius < outerRadius, ...
-        'InnerRadius must be less than outerRadius');
-      assert(separation <= outerRadius - innerRadius, ...
-        'Separation must be less than outerRadius - innerRadius');
-      
-      % Set properties
-      obj.separation = separation;
-      obj.innerRadius = innerRadius;
-      obj.outerRadius = outerRadius;
+      drag = drag@ott.drag.Stokes(unmatched{:});
+      drag.innerRadius = p.Results.innerRadius;
+      drag.outerRadius = p.Results.outerRadius;
+      drag.separation = p.Results.separation;
+      drag.viscosity = p.Results.viscosity;
+    end
+  end
+
+  methods % Getters/setters
+    function D = get.forwardInternal(drag)
+
+      % Calculate stokes sphere drag
+      D = ott.drag.StokesSphere(drag.innerRadius, drag.viscosity).forward;
 
       % Calculate parameters for Lachlan's script
-      D = separation ./ innerRadius;
-      lam = innerRadius ./ outerRadius;
+      pD = drag.separation ./ drag.innerRadius;
+      lam = drag.innerRadius ./ drag.outerRadius;
 
-      [gy, fx, fxc, fz, gz] = WEES(D, lam);
+      [gy, fx, fxc, fz, gz] = WEES(pD, lam);
 
-      obj.forward(1, 1) = obj.forward(1, 1) .* fx;
-      obj.forward(2, 2) = obj.forward(2, 2) .* fx;
-      obj.forward(3, 3) = obj.forward(3, 3) .* fz;
-      obj.forward(4, 4) = obj.forward(4, 4) .* gy;
-      obj.forward(5, 5) = obj.forward(5, 5) .* gy;
-      obj.forward(6, 6) = obj.forward(6, 6) .* gz;
+      % Add corrections for diagonal terms
+      D(1, 1) = D(1, 1) .* fx;
+      D(2, 2) = D(2, 2) .* fx;
+      D(3, 3) = D(3, 3) .* fz;
+      D(4, 4) = D(4, 4) .* gy;
+      D(5, 5) = D(5, 5) .* gy;
+      D(6, 6) = D(6, 6) .* gz;
 
       % Add cross-terms
-      obj.forward(1, 5) = 6*pi*p.Results.viscosity*innerRadius^2*fxc;
-      obj.forward(2, 4) = -6*pi*p.Results.viscosity*innerRadius^2*fxc;
-      obj.forward(5, 1) = 8*pi*p.Results.viscosity*innerRadius^2*fxc;
-      obj.forward(4, 2) = -8*pi*p.Results.viscosity*innerRadius^2*fxc;
+      D(1, 5) = 6*pi*drag.viscosity*drag.innerRadius^2*fxc;
+      D(2, 4) = -6*pi*drag.viscosity*drag.innerRadius^2*fxc;
+      D(5, 1) = 8*pi*drag.viscosity*drag.innerRadius^2*fxc;
+      D(4, 2) = -8*pi*drag.viscosity*drag.innerRadius^2*fxc;
+    end
 
-      % If no inverse/forward, calculate them
-      if p.Results.finalize
-        obj = obj.finalize();
-      end
+    function drag = set.innerRadius(drag, val)
+      assert(isnumeric(val) && isscalar(val) && val > 0, ...
+          'innerRadius must be positive numeric scalar');
+      assert(val < drag.outerRadius, ...
+          'innerRadius must be less than outerRadius');
+      assert(drag.separation <= drag.outerRadius - val, ...
+          'separation must be less that outerRadius-innerRadius');
+      drag.innerRadius = val;
+    end
+
+    function drag = set.outerRadius(drag, val)
+      assert(isnumeric(val) && isscalar(val) && val > 0, ...
+          'outerRadius must be positive numeric scalar');
+      assert(drag.innerRadius < val, ...
+          'innerRadius must be less than outerRadius');
+      assert(drag.separation <= val - drag.innerRadius, ...
+          'separation must be less that outerRadius-innerRadius');
+      drag.outerRadius = val;
+    end
+
+    function drag = set.separation(drag, val)
+      assert(isnumeric(val) && isscalar(val) && val > 0, ...
+          'separation must be positive numeric scalar');
+      assert(val <= drag.outerRadius - drag.innerRadius, ...
+          'separation must be less that outerRadius-innerRadius');
+      drag.separation = val;
     end
   end
 end

@@ -25,7 +25,7 @@ classdef StarShape < ott.shapes.mixin.CoordsSph
   end
 
   methods (Abstract)
-    starRadii
+    % starRadii   % Not actually abstract, implemented to conflict with Shape
   end
 
   methods
@@ -68,6 +68,12 @@ classdef StarShape < ott.shapes.mixin.CoordsSph
 
       shape = ott.shapes.PatchMesh.FromSurfMatrix(X, Y, Z, ...
           'position', shape.position, 'rotation', shape.rotation);
+    end
+
+    function R = starRadii(shape, theta, phi)
+      % Method implemented to cause conflict with method from Shape
+      % This method should be implemented in the sub-class
+      error('Method should be overloaded in sub-class');
     end
   end
 

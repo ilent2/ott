@@ -1,5 +1,6 @@
-classdef FaxenSphere < ott.drag.StokesSphere
+classdef FaxenSphere < ott.drag.StokesSphereWall
 % Stokes drag with Faxen's corrections for movement near a plane.
+% Inherits from :class:`StokesSphereWall`.
 %
 % Faxen's correction can provide reasonable estimates for the drag
 % on a spherical particle moving near a planar surface.
@@ -24,46 +25,51 @@ classdef FaxenSphere < ott.drag.StokesSphere
 %   - radius      -- Radius of the sphere
 %   - viscosity   -- Viscosity of the medium
 %   - separation  -- Distance between the sphere centre and plane
+%   - forward     -- Computed drag tensor
+%   - inverse     -- Computed from `forward`.
+%
+% See :class:`Stokes` for other methods/parameters.
 
+% Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties (SetAccess=protected)
-    separation     % Distance between the sphere centre and plane
+  properties (Dependent)
+    forwardInternal
   end
 
   methods
-    function obj = FaxenSphere(radius, separation, varargin)
+    function drag = FaxenSphere(varargin)
       % Construct a new Faxen's corrected sphere drag tensor.
       %
-      % Usage:
+      % Usage
       %   drag = FaxenSphere(radius, separation, viscosity, ...)
-      %   radius and separation should be specified in the same units.
+      %   Radius and separation should be specified in the same units.
       %
-      % Parameters:
-      %   - radius     -- Radius of sphere
+      % Parameters
+      %   - radius     -- (numeric) Radius of sphere (default: 1)
       %   - separation -- Separation between sphere centre and surface
-      %   - viscosity -- Viscosity of medium (optional, default: 1.0)
+      %   - viscosity -- Viscosity of medium (default: 1.0)
       %
-      % Optional named arguments:
-      %   - finalize (logical) -- calculate inverse drag tensor.
-      %     Default: `true`.
+      % Parameters can also be passed as named arguments.
+      % Unmatched parameters are passed to :class:`Stokes`.
 
-      p = inputParser;
-      p.addOptional('viscosity', 1.0, @(x)isnumeric(x)&&isscalar(x));
-      p.addParameter('finalize', true);
-      p.parse(varargin{:});
+      % Only need a constructor for help/doc functionality
+      drag = drag@ott.drag.StokesSphereWall(varargin{:});
+    end
+  end
 
-      % Construct regular sphere instance
-      obj = obj@ott.drag.StokesSphere(radius, p.Results.viscosity, ...
-          'finalize', false);
-      obj.separation = separation;
+  methods % Getters/setters
+    function D = get.forwardInternal(drag)
 
-      as = radius ./ separation;
+      % Calculate stokes sphere drag
+      D = ott.drag.StokesSphere(drag.radius, drag.viscosity).forward;
+
+      as = drag.radius ./ drag.separation;
 
       % Check separation is large enough
       % This threshold is determined by a 10% accuracy comparing to Chaoui
-      if (separation ./ radius - 1) < 0.6
+      if (drag.separation / drag.radius - 1) < 0.6
         warning('ott:drag:FaxenSphere:small_epsilon', ...
           ['Apprxomation may be inacurate for small separation', ...
           newline, 'Consider using Pade or Chaoui approximation']);
@@ -81,21 +87,16 @@ classdef FaxenSphere < ott.drag.StokesSphere
       omega = (3./32) .* as.^4 .* (1 - (3./8) .* as);
 
       % Apply corrections
-      obj.forward(1, 1) = obj.forward(1, 1)*gammaP;
-      obj.forward(2, 2) = obj.forward(2, 2)*gammaP;
-      obj.forward(3, 3) = obj.forward(3, 3)*gammaS;
-      obj.forward(5, 1) = -8*pi*p.Results.viscosity*radius^2*omega;
-      obj.forward(4, 2) = 8*pi*p.Results.viscosity*radius^2*omega;
-      obj.forward(4, 4) = obj.forward(4, 4)*betaS;
-      obj.forward(5, 5) = obj.forward(5, 5)*betaS;
-      obj.forward(6, 6) = obj.forward(6, 6)*betaP;
-      obj.forward(1, 5) = (3/4) .* obj.forward(5, 1);
-      obj.forward(2, 4) = (3/4) .* obj.forward(4, 2);
-
-      % If no inverse/forward, calculate them
-      if p.Results.finalize
-        obj = obj.finalize();
-      end
+      D(1, 1) = D(1, 1)*gammaP;
+      D(2, 2) = D(2, 2)*gammaP;
+      D(3, 3) = D(3, 3)*gammaS;
+      D(5, 1) = -8*pi*drag.viscosity*drag.radius^2*omega;
+      D(4, 2) = 8*pi*drag.viscosity*drag.radius^2*omega;
+      D(4, 4) = D(4, 4)*betaS;
+      D(5, 5) = D(5, 5)*betaS;
+      D(6, 6) = D(6, 6)*betaP;
+      D(1, 5) = (3/4) .* D(5, 1);
+      D(2, 4) = (3/4) .* D(4, 2);
     end
   end
 end

@@ -4,6 +4,12 @@ end
 
 function setupOnce(testCase)
   addpath('../../');
+  
+  % Turn off warning about FaxnTerms
+  warning('off', 'ott:drag:ChaouiSphere:faxen_perp_terms');
+  
+  % Turn on intended warnings
+  warning('on', 'ott:drag:ChaouiSphere:large_epsilon');
 end
 
 function testConstruction(testCase)
@@ -42,8 +48,9 @@ function testLargeEpsilonWarning(testCase)
   radius = 1.0;
   viscosity = 1.0;
   separation = 1e6;
+  drag = ott.drag.ChaouiSphere(radius, separation, viscosity);
   
-  testCase.verifyWarning(@() ott.drag.ChaouiSphere(radius, separation, viscosity), ...
+  testCase.verifyWarning(@() drag.forward, ...
     'ott:drag:ChaouiSphere:large_epsilon');
 
 end
@@ -52,21 +59,18 @@ function testFarLimit(testCase)
 
   radius = 1.0;
   viscosity = 1.0;
-  separation = radius + 0.3*radius;
-  
-  S = warning('off', 'ott:drag:ChaouiSphere:large_epsilon');
+  separation = radius + 0.2*radius;
 
   a = ott.drag.ChaouiSphere(radius, separation, viscosity);
-  b = ott.drag.FaxenSphere(radius, separation, viscosity);
+  b = ott.drag.PadeSphere(radius, separation, viscosity);
   
-  warning(S);
-
+  S = warning('off', 'ott:drag:ChaouiSphere:large_epsilon');
+  
   testCase.verifyEqual(a.forward, b.forward, ...
       'RelTol', 6.0e-2, ...
       'Far-limit doesn''t match forward');
-  testCase.verifyEqual(a.inverse, b.inverse, ...
-      'RelTol', 5.0e-2, ...
-      'Far-limit doesn''t match inverse');
+    
+  warning(S);
 
 end
 
@@ -105,9 +109,9 @@ function testPlot(testCase)
   warning(S2);
   warning(S3);
 
-  figure();
-  semilogx(separation./radius - 1, values./sphere.forward(idx));
-  axis([1e-6, 1e1, 1, 8]);
+%   figure();
+%   semilogx(separation./radius - 1, values./sphere.forward(idx));
+%   axis([1e-6, 1e1, 1, 8]);
   
 %   figure();
 %   loglog(separation./radius - 1, abs((values(2, :) - values(1, :))./values(1, :)));

@@ -28,6 +28,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 %   - normalsXyz      -- Calculate normals at surface location
 %   - writeWavefrontObj -- write shape to Wavefront OBJ file
 %   - intersect       -- Calculate intersection between vectors and surface
+%   - starRadii       -- Calculate radii of star shaped particle
 %   - intersectAll    -- Calculate intersection between vectors and surface
 %   - intersectBoundingBox -- Calculate intersection with bounding box
 %   - getBoundingBox  -- Get the bounding box with transformations applied
@@ -104,14 +105,14 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       Nrotation = size(p.Results.rotation, 2);
       assert(mod(Nrotation, 3) == 0, ...
         'rotation must be a 3x3N matrix');
-      Nrotation = Nrotation ./ 3;
+      Nrotation = floor(Nrotation ./ 3);
 
       % Create array if required
       if Nposition ~= 1 || Nrotation ~= 1
         assert(Nposition == 1 || Nrotation == 1 || Nposition == Nrotation, ...
             'length of position and rotation must be same length');
-        shape = repelem(shape, 1, max([Nposition, Nrotation]));
       end
+      shape = repelem(shape, 1, max([Nposition, Nrotation]));
 
       % Store initial position
       if Nposition > 1
@@ -234,6 +235,36 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 
       shape = ott.shapes.TriangularMesh(shape);
       shape.writeWavefrontObj(filename);
+    end
+
+    function R = starRadii(shape, theta, phi)
+      % Calculate radii for star shaped particles.
+      %
+      % Checks that the particle is star shaped, then uses intersect
+      % to determine the surface locations.
+      %
+      % Usage
+      %   R = shape.starRadii(theta, phi)
+      %
+      % Parameters
+      %   - theta, phi (numeric) -- Angular coordinates
+
+      % Check radii
+      if ~shape.starShaped
+        warning('ott:shapes:Shape:not_star_shaped', ...
+            'Shape may not be star shaped, radii may not be unique');
+      end
+
+      % Construct vectors for intersection calculation
+      directions = ott.utils.rtp2xyz(ones(size(theta)), theta, phi);
+      vecs = ott.utils.Vector('origin', zeros(size(directions)), ...
+          'direction', directions);
+
+      % Find intersections
+      locs = shape.intersect(vecs);
+
+      % Calculate radii
+      R = vecnorm(locs);
     end
 
     function [locs, norms] = intersectBoundingBox(shape, vecs, varargin)
@@ -725,7 +756,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
             % Find mean of each patch face
             mXyz = zeros(3, size(pch(ii).Faces, 1));
             for jj = 1:size(pch(ii).Faces, 2)
-              mXyz = mXyz + pch(ii).Vertices(shape.Faces(:, ii), :).';
+              mXyz = mXyz + pch(ii).Vertices(pch(ii).Faces(:, ii), :).';
             end
             mXyz = mXyz ./ size(pch(ii).Faces, 2);
 

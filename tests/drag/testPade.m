@@ -4,6 +4,12 @@ end
 
 function setupOnce(testCase)
   addpath('../../');
+  
+  % Turn off warning about FaxnTerms
+  warning('off', 'ott:drag:ChaouiSphere:faxen_perp_terms');
+  
+  % Turn on warnings
+  warning('on', 'ott:drag:PadeSphere:small_epsilon');
 end
 
 function testConstruction(testCase)
@@ -42,8 +48,9 @@ function testSmallEpsilonWarning(testCase)
   radius = 1.0;
   viscosity = 1.0;
   separation = radius .* (1 + 1e-4);
+  drag = ott.drag.PadeSphere(radius, separation, viscosity);
   
-  testCase.verifyWarning(@() ott.drag.PadeSphere(radius, separation, viscosity), ...
+  testCase.verifyWarning(@() drag.forward, ...
     'ott:drag:PadeSphere:small_epsilon');
 
 end
@@ -53,20 +60,17 @@ function testFarLimit(testCase)
   radius = 1.0;
   viscosity = 1.0;
   separation = radius .* (1 + 1);
-  
-  S = warning('off', 'ott:drag:PadeSphere:small_epsilon');
 
   a = ott.drag.PadeSphere(radius, separation, viscosity);
   b = ott.drag.FaxenSphere(radius, separation, viscosity);
   
-  warning(S);
-
+  S = warning('off', 'ott:drag:PadeSphere:small_epsilon');
+  
   testCase.verifyEqual(a.forward, b.forward, ...
       'RelTol', 6.0e-2, ...
       'Far-limit doesn''t match forward');
-  testCase.verifyEqual(a.inverse, b.inverse, ...
-      'RelTol', 5.0e-2, ...
-      'Far-limit doesn''t match inverse');
+    
+  warning(S);
 
 end
 

@@ -13,7 +13,7 @@ function testConstruction(testCase)
   separation = 0.1;
   viscosity = 1.6;
   a = ott.drag.EccentricSpheresNn(innerRadius, outerRadius, ...
-    separation, viscosity);
+    separation, 'viscosity', viscosity);
 
   testCase.verifyEqual(a.innerRadius, innerRadius, 'Inner radius not set');
   testCase.verifyEqual(a.outerRadius, outerRadius, 'Outer radius not set');
@@ -37,7 +37,8 @@ function testFaxenLimit(testCase)
   viscosity = 3.0;
   separation = 2.21;  % Faxen's should work to about 1 radius (i.e. sep=2)
 
-  a = ott.drag.EccentricSpheresNn(radius, outerRadius, separation-radius, viscosity);
+  a = ott.drag.EccentricSpheresNn(radius, outerRadius, ...
+    separation-radius, 'viscosity', viscosity);
   b = ott.drag.FaxenSphere(radius, separation, viscosity);
   
   testCase.verifyEqual(a.forward, b.forward, ...
@@ -54,7 +55,8 @@ function testFarLimit(testCase)
   viscosity = 1.0;
   separation = 10000.0;
 
-  a = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, viscosity);
+  a = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, ...
+      'viscosity', viscosity);
   b = ott.drag.StokesSphere(radius, viscosity);
 
   testCase.verifyEqual(a.forward, b.forward, ...
@@ -72,8 +74,10 @@ function testViscosity(testCase)
   outerRadius = 100.0;
   separation = 10.0;
   
-  a = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, 1.0);
-  b = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, 2.0);
+  a = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, ...
+    'viscosity', 1.0);
+  b = ott.drag.EccentricSpheresNn(radius, outerRadius, separation, ...
+    'viscosity', 2.0);
   
   testCase.verifyEqual(a.forward, 0.5*b.forward, ...
     'RelTol', 1.0e-16, 'Viscosity has incorrect effect');

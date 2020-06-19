@@ -1,82 +1,73 @@
-classdef StokesSphere < ott.drag.Stokes
+classdef StokesSphere < ott.drag.Stokes ...
+    & ott.drag.mixin.CalcInvDrag ...
+    & ott.drag.mixin.VarViscosity
 % Drag tensor for a sphere with Stokes Drag
 %
 % Properties
 %   - radius    -- Radius of sphere
 %   - viscosity -- Viscosity of medium
+%   - forward   -- Calculated drag tensor
+%   - inverse   -- Calculate from forward
+%
+% Supported casts
+%   - ott.shapes.Shape -- Constructs a sphere shape
+%
+% See :class:`Stokes` for other methods/parameters.
 
+% Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties (SetAccess=protected)
+  properties
     radius        % Radius of sphere
   end
 
-  methods (Static)
-    function drag = simple(shape, varargin)
-      % Calculate the drag using the Stokes sphere approximation.
-      %
-      % Usage:
-      %   drag = ott.drag.Sphere.simple(shape, ...) construct a new
-      %   drag tensor for the given ott.shapes.Shape object.
-      %   Shape must implement a maxRadius method, the result is used
-      %   as the sphere radius.
-      %
-      %   drag = ott.drag.Sphere.simple(name, parameters, ...) constructs
-      %   a new shape described by name and parameters.
-      %   See ott.shapes.Shape.simple for supported shapes.
-      %   Constructed shape must have a maxRadius method.
-      %
-      % See ott.drag.Sphere/Sphere for optional arguments.
-
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addOptional('parameters', []);
-      p.addParameter('viscosity', 1.0);
-      p.parse(varargin{:});
-
-      % Get a shape object from the inputs
-      if ischar(shape) && ~isempty(p.Results.parameters)
-        shape = ott.shapes.Shape.simple(shape, p.Results.parameters);
-        varargin = varargin(2:end);
-      elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
-        error('Must input either Shape object or string and parameters');
-      end
-
-      % Get the shape radius
-      radius = shape.maxRadius;
-
-      % Calculate drag
-      drag = ott.drag.StokesSpehre(radius, p.Results.viscosity);
-    end
+  properties (Dependent)
+    forwardInternal       % Calculated drag tensor
   end
 
   methods
-    function obj = StokesSphere(radius, varargin)
+    function drag = StokesSphere(varargin)
       % Calculate drag tensors for spherical particle in Stokes drag.
       %
       % Usage:
-      %   tensor = Sphere(radius, eta, ...)
+      %   tensor = Sphere(radius, viscosity, ...)
       %
       % Parameters
-      %   - radius    -- Radius of particle
-      %   - viscosity -- Viscosity of medium (optional, default: 1.0)
+      %   - radius    -- (numeric) Radius of particle (default: 1.0)
+      %   - viscosity -- (numeric) Viscosity of medium (default: 1.0)
       %
-      % Optional named arguments:
-      %   - finalize (logical) -- calculate inverse drag tensor.
-      %     Default: `true`.
-      
+      % Parameters can also be passed as named arguments.
+      % Unmatched parameters are passed to :class:`Stokes`.
+
       p = inputParser;
-      p.addOptional('viscosity', 1.0, @(x)isnumeric(x)&&isscalar(x));
-      p.addParameter('finalize', true);
+      p.addOptional('radius', 1.0, @isnumeric);
+      p.addOptional('viscosity', 1.0, @isnumeric);
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      obj = obj@ott.drag.Stokes(...
-        'translation', 6*pi*p.Results.viscosity*radius*eye(3), ...
-        'rotation', 8*pi*p.Results.viscosity*radius.^3*eye(3), ...
-        'finalize', p.Results.finalize, 'viscosity', p.Results.viscosity);
+      drag = drag@ott.drag.Stokes(unmatched{:});
+      drag.viscosity = p.Results.viscosity;
+      drag.radius = p.Results.radius;
+    end
 
-      obj.radius = radius;
+    function shape = ott.shapes.Shape(drag)
+      % Construct a geometrical representation of the shape
+      shape = ott.shapes.Sphere(drag.radius, 'rotation', drag.rotation);
+    end
+  end
+
+  methods % Getters/setters
+    function D = get.forwardInternal(drag)
+      D = diag([6*pi*drag.viscosity*drag.radius.*[1;1;1]; ...
+                8*pi*drag.viscosity*drag.radius.^3.*[1;1;1]]);
+    end
+
+    function drag = set.radius(drag, val)
+      assert(isnumeric(val) && isscalar(val), ...
+          'radius must be numeric scalar');
+      drag.radius = val;
     end
   end
 end

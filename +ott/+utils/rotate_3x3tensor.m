@@ -1,18 +1,28 @@
 function alpha = rotate_3x3tensor(ualpha, varargin)
-% Apply a set of rotations to a 3x3 tensor
+% Apply a set of rotations to a 3x3 tensor.
 %
-% alpha = rotate_3x3tensor(ualpha, R, ...) applies the operation
-% alpha = R*ualpha*inv(R) if R is a 3x3N matrix of rotation matrices.
+% Applies the operation::
 %
-% alpha = rotate_3x3tensor(ualpha, 'direction', dir, ...) computes
-% the appropriate rotation rotation matrix to rotate from the z-axis
-% to the 3xN matrix of directions.  This is useful for uniaxial materials.
-% 'direction' is the [x; y; z] Cartesian coordinate.
-% 'sphdirection' is the [phi; theta] Spherical coordinate.
+%   alpha = R*ualpha*inv(R)
 %
-% Optional named parameters:
-%   'inverse'     bool     When true, returns the inverse polarisability.
-%       Default: false.
+% Where `R` are 3x3 rotation matrices and ualpha is a 3x3 tensor.
+% Supports arrays of rotation matrices.
+%
+% Usage
+%   alpha = rotate_3x3tensor(ualpha, R, ...)
+%
+%   alpha = rotate_3x3tensor(ualpha, 'direction', direction, ...)
+%   computes the appropriate rotation matrix to rotate from the z-axis
+%   to the 3xN matrix of directions.  This is useful for uniaxial materials.
+%
+% Parameters
+%   - R (3x3N numeric) -- Rotation matrices.
+%   - direction (3xN numeric) -- Cartesian vectors [x;y;z].
+%   - sphdirection (2xN numeric) -- Spherical vectors [phi; theta]
+%
+% Optional named parameters
+%   - inverse (logical) -- When true, returns the inverse tensor.
+%     Default: false.
 
 % Copyright 2018 Isaac Lenton
 

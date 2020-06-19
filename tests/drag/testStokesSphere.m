@@ -27,7 +27,3 @@ function testConstruction(testCase)
     'A(4, 4) should equal A(6, 6)');
 end
 
-function testSimple(testCase)
-  error('not yet implemented');
-end
-
