@@ -1,4 +1,4 @@
-classdef Tmatrix < ott.scat.utils.Particle ...
+classdef Tmatrix < ott.scat.Particle ...
     & ott.scat.utils.BeamForce & matlab.mixin.Heterogeneous ...
     & ott.utils.RotationPositionProp
 % Class representing the T-matrix of a scattering particle or lens.
@@ -10,6 +10,11 @@ classdef Tmatrix < ott.scat.utils.Particle ...
 % creation methods. This class doesn't inherit from ``double`` or ``single``,
 % instead the internal array type can be set at creation allowing the
 % use of different data types such as ``sparse`` or ``gpuArray``.
+%
+% Distance units are all relative to the medium wavelength, usually this
+% will be the wavelength of the medium surrounding the particle.
+% Most methods have a `wavelength` parameter which can be used to
+% specify the scale of the distance parameters in the input.
 %
 % Properties
 %   - data        -- The T-matrix this class encapsulates
@@ -46,6 +51,7 @@ classdef Tmatrix < ott.scat.utils.Particle ...
   % TODO: Remove parse_wavenumber, parser_k_medium, parser_k_particle
   % TODO: Update defaults to use SMARTIES and DDA and others?
   % TODO: Rotation/translatiosn between T-matrices (in mtimes)
+  % TODO: Add a shrink method and makeSparse (similar to Bsc)
 
   properties
     type          % Type of T-matrix (total, scattered or internal)
@@ -820,9 +826,83 @@ classdef Tmatrix < ott.scat.utils.Particle ...
       [varargout{1:nargout}] = scatter@ott.scat.utils.Particle(...
           tmatrix, beam, varargin{:});
     end
+
+    function shape = NmaxSphere(tmatrix, varargin)
+      % Get a sphere representing the particle's Nmax
+      %
+      % Usage
+      %   shape = tmatrix.NmaxSphere(...)
+      %
+      % Optional named parameters
+      %   - wavelength (numeric) -- Wavelength of medium (default: 1.0)
+      %
+      %   - nmaxType (enum) -- Which Nmax to use: either 'rows',
+      %     'cols' or 'both'.  Default: ``'cols'``.
+
+      p = inputParser;
+      p.addParameter('wavelength', 1.0);
+      p.addParameter('nmaxType', 'cols');
+      p.parse(varargin{:});
+
+      switch p.Results.nmaxType
+        case 'both'
+          oNmax = tmatrix.Nmax;
+        case 'cols'
+          oNmax = tmatrix.Nmax(2);
+        case 'rows'
+          oNmax = tmatrix.Nmax(1);
+        otherwise
+          error('nmaxType must be both, cols or rows');
+      end
+
+      radius = ott.utils.nmax2ka(oNmax)./(2*pi).*p.Results.wavelength;
+      shape = ott.shapes.Sphere(radius, ...
+          'position', tmatrix.position*p.Results.wavelength, ...
+          'rotation', tmatrix.rotation);
+    end
+  end
+
+  methods (Sealed)
+    function shape = ott.shapes.Shape(tmatrix, varargin)
+      % Get a shape describing the T-matrix.
+      %
+      % By default, this method returns the Nmax sphere.  In sub-classes,
+      % this method returns a shape that describes the particle geomtry
+      % (use :meth:`NmaxSphere` to always get the Nmax sphere).
+      %
+      % Optional named arguments
+      %   - wavelength (numeric) -- Wavelength of medium, used to
+      %     scale coordinates of generated shape.  (default: 1.0)
+      %
+      % All arguments are passed to the :meth:`getGeometry` method.
+
+      p = inputParser;
+      p.addParameter('wavelength', 1.0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      wavelength = p.Results.wavelength;
+      assert(isnumeric(wavelength) && isscalar(wavelength) ...
+          && wavelength > 0, ...
+          'wavelength must be positive numeric scalar');
+
+      shape = ott.shapes.Shape.empty(1, 0);
+      for ii = 1:numel(tmatrix)
+        shape = [shape, tmatrix(ii).getGeometry(wavelength, unmatched{:})];
+      end
+    end
   end
 
   methods (Hidden)
+    function shape = getGeometry(tmatrix, wavelength, varargin)
+      % Get a shape representing the T-matrix
+      %
+      % The default method returns a Nmax sphere
+
+      shape = tmatrix.NmaxSphere('wavelength', wavelength, varargin{:});
+    end
+
     function sbeam = scatterInternal(tmatrix, beam, varargin)
       % Calculate the beam scattered by a T-matrix.
       %
