@@ -16,7 +16,6 @@ documentation.  The documentation can also be downloaded in PDF format.
    Introduction.rst
    Getting-Started.rst
    Examples.rst
-   Package-Overview.rst
    Reference.rst
    Conceptual-Notes.rst
    Further-Reading.rst

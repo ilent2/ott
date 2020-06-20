@@ -26,9 +26,6 @@ chapters:
      more details including examples of the most commonly performed
      tasks with the toolbox.
 
-   * :ref:`package-overview` provides an overview of the main toolbox
-     packages including basic comparisons between different methods.
-
    * :ref:`reference` provides a more detailed description of each
      package/class/function with usage, examples and discussion of
      parameters.  This section is mostly generated from the source
