@@ -5,6 +5,9 @@ classdef ShapeProperty
 % multiple geometric shapes.  If the particle only describes one type of
 % shape it may be better to simply inherit from the Shape class.
 %
+% Does not implement a class constructor.  The shape property is
+% not initialised and must be set in the sub-class constructor.
+%
 % Properties
 %   - shape         -- The encapsulated shape object.
 %
@@ -12,20 +15,8 @@ classdef ShapeProperty
 %   - positionInternal      -- Uses the shapes location.
 %   - rotationInternal      -- Uses the shapes rotation.
 %
-% Dependent methods
-%   - rotate        -- Uses the shapes rotate method.
-%
 % Methods
-%   - force       -- Calculate force on particle in beam
-%   - torque      -- Calculate torque on particle in beam
-%   - forcetorque -- Calculate force and torque on particle in beam
 %   - validateShape   -- Method called to validate the shape
-%
-% Abstract methods
-%   - scatter     -- Calculate scattered beam
-%   - forceInternal       -- Method called by `force`
-%   - torqueInternal      -- Method called by `torque`
-%   - forcetorqueInternal -- Method called by `forcetorque`
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -38,17 +29,6 @@ classdef ShapeProperty
   properties (Dependent, Hidden)
     positionInternal      % Uses the shapes location.
     rotationInternal      % Uses the shapes rotation.
-  end
-
-  methods
-    function particle = ShapeProperty(shape)
-      % Construct and initialise the shape property
-      %
-      % Usage
-      %   particle = ShapeProperty(shape)
-
-      particle.shape = shape;
-    end
   end
 
   methods (Hidden)

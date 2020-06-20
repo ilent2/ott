@@ -1,8 +1,10 @@
-classdef HomogeneousRelative < ott.scat.Particle
+classdef HomogeneousRelative
 % Declares a index_relative property for homogeneous particles.
 %
 % Properties
 %   - index_relative      -- Relative refractive index
+%
+% No class constructor is implemented.  Property is not initialised.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -10,17 +12,6 @@ classdef HomogeneousRelative < ott.scat.Particle
 
   properties
     index_relative      % Relative refractive index of particle
-  end
-
-  methods
-    function particle = HomogeneousRelative(index_relative)
-      % Construct and assign the relative refractive index
-      %
-      % Usage
-      %   particle = HomogeneousRelative(index_relative)
-
-      particle.index_relative = index_relative;
-    end
   end
 
   methods % Getters/setters
