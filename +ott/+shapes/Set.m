@@ -47,6 +47,12 @@ classdef (Abstract) Set < ott.shapes.Shape ...
     end
   end
 
+  methods (Hidden)
+    function shape = scaleInternal(shape, sc)
+      shape.shapes = shape.shapes.scale(sc);
+    end
+  end
+
   methods % Getters/setters
     function shape = set.shapes(shape, val)
       assert(numel(val) >= 1, 'number of shapes must be >= 1');

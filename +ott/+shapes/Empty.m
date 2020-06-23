@@ -112,6 +112,10 @@ classdef Empty < ott.shapes.Shape
       % Make transparent
       S.FaceAlpha = 0;
     end
+
+    function shape = scaleInternal(shape, sc)
+      % Nothing to do
+    end
   end
 
   methods % Getters/setters

@@ -106,6 +106,10 @@ classdef Ellipsoid < ott.shapes.Shape ...
       dist = dot(locs - vecs.origin, vecs.direction)./vecnorm(vecs.direction);
 
     end
+
+    function shape = scaleInternal(shape, sc)
+      shape.radii = shape.radii * sc;
+    end
   end
 
   methods % Getters/setters

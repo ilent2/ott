@@ -189,6 +189,10 @@ classdef Plane < ott.shapes.Shape ...
       shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
       S = shape.surfInternal(unmatched{:});
     end
+
+    function shape = scaleInternal(shape, sc)
+      % Nothing to do
+    end
   end
 
   methods % Getters/setters

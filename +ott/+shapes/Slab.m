@@ -140,6 +140,10 @@ classdef Slab < ott.shapes.Shape ...
       shape = ott.shapes.PatchMesh(shape, 'scale', p.Results.scale);
       S = shape.surfInternal(unmatched{:});
     end
+
+    function shape = scaleInternal(shape, sc)
+      shape.depth = shape.depth * sc;
+    end
   end
 
   methods % Getters/setters

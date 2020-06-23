@@ -10,6 +10,10 @@ classdef AxisymInterp < ott.shapes.Shape ...
 % Properties
 %   - points        -- Discrete points describing surface [rho; z]
 %
+% Methods
+%   - boundaryPoints  -- Calculate points for line integration
+%   - surfPoints      -- Calculate points for surface integration
+%
 % Supported casts
 %   - PatchMesh
 %
@@ -132,6 +136,91 @@ classdef AxisymInterp < ott.shapes.Shape ...
 
       shape = shape@ott.shapes.Shape(unmatched{:});
       shape.points = p.Results.points;
+    end
+
+    function [xyz, nxyz, ds] = boundaryPoints(shape, npts)
+      % Calculate points for line integration
+      %
+      % Usage
+      %   [xyz, nxyz, ds] = shape.boundaryPoints(npts, ...)
+      %
+      % Parameters
+      %   - npts (numeric) -- Number of equally spaced points along surface.
+
+      % Calculate the point spacing
+      ds = shape.perimeter / npts / 2.0;
+
+      % The following is based on axisym_boundarypoints from OTTv1
+
+      % Calculate length of each line segment
+      s=sqrt((rho(2:end)-rho(1:end-1)).^2+(z(2:end)-z(1:end-1)).^2);
+
+      %Don't ask me how this works. It does. It's simple algebra in the end...
+      %and yes, it can be done more intelligently.
+      zout=zeros(npts,1);
+      rhoout=zout;
+      nxyz=zeros(3, npts);
+
+      sdeficit=0;
+      ncum=0;
+
+      for ii=2:length(rho)
+          N=s(ii-1)/ds;
+          Nused=round(N+sdeficit);
+
+          nc=[-(z(ii)-z(ii-1));0;(rho(ii)-rho(ii-1))];
+          nc=nc./vecnorm(nc);
+
+          if Nused>=1
+              drho=(rho(ii)-rho(ii-1))/N*ones(Nused,1);
+
+              rhot=cumsum(drho)-drho/2-sdeficit*drho(1);
+              rhoout(ncum+(1:Nused))=rho(ii-1)+rhot;
+
+              dz=(z(ii)-z(ii-1))/N*ones(Nused,1);
+
+              zt=cumsum(dz)-dz/2-sdeficit*dz(1);
+              zout(ncum+(1:Nused))=z(ii-1)+zt;
+
+              nxyz(:, ncum+(1:Nused))=repmat(nc,[length(zt),1]);
+
+              sdeficit=(N-Nused+sdeficit);
+          else
+              sdeficit=sdeficit+N;
+          end
+
+          ncum=ncum+Nused;
+
+      end
+
+      % Truncate points if not allocated
+      if ncum < npts
+        warning('ott:shapes:AxisymInterp:boundarypoints_length', ...
+            'Number of points generated does not match request');
+        zout = zout(1:ncum);
+        rhoout = zout(1:ncum);
+        nxyz = nxyz(:, 1:ncum);
+      end
+
+      % Package output
+      xyz = [rhoout,zeros(size(rhoout)),zout].';
+
+      % Calculate area
+      if nargout >= 3
+        dst=zeros(size(rtp, 1),3);
+
+        %calcultes area elements
+        dst(2:end-1,1)=(rhoout(3:end)-rhoout(1:end-2))/2;
+        dst(2:end-1,3)=(zout(3:end)-zout(1:end-2))/2;
+        dst(1,1)=(mean(rhoout(1:2))-rho(1));
+        dst(1,3)=(mean(zout(1:2))-z(1));
+        dst(end,1)=(rho(end)-mean(rhoout(end-1:end)));
+        dst(end,3)=(z(end)-mean(zout(end-1:end)));
+
+        % a general axisymmetric conic region has the
+        % following area (sans factor of 2*pi):
+        ds=(rtp(:,1).*sqrt(sum(abs(dst).^2,2)).*sin(rtp(:,2)));
+      end
     end
 
     function varargout = surfPoints(shape, varargin)
@@ -279,6 +368,10 @@ classdef AxisymInterp < ott.shapes.Shape ...
 
       shape = ott.shapes.PatchMesh(shape, 'resolution', p.Results.resolution);
       S = shape.surfInternal(unmatched{:});
+    end
+
+    function shape = scaleInternal(shape, sc)
+      shape.points = shape.points .* sc;
     end
   end
 

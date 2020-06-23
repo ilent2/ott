@@ -127,6 +127,10 @@ classdef Cube < ott.shapes.Shape ...
       [varargout{1:nargout}] = intersectInternal@ ...
           ott.shapes.mixin.IntersectMinAll(shape, varargin{:});
     end
+
+    function shape = scaleInternal(shape, sc)
+      shape.width = shape.width * sc;
+    end
   end
 
   methods % Getters/setters

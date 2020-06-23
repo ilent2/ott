@@ -70,34 +70,6 @@ classdef Sphere < ott.shapes.Shape ...
 
       r = ones(size(theta)) * shape.radius;
     end
-
-    function [rtp, n, ds] = boundarypoints(shape, varargin)
-      % BOUNDARYPOINTS calculates boundary points for surface integral
-      %
-      % [rtp, n, ds] = BOUDNARYPOINTS(npts) calculates the boundary points
-      % and surface normal vectors in spherical coordinates and the area
-      % elements of each ring.
-      %
-      % BOUNDARYPOINTS('Nmax', Nmax) takes a guess at a suitable npts
-      % for the given Nmax.
-
-      ntheta = shape.boundarypoints_npts(varargin{:});
-
-      % Sphere has equally spaced angles
-      theta = 0.0:(pi/(ntheta-1)):pi;
-      phi = zeros(size(theta));
-
-      xyz = shape.locations(theta, phi);
-      nxyz = xyz ./ shape.radius;
-
-      % Convert cylindrical coordinates into spherical coordinates
-      [n, rtp] = ott.utils.xyzv2rtpv(nxyz, xyz);
-
-      % Calculate area elements
-      ds = shape.boundarypoints_area(xyz(:, 1), xyz(:, 3), ...
-          xyz(:, 1), xyz(:, 3), rtp);
-
-    end
   end
 
   methods (Hidden)
@@ -140,12 +112,16 @@ classdef Sphere < ott.shapes.Shape ...
       dist = cat(3, t1, t2);
       locs = Q1 + dist.*D;
       norms = shape.normalsXyz(reshape(locs, 3, []));
-      
+
       % Ensure outputs have correct shape/size
       dist = permute(dist, [1, 3, 2]);
       locs = permute(locs, [1, 3, 2]);
       norms = permute(reshape(norms, 3, [], 2), [1, 3, 2]);
 
+    end
+
+    function shape = scaleInternal(shape, sc)
+      shape.radius = shape.radius * sc;
     end
   end
 

@@ -95,6 +95,10 @@ classdef Inverse < ott.shapes.Shape
 
       S = shape.internal.surfInternal(varargin{:});
     end
+
+    function shape = scaleInternal(shape, sc)
+      shape.internal = shape.internal.scale(sc);
+    end
   end
 
   methods % Getters/setters

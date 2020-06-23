@@ -114,22 +114,6 @@ classdef Cylinder < ott.shapes.Shape ...
       r(sides) = shape.radius ./ sin(theta(sides));
       r(ends) = (shape.height/2) ./ abs(cos(theta(ends)));
     end
-
-    function [rtp, n, ds] = boundarypoints(shape, varargin)
-      % BOUNDARYPOINTS calculates boundary points for surface integral
-      %
-      % [rtp, n, ds] = BOUDNARYPOINTS(npts) calculates the boundary points
-      % and surface normal vectors in spherical coordinates and the area
-      % elements of each ring.
-      %
-      % BOUNDARYPOINTS('Nmax', Nmax) takes a guess at a suitable npts
-      % for the given Nmax.
-
-      rho = [0.0; 1.0; 1.0; 0.0].*shape.radius;
-      z = [-0.5; -0.5; 0.5; 0.5].*shape.height;
-
-      [rtp, n, ds] = shape.boundarypoints_rhoz(rho, z, varargin{:});
-    end
   end
 
   methods (Hidden)
@@ -233,6 +217,11 @@ classdef Cylinder < ott.shapes.Shape ...
 
       S = surfInternal@ott.shapes.mixin.AxisymStarShape(shape, ...
           'resolution', p.Results.resolution, unmatched{:});
+    end
+
+    function shape = scaleInternal(shape, sc)
+      shape.height = shape.height * sc;
+      shape.radius = shape.radius * sc;
     end
   end
 

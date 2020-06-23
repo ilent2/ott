@@ -125,6 +125,10 @@ classdef Superellipsoid < ott.shapes.Shape ...
 
       n = ott.utils.rtpv2xyzv(n, rtp);
     end
+
+    function shape = scaleInternal(shape, sc)
+      shape.radii = shape.radii * sc;
+    end
   end
 
   methods % Getters/setters

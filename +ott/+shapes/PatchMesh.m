@@ -95,6 +95,10 @@ classdef PatchMesh < ott.shapes.Shape ...
       shape = ott.shapes.TriangularMesh(shape);
       nxyz = shape.normalsXyzInternal(xyz);
     end
+
+    function shape = scaleInternal(shape, sc)
+      shape.verts = shape.verts .* sc;
+    end
   end
 
   methods % Getters/setters

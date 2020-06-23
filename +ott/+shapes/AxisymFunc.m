@@ -427,6 +427,15 @@ classdef AxisymFunc < ott.shapes.Shape ...
       shape = ott.shapes.PatchMesh(shape, 'resolution', p.Results.resolution);
       S = shape.surfInternal(unmatched{:});
     end
+
+    function shape = scaleInternal(shape, sc)
+      if strcmpi(shape.type, 'angular')
+        shape.func = @(x) shape.func(x) .* sc;
+      else
+        shape.range = shape.range * sc;
+        shape.func = @(x) shape.func(x ./ sc) .* sc;
+      end
+    end
   end
 
   methods % Getters/setters

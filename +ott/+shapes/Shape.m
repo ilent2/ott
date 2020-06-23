@@ -21,6 +21,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 %
 % Methods
 %   - surf            -- Generate surface visualisation
+%   - scale           -- Scale the geometry (uses `scaleInternal`)
 %   - voxels          -- Generate array of voxels or voxel visualisation
 %   - insideRtp       -- Determine if Spherical point is inside shape
 %   - insideXyz       -- Determine if Cartesian point is inside shape
@@ -35,11 +36,14 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 %   - getBoundingBoxShape -- Get a shape representing the bounding box
 %   - rotate*         -- Functions for rotating the entity
 %   - translate*      -- Functions for translating the entity
+%   - operator/       -- Scale the object (uses scale)
+%   - operator*       -- Scale the object (uses scale)
 %   - operator|       -- Union operator: creates a new set
 %   - operator&       -- Intersection operator: creates a new set
 %   - operator~       -- Inverse operator: creates a new :class:`Inverse`.
 %
 % Abstract methods
+%   - scaleInternal       -- Scale the geometry (called by times/rdivide)
 %   - surfInternal        -- Generate surface visualisation
 %   - surfPoints          -- Calculate points for surface integration
 %   - intersectInternal   -- Method called by intersect
@@ -67,6 +71,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 
   methods (Abstract)
     surfPoints(obj)      % Calculate points for surface integration
+    scaleInternal(obj)           % Scale the object
   end
 
   methods (Abstract, Hidden)
@@ -137,6 +142,44 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       % Cast to TriangularMesh via PatchMesh
       shape = ott.shapes.PatchMesh(shape, varargin{:});
       shape = ott.shapes.TriangularMesh(shape);
+    end
+
+    function shape = times(a, b)
+      % Scale the object
+      %
+      % Usage
+      %   shape = shape * scalar     or     shape = scalar * shape
+
+      if isscalar(a)
+        shape = b.scale(a);
+      elseif isscalar(b)
+        shape = a.scale(b);
+      else
+        error('Either a or b must be a scalar');
+      end
+    end
+
+    function shape = mtimes(a, b)
+      % Defers to times
+      shape = times(a, b);
+    end
+
+    function shape = rdivide(a, b)
+      % Scale the shape by a factor
+      %
+      % Usage
+      %   shape = shape ./ scalar
+
+      if isscalar(b)
+        shape = a.scale(1./b);
+      else
+        error('b must be a scalar');
+      end
+    end
+
+    function shape = mrdivide(a, b)
+      % Defers to rdivide
+      shape = rdivide(a, b);
     end
 
     function shape = not(shape)
@@ -777,6 +820,36 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 
       if nargout ~= 0
         varargout{1} = pch;
+      end
+    end
+
+    function shape = scale(shape, sc, varargin)
+      % Scale the shape by a factor
+      %
+      % Usage
+      %   shape = shape.scale(sc, ...)
+      %
+      % Optional named parameters
+      %   - origin (enum) -- Either 'local' or 'global'.  If 'global',
+      %     scales the position coordinate too (default).
+
+      p = inputParser;
+      p.addParameter('origin', 'global');
+      p.parse(varargin{:});
+
+      assert(isnumeric(sc) && isscalar(sc), ...
+          'sc must be a numeric scalar');
+
+      origin = p.Results.origin;
+      assert(any(strcmpi(origin, {'local', 'global'})), ...
+          'origin must be local or global');
+
+      for ii = 1:numel(shape)
+        shape(ii) = shape(ii).scaleInternal(sc);
+
+        if strcmpi(origin, 'global')
+          shape(ii).position = shape(ii).position * sc;
+        end
       end
     end
   end

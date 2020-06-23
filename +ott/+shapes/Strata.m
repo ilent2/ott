@@ -105,6 +105,11 @@ classdef Strata < ott.shapes.Plane
             intersectAllInternal@ott.shapes.Plane(shape, tvecs);
       end
     end
+
+    function shape = scaleInternal(shape, sc)
+      shape.depths = shape.depths * sc;
+      shape = scaleInternal@ott.shapes.Plane(sc);
+    end
   end
 
   methods % Getters/setters
