@@ -7,27 +7,32 @@ function setupOnce(testCase)
   addpath('../../../');
 end
 
-function testWrongArgCount(testCase)
+function testConstruct(testCase)
 
-  testCase.verifyError(@() ott.beam.medium.Vacuum(), ...
-    'ott:beam:medium:Vacuum:wrong_arg_count');
+  permittivity = 8.854e-12;
+  permeability = 1.257e-6;
+  
+  vacuum = ott.beam.medium.Vacuum(permittivity, permeability);
+  
+  testCase.verifyEqual(vacuum.permittivity, permittivity, 'permittivity');
+  testCase.verifyEqual(vacuum.permeability, permeability, 'permeability');
+  
+  testCase.verifyEqual(vacuum.speed, 1./sqrt(permittivity*permeability), 'speed');
   
 end
 
-function testSi(testCase)
-
-  vacuum = ott.beam.medium.Vacuum.SiUnits;
-  testCase.verifyEqual(vacuum.permittivity, 8.854e-12, 'RelTol', 1e-3);
-  testCase.verifyEqual(vacuum.permeability, 1.257e-6, 'RelTol', 1e-3);
-  testCase.verifyEqual(vacuum.speed, 2.998e8, 'RelTol', 1e-3);
-  
-end
-
-function testUnit(testCase)
+function testCastMaterial(testCase)
 
   vacuum = ott.beam.medium.Vacuum.Unitary;
-  testCase.verifyEqual(vacuum.permittivity, 1.0, 'RelTol', 1e-3);
-  testCase.verifyEqual(vacuum.permeability, 1.0, 'RelTol', 1e-3);
-  testCase.verifyEqual(vacuum.speed, 1.0, 'RelTol', 1e-3);
+  material = ott.beam.medium.Material(vacuum);
   
+  testCase.verifyTrue(isa(material, 'ott.beam.medium.Material'), 'type');
+end
+
+function testCastMedium(testCase)
+
+  vacuum = ott.beam.medium.Vacuum.Unitary;
+  medium = ott.beam.medium.Medium(vacuum);
+  
+  testCase.verifyTrue(isa(medium, 'ott.beam.medium.Medium'), 'type');
 end

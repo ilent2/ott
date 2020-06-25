@@ -1,13 +1,20 @@
-classdef (Abstract) Medium
-% Abstract base class for describing optical media
+classdef Medium
+% Specification of an optical medium (material + frequency + units)
 %
-% Abstract properties
+% Properties
+%   - material      -- Description of the material
+%   - frequency     -- Optical (angular) frequency
+%   - vacuum        -- Vacuum (describes units)
+%
+% Static properties (methods)
+%   - DefaultFrequency  -- Default optical frequency
+%   - DefaultVacuum     -- Default vacuum
+%
+% Dependent properties
 %   - permittivity  -- Permittivity of medium
 %   - permeability  -- Permeability of medium
 %   - speed         -- Wave speed in medium
 %   - index         -- Refractive index of medium
-%
-% Dependent properties
 %   - impedance     -- Impedance of medium
 %
 % Methods
@@ -19,26 +26,107 @@ classdef (Abstract) Medium
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file
 
-  properties (Abstract)
+  properties
+    material       % Description of the material
+    frequency      % Optical (angular) frequency
+    vacuum         % Vacuum (describes units)
+  end
+
+  properties (Dependent)
     permittivity
     permeability
     speed
     index
-  end
-
-  properties (Dependent)
     impedance
   end
 
   methods (Static)
-    function args = likeProperties(other, args)
-      % Add like-properties to argument list
+    function out = DefaultFrequency(data)
+      % Static variable for default optical frequency
+      %
+      % Usage
+      %   frequency = Medium.DefaultFrequency
+      %
+      %   Medium.DefaultFrequency(value)
+      %   -- Change the default optical frequency used in the constructor.
+      %
+      % Initial value for default frequency is ``2*pi``.
 
-      % Nothing to do
+      persistent Frequency;
+
+      if nargin == 0
+        if isempty(Frequency)
+          Frequency = 2*pi;
+        end
+        out = Frequency;
+      else
+        assert(isnumeric(data) && isscalar(data), ...
+            'value must be numeric scalar');
+        Frequency = data;
+      end
+    end
+
+    function out = DefaultVacuum(data)
+      % Get/set default vacuum static variable
+      %
+      % Usage
+      %   vacuum = Medium.DefaultVacuum
+      %
+      %   Medium.DefaultVacuum(value)
+      %   -- Change the default vacuum used in the constructor.
+      %
+      % Default initial vacuum is ``ott.beam.medium.Vacuum.Unitary``.
+
+      persistent Vacuum;
+
+      if nargin == 0
+        if isempty(Vacuum)
+          Vacuum = ott.beam.medium.Vacuum.Unitary;
+        end
+        out = Vacuum;
+      else
+        assert(isa(data, 'ott.beam.medium.Vacuum'), ...
+            'value must be a ott.beam.medium.Vacuum');
+        Vacuum = data;
+      end
     end
   end
 
   methods
+    function med = Medium(varargin)
+      % Construct a new optical medium
+      %
+      % Usage
+      %   medium = Medium(material, frequency, vacuum)
+      %
+      % Parameters
+      %   - material (Material) -- Material properties of medium.
+      %
+      %   - frequency (numeric) -- Optical (angular) frequency.
+      %     Default: ``Medium.DefaultFrequency()``.
+      %
+      %   - vacuum (Vacuum) -- Vacuum (defines units).
+      %     Default: ``Medium.DefaultVacuum()``.
+
+      p = inputParser;
+      p.addRequired('material', @(x) isa(x, 'ott.beam.medium.Material'));
+      p.addOptional('frequency', ...
+          ott.beam.medium.Medium.DefaultFrequency(), @isnumeric);
+      p.addOptional('vacuum', ...
+          ott.beam.medium.Medium.DefaultVacuum(), ...
+          @(x) isa(x, 'ott.beam.medium.Vacuum'));
+      p.parse(varargin{:});
+
+      med.material = p.Results.material;
+      med.frequency = p.Results.frequency;
+      med.vacuum = p.Results.vacuum;
+    end
+
+    function mat = ott.beam.medium.Material(med)
+      % Extract the material property
+      mat = med.material;
+    end
+
     function rmat = rdivide(material1, material2)
       % Construct a relative material from two mediums
       %
@@ -47,22 +135,62 @@ classdef (Abstract) Medium
 
       rmat = ott.beam.medium.Relative(material1, material2);
     end
-    
+
     function b = eq(a, b)
       % Compare two mediums
       %
       % Usage
       %   b = medium1 == medium2
-      
+
       b = isequaln(a, b);
     end
   end
 
   methods % Getters/setters
     function val = get.impedance(mat)
-      % TODO: Should this really be a dependent property
-      % TODO: Should this be matrix multiplication/sqrt?
       val = sqrt(mat.permeability ./ mat.permittivity);
+    end
+
+    function val = get.index(mat)
+      val = mat.material.index;
+    end
+
+    function mat = set.material(mat, val)
+      assert(isa(val, 'ott.beam.medium.Material'), ...
+          'material must be a ott.beam.medium.Material');
+      mat.material = val;
+    end
+
+    function mat = set.frequency(mat, val)
+      assert(isnumeric(val) && isscalar(val), ...
+          'frequency must be numeric scalar');
+      mat.frequency = val;
+    end
+
+    function mat = set.vacuum(mat, val)
+      assert(isa(val, 'ott.beam.medium.Vacuum'), ...
+          'vacuum must be a ott.beam.medium.Vacuum');
+      mat.vacuum = val;
+    end
+
+    function mat = set.permittivity(mat, val)
+      assert(isnumeric(val), 'permittivity must be numeric');
+      mat.material.relative_permittivity = val ./ mat.vacuum.permittivity;
+    end
+    function val = get.permittivity(mat)
+      val = mat.material.relative_permittivity .* mat.vacuum.permittivity;
+    end
+
+    function mat = set.permeability(mat, val)
+      assert(isnumeric(val), 'permeability must be numeric');
+      mat.material.relative_permeability = val ./ mat.vacuum.permeability;
+    end
+    function val = get.permeability(mat)
+      val = mat.material.relative_permeability .* mat.vacuum.permeability;
+    end
+
+    function val = get.speed(mat)
+      val = mat.vacuum.speed ./ mat.material.index;
     end
   end
 end

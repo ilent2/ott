@@ -3,19 +3,21 @@ classdef Dielectric < ott.beam.medium.Material
 %
 % In a `Dielectric`, the relative permeability is constant, equal to 1,
 % and the refractive index is directly related to the relative permittivity
-% by :math:`\sqrt{\epsilon_r}`.
+% by :math:`n = \sqrt{\epsilon_r}`.
 %
 % Properties
-%   - vacuum                -- Material vacuum
-%   - relative_index        -- Refractive index (dependent)
 %   - relative_permittivity -- Relative permittivity of medium
 %   - relative_permeability -- Relative permeability (constant, 1.0)
 %
-% Static methods
-%   - Water                 -- Material with refractive index of 1.33
-%   - Polystyrene           -- Material with refractive index of 1.59
+% Dependent properties
+%   - index                 -- Refractive index
+%   - isIsotropic           -- True if the material is isotropic
+%   - isConductive          -- True if for electrically conductive materials
 %
-% For other properties, see :class:`ott.beam.medium.Material`.
+% Static methods
+%   - FromIndex             -- Construct medium from refractive index
+%
+% See also :class:`ott.beam.medium.Generic` for example materials.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -26,45 +28,18 @@ classdef Dielectric < ott.beam.medium.Material
   end
 
   properties (Dependent)
-    relative_index
     relative_permeability
   end
 
   methods (Static)
-    function mat = Water(vacuum)
-      % Non-conductive dielectric material similar to water at 20 C
-      %
-      % Refractive index is 1.33.
+    function mat = FromIndex(index)
+      % Construct material from refractive index
       %
       % Usage
-      %   mat = ott.beam.medium.Dielectric.Water
-      %
-      %   mat = ott.beam.medium.Dielectric.Water(vacuum)
-      %   Specify the vacuum material (default: Unitary)
+      %   mat = Dielectric.FromIndex(index)
 
-      if nargin < 1
-        vacuum = ott.beam.medium.Vacuum.Unitary;
-      end
-
-      mat = ott.beam.medium.Dielectric('vacuum', vacuum, 'index', 1.33);
-    end
-
-    function mat = Polystyrene(vacuum)
-      % Non-conductive dielectric material similar to polystyrene
-      %
-      % Refractive index is 1.59.
-      %
-      % Usage
-      %   mat = ott.beam.medium.Dielectric.Polystyrene
-      %
-      %   mat = ott.beam.medium.Dielectric.Polystyrene(vacuum)
-      %   Specify the vacuum material (default: Unitary)
-
-      if nargin < 1
-        vacuum = ott.beam.medium.Vacuum.Unitary;
-      end
-
-      mat = ott.beam.medium.Dielectric('vacuum', vacuum, 'index', 1.59);
+      assert(isnumeric(index), 'index must be numeric');
+      mat = ott.beam.medium.Dielectric(index.^2);
     end
   end
 
@@ -73,72 +48,37 @@ classdef Dielectric < ott.beam.medium.Material
       % Construct a new dielectric material
       %
       % Usage
-      %   mat = Dielectric(...)
+      %   mat = Dielectric(permittivity)
       %
-      % Named parameters
-      %   - permittivity|relative_permittivity (numeric)
-      %   - index|relative_index (numeric)
-      %   - speed (numeric)
+      % Parameters
+      %   - permittivity (numeric) -- Relative permittivity of material.
+      %     Can either be a scalar or 3x3 matrix.
       %
-      %   - vacuum (ott.beam.medium.Medium) -- Medium to use for vacuum.
-      %     Default: ``ott.beam.medium.Vacuum.Unitary``
-      %
-      % Must provide one of permittivity/index/speed.
+      % See also :meth:`FromIndex` for a constructor from refractive index.
 
       p = inputParser;
-      p.addParameter('vacuum', ott.beam.medium.Vacuum.Unitary);
-      p.addParameter('index', []);
-      p.addParameter('relative_index', []);
-      p.addParameter('permittivity', []);
-      p.addParameter('relative_permittivity', []);
-      p.addParameter('speed', []);
+      p.addRequired('permittivity', @isnumeric);
       p.parse(varargin{:});
 
-      % Assign vacuum
-      mat = mat@ott.beam.medium.Material(p.Results.vacuum);
-
-      % Check refractive index is not ambiguous or undefined
-      num_args = isempty(p.Results.index) ...
-          + isempty(p.Results.relative_index) ...
-          + isempty(p.Results.permittivity) ...
-          + isempty(p.Results.relative_permittivity) ...
-          + isempty(p.Results.speed);
-      assert(num_args == 4, ...
-          'ott:beam:medium:Dielectric:wrong_arg_count', ...
-          'Must provide one of permittivity/index/speed');
-
-      % Assign refractive index
-      if ~isempty(p.Results.index)
-        mat.index = p.Results.index;
-      elseif ~isempty(p.Results.relative_index)
-        mat.relative_index = p.Results.relative_index;
-      elseif ~isempty(p.Results.permittivity)
-        mat.permittivity = p.Results.permittivity;
-      elseif ~isempty(p.Results.relative_permittivity)
-        mat.relative_permittivity = p.Results.relative_permittivity;
-      elseif ~isempty(p.Results.speed)
-        mat.speed = p.Results.speed;
-      end
+      mat.relative_permittivity = p.Results.permittivity;
     end
   end
 
   methods % Getters/setters
-    function index = get.relative_index(mat)
-      index = sqrt(mat.relative_permittivity);
-    end
-    function mat = set.relative_index(mat, val)
-      assert(isnumeric(val) && isscalar(val), ...
-          'relative index must be numeric scalar');
-      mat.relative_permittivity = val.^2;
-    end
-
     function val = get.relative_permeability(mat)
       val = 1.0;
     end
 
     function mat = set.relative_permittivity(mat, val)
-      assert(isnumeric(val) && isscalar(val), ...
-          'relative permittivity must be numeric scalar');
+      assert(isnumeric(val) && (isscalar(val) ...
+          || (ismatrix(val) && all(size(val) == [3, 3]))), ...
+          'relative_permittivity must be numeric scalar or 3x3 matrix');
+
+      % Convert to scalar if isotropic
+      if isdiag(val) && all(diag(val)) == val(1, 1)
+        val = val(1, 1);
+      end
+
       mat.relative_permittivity = val;
     end
   end

@@ -1,16 +1,29 @@
-function tests = testVacuum
-  % Test for beam combination functionality
+function tests = testDielectric
   tests = functiontests(localfunctions);
 end
 
-function setupOnce(testCase)
+function setupOnce(~)
   addpath('../../../');
 end
 
-function testWater(testCase)
+function testConstructor(testCase)
 
-  vacuum = ott.beam.medium.Dielectric.Water;
-  testCase.verifyEqual(vacuum.index, 1.33);
-  testCase.verifyEqual(vacuum.relative_index, 1.33);
+  permittivity = 1.0;
+
+  material = ott.beam.medium.Dielectric(permittivity);
+  testCase.verifyEqual(material.relative_permittivity, permittivity, ...
+      'permittivity');
+  testCase.verifyEqual(material.relative_permeability, 1.0, 'permeability');
   
+end
+
+function testFromIndex(testCase)
+
+  index = 1.0;
+
+  material = ott.beam.medium.Dielectric.FromIndex(index);
+  testCase.verifyEqual(material.index, index, ...
+      'index');
+  testCase.verifyEqual(material.relative_permeability, 1.0, 'permeability');
+
 end

@@ -1,15 +1,22 @@
 classdef Relative < ott.beam.medium.Material
-% Relative material medium
+% Describes a ratio between two materials.
 % Inherits from :class:`ott.beam.medium.Material`.
+%
+% Unlike other materials, this material declares properties as ratios
+% of two materials.  The relative material can be constructed from two
+% materials or mediums using the constructor or using::
+%
+%   relMaterial = material1 ./ material2
 %
 % Properties
 %   - material1   -- First material
 %   - material2   -- Second material
+%   - relative_permittivity   -- Relative permittivity between materials
+%   - relative_permeability   -- Relative permeability between materials
+%   - index                   -- Relative refractive index between materials
 %
 % Methods
 %   - times       -- Dissolve the material or create a new relative material
-%
-% For other properties, see :class:`Material`.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -21,7 +28,6 @@ classdef Relative < ott.beam.medium.Material
   end
 
   properties (Dependent)
-    relative_index
     relative_permittivity
     relative_permeability
   end
@@ -36,58 +42,36 @@ classdef Relative < ott.beam.medium.Material
       %   mat = Relative(material1, material2)
       %
       % Parameters
-      %   - material1, material2 (Medium) -- Two mediums forming the
-      %     relative permittivity relationship.
-      %     If mediums are :class:`Material`, the vacuums should match.
-      %
-      % Optional named arguments
-      %   - vacuum (Medium) -- The material to use for the vacuum.
-      %     Default: ``material1.vacuum`` if material is a Material.
-      %     Otherwise ``ott.beam.medium.Vacuum.Unitary``.
+      %   - material1, material2 (Material|other) -- Two materials forming
+      %     the relative relationship.  If the objects aren't
+      %     :class:`ott.beam.medium.Material` types, attempts to cast
+      %     to a Material.
 
-      p = inputParser;
-      p.addParameter('vacuum', ott.beam.medium.Vacuum.Unitary);
-      p.parse(varargin{:});
-
-      % Check vacuums match
-      if isa(material2, 'ott.beam.medium.Material') ...
-          && isa(material1, 'ott.beam.medium.Material')
-        assert(material1.vacuum == material2.vacuum, ...
-            'vacuum must match when both arguments are Materials');
+      % Cast materials if needed
+      if ~isa(material1, 'ott.beam.medium.Material')
+        material1 = ott.beam.medium.Material(material1);
+      end
+      if ~isa(material2, 'ott.beam.medium.Material')
+        material2 = ott.beam.medium.Material(material2);
       end
 
-      % Get vacuum
-      if isa(material1, 'ott.beam.medium.Material')
-        vacuum = material1.vacuum;
-      elseif isa(material2, 'ott.beam.medium.Material')
-        vacuum = material2.vacuum;
-      else
-        vacuum = p.Results.vacuum;
-      end
-
-      % TODO: Conversion between vacuums (should be possible?)
-
-      % Construct base
-      mat = mat@ott.beam.medium.Material(vacuum);
-
-      % Store materials
+      % Store properties
       mat.material1 = material1;
       mat.material2 = material2;
     end
 
-    function mat = times(mat, other)
+    function mat = times(a, b)
       % Dissolve the material or construct a new relative material
       %
       % Usage
       %   mat = material1 .* material2
-      %
-      % If `material1.material2 == material2`, returns material1.
-      % Otherwise sets `material1.material2` to a new relative
-      % material created from `material1.material2` and `material2`.
 
-      if mat.material2 == other
-        % Nothing to do
+      if isa(a, 'ott.beam.medium.Relative') && a.material2 == b
+        mat = a.material1;    % dissolve
+      elseif isa(b, 'ott.beam.medium.Relative') && b.material2 == a
+        mat = b.material1;    % dissolve
       else
+        mat = a;
         mat.material2 = mat.material2 ./ other;
       end
     end
@@ -95,35 +79,23 @@ classdef Relative < ott.beam.medium.Material
 
   methods % Getters/setters
 
-    function val = get.relative_index(mat)
-      val = material1.index ./ material2.index;
-    end
-
     function val = get.relative_permittivity(mat)
-      val = material1.permittivity ./ material2.permittivity;
+      val = material1.relative_permittivity ./ material2.relative_permittivity;
     end
 
     function val = get.relative_permeability(mat)
-      val = material1.permeability ./ material2.permeability;
+      val = material1.relative_permeability ./ material2.relative_permeability;
     end
 
     function mat = set.material1(mat, val)
-      assert(isa(val, 'ott.beam.medium.Medium'), ...
-          'material must be a ott.beam.medium.Medium');
-      if isa(val, 'ott.beam.medium.Material')
-        assert(val.vacuum == mat.vacuum, ...
-          'material vacuum must match');
-      end
+      assert(isa(val, 'ott.beam.medium.Material'), ...
+          'material must be a ott.beam.medium.Material');
       mat.material1 = val;
     end
 
     function mat = set.material2(mat, val)
-      assert(isa(val, 'ott.beam.medium.Medium'), ...
-          'material must be a ott.beam.medium.Medium');
-      if isa(val, 'ott.beam.medium.Material')
-        assert(val.vacuum == mat.vacuum, ...
-          'material vacuum must match');
-      end
+      assert(isa(val, 'ott.beam.medium.Material'), ...
+          'material must be a ott.beam.medium.Material');
       mat.material2 = val;
     end
   end
