@@ -13,6 +13,8 @@ classdef Medium
 % Dependent properties
 %   - permittivity  -- Permittivity of medium
 %   - permeability  -- Permeability of medium
+%   - wavelength    -- Wavelength in medium
+%   - wavelength0   -- Wavelength in vacuum
 %   - speed         -- Wave speed in medium
 %   - index         -- Refractive index of medium
 %   - impedance     -- Impedance of medium
@@ -35,7 +37,9 @@ classdef Medium
   properties (Dependent)
     permittivity
     permeability
-    speed
+    wavelength      % Wavelength in medium
+    wavelength0     % Wavelength in vacuum
+    speed           % Speed in medium
     index
     impedance
   end
@@ -90,6 +94,37 @@ classdef Medium
         Vacuum = data;
       end
     end
+
+    function med = FromWavelength(varargin)
+      % Construct medium using wavelength instead of frequency
+      %
+      % Usage
+      %   medium = Medium.FromWavelength(material, wavelength, vacuum)
+      %
+      % Parameters
+      %   - material (Material) -- Material properties of medium.
+      %
+      %   - wavelength (numeric) -- Wavelength in medium.
+      %
+      %   - vacuum (Vacuum) -- Vacuum (defines units).
+      %     Default: ``Medium.DefaultVacuum()``.
+
+      p = inputParser;
+      p.addOptional('material', [], @(x) isa(x, 'ott.beam.medium.Material'));
+      p.addOptional('wavelength', [], @(x) ~isempty(x) && isnumeric(x));
+      p.addOptional('vacuum', ...
+          ott.beam.medium.Medium.DefaultVacuum(), ...
+          @(x) isa(x, 'ott.beam.medium.Vacuum'));
+      p.parse(varargin{:});
+
+      frequency = 2*pi*p.Results.vacuum.speed ...
+          ./p.Results.material.index ./ p.Results.wavelength;
+
+      med = ott.beam.medium.Medium(...
+        'material', p.Results.material, ...
+        'frequency', frequency, ...
+        'vacuum', p.Results.vacuum);
+    end
   end
 
   methods
@@ -109,7 +144,7 @@ classdef Medium
       %     Default: ``Medium.DefaultVacuum()``.
 
       p = inputParser;
-      p.addRequired('material', @(x) isa(x, 'ott.beam.medium.Material'));
+      p.addOptional('material', [], @(x) isa(x, 'ott.beam.medium.Material'));
       p.addOptional('frequency', ...
           ott.beam.medium.Medium.DefaultFrequency(), @isnumeric);
       p.addOptional('vacuum', ...
@@ -191,6 +226,13 @@ classdef Medium
 
     function val = get.speed(mat)
       val = mat.vacuum.speed ./ mat.material.index;
+    end
+
+    function val = get.wavelength(mat)
+      val = mat.speed ./ mat.frequency .* (2*pi);
+    end
+    function val = get.wavelength0(mat)
+      val = mat.vacuum.speed ./ mat.frequency .* (2*pi);
     end
   end
 end

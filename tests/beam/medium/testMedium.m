@@ -28,10 +28,29 @@ function testConstructor(testCase)
     water.relative_permeability .* vacuum.permeability, 'permeability');
   testCase.verifyEqual(medium.speed, ...
     vacuum.speed ./ water.index, 'speed');
+  testCase.verifyEqual(medium.wavelength, ...
+    medium.speed ./ medium.frequency .* (2*pi), 'wavelength');
   testCase.verifyEqual(medium.index, ...
     water.index, 'index');
   testCase.verifyEqual(medium.impedance, ...
     sqrt(medium.permeability ./ medium.permittivity), 'impedance');
+  
+end
+
+function testFromWavelength(testCase)
+
+  water = ott.beam.medium.Generic.Water;
+  vacuum = ott.beam.medium.Vacuum.BaseSi;
+  wavelegnth = 1.0e-6;
+  
+  medium = ott.beam.medium.Medium.FromWavelength(water, wavelegnth, vacuum);
+  
+  testCase.assertClass(medium, 'ott.beam.medium.Medium', 'mat');
+  
+  % Test properties
+  testCase.verifyEqual(medium.material, water, 'mat');
+  testCase.verifyEqual(medium.vacuum, vacuum, 'vacuum');
+  testCase.verifyEqual(medium.wavelength, wavelegnth, 'freq');
   
 end
 
