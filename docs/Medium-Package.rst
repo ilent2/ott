@@ -59,7 +59,7 @@ Medium
 ======
 
 .. autoclass:: Medium
-   :members: Medium, DefaultVacuum, DefaultFrequency
+   :members: Medium, FromWavelength, DefaultVacuum, DefaultFrequency
 
 .. _vacuums:
 
