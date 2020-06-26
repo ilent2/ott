@@ -55,7 +55,7 @@ classdef StokesStarShaped < ott.drag.Stokes ...
       % Unmatched parameters are passed to :class:`Stokes`.
 
       p = inputParser;
-      p.addRequired('shape', @(x) isa(x, 'ott.shapes.Shape'));
+      p.addOptional('shape', [], @(x) isa(x, 'ott.shapes.Shape'));
       p.addOptional('viscosity', 1.0, @isnumeric);
       p.KeepUnmatched = true;
       p.parse(varargin{:});

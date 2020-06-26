@@ -31,16 +31,16 @@ classdef Arbitrary < ott.beam.medium.Material
       %
       % Parameters
       %   - permittivity (numeric) -- Relative permittivity of material.
-      %     Can either be a scalar or 3x3 matrix.
+      %     Can either be a scalar or 3x3 matrix.  Default: 1.0
       %
       %   - permeability (numeric) -- Relative permeability of material.
-      %     Can either be a scalar or 3x3 matrix.
+      %     Can either be a scalar or 3x3 matrix.  Default: 1.0
       %
       % Parameters can also be named.
 
       p = inputParser;
-      p.addRequired('permittivity', @isnumeric);
-      p.addRequired('permeability', @isnumeric);
+      p.addOptional('permittivity', 1.0, @isnumeric);
+      p.addOptional('permeability', 1.0, @isnumeric);
       p.parse(varargin{:});
 
       mat.relative_permittivity = p.Results.permittivity;

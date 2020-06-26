@@ -49,13 +49,13 @@ classdef Vacuum
       %   vacuum = Vacuum(permittivity, permeability)
       %
       % Parameters
-      %   - permittivity (numeric) -- Permittivity of vacuum.
+      %   - permittivity (numeric) -- Permittivity of vacuum.  Default: 1.0.
       %
-      %   - permeability (numeric) -- Permeability of vacuum.
+      %   - permeability (numeric) -- Permeability of vacuum.  Default: 1.0.
 
       p = inputParser;
-      p.addRequired('permittivity', @isnumeric);
-      p.addRequired('permeability', @isnumeric);
+      p.addOptional('permittivity', 1.0, @isnumeric);
+      p.addOptional('permeability', 1.0, @isnumeric);
       p.parse(varargin{:});
 
       vac.permittivity = p.Results.permittivity;

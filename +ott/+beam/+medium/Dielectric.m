@@ -52,12 +52,12 @@ classdef Dielectric < ott.beam.medium.Material
       %
       % Parameters
       %   - permittivity (numeric) -- Relative permittivity of material.
-      %     Can either be a scalar or 3x3 matrix.
+      %     Can either be a scalar or 3x3 matrix.  Default: 1.0.
       %
       % See also :meth:`FromIndex` for a constructor from refractive index.
 
       p = inputParser;
-      p.addRequired('permittivity', @isnumeric);
+      p.addOptional('permittivity', 1.0, @isnumeric);
       p.parse(varargin{:});
 
       mat.relative_permittivity = p.Results.permittivity;

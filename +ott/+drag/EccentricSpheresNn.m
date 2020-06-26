@@ -50,9 +50,9 @@ classdef EccentricSpheresNn < ott.drag.Stokes ...
       % Additional parameters are passed to corresponding class constructor.
 
       p = inputParser;
-      p.addRequired('innerRadius', @isnumeric);
-      p.addRequired('outerRadius', @isnumeric);
-      p.addRequired('separation', @isnumeric);
+      p.addOptional('innerRadius', [], @isnumeric);
+      p.addOptional('outerRadius', [], @isnumeric);
+      p.addOptional('separation', [], @isnumeric);
       p.addParameter('viscosity', 1.0);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
