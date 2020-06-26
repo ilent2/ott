@@ -7,8 +7,10 @@ classdef (Abstract) Material
 %
 % Dependent properties
 %   - index           -- Refractive index
-%   - isIsotropic           -- True if the material is isotropic
-%   - isConductive          -- True if the material is conductive
+%   - isIsotropic     -- True if the material is isotropic
+%   - isConductive    -- True if the material is conductive
+%   - isElectric      -- True if the permittivity is not 1
+%   - isMgnetic       -- True if the permeability is not 1
 %
 % Methods
 %   - rdivide       -- Create a relative material
@@ -26,6 +28,8 @@ classdef (Abstract) Material
     index             % Refractive index (or relative refractive index)
     isIsotropic       % True if isotropic
     isConductive      % True if conductive
+    isElectric        % True if the permittivity is not 1
+    isMgnetic         % True if the permeability is not 1
   end
 
   methods
@@ -51,6 +55,14 @@ classdef (Abstract) Material
 
     function val = get.isConductive(mat)
       val = ~isreal(mat.relative_permittivity);
+    end
+
+    function val = get.isElectric(mat)
+      val = mat.relative_permittivity ~= 1.0;
+    end
+
+    function val = get.isMagnetic(mat)
+      val = mat.relative_permeability ~= 1.0;
     end
   end
 end

@@ -6,7 +6,7 @@ classdef Dda < ott.scat.vswf.scat.Tmatrix
 % the class constructor can be used.  Using the simple interface, the
 % following should produce something similar to ``Mie``::
 %
-%   Tmatrix = ott.Dda.simple('sphere', 0.1, 'index_relative', 1.2);
+%   Tmatrix = ott.Dda.FromShape(shape, 0.1, 'index_relative', 1.2);
 %
 % The DDA method requires a lot of memory to calculate the T-matrix.
 % Most small desktop computers will be unable to calculate T-matrices
@@ -15,58 +15,27 @@ classdef Dda < ott.scat.vswf.scat.Tmatrix
 % For these particles, consider using Geometric Optics
 % or Finite Difference Time Domain method.
 %
-% See also Dda, simple.
+% See also Dda
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  methods (Static, Hidden)
-    function p = input_parser(varargin)
-      % Helper for input parsing
-
-      p = inputParser;
-
-      p.addParameter('progress_callback', ...
-        @ott.scat.vswf.Dda.DefaultProgressCallback);
-      p.addParameter('Nmax', []);
-      p.addParameter('wavelength0', []);
-      p.addParameter('spacing', []);
-
-      p.addParameter('index_relative', []);
-
-      p.addParameter('k_medium', []);
-      p.addParameter('wavelength_medium', []);
-      p.addParameter('index_medium', []);
-
-      p.addParameter('k_particle', []);
-      p.addParameter('wavelength_particle', []);
-      p.addParameter('index_particle', []);
-      p.addParameter('polarizability', 'LDR');
-
-      p.addParameter('z_mirror_symmetry', false);
-      p.addParameter('z_rotational_symmetry', 1);
-      p.addParameter('low_memory', false);
-      p.addParameter('use_nearfield', false);
-      p.addParameter('use_iterative', false);
-
-      p.addParameter('modes', []);
-
-      p.addParameter('verbose', true);
-
-      % Fields to enable compatability with Tmatrix.simple
-      p.addParameter('method', []);
-
-      p.parse(varargin{:});
-    end
-
-    function DefaultProgressCallback(data)
-      % Default progress callback function
-      disp(['Iteration ' num2str(data.m) ' / ' num2str(max(data.mrange))]);
-    end
-  end
-
   methods (Static)
-    function tmatrix = simple(shape, varargin)
+    function DefaultProgressCallback(data)
+      % Default progress callback for Dda
+      %
+      % Prints the progress to the terminal.
+      %
+      % Usage
+      %   DefaultProgressCallback(data)
+      %
+      % Parameters
+      %   - data (struct) -- Structure with two fields: index and total.
+
+      disp(['Iteration ' num2str(data.index) ' / ' num2str(max(data.total))]);
+    end
+
+    function tmatrix = FromShape(shape, varargin)
       % Construct a T-matrix using DDA for simple shapes.
       %
       % Usage
@@ -83,18 +52,27 @@ classdef Dda < ott.scat.vswf.scat.Tmatrix
       %
       % For other named parameters, see :meth:`Dda`.
 
+      % TODO: Main constructor should have only polaisability as input,
+      % this constructor could have either...
+      p.addParameter('polarizability', 'LDR');
+      p.addParameter('wavelength0', []);
+      p.addParameter('spacing', []);
+
+      % TODO: No Nmax in main method?  Makes it easier to parallise?
+      % Just take a combined index as an input?
+      p.addParameter('Nmax', []);
+
+      % TODO: These properties should probably be in the dipole.Dda method?
+      p.addParameter('z_mirror_symmetry', false);
+      p.addParameter('z_rotational_symmetry', 1);
+      p.addParameter('low_memory', false);
+      p.addParameter('use_nearfield', false);
+      p.addParameter('use_iterative', false);
+
       p = inputParser;
       p.KeepUnmatched = true;
       p.addOptional('parameters', []);
       p.parse(varargin{:});
-
-      % Get a shape object from the inputs
-      if ischar(shape) && ~isempty(p.Results.parameters)
-        shape = ott.shapes.Shape.simple(shape, p.Results.parameters);
-        varargin = varargin(2:end);
-      elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
-        error('Must input either Shape object or string and parameters');
-      end
 
       import ott.scat.vswf.Dda;
       import ott.scat.vswf.Tmatrix;

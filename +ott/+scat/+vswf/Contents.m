@@ -2,6 +2,7 @@
 %
 % Classes
 %   Tmatrix    - Representation of a T-matrix
+%   Shape      - T-matrix object with variable shape/material properties
 %   Ebcm       - Constructs a T-matrix with extended boundary conditions method
 %   Mie        - T-matrix for spherical particles
 %   MieLayered - T-matrix for layered spherical particles

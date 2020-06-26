@@ -15,7 +15,9 @@ classdef Mie < ott.scat.vswf.Tmatrix ...
 %   - relativeMedium  -- Relative medium describing particle material
 %
 % Static methods
-%   - FromShape       -- Construct Mie from shape object
+%   - FromShape       -- Uses ShapeMaxRadius but raises a warning
+%   - ShapeVolume     -- Construct with radius set from particle volume
+%   - ShapeMaxRadius  -- Construct with radius set from particle max radius
 %
 % See base class for additional methods/properties.
 %
@@ -32,12 +34,47 @@ classdef Mie < ott.scat.vswf.Tmatrix ...
     function tmatrix = FromShape(shape, varargin)
       % Construct a T-matrix from a shape object.
       %
-      % Uses the shape maxRadius property for the sphere radius.
-      % Note: For some shapes it might be better to use the average
-      % radius instead.
+      % Uses :meth:`ShapeMaxRadius` but raises a warning if the
+      % shape isn't a sphere.
       %
       % Usage
       %   tmatrix = Mie.FromShape(shape, ...)
+      %
+      % All other parameters passed to constructor.
+
+      assert(numel(shape) == 1 && isa(shape, 'ott.shapes.Shape'), ...
+          'shape must be a single ott.shapes.Shape');
+
+      if ~isa(shape, 'ott.shapes.mixin.IsSphereAbsProp') ...
+          || (isa(shape, 'ott.shapes.mixin.IsSphereAbsProp') ...
+          && ~shape.isSphere)
+        warning('ott:scat:vswf:Mie:not_a_sphere', ...
+            'Shape is not a sphere, using maxRadius property');
+      end
+
+      tmatrix = ott.scat.vswf.ShapeMaxRadius(shape, varargin{:});
+    end
+
+    function tmatrix = ShapeVolume(shape, varargin)
+      % Construct Mie T-matrix with radius from shape volume
+      %
+      % Usage
+      %   tmatrix = Mie.ShapeVolume(shape, ...)
+      %
+      % All other parameters passed to constructor.
+
+      assert(numel(shape) == 1 && isa(shape, 'ott.shapes.Shape'), ...
+          'shape must be a single ott.shapes.Shape');
+
+      radius = ((3/4/pi) * shape.volume).^(1/3);
+      tmatrix = ott.scat.vswf.Mie(radius, varargin{:});
+    end
+
+    function tmatrix = ShapeMaxRadius(shape, varargin)
+      % Construct Mie T-matrix with radius from shape max radius
+      %
+      % Usage
+      %   tmatrix = Mie.ShapeMaxRadius(shape, ...)
       %
       % All other parameters passed to constructor.
 

@@ -13,7 +13,14 @@ classdef Pointmatch < ott.Tmatrix ...
 %
 % Properties
 %   - relativeMedium  -- Particle relative medium
-%   - shape           -- Shape the T-matrix was calculated for
+%   - rtp             -- Locations used for point matching
+%   - nxyz            -- Surface normals at rtp-locations
+%   - zRotSymmetry    -- Z-axis rotational symmetry (1 = no symmetry)
+%   - xySymmetry      -- XY mirror symmetry (logical)
+%
+% Static methods
+%   - DefaultProgressCallback   -- Default progress call-back method
+%   - FromStarShape   -- Construct T-matrix from star shape
 %
 % This class is based on tmatrix_pm.m from ottv1.
 
@@ -21,7 +28,10 @@ classdef Pointmatch < ott.Tmatrix ...
 % See LICENSE.md for information about using/distributing this file.
 
   properties (SetAccess=protected)
-    shape          % (ott.shapes.Shape) Shape T-matrix was calculated for
+    rtp         % Location for point matching (3xN numeric)
+    nxyz        % Surface normals at rtp-locations (3xN numeric)
+    zRotSymmetry % Z-axis rotational symmetry (1 = no symmetry)
+    xySymmetry  % XY mirror symmetry (logical)
   end
 
   methods (Static)
@@ -49,11 +59,9 @@ classdef Pointmatch < ott.Tmatrix ...
           error('Unknown stage');
       end
     end
-  end
 
-  methods
-    function [Texternal, Tinternal] = Pointmatch(varargin)
-      % Calculates T-matrix using the point matching method.
+    function varargout = FromStarShape(varargin)
+      % Construct T-matrix using point matching from a star shaped object
       %
       % Usage
       %   tmatrix = Pointmatch(shape, relativeMedium, ...)
@@ -63,8 +71,8 @@ classdef Pointmatch < ott.Tmatrix ...
       %   Calculate external and internal T-matrices.
       %
       % Parameters
-      %   - shape (ott.shapes.Shape) -- Description of shape geometry.
-      %     Object should implement a valid starRadii method.
+      %   - shape (ott.shapes.Shape) -- A star-shaped object describing
+      %     the geometry (must have a valid ``starRadii`` method).
       %
       %   - relativeMedium (ott.beam.medium.RelativeMedium) -- The relative
       %     medium describing the particle's material.
@@ -75,21 +83,17 @@ classdef Pointmatch < ott.Tmatrix ...
       %     This parameter not used for setting the T-matrix material.
       %     Default: ``1.0`` (i.e., `shape` is already in relative units).
       %
-      %   - angulargrid ({theta, phi}) -- Angular grid of points for
-      %     calculation of radii.  Default is equally spaced angles with
-      %     the number of points determined by Nmax.
-      %
       %   - Nmax (numeric) -- Size of the VSWF expansion used for the
       %     T-matrix calculation.  In some cases it can be reduced
       %     after construction.
       %     Default: ``ott.utis.ka2nmax(2*pi*shape.maxRadius)`` (may
       %     need different values to give convergence for some shapes).
       %
-      %   - progress (function_handle) -- Function to call for progress
-      %     updates during method evaluation.  Takes one argument, see
-      %     :meth:`DefaultProgressCallback` for more information.
-      %     Default: ``[]`` (for Nmax < 20) and
-      %     ``@DefaultProgressCallback`` (otherwise).
+      %   - angulargrid ({theta, phi}) -- Angular grid of points for
+      %     calculation of radii.  Default is equally spaced angles with
+      %     the number of points determined by Nmax.
+      %
+      % Additional parameters are passed to the class constructor.
 
       p = inputParser;
       p.addRequired('shape', @isnumeric);
@@ -98,39 +102,27 @@ classdef Pointmatch < ott.Tmatrix ...
       p.addParameter('wavelength', 1.0);
       p.addParameter('angulargrid', []);
       p.addParameter('Nmax', []);
-      p.addParameter('progress', []);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      Texternal = Texternal@ott.scat.vswf.Tmatrix(unmatched{:});
-      Texternal.relativeMedium = p.Results.relativeMedium;
-      Texternal.shape = p.Results.shape ./ p.Results.wavelength;
+      % Get shape
+      shape = p.Results.shape ./ p.Results.wavelength;
 
       % Get or calculate Nmax
       Nmax = p.Results.Nmax;
       if isempty(Nmax)
-        Nmax = ott.utils.ka2nmax(2*pi*Texternal.shape.maxRadius);
+        Nmax = ott.utils.ka2nmax(2*pi*shape.maxRadius);
       else
         assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
             'Nmax must be positive numeric scalar');
-      end
-
-      % Handle default argument for progress callback
-      progress_cb = p.Results.progress;
-      if isempty(progress_cb)
-        if Nmax > 20
-          progress_cb = @ott.scat.vswf.Pointmatch.DefaultProgressCallback;
-        else
-          progress_cb = @(x) [];
-        end
       end
 
       % Get or calculate angular grid
       angulargrid = p.Results.angulargrid;
       if isempty(angulargrid)
 
-        if Texternal.shape.zRotSymmetry == 0
+        if shape.zRotSymmetry == 0
           ntheta = 4*(Nmax + 2);
           nphi = 1;
         else
@@ -156,12 +148,107 @@ classdef Pointmatch < ott.Tmatrix ...
       end
 
       % Calculate shape radii and normals
-      radii = Texternal.shape.starRadii(theta, phi);
+      radii = shape.starRadii(theta, phi);
       rtp = [radii(:), theta(:), phi(:)].';
+
+      % Calculate surface normals
+      nxyz = shape.normalsRtp(rtp);
+
+      % Construct T-matrices
+      [varargout{1:nargout}] = ott.scat.vswf.Pointmatch(...
+          rtp, nxyz, p.Results.relativeMedium, 'Nmax', Nmax, ...
+          'zRotSymmetry', shape.zRotSymmetry, ...
+          'xySymmetry', shape.xySymmetry);
+    end
+  end
+
+  methods
+    function [Texternal, Tinternal] = Pointmatch(varargin)
+      % Calculates T-matrix using the point matching method.
+      %
+      % Usage
+      %   tmatrix = Pointmatch(rtp, nxyz, relativeMedium, ...)
+      %   Calculate external T-matrix.
+      %
+      %   [external, internal] = Pointmatch(rtp, nxyz, relativeMedium, ...)
+      %   Calculate external and internal T-matrices.
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Locations of surface points to point-match.
+      %
+      %   - nxyz (3xN numeric) -- Normals at surface locations.
+      %
+      %   - relativeMedium (ott.beam.medium.RelativeMedium) -- The relative
+      %     medium describing the particle's material.
+      %
+      % Optional named parameters
+      %   - wavelength (numeric) -- Used to convert `rtp` input to
+      %     relative units, i.e. `radius_rel = radius ./ wavelength`.
+      %     This parameter not used for setting the T-matrix material.
+      %     Default: ``1.0`` (i.e., `rtp(1, :)` is already in relative units).
+      %
+      %   - Nmax (numeric) -- Size of the VSWF expansion used for the
+      %     T-matrix calculation.  In some cases it can be reduced
+      %     after construction.
+      %     Default: ``ott.utis.ka2nmax(2*pi*max(rtp(1, :)))`` (may
+      %     need different values to give convergence for some shapes).
+      %
+      %   - zRotSymmetry (numeric) -- Degree of rotational symmetry
+      %     about the z-axis.  Default: ``1`` (no symmetry).
+      %
+      %   - xySymmetry (logical) -- If the particle is mirror symmetry
+      %     about the xy-plane.  Default: ``false``.
+      %
+      %   - progress (function_handle) -- Function to call for progress
+      %     updates during method evaluation.  Takes one argument, see
+      %     :meth:`DefaultProgressCallback` for more information.
+      %     Default: ``[]`` (for Nmax < 20) and
+      %     ``@DefaultProgressCallback`` (otherwise).
+
+      p = inputParser;
+      p.addRequired('rtp', @isnumeric);
+      p.addRequired('nxyz', @isnumeric);
+      p.addRequired('relativeMedium', ...
+          @(x) isa(x, 'ott.beam.medium.Relative'));
+      p.addParameter('wavelength', 1.0);
+      p.addParameter('Nmax', []);
+      p.addParameter('progress', []);
+      p.addParameter('zRotSymmetry', 1);
+      p.addParameter('xySymmetry', false);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      Texternal = Texternal@ott.scat.vswf.Tmatrix(unmatched{:});
+      Texternal.zRotSymmetry = p.Results.zRotSymmetry;
+      Texternal.xySymmetry = p.Results.xySymmetry;
+      Texternal.nxyz = p.Results.nxyz;
+      Texternal.relativeMedium = p.Results.relativeMedium;
+      Texternal.rtp = p.Results.rtp;
+      Texternal.rtp(1, :) = Texternal.rtp(1, :) ./ p.Results.wavelength;
+
+      % Get or calculate Nmax
+      Nmax = p.Results.Nmax;
+      if isempty(Nmax)
+        Nmax = ott.utils.ka2nmax(2*pi*max(Texternal.rtp(1, :)));
+      else
+        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
+            'Nmax must be positive numeric scalar');
+      end
+
+      % Handle default argument for progress callback
+      progress_cb = p.Results.progress;
+      if isempty(progress_cb)
+        if Nmax > 20
+          progress_cb = @ott.scat.vswf.Pointmatch.DefaultProgressCallback;
+        else
+          progress_cb = @(x) [];
+        end
+      end
 
       % Calculate coefficient and incident wave matrices
       [coeff_matrix, incident_wave_matrix] = Texternal.setup(...
-          Nmax, rtp, progress_callback);
+          Nmax, progress_callback);
 
       total_orders = ott.utils.combined_index(Nmax, Nmax);
 
@@ -169,7 +256,7 @@ classdef Pointmatch < ott.Tmatrix ...
 
       % Generate T-matrix
 
-      if Texternal.shape.zRotSymmetry == 0
+      if Texternal.zRotSymmetry == 0
 
         % Infinite rotational symmetry
 
@@ -189,7 +276,7 @@ classdef Pointmatch < ott.Tmatrix ...
           omodes = modes;
           iomodes = [ omodes; emodes ];
 
-          if Texternal.shape.xySymmetry
+          if Texternal.xySymmetry
 
             % Correct the incident modes to include even/odd modes
             even_modes = logical(mod(n + mi, 2));
@@ -233,7 +320,7 @@ classdef Pointmatch < ott.Tmatrix ...
 
         end
 
-      elseif Texternal.shape.zRotSymmetry ~= 1
+      elseif Texternal.zRotSymmetry ~= 1
 
         % Discrete rotational symmetry
 
@@ -245,7 +332,7 @@ classdef Pointmatch < ott.Tmatrix ...
         for mi = -Nmax:Nmax
 
           % Calculate which modes preseve symmetry, m = +/- ip
-          axial_modes = mod(m - mi, Texternal.shape.zRotSymmetry) == 0;
+          axial_modes = mod(m - mi, Texternal.zRotSymmetry) == 0;
           incm_modes = m == mi;
           modes = [ axial_modes; axial_modes ];
           imodes = [ incm_modes; incm_modes ];
@@ -255,7 +342,7 @@ classdef Pointmatch < ott.Tmatrix ...
           omodes = modes;
           iomodes = [ omodes; emodes ];
 
-          if Texternal.shape.xySymmetry
+          if Texternal.xySymmetry
 
             % Correct the incident modes to include even/odd modes
             even_modes = logical(mod(n + mi, 2));
@@ -301,7 +388,7 @@ classdef Pointmatch < ott.Tmatrix ...
 
       else
 
-        if Texternal.shape.xySymmetry
+        if Texternal.xySymmetry
 
           % Only mirror symmetry
           % Parity is conserved, even modes go to even modes, etc.
@@ -356,18 +443,16 @@ classdef Pointmatch < ott.Tmatrix ...
   methods (Access=protected)
 
     function [coeff_matrix, incident_wave_matrix] = setup(tmatrix, ...
-        Nmax, rtp, progress_callback)
+        Nmax, progress_callback)
       % Calculate the coefficient and incident wave matrices
 
-      % Calculate normals
-      normals = tmatrix.shape.normals(rtp);
-
-      npoints = size(rtp, 2);
+      normals = tmatrix.nxyz;
+      npoints = size(tmatrix.rtp, 2);
       total_orders = ott.utils.combined_index(Nmax, Nmax);
 
-      r = rtp(1, :).';
-      theta = rtp(2, :).';
-      phi = rtp(3, :).';
+      r = tmatrix.rtp(1, :).';
+      theta = tmatrix.rtp(2, :).';
+      phi = tmatrix.rtp(3, :).';
 
       % 3 vector components at each point, c/d,p/q coefficient per order
       coeff_matrix = zeros(6*npoints,4*total_orders);
@@ -418,18 +503,30 @@ classdef Pointmatch < ott.Tmatrix ...
     end
   end
 
-  methods (Hidden)
-    function shape = getGeometry(tmatrix, wavelength)
-      % Get sphere shape with radius in specified units
-      shape = tmatrix.shape .* wavelength;
-    end
-  end
-
   methods % Getters/setter
-    function tmatrix = set.shape(tmatrix, val)
-      assert(isa(val, 'ott.shapes.Shape'), ...
-          'shape must be a ott.shapes.Shape');
-      tmatrix.shape = val;
+    function tmatrix = set.rtp(tmatrix, val)
+      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 3, ...
+          'rtp must be a 3xN matrix');
+      tmatrix.rtp = val;
+    end
+
+    function tmatrix = set.nxyz(tmatrix, val)
+      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 3, ...
+          'nxyz must be a 3xN matrix');
+      tmatrix.nxyz = val;
+    end
+
+    function tmatrix = set.zRotSymmetry(tmatrix, val)
+      assert(isnumeric(val) && isscalar(val) && val >= 0 ...
+          && round(val) == val, ...
+          'zRotSymmetry must be numeric scalar integer');
+      tmatrix.zRotSymmetry = val;
+    end
+
+    function tmatrix = set.xySymmetry(tmatrix, val)
+      assert(islogical(val) && isscalar(val), ...
+          'xySymmetry must be scalar logical');
+      tmatrix.xySymmetry = val;
     end
   end
 end

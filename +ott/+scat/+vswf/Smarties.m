@@ -21,18 +21,17 @@ classdef Smarties < ott.Tmatrix
   end
 
   methods (Static)
-    function tmatrix = simple(shape, varargin)
+    function tmatrix = FromShape(shape, varargin)
       % Construct a T-matrix using SMARTIES/EBCM for spheroids
       %
       % simple(shape) constructs a new simple T-matrix for the given shape.
-      %
-      % simple(name, parameters) constructs a new T-matrix for the
-      % shape described by name and parameters.
       %
       % Shape must be spheroid with extraordinary axis aligned to z-axis.
       %
       % Optional named parameters:
       %     'internal'    bool    Calculate internal T-matrix (default: 0)
+
+      % TODO: If not an ellipsoid, use bounding box and raise warning
 
       p = inputParser;
       p.KeepUnmatched = true;
