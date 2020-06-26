@@ -11,6 +11,9 @@
 %   NumericalVolume   - Calculate volume numerically
 %   InfVolume         - Shapes with infinite volume
 %
+% Abstract properties
+%   IsSphereAbsProp   - Adds a isSphere abstract property
+%
 % Surfaces
 %   IsosurfSurf       - Use isosurf for surf
 %   IsosurfSurfPoints - use isosurf for surfPoints

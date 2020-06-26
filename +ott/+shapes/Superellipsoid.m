@@ -2,7 +2,8 @@ classdef Superellipsoid < ott.shapes.Shape ...
     & ott.shapes.mixin.StarShape ...
     & ott.shapes.mixin.NumericalVolume ...
     & ott.shapes.mixin.IsosurfSurfPoints ...
-    & ott.shapes.mixin.IntersectRayMarch
+    & ott.shapes.mixin.IntersectRayMarch ...
+    & ott.shapes.mixin.IsSphereAbsProp
 % Superellipsoid shape
 %
 % In Cartesian coordinates, a superellipsoid is defined by
@@ -34,6 +35,7 @@ classdef Superellipsoid < ott.shapes.Shape ...
     boundingBox        % Cartesian coordinate bounding box (no rot/pos)
     zRotSymmetry       % Degree of z rotational symmetry
     xySymmetry         % True if the particle is xy-plane mirror symmetric
+    isSphere           % True if the particle is a sphere
   end
 
   methods
@@ -163,6 +165,13 @@ classdef Superellipsoid < ott.shapes.Shape ...
       else
         q = 2;
       end
+    end
+
+    function b = get.isSphere(shape)
+      b = shape.isEllipsoid && all(shape.radii(1) == shape.radii);
+    end
+    function b = get.isEllipsoid(shape)
+      b = shape.ew == 1.0 && shape.ns == 1.0;
     end
   end
 end

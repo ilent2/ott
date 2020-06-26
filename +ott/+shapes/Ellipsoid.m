@@ -1,7 +1,8 @@
 classdef Ellipsoid < ott.shapes.Shape ...
     & ott.shapes.mixin.StarShape ...
     & ott.shapes.mixin.IsosurfSurfPoints ...
-    & ott.shapes.mixin.IntersectMinAll
+    & ott.shapes.mixin.IntersectMinAll ...
+    & ott.shapes.mixin.IsSphereAbsProp
 % Ellipsoid shape
 %
 % Properties:
@@ -20,6 +21,7 @@ classdef Ellipsoid < ott.shapes.Shape ...
     boundingBox        % Cartesian coordinate bounding box (no rot/pos)
     zRotSymmetry       % Degree of z rotational symmetry
     xySymmetry         % True if the particle is xy-plane mirror symmetric
+    isSphere           % True if the particle is a sphere
   end
 
   methods
@@ -142,6 +144,10 @@ classdef Ellipsoid < ott.shapes.Shape ...
       else
         q = 2;
       end
+    end
+
+    function b = get.isSphere(shape)
+      b = all(shape.radii(1) == shape.radii);
     end
   end
 end

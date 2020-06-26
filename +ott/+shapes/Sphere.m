@@ -1,7 +1,8 @@
 classdef Sphere < ott.shapes.Shape ...
     & ott.shapes.mixin.AxisymStarShape ...
     & ott.shapes.mixin.IsosurfSurfPoints ...
-    & ott.shapes.mixin.IntersectMinAll
+    & ott.shapes.mixin.IntersectMinAll ...
+    & ott.shapes.mixin.IsSphereAbsProp
 % Spherical particle.
 % Inherits from :class:`Shape`.
 %
@@ -23,6 +24,7 @@ classdef Sphere < ott.shapes.Shape ...
     boundingBox        % Cartesian coordinate bounding box (no rot/pos)
     xySymmetry         % True if the particle is xy-plane mirror symmetric
     perimeter          % Perimeter from in axis plane
+    isSphere           % (Constant: true)
   end
 
   methods
@@ -153,6 +155,10 @@ classdef Sphere < ott.shapes.Shape ...
     function p = get.perimeter(shape)
       % Calculate the perimiter of the object
       p = 2.0 * pi * shape.radius;
+    end
+
+    function b = get.isSphere(shape)
+      b = true;
     end
   end
 end
