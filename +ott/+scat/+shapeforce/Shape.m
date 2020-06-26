@@ -1,6 +1,6 @@
 classdef Shape < ott.scat.utils.ZeroScattered ...
     & ott.scat.utils.ShapeProperty ...
-    & ott.scat.utils.HomogeneousRelative
+    & ott.scat.utils.RelativeMediumProperty
 % Shape-induced force approximation for homogeneous shapes.
 % Inherits from :class:`ott.scat.utils.ZeroScattered`,
 % :class:`ott.scat.utils.ShapeProperty` and
@@ -24,7 +24,7 @@ classdef Shape < ott.scat.utils.ZeroScattered ...
 %   https://doi.org/10.1038/nphoton.2014.74
 %
 % Properties
-%   - index_relative  -- Relative refractive index of particle.
+%   - relativeMedium  -- Relative properties of the optical medium.
 %   - shape           -- Geometry associated with particle.
 
 % Copyright 2020 Isaac Lenton
@@ -32,7 +32,7 @@ classdef Shape < ott.scat.utils.ZeroScattered ...
 % using/distributing this file
 
   methods
-    function particle = Shape(shape, index_relative, varargin)
+    function particle = Shape(varargin)
       % Construct a new homogeneous shape-induced force shape.
       %
       % Usage
@@ -45,10 +45,13 @@ classdef Shape < ott.scat.utils.ZeroScattered ...
       %   - index_relative (numeric) -- Relative refractive index of shape.
 
       p = inputParser;
+      p.addOptional('shape', [], @(x) isa(x, 'ott.shapes.Shape'));
+      p.addOptional('relativeMedium', [], ...
+          @(x) isa(x, 'ott.beam.medium.Relative'));
       p.parse(varargin{:});
 
-      particle = particle@ott.scat.utils.ShapeProperty(shape);
-      particle = particle@ott.scat.utils.HomogeneousRelative(index_relative);
+      particle.shape = p.Results.shape;
+      particle.relativeMedium = p.Results.relativeMedium;
     end
   end
 

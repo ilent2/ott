@@ -1,4 +1,4 @@
-classdef ThinLens < ott.shapes.Plane
+classdef ThinLens
 % Thin lens approximation.
 % Inherits from :class:`ott.shapes.Plane`.
 %
@@ -21,6 +21,8 @@ classdef ThinLens < ott.shapes.Plane
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file
+
+% TODO: getGeometry method for lens surface
 
   properties
     focal_length       % Focal length of the lens (can be negative)

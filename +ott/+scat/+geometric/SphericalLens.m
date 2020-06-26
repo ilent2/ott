@@ -1,4 +1,4 @@
-classdef SphericalLens < ott.shapes.Plane
+classdef SphericalLens
 % Finite aperture spherical lens approximation.
 % Inherits from :class:`ott.shapes.Plane`.
 %
@@ -78,6 +78,8 @@ classdef SphericalLens < ott.shapes.Plane
       %     Default: ``'sphere'``.
       %
       % For other optional arguments, see base class.
+
+      % TODO: This method should change to getGeometry
 
       p = inputParser;
       p.KeepUnmatched = true;

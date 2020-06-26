@@ -1,5 +1,5 @@
 classdef Shape < ott.scat.utils.ShapeProperty ...
-    & ott.scat.utils.HomogeneousRelative ...
+    & ott.scat.utils.RelativeMediumProperty
     & ott.scat.utils.BeamForce
 % Describes scattering by a Shape instance.
 % Inherits from :class:`ott.shapes.Shape`.
@@ -8,7 +8,7 @@ classdef Shape < ott.scat.utils.ShapeProperty ...
 % refractive index value.
 %
 % Properties
-%   - index_relative      -- Refractive index of particle relative to medium
+%   - relativeMedium      -- Relative medium describing optical properties
 %   - shape               -- Shape associated with particle
 %
 % Methods
@@ -19,11 +19,11 @@ classdef Shape < ott.scat.utils.ShapeProperty ...
 % using/distributing this file
 
   methods
-    function particle = Shape(shape, index_relative, varargin)
+    function particle = Shape(shape, relativeMedium, varargin)
       % Construct a new homogeneous geometric scattering shape.
       %
       % Usage
-      %   particle = Shape(shape, index_relative, ...)
+      %   particle = Shape(shape, relativeMedium, ...)
       %
       % Parameters
       %   - shape (ott.shapes.Shape) -- The geometric shape describing
@@ -32,10 +32,13 @@ classdef Shape < ott.scat.utils.ShapeProperty ...
       %   - index_relative (numeric) -- Relative refractive index of shape.
 
       p = inputParser;
+      p.addOptional('shape', [], @(x) isa(x, 'ott.shapes.Shape'));
+      p.addOptional('relativeMedium', [], ...
+          @(x) isa(x, 'ott.beam.medium.Relative'));
       p.parse(varargin{:});
 
-      particle = particle@ott.scat.utils.HomogeneousRelative(index_relative);
-      particle = particle@ott.scat.utils.ShapeProperty(shape);
+      particle.relativeMedium = p.Results.relativeMedium;
+      particle.shape = p.Results.shape;
     end
 
     function [out_ray, int_ray] = scatter(part, ray, varargin)

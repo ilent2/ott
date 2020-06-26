@@ -1,4 +1,6 @@
-classdef Strata
+classdef Strata < ott.scat.Particle ...
+    & ott.scat.utils.ShapeProperty ...
+    & ott.scat.utils.RelativeMediumProperty
 % Describes scattering of a plane wave by layered (stratified) planes
 %
 % Implementation of the method described in
@@ -8,16 +10,77 @@ classdef Strata
 %   Journal of Research of the National Bureau of Standards
 %   Vol. 61, No.3, September 1958 Research Paper 2899
 %
+% Properties
+%   - relativeMedium -- Relative materials for layers (relative to exterior)
+%   - shape          -- A ott.shapes.Strata describing the geometry
+%
+% Static methods
+%   - FromShape      -- Construct a Strata from a shape object
+%
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
-    normal          % Vector perpendicular to the surfaces
-    index_relative  % Relative refractive index of each layer
-  end
-
   methods (Static)
+    function scat = FromShape(varargin)
+      % Construct a strata object from a shape array
+      %
+      % Usage
+      %   scat = Strata.FromShape(shape, relativeMedium, ...)
+      %
+      % Parameters
+      %   - shape (ott.shapes.Shape) -- Either a strata, array of
+      %     planes or a slab object.
+      %
+      %   - relativeMedium (ott.beam.medium.Relative) -- An array of
+      %     relative mediums describing the material properties relative
+      %     to the outside medium.  For slabs and single planes this
+      %     should be a single medium; for plane arrays and strata, the
+      %     number of elements should match the number of surfaces.
+      %
+      % Additional parameters passed to constructor.
+
+      p = inputParser;
+      p.addOptional('shape', [], @(x) isa(x, 'ott.shapes.Shape'));
+      p.addOptional('relativeMedium', [], ...
+          @(x) isa(x, 'ott.beam.medium.Relative'));
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      shape = p.Results.shape;
+      relativeMedium = p.Results.relativeMedium;
+
+      if numel(shape) == 1
+        if isa(shape, 'ott.shapes.Strata') % Must be before plane
+          assert(numel(relativeMedium) == numel(shape.depths), ...
+              'length of relativeMedium must match number of Strata planes');
+        elseif isa(shape, 'ott.shapes.Plane')
+          assert(numel(relativeMedium) == 1, ...
+              'length of relativeMedium must match number of planes');
+          shape = ott.shapes.Strata(shape);
+        elseif isa(shape, 'ott.shapes.Slab')
+          assert(numel(relativeMedium) == 1, ...
+              'relativeMedium must be a single material for slab shapes');
+          shape = ott.shapes.Strata(shape);
+
+          % Duplicate relative medium
+          relativeMedium(2) = relativeMedium(1);
+          relativeMedium(2).material1 = relativeMedium(2).material2;
+        else
+          error('shape must be a Strata, Plane or Slab');
+        end
+      elseif isa(shape, 'ott.shapes.Plane')
+        assert(numel(relativeMedium) == numel(shape), ...
+            'length of relativeMedium must match number of planes');
+        shape = ott.shapes.Strata(shape);
+      else
+        error('shape must be a single shape or an array of Planes');
+      end
+
+      scat = ott.scat.planewave.Strata(shape, relativeMedium, unmatched{:});
+    end
+
     function [aS, bS] = coeffS(normal, depths, kvecs)
       % Calculate the S-scattering coefficients (out-of-plane)
 
@@ -122,9 +185,27 @@ classdef Strata
   end
 
   methods
-    function strata = Strata(normal, index_relative)
-      strata.normal = normal;
-      strata.index_relative = index_relative;
+    function strata = Strata(varargin)
+      % Construct a strata object from a shape array
+      %
+      % Usage
+      %   scat = Strata(shape, relativeMedium, ...)
+      %
+      % Parameters
+      %   - shape (ott.shapes.Strata) -- Geometry for scattering method.
+      %
+      %   - relativeMedium (ott.beam.medium.Relative) -- An array of
+      %     relative mediums describing the material properties relative
+      %     to the outside medium.  Must match the number of shape surfaces.
+
+      p = inputParser;
+      p.addOptional('shape', [], @(x) isa(x, 'ott.shapes.Shape'));
+      p.addOptional('relativeMedium', [], ...
+          @(x) isa(x, 'ott.beam.medium.Relative'));
+      p.parse(varargin{:});
+
+      strata.shape = p.Results.shape;
+      strata.relativeMedium = p.Results.relativeMedium;
     end
 
     function [rbeam, tbeam, ibeams] = scatter(strata, beam)
@@ -207,6 +288,13 @@ classdef Strata
             'origin', beam.origin);
         end
       end
+    end
+  end
+
+  methods (Hidden)
+    function val = validateShape(~, val)
+      assert(isa(val, 'ott.shapes.Strata') && numel(val) == 1, ...
+          'shape must be a single ott.shapes.Strata instance');
     end
   end
 end

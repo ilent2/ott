@@ -1,18 +1,16 @@
-classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
-    & ott.scat.utils.HomogeneousRelative ...
+classdef Plane < ott.scat.utils.Particle ...
+    & ott.scat.utils.RelativeMediumProperty ...
+    & ott.scat.utils.ShapeProperty ...
     & ott.scat.utils.BeamForce
 % Describes how a infinite plane scatters a plane wave.
-% Inherits from :class:`ott.shapes.Plane`.
+% Inherits from :class:`ott.scat.Particle`.
 %
-% The refractive index of the medium above the surface (in the position
-% direction of the normal vector) is related to the index inside the
-% surface (negative to the noraml) by:
-%
-%   index_relative = (negative) ./ (posative)
+% The relative refractive index describes the ratio of the refractive
+% index above the plane and bellow the plane.
 %
 % Properties
-%   - normal          -- Vector normal to the plane surface
-%   - index_relative  -- Relative refractive index of plane to medium
+%   - relativeMedium -- Relative materials for layers (relative to exterior)
+%   - shape          -- A ott.shapes.Plane describing the geometry
 %
 % Methods
 %   - scatter         -- Calculate scattered plane wave beams
@@ -40,16 +38,27 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
   end
 
   methods
-    function plane = Plane(normal, index_relative, varargin)
+    function plane = Plane(varargin)
       % Construct a new plane instance
       %
       % Usage
-      %   plane = Plane(normal, index_relative, ...)
+      %   plane = Plane(shape, relativeMedium, ...)
       %
-      % Optional named arguments are passed to :class:`ott.shapes.Plane`.
-      
-      plane = plane@ott.shapes.Plane(normal, varargin{:});
-      plane = plane@ott.scat.utils.HomogeneousRelative(index_relative);
+      % Parameters
+      %   - shape (ott.shapes.Plane) -- Geometry for scattering method.
+      %
+      %   - relativeMedium (ott.beam.medium.Relative) -- Description of
+      %     the material properties `inside` the plane relative to the
+      %     `outside`.
+
+      p = inputParser;
+      p.addOptional('shape', [], @(x) isa(x, 'ott.shapes.Plane'));
+      p.addOptional('relativeMedium', [], ...
+          @(x) isa(x, 'ott.beam.medium.Relative'));
+      p.parse(varargin{:});
+
+      plane.shape = p.Results.shape;
+      plane.relativeMedium = p.Results.relativeMedium;
     end
   end
 
@@ -160,6 +169,16 @@ classdef Plane < ott.shapes.Plane & ott.scat.utils.Particle ...
           'index', unique(n2), ...
           'origin', beam.origin, ...
           'like', beam);
+    end
+
+    function val = validateShape(~, val)
+      assert(isa(val, 'ott.shapes.Plane') && numel(val) == 1, ...
+          'shape must be a single ott.shapes.Plane instance');
+    end
+
+    function val = validateMedium(~, val)
+      assert(isa(val, 'ott.beam.medium.Relative') && numel(val) == 1, ...
+          'relativeMedium must be a single ott.beam.medium.Relative instance');
     end
   end
 end

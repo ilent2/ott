@@ -1,9 +1,5 @@
-classdef ShapeProperty
+classdef (InferiorClasses = {?ott.scat.Particle}) ShapeProperty
 % Declares a shape property and dependent properties for shapes.
-%
-% Use this class when the scattering method (particle) can describe
-% multiple geometric shapes.  If the particle only describes one type of
-% shape it may be better to simply inherit from the Shape class.
 %
 % Does not implement a class constructor.  The shape property is
 % not initialised and must be set in the sub-class constructor.
@@ -15,8 +11,9 @@ classdef ShapeProperty
 %   - positionInternal      -- Uses the shapes location.
 %   - rotationInternal      -- Uses the shapes rotation.
 %
-% Methods
+% Hidden methods
 %   - validateShape   -- Method called to validate the shape
+%   - getGeometry     -- Returns the shape (scaled by the wavelength)
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -40,6 +37,11 @@ classdef ShapeProperty
 
       assert(isa(shape, 'ott.shapes.Shape'), ...
           'shape must be of type ''ott.shapes.Shape''');
+    end
+
+    function shape = getGeometry(particle, wavelength, varargin)
+      % Get the shape property
+      shape = particle.shape .* wavelength;
     end
   end
 

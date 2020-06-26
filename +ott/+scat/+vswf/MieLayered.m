@@ -1,4 +1,5 @@
-classdef Mie < ott.scat.vswf.Tmatrix
+classdef MieLayered < ott.scat.vswf.Tmatrix ...
+    & ott.scat.utils.RelativeMediumProperty
 % Construct T-matrices for a layered sphere
 %
 % This class implements the first part of
@@ -24,7 +25,6 @@ classdef Mie < ott.scat.vswf.Tmatrix
 
   properties (SetAccess=protected)
     radii     % (numeric) Sphere radii (relative units)
-    relativeMedium  % (ott.beam.medium.Relative) Relative particle material
   end
 
   methods (Static)
@@ -256,12 +256,6 @@ classdef Mie < ott.scat.vswf.Tmatrix
           && all(val > 0), ...
           'radii should be sorted positive numeric vector');
       tmatrix.radii = val(:).';
-    end
-
-    function tmatrix = set.relativeMedium(tmatrix, val)
-      assert(isa(val, 'ott.beam.medium.Relative'), ...
-          'relativeMedium must be ott.beam.medium.Relative');
-      tmatrix.relativeMedium = val;
     end
   end
 end

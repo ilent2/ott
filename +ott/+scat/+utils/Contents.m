@@ -1,8 +1,8 @@
 % ott.scat.utils Classes to assist in implementing scattering methods
 %
 % Properties
-%   HomogeneousRelative   -- Declares a homogeneous refractive index property
-%   ShapeProperty   -- Adds a shape property and dependent rotation/position
+%   RelativeMediumProperty -- mixin: relativeMedium property
+%   ShapeProperty   -- mixin: shape property and dependent rotation/position
 %
 % Scattering methods
 %   ZeroScattered   -- Base class for particles producing Zero-scattered beams

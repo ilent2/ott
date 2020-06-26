@@ -24,6 +24,7 @@ classdef ScatteredBeam < ott.optics.beam.Beam
 % using/distributing this file.
 
 % TODO: Compare all these with T-matrix limit
+% TODO: This has/should moved to dipole beam type???
 
   properties
     position    % The dipole position in the original beam

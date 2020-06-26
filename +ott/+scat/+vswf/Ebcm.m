@@ -1,188 +1,252 @@
-classdef Ebcm < ott.Tmatrix
+classdef Ebcm < ott.Tmatrix ...
+    & ott.scat.utils.RelativeMediumProperty
 % Constructs a T-matrix using extended boundary conditions method.
-% Inherits from :class:`+ott.Tmatrix`.
+% Inherits from :class:`ott.Tmatrix`.
 %
-% Ebcm properties:
-%   k_medium          Wavenumber in the surrounding medium
-%   k_particle        Wavenumber of the particle
+% Implements the extended boundary conditions methods for rotationally
+% symmetric homogeneous particles.
+%
+% Properties
+%   - points         -- (2xN numeric) Surface points [r; theta]
+%   - normals        -- (2xN numeric) Normals at points [nr; ntheta]
+%   - areas          -- (1xN numeric) Conic section surface areas
+%
+% Static methosd
+%   - FromStarShape   -- Construct from a star shaped object
+%   - FromAxisymInterpShape -- Construct using AxisymInterp shape
+%
+% Additional methods/properties inherited from :class:`Tmatrix`.
 %
 % This class is based on tmatrix_ebcm_axisym.m from ottv1.
-%
-% See also Ebcm
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
   properties (SetAccess=protected)
-    k_medium            % Wavenumber of medium
-    k_particle          % Wavenumber of particle
+    points         % (2xN numeric) Surface points [r; theta]
+    normals        % (2xN numeric) Normals at points [nr; ntheta]
+    areas          % (1xN numeric) Conic section surface areas
   end
 
   methods (Static)
-    function tmatrix = simple(shape, varargin)
-      %SIMPLE construct a T-matrix using EBCM for a simple shape.
+    function varargout = FromAxisymInterpShape(varargin)
+      % Construct a T-amtrix using EBCM from a AxisymInterp shape object.
       %
-      % SIMPLE(shape) constructs a new simple T-matrix for the given
-      % ott.shapes.Shape object.
+      % Usage
+      %   tmatrix = Ebcm.FromAxisymInterpShape(shape, relativeMedium, ...)
+      %   Calculate external T-matrix (unless `internal` is true)
       %
-      % SIMPLE(name, parameters) constructs a new T-matrix for the
-      % shape described by the name and parameters.
+      %   [external, internal] = Ebcm.FromAxisymInterpShape(...)
+      %   Calculate both the internal and external T-matrices.
       %
-      % Supported shape names [parameters]:
-      %   'ellipsoid'       Ellipsoid [ a b c]
-      %   'cylinder'        z-axis aligned cylinder [ radius height ]
-      %   'superellipsoid'  Superellipsoid [ a b c e n ]
-      %   'cone-tipped-cylinder'      [ radius height cone_height ]
-      %   'cube'            Cube [ width ]
-      %   'sphere'          Sphere [ radius ]
+      % Parameters
+      %   - shape (ott.shapes.Shape) -- Description of shape geometry.
+      %     Object must be a AxisymInterp or be castable to AxisymInterp.
       %
-      %  TMATRIXEBCM(..., 'Nmax', Nmax) specifies the size of the
-      %  T-matrix to use.  If not specified, the size is calculated
-      %  from ott.utils.ka2nmax(max_radius*k_medium).
+      %   - relativeMedium (ott.beam.medium.RelativeMedium) -- The relative
+      %     medium describing the particle's material.
       %
-      %  TMATRIXEBCM(..., 'k_medium', k)
-      %  or TMATRIXEBCM(..., 'wavelength_medium', wavelength)
-      %  or TMATRIXEBCM(..., 'index_medium', index)
-      %  specify the wavenumber, wavelength or index in the medium.
+      % Optional named parameters
+      %   - wavelength (numeric) -- Used to convert `shape` input to
+      %     relative units, i.e. `radius_rel = radius ./ wavelength`.
+      %     This parameter not used for setting the T-matrix material.
+      %     Default: ``1.0`` (i.e., `shape` is already in relative units).
       %
-      %  TMATRIXEBCM(..., 'wavelength0', wavelength) specifies the
-      %  wavelength in the vecuum, required when index_particle or
-      %  index_medium are specified.
+      % Additional parameters are passed to :meth:`Ebcm`.
 
       p = inputParser;
-      p.KeepUnmatched = true;
-      p.addOptional('parameters', []);
-      p.parse(varargin{:});
-
-      % Get a shape object from the inputs
-      if ischar(shape) && ~isempty(p.Results.parameters)
-        shape = ott.shapes.Shape.simple(shape, p.Results.parameters);
-        varargin = varargin(2:end);
-      elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
-        error('Must input either Shape object or string and parameters');
-      end
-
-      % Check the particle is star shaped
-      if ~isa(shape, 'ott.shapes.StarShape')
-        error('Only star shaped particles supported for now');
-      end
-
-      % Check that the particle is rotationally symmetric
-      axsym = shape.axialSymmetry();
-      if axsym(3) ~= 0
-        error('Only axially symetric particles supported for now');
-      end
-
-      % Parse optional parameters
-      p = inputParser;
+      p.addRequired('shape', @(x) isa(x, 'ott.shapes.Shape'));
+      p.addRequired('relativeMedium', ...
+          @(x) isa(x, 'ott.beam.medium.Relative'));
+      p.addParameter('wavelength', 1.0);
       p.addParameter('Nmax', []);
-      p.addParameter('wavelength0', []);
-      p.addParameter('internal', false);
-      p.addParameter('npts', []);
-      p.addParameter('invmethod', []);
-      
-      p.addParameter('index_relative', []);
-      
-      p.addParameter('k_medium', []);
-      p.addParameter('wavelength_medium', []);
-      p.addParameter('index_medium', []);
-      
-      p.addParameter('k_particle', []);
-      p.addParameter('wavelength_particle', []);
-      p.addParameter('index_particle', []);
-      
-      p.addParameter('verbose', false);
-      
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      % Get or estimate Nmax from the inputs
-      [k_medium, k_particle] = ott.Tmatrix.parser_wavenumber(p, 2*pi);
-      if isempty(p.Results.Nmax)
-        if p.Results.internal
-          Nmax = ott.utils.ka2nmax(shape.maxRadius * abs(k_particle));
-        else
-          Nmax = ott.utils.ka2nmax(shape.maxRadius * abs(k_medium));
-        end
-      else
-        Nmax = p.Results.Nmax;
+      % Ensure shape is an AxisymInterp
+      shape = p.Results.shape;
+      if ~isa(shape, 'ott.shapes.AxisymInterp')
+        shape = ott.shapes.AxisymInterp(shape);
       end
 
-      % Get the boudnary points
-      if isempty(p.Results.npts)
-        [rtp,n,ds] = shape.boundarypoints('Nmax', Nmax);
+      % Rescale shape
+      shape = shape ./ p.Results.wavelength;
+
+      % Get Nmax for npts calculation
+      Nmax = p.Results.Nmax;
+      if isempty(Nmax)
+        Nmax = ott.utils.ka2nmax(2*pi*shape.maxRadius);
       else
-        [rtp,n,ds] = shape.boundarypoints('npts', p.Results.npts);
+        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
+            'Nmax must be positive numeric scalar');
       end
 
-      % Get the z-axis mirror symmetry and rotational symmetry
-      [~, ~, z_rotational_symmetry] = shape.axialSymmetry();
-      [~, ~, z_mirror_symmetry] = shape.mirrorSymmetry();
+      % Calculate desired number of boundary points
+      npts = ceil(ott.utils.combined_index(Nmax, Nmax).^2/20+5);
 
-      % Calculate the T-matrix using EBCM
-      tmatrix = ott.scat.vswf.Ebcm(rtp, n, ds, 'Nmax', Nmax, ...
-          'k_medium', k_medium, 'k_particle', k_particle, ...
-          'rotational_symmetry', z_rotational_symmetry, ...
-          'z_mirror_symmetry', z_mirror_symmetry, ...
-          'invmethod', p.Results.invmethod, ...
-          'internal', p.Results.internal, ...
-          'verbose', p.Results.verbose);
+      % Calculate boundary points and change coordinates
+      [xyz, nxyz, ds] = shape.boundaryPoints(npts);
+      [nrtp, rtp] = ott.utils.xyzv2rtpv(nxyz, xyz);
+
+      % Construct T-matrices
+      [varargout{1:nargout}] = ott.scat.vswf.Ebcm(rtp, nrtp, ds, ...
+          p.Results.relativeMedium, 'Nmax', Nmax, unmatched{:});
     end
-  end
-  
-  methods (Static, Hidden)
+
+    function varargout = FromStarShape(varargin)
+      % Construct a T-matrix using EBCM from a star-shaped object
+      %
+      % Usage
+      %   tmatrix = Ebcm.FromStarShape(shape, relativeMedium, ...)
+      %   Calculate external T-matrix (unless `internal` is true)
+      %
+      %   [external, internal] = Ebcm.FromStarShape(shape, relativeMedium, ...)
+      %   Calculate both the internal and external T-matrices.
+      %
+      % Parameters
+      %   - shape (ott.shapes.Shape) -- Description of shape geometry.
+      %     Object should implement a valid starRadii method.
+      %
+      %   - relativeMedium (ott.beam.medium.RelativeMedium) -- The relative
+      %     medium describing the particle's material.
+      %
+      % Optional named parameters
+      %   - wavelength (numeric) -- Used to convert `shape` input to
+      %     relative units, i.e. `radius_rel = radius ./ wavelength`.
+      %     This parameter not used for setting the T-matrix material.
+      %     Default: ``1.0`` (i.e., `shape` is already in relative units).
+      %
+      %   - angles (N numeric) -- Angles describing edge of line segments.
+      %     The function calls Ebcm with `N-1` points positioned at the
+      %     centre of these line segments.
+      %
+      % All other parameters are passed to the class constructor.
+
+      p = inputParser;
+      p.addRequired('shape', @isnumeric);
+      p.addRequired('relativeMedium', ...
+          @(x) isa(x, 'ott.beam.medium.Relative'));
+      p.addParameter('wavelength', 1.0);
+      p.addParameter('Nmax', []);
+      p.addParameter('angles', []);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Rescale shape
+      shape = shape ./ p.Results.wavelength;
+
+      assert(shape.zRotSymmetry == 0, ...
+          'shape must be rotationally symmetric about the z axis');
+
+      % Get Nmax for npts calculation
+      Nmax = p.Results.Nmax;
+      if isempty(Nmax)
+        Nmax = ott.utils.ka2nmax(2*pi*shape.maxRadius);
+      else
+        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
+            'Nmax must be positive numeric scalar');
+      end
+
+      angles = p.Results.angles;
+      if isempty(angles)
+        % Calculate desired number of boundary points
+        npts = ceil(ott.utils.combined_index(Nmax, Nmax).^2/20+5);
+
+        % Calculate angles
+        angles = linspace(0, pi, npts+1);
+      end
+
+      % Calculate radii at points
+      phi = zeros(size(angles)));
+      radii = shape.starRadii(angles, phi);
+      rtp = [radii(:), angles(:), phi(:)].';
+      xyz = ott.utils.rtp2xyz(rtp);
+
+      % Calculate normals
+      nxyz = shape.normals(xyz);
+      nrtp = ott.utils.xyzv2rtpv(nxyz, xyz);
+
+      % Calculate area of segments
+      ds = 
+
+      % Construct T-matrices
+      [varargout{1:nargout}] = ott.scat.vswf.Ebcm(rtp, nrtp, ds, ...
+          p.Results.relativeMedium, unmatched{:});
+    end
   end
 
   methods
-    function tmatrix = Ebcm(rtp, normals, ds, varargin)
-      %TMATRIXEBCM calculates T-matrix using extended boundary condition method
+    function [tmatrix, internal] = Ebcm(varargin)
+      % Calculates T-matrix using extended boundary condition method
       %
-      % TMATRIXEBCM(rtp, normals, ds) uses points at r [ r theta phi ]
-      % with normals and steps (ds) to calculate the T-matrix.
-      %     r     radius of the point
-      %     theta polar angle from +z axis (rad)
-      %     phi   azimuthal angle, measured from +x towards +y axes (rad)
+      % Usage
+      %   tmatrix = Ebcm(points, normals, area, relativeMedium, ...)
+      %   Calculate external T-matrix (unless `internal` is true)
       %
-      % Note: Only rotationally symetric particles are supported at present.
+      %   [external, internal] = Ebcm(...)
+      %   Calculate both the internal and external T-matrices.
       %
-      %  TMATRIXEBCM(..., 'Nmax', Nmax) specifies the size of the
-      %  T-matrix to use.  If not specified, the size is calculated
-      %  from ott.utils.ka2nmax(max_radius*k_medium).
+      % Parameters
+      %   - points (2xN numeric) -- Coordinates describing surface.
+      %     Spherical coordinates (omitting azimuthal angle: `[r; theta]`).
       %
-      %  TMATRIXEBCM(..., 'k_medium', k)
-      %  or TMATRIXEBCM(..., 'wavelength_medium', wavelength)
-      %  or TMATRIXEBCM(..., 'index_medium', index)
-      %  specify the wavenumber, wavelength or index in the medium.
+      %   - normals (2xN numeric) -- Normals at surface points.
       %
-      %  TMATRIXEBCM(..., 'k_particle', k)
-      %  or TMATRIXEBCM(..., 'wavelength_particle', wavelength)
-      %  or TMATRIXEBCM(..., 'index_particle', index)
-      %  specify the wavenumber, wavelength or index in the particle.
+      %   - areas (N numeric) -- Area elements at surface points.
       %
-      %  TMATRIXEBCM(..., 'wavelength0', wavelength) specifies the
-      %  wavelength in the vecuum, required when index_particle or
-      %  index_medium are specified.
+      %   - relativeMedium (ott.beam.medium.RelativeMedium) -- The relative
+      %     medium describing the particle's material.
       %
-      %  TMATRIXEBCM(..., 'rotational_symmetry', sym) if true the particle
-      %  is assumed to be rotationally symmetric about the z-axis and
-      %  phi must be all the same angle.
+      % Optional named parameters
+      %   - wavelength (numeric) -- Used to convert radius input to
+      %     relative units, i.e. `radius_rel = radius ./ wavelength`.
+      %     This parameter not used for setting the T-matrix material.
+      %     Default: ``1.0`` (i.e., radius is already in relative units).
       %
-      %  TMATRIXEBCM(..., 'z_rotational_symmetry', sym) if true, the particle
-      %  is assumed to be mirror symmetric about the xy-plane.
+      %   - internal (logical) -- If true, the returned T-matrix is
+      %     an internal T-matrix.  Ignored for two outputs.
+      %     Default: ``false``.
+      %
+      %   - Nmax (numeric) -- Size of the VSWF expansion used for the
+      %     T-matrix calculation.  In some cases it can be reduced
+      %     after construction.
+      %     Default: ``ott.utis.ka2nmax(2*pi*shape.maxRadius)`` (may
+      %     need different values to give convergence for some shapes).
+      %
+      %   - verbose (logical) -- If true, outputs the condition number
+      %     of the Q and RgQ matrices.
 
-      tmatrix = tmatrix@ott.Tmatrix();
+      p = inputParser;
+      p.addRequired('points', @isnumeric);
+      p.addRequired('normals', @isnumeric);
+      p.addRequired('areas', @isnumeric);
+      p.addParameter('wavelength', 1.0);
+      p.addParameter('internal', false);
+      p.addParameter('Nmax', []);
+      p.addParameter('verbose', []);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Construct base class and store parameters (changing units)
+      tmatrix = tmatrix@ott.scat.vswf.Tmatrix(unmatched{:});
+      tmatrix.points = p.Results.points;
+      tmatrix.points(1, :) = tmatrix.points(1, :) ./ p.Results.wavelength;
+      tmatrix.normals = p.Results.normals;
+      tmatrix.areas = p.Results.areas ./ p.Results.wavelength.^2;
+      tmatrix.relativeMedium = p.Results.relativeMedium;
+
+      % TODO: Continue from here down
+
+
+
+
+
 
       % Parse inputs
       pa = inputParser;
-      pa.addParameter('Nmax', []);
-      pa.addParameter('k_medium', []);
-      pa.addParameter('wavelength_medium', []);
-      pa.addParameter('index_medium', []);
-      pa.addParameter('k_particle', []);
-      pa.addParameter('wavelength_particle', []);
-      pa.addParameter('index_particle', []);
-      pa.addParameter('index_relative', []);
-      pa.addParameter('wavelength0', []);
-      pa.addParameter('rotational_symmetry', 1);
       pa.addParameter('z_mirror_symmetry', false);
       pa.addParameter('internal', false);
       pa.addParameter('invmethod', []);
@@ -205,12 +269,6 @@ classdef Ebcm < ott.Tmatrix
         Nmax = pa.Results.Nmax;
       end
 
-      % Check that the particle is rotationally symmetric
-      if pa.Results.rotational_symmetry ~= 0
-        % TODO: Add support for non axis symetric particles
-        error('Only axis symetric particles supported');
-      end
-      
       % Choose default value for inverse method
       invmethod = pa.Results.invmethod;
       if isempty(invmethod)
@@ -437,16 +495,11 @@ classdef Ebcm < ott.Tmatrix
           error('RgQ is not finite');
         end
       end
-      
-      % TODO: Internal field calculation
-      if pa.Results.internal
-        
-        tmatrix.data = -inv(Q);
 
-        % Store the type of T-matrix
-        tmatrix.type = 'internal';
-        
-      else
+      if nargout > 1
+        internal = tmatrix.setType('internal');
+        internal.data = -inv(Q);
+      end
 
         %solve the T-matrix:
         switch invmethod
@@ -468,8 +521,46 @@ classdef Ebcm < ott.Tmatrix
         end
 
         % Store the type of T-matrix
-        tmatrix.type = 'scattered';
+        tmatrix.setType('scattered');
       end
+    end
+  end
+
+  methods (Hidden)
+    function shape = getGeometry(tmatrix, wavelength)
+      % Get AxisymInterp shape with radius in specified units
+
+      % Convert points to cylindrical coordinates
+      rhoz = tmatrix.points(1, :).* ...
+          [sin(tmatrix.points(2, :)); cos(tmatrix.points(2, :))];
+
+      shape = ott.shapes.AxisymInterp(rhoz.*wavelength, ...
+          'position', tmatrix.position*wavelength, ...
+          'rotation', tmatrix.rotation);
+    end
+  end
+
+  methods % Getters/setter
+    function tmatrix = set.points(tmatrix, val)
+      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 2, ...
+          'points must be 2xN numeric matrix');
+      assert(all(val(2, :) >= 0 & val(2, :) <= pi), ...
+          'points(2, :) must all be in range [0, pi]');
+      assert(all(val(1, :) >= 0), ...
+          'points(1, :) must be positive');
+      tmatrix.points = val;
+    end
+
+    function tmatrix = set.normals(tmatrix, val)
+      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 2, ...
+          'normals must be 2xN numeric matrix');
+      tmatrix.normals = val;
+    end
+
+    function tmatrix = set.areas(tmatrix, val)
+      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 1, ...
+          'areas must be 1xN numeric matrix');
+      tmatrix.areas = val;
     end
   end
 end

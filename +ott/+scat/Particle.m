@@ -1,10 +1,11 @@
-classdef (Abstract) Particle < ott.utils.RotationPositionEntity
-% Describes the abstract interface for particle.
-% Inherits from :class:`ott.utils.RotationPositionEntity`.
+classdef (Abstract) Particle < ott.utils.RotationPositionEntity ...
+    & matlab.mixin.Heterogeneous
+% Describes the abstract interface for particle scattering methods.
+% Inherits from :class:`ott.utils.RotationPositionEntity` and
+% :class:`matlab.mixin.Hetrogeneous`.
 %
 % Particle-centric scattering methods should inherit from this class.
-% Particles which describe geometric shapes can choose to inherit from
-% this class and the geometric shape class, or use the
+% Particles which describe geometric shapes should inherit from
 % :class:`ShapeProperty` to declare a `shape` property in the class.
 %
 % Abstract properties
@@ -19,12 +20,16 @@ classdef (Abstract) Particle < ott.utils.RotationPositionEntity
 %
 % Hidden methods
 %   - forcetorqueInternal -- Method called by `forcetorque`
+%   - getGeometry         -- Get a shape representation of this particle
 %
 % Abstract methods
 %   - rotate              -- Apply rotation to particle
 %   - forceInternal       -- Method called by `force`
 %   - torqueInternal      -- Method called by `torque`
 %   - scatterInternal     -- Method called by `scatter`
+%
+% Supported casts
+%   - ott.shapes.Shape -- Get a shape describing the particle
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -131,7 +136,49 @@ classdef (Abstract) Particle < ott.utils.RotationPositionEntity
     end
   end
 
+  methods (Sealed)
+    function shape = ott.shapes.Shape(tmatrix, varargin)
+      % Get a shape describing the particle.
+      %
+      % By default, this method returns an empty with the same position
+      % and orientation as the particle.  In sub-classes,
+      % this method returns a shape that describes the particle geometry.
+      %
+      % Optional named arguments
+      %   - wavelength (numeric) -- Wavelength of medium, used to
+      %     scale coordinates of generated shape.  (default: 1.0)
+      %
+      % All arguments are passed to the :meth:`getGeometry` method.
+
+      p = inputParser;
+      p.addParameter('wavelength', 1.0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      wavelength = p.Results.wavelength;
+      assert(isnumeric(wavelength) && isscalar(wavelength) ...
+          && wavelength > 0, ...
+          'wavelength must be positive numeric scalar');
+
+      shape = ott.shapes.Shape.empty(1, 0);
+      for ii = 1:numel(tmatrix)
+        shape = [shape, tmatrix(ii).getGeometry(wavelength, unmatched{:})];
+      end
+    end
+  end
+
   methods (Hidden)
+    function shape = getGeometry(particle, wavelength, varargin)
+      % Get a shape representing the particle
+      %
+      % The default method returns a empty
+
+      shape = ott.shapes.Empty(...
+          'position', particle.position.*wavelength, ...
+          'rotation', particle.rotation);
+    end
+
     function [force, torque] = forcetorqueInternal(particle, varargin)
       % Calculate force and torque on particle in beam
       %

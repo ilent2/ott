@@ -1,12 +1,19 @@
-classdef Pointmatch < ott.Tmatrix
+classdef Pointmatch < ott.Tmatrix ...
+    & ott.scat.utils.RelativeMediumProperty
 % Constructs a T-matrix using the point matching method
 %
-% Properties
-%   - k_medium       -- Wavenumber in the surrounding medium
-%   - k_particle     -- Wavenumber of the particle
+% The point matching method is described in
 %
-% Methods
-%   - getInternal    -- Get the internal T-matrix
+%   T. A. Nieminen, H. Rubinsztein-Dunlop, N. R. Heckenberg
+%   JQSRT 79-80, 1019-1029 (2003), 10.1016/S0022-4073(02)00336-9
+%
+% Supports homogeneous isotropic materials.
+% This implementation includes symmetry optimisations for rotationally
+% symmetric and mirror symmetric particles.
+%
+% Properties
+%   - relativeMedium  -- Particle relative medium
+%   - shape           -- Shape the T-matrix was calculated for
 %
 % This class is based on tmatrix_pm.m from ottv1.
 
@@ -14,304 +21,147 @@ classdef Pointmatch < ott.Tmatrix
 % See LICENSE.md for information about using/distributing this file.
 
   properties (SetAccess=protected)
-    k_medium            % Wavenumber of medium
-    k_particle          % Wavenumber of particle
-
-    idata               % Internal T-matrix
-  end
-  
-  methods (Static, Hidden)
-    
-    function p = input_parser(varargin)
-      % Helper for input parsing
-      
-      p = inputParser;
-
-      p.addParameter('progress_callback', []);
-      p.addParameter('Nmax', []);
-      p.addParameter('wavelength0', []);
-      p.addParameter('internal', false);
-      p.addParameter('distribution', 'angulargrid');
-
-      p.addParameter('index_relative', []);
-
-      p.addParameter('k_medium', []);
-      p.addParameter('wavelength_medium', []);
-      p.addParameter('index_medium', []);
-
-      p.addParameter('k_particle', []);
-      p.addParameter('wavelength_particle', []);
-      p.addParameter('index_particle', []);
-      
-      p.addParameter('z_rotational_symmetry', false);
-      p.addParameter('z_mirror_symmetry', false);
-      
-      % Fields to enable compatability with Tmatrix.simple
-      p.addParameter('method', []);
-
-      p.parse(varargin{:});
-    end
-    
-    function DefaultProgressCallback(data)
-      % Default progress callback function
-      
-      stage = data{1};
-      num = data{2};
-      total = data{3};
-      
-      if strcmpi(stage, 'setup')
-        disp(['Setup: ' num2str(num) ' / ' num2str(total)]);
-      elseif strcmpi(stage, 'inv')
-        disp(['Inversion: ' num2str(num) ' / ' num2str(total)]);
-      end
-    end
-    
+    shape          % (ott.shapes.Shape) Shape T-matrix was calculated for
   end
 
   methods (Static)
-    function tmatrix = simple(shape, varargin)
-      %SIMPLE construct a T-matrix using PM for a simple shape.
+    function DefaultProgressCallback(data)
+      % Default progress callback for Pointmatch
       %
-      % SIMPLE(shape) constructs a new simple T-matrix for the given
-      % ott.shapes.Shape object.
+      % Prints the progress to the terminal.
       %
-      % SIMPLE(name, parameters) constructs a new T-matrix for the
-      % shape described by the name and parameters.
+      % Usage
+      %   DefaultProgressCallback(data)
       %
-      % Supported shape names [parameters]:
-      %   'ellipsoid'       Ellipsoid [ a b c]
-      %   'cylinder'        z-axis aligned cylinder [ radius height ]
-      %   'superellipsoid'  Superellipsoid [ a b c e n ]
-      %   'cone-tipped-cylinder'      [ radius height cone_height ]
-      %   'cube'            Cube [ width ]
-      %   'sphere'          Sphere [ radius ]
-      %
-      %  TMATRIXPM(..., 'Nmax', Nmax) specifies the size of the
-      %  T-matrix to use.  If not specified, the size is calculated
-      %  from ott.utils.ka2nmax(max_radius*k_medium).
-      %
-      %  TMATRIXPM(..., 'k_medium', k)
-      %  or TMATRIXPM(..., 'wavelength_medium', wavelength)
-      %  or TMATRIXPM(..., 'index_medium', index)
-      %  specify the wavenumber, wavelength or index in the medium.
-      %
-      %  TMATRIXPM(..., 'wavelength0', wavelength) specifies the
-      %  wavelength in the vecuum, required when index_particle or
-      %  index_medium are specified.
-      %
-      %  TMATRIXPM(..., 'distribution', m) specifies point distriution method
-      %      'angulargrid'    uses an angular grid of points
-      %      'random'         uses randomly distributed points
+      % Parameters
+      %   - data (struct) -- Structure with three fields: stage
+      %     (either 'setup' or 'inv'), iteration (numeric), and
+      %     total (numeric).
 
-      p = inputParser;
-      p.KeepUnmatched = true;
-      p.addOptional('parameters', []);
-      p.parse(varargin{:});
-
-      % Get a shape object from the inputs
-      if ischar(shape) && ~isempty(p.Results.parameters)
-        shape = ott.shapes.Shape.simple(shape, p.Results.parameters);
-        varargin = varargin(2:end);
-      elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
-        error('Must input either Shape object or string and parameters');
+      switch data.stage
+        case 'setup'
+          disp(['Setup: ' num2str(data.iteration) ...
+              ' / ' num2str(data.total)]);
+        case 'inv'
+          disp(['Inversion: ' num2str(data.iteration) ...
+              ' / ' num2str(data.total)]);
+        otherwise
+          error('Unknown stage');
       end
-
-      % Handle different shapes
-      if ischar(shape)
-        shape = ott.shapes.Shape.simple(shape, parameters);
-      end
-
-      % Check the particle is star shaped
-      if ~isa(shape, 'ott.shapes.StarShape')
-        error('Only star shaped particles supported for now');
-      end
-
-      % Parse parameters
-      p = ott.scat.vswf.Pointmatch.input_parser(varargin{:});
-
-      % Get or estimate Nmax from the inputs
-      [k_medium, k_particle] = ott.Tmatrix.parser_wavenumber(p, 2*pi);
-      if isempty(p.Results.Nmax)
-        maxRadius = shape.maxRadius;
-        if p.Results.internal
-          Nmax = ott.utils.ka2nmax(maxRadius * abs(k_particle));
-        else
-          Nmax = ott.utils.ka2nmax(maxRadius * abs(k_medium));
-        end
-      else
-        Nmax = p.Results.Nmax;
-        
-        % We only support square matricies for now
-        if numel(Nmax) ~= 1
-          Nmax = max(Nmax(:));
-        end
-      end
-
-      % Get the symmetry of the shape
-      [~,~, z_rotational_symmetry] = shape.axialSymmetry();
-      [~,~, z_mirror_symmetry] = shape.mirrorSymmetry();
-
-      % Get the coordinates of the shape
-      rtp = shape.angulargrid(Nmax);
-      normals = shape.normals(rtp(:, 2), rtp(:, 3));
-
-      % inputParser will take the last parameter, so varargin just needs to
-      % be before the replacements for varargin.
-      tmatrix = ott.scat.vswf.Pointmatch(rtp, normals, varargin{:}, ...
-          'Nmax', Nmax, ...
-          'z_mirror_symmetry', z_mirror_symmetry, ...
-          'z_rotational_symmetry', z_rotational_symmetry);
     end
-  end
-
-  methods (Access=protected)
-
-    function [coeff_matrix, incident_wave_matrix] = setup(tmatrix, ...
-        Nmax, rtp, normals, progress_callback)
-      % SETUP calculates the coefficient and incident wave matrices
-
-      npoints = size(rtp, 1);
-      total_orders = ott.utils.combined_index(Nmax, Nmax);
-
-      r = rtp(:, 1);
-      theta = rtp(:, 2);
-      phi = rtp(:, 3);
-
-      % 3 vector components at each point, c/d,p/q coefficient per order
-      coeff_matrix = zeros(6*npoints,4*total_orders);
-      incident_wave_matrix = zeros(6*npoints,2*total_orders);
-
-      k_relative = tmatrix.k_particle/tmatrix.k_medium;
-
-      import ott.utils.vswf;
-      import ott.utils.perpcomponent;
-
-      for n = 1:Nmax
-        for m = -n:n
-
-          % INCIDENT-SCATTERED
-          [M1,N1,~,~,M2,N2] = vswf(n,m,tmatrix.k_medium*r,theta,phi);
-          [M3,N3] = vswf(n,m,tmatrix.k_particle*r,theta,phi,3);
-
-          ci = ott.utils.combined_index(n,m);
-
-          M1 = perpcomponent(M1,normals);
-          N1 = perpcomponent(N1,normals);
-          M2 = perpcomponent(M2,normals);
-          N2 = perpcomponent(N2,normals);
-          M3 = perpcomponent(M3,normals);
-          N3 = perpcomponent(N3,normals);
-          M1 = M1(:);
-          N1 = N1(:);
-          M2 = M2(:);
-          N2 = N2(:);
-          M3 = M3(:);
-          N3 = N3(:);
-
-          % 1 is outgoing field, 3 is particle field, 2 is incoming field
-          coeff_matrix(:,ci) = - [ M1; N1 ];
-          coeff_matrix(:,ci+total_orders) = - [ N1; M1 ];
-          coeff_matrix(:,ci+2*total_orders) = [ M3; k_relative*N3 ];
-          coeff_matrix(:,ci+3*total_orders) = [ N3; k_relative*M3 ];
-
-          incident_wave_matrix(:,ci) = [ M2; N2 ];
-          incident_wave_matrix(:,ci+total_orders) = [ N2; M2 ];
-
-        end
-
-        % Output progress
-        progress_callback({'setup', ci, total_orders});
-      end
-
-    end
-
   end
 
   methods
-    function tmatrix = Pointmatch(rtp, normals, varargin)
-      %TMATRIXPM calculates T-matrix using the point matching method
+    function [Texternal, Tinternal] = Pointmatch(varargin)
+      % Calculates T-matrix using the point matching method.
       %
-      % TMATRIXPM(r, theta, phi, normals) uses points at r, theta, phi
-      % with normals to calculate the T-matrix.
-      %     r     radius of the point
-      %     theta polar angle from +z axis (rad)
-      %     phi   azimuthal angle, measured from +x towards +y axes (rad)
+      % Usage
+      %   tmatrix = Pointmatch(shape, relativeMedium, ...)
+      %   Calculate external T-matrix.
       %
-      % Both the external and internal T-matricies are calculated.
-      % The external T-matrix is encapsulated by this object, the
-      % internal T-matrix can be retrieved using getInternal.
-      % If 'internal' is requested using the optional parameter (see bellow),
-      % the external T-matrix is replaced with the internal T-matrix.
+      %   [external, internal] = Pointmatch(shape, relativeMedium, ...)
+      %   Calculate external and internal T-matrices.
       %
-      %  TMATRIXPM(..., 'Nmax', Nmax) specifies the size of the
-      %  T-matrix to use.  If not specified, the size is calculated
-      %  from ott.utils.ka2nmax(max_radius*k_medium).
+      % Parameters
+      %   - shape (ott.shapes.Shape) -- Description of shape geometry.
+      %     Object should implement a valid starRadii method.
       %
-      %  TMATRIXPM(..., 'k_medium', k)
-      %  or TMATRIXPM(..., 'wavelength_medium', wavelength)
-      %  or TMATRIXPM(..., 'index_medium', index)
-      %  specify the wavenumber, wavelength or index in the medium.
+      %   - relativeMedium (ott.beam.medium.RelativeMedium) -- The relative
+      %     medium describing the particle's material.
       %
-      %  TMATRIXPM(..., 'k_particle', k)
-      %  or TMATRIXPM(..., 'wavelength_particle', wavelength)
-      %  or TMATRIXPM(..., 'index_particle', index)
-      %  specify the wavenumber, wavelength or index in the particle.
+      % Optional named parameters
+      %   - wavelength (numeric) -- Used to convert `shape` input to
+      %     relative units, i.e. `radius_rel = radius ./ wavelength`.
+      %     This parameter not used for setting the T-matrix material.
+      %     Default: ``1.0`` (i.e., `shape` is already in relative units).
       %
-      %  TMATRIXPM(..., 'wavelength0', wavelength) specifies the
-      %  wavelength in the vecuum, required when index_particle or
-      %  index_medium are specified.
+      %   - angulargrid ({theta, phi}) -- Angular grid of points for
+      %     calculation of radii.  Default is equally spaced angles with
+      %     the number of points determined by Nmax.
       %
-      %  TMATRIXPM(..., 'internal', internal) if true, encapsulates
-      %  the internal T-matrix and discards the external T-matrix.
+      %   - Nmax (numeric) -- Size of the VSWF expansion used for the
+      %     T-matrix calculation.  In some cases it can be reduced
+      %     after construction.
+      %     Default: ``ott.utis.ka2nmax(2*pi*shape.maxRadius)`` (may
+      %     need different values to give convergence for some shapes).
       %
-      %  TMATRIXPM(..., 'z_rotational_symmetry', sym) if true the particle
-      %  is assumed to be rotationally symmetric about the z-axis and
-      %  phi must be all the same angle.
-      %
-      %  TMATRIXPM(..., 'z_mirror_symmetry', sym) not yet implemented.
+      %   - progress (function_handle) -- Function to call for progress
+      %     updates during method evaluation.  Takes one argument, see
+      %     :meth:`DefaultProgressCallback` for more information.
+      %     Default: ``[]`` (for Nmax < 20) and
+      %     ``@DefaultProgressCallback`` (otherwise).
 
-      tmatrix = tmatrix@ott.Tmatrix();
+      p = inputParser;
+      p.addRequired('shape', @isnumeric);
+      p.addRequired('relativeMedium', ...
+          @(x) isa(x, 'ott.beam.medium.Relative'));
+      p.addParameter('wavelength', 1.0);
+      p.addParameter('angulargrid', []);
+      p.addParameter('Nmax', []);
+      p.addParameter('progress', []);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      % TODO: Different T and T2 size
-      % TODO: Different row/column Nmax
+      Texternal = Texternal@ott.scat.vswf.Tmatrix(unmatched{:});
+      Texternal.relativeMedium = p.Results.relativeMedium;
+      Texternal.shape = p.Results.shape ./ p.Results.wavelength;
 
-      % Parse inputs
-      p = ott.scat.vswf.Pointmatch.input_parser(varargin{:});
-
-      % Store inputs k_medium and k_particle
-      [tmatrix.k_medium, tmatrix.k_particle] = ...
-          tmatrix.parser_wavenumber(p, 2*pi);
-      
-      % Get or estimate Nmax from the inputs
-      if isempty(p.Results.Nmax)
-        maxRadius = max(rtp(:, 1));
-        if p.Results.internal
-          Nmax = ott.utils.ka2nmax(maxRadius * abs(tmatrix.k_particle));
-        else
-          Nmax = ott.utils.ka2nmax(maxRadius * abs(tmatrix.k_medium));
-        end
+      % Get or calculate Nmax
+      Nmax = p.Results.Nmax;
+      if isempty(Nmax)
+        Nmax = ott.utils.ka2nmax(2*pi*Texternal.shape.maxRadius);
       else
-        Nmax = p.Results.Nmax;
-        
-        % We only support square matricies for now
-        if numel(Nmax) ~= 1
-          Nmax = max(Nmax(:));
+        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
+            'Nmax must be positive numeric scalar');
+      end
+
+      % Handle default argument for progress callback
+      progress_cb = p.Results.progress;
+      if isempty(progress_cb)
+        if Nmax > 20
+          progress_cb = @ott.scat.vswf.Pointmatch.DefaultProgressCallback;
+        else
+          progress_cb = @(x) [];
         end
       end
 
-      % Handle default argument for progress_callback
-      progress_callback = p.Results.progress_callback;
-      if isempty(progress_callback)
-        if Nmax > 20
-          progress_callback = @ott.scat.vswf.Pointmatch.DefaultProgressCallback;
+      % Get or calculate angular grid
+      angulargrid = p.Results.angulargrid;
+      if isempty(angulargrid)
+
+        if Texternal.shape.zRotSymmetry == 0
+          ntheta = 4*(Nmax + 2);
+          nphi = 1;
         else
-          progress_callback = @(x) [];
+          ntheta = 2*(Nmax + 2);
+          nphi = 3*(Nmax + 2)+1;
         end
+
+        theta = ((1:ntheta)-0.5)/ntheta * pi;
+        phi = ((1:nphi)-1)/nphi * 2*pi;
+
+        [theta, phi] = meshgrid(theta, phi);
+
+      else
+        assert(iscell(angulargrid) && numel(angulargrid) == 2, ...
+            'angulargrid must be 2 element cell array');
+        theta = angulargrid{1};
+        phi = angulargrid{2};
+
+        assert(isnumeric(theta), 'theta must be numeric');
+        assert(isnumeric(phi), 'phi must be numeric');
+        assert(numel(theta) == numel(phi), ...
+            'number of theta and phi points must match');
       end
+
+      % Calculate shape radii and normals
+      radii = Texternal.shape.starRadii(theta, phi);
+      rtp = [radii(:), theta(:), phi(:)].';
 
       % Calculate coefficient and incident wave matrices
-      [coeff_matrix, incident_wave_matrix] = tmatrix.setup(...
-          Nmax, rtp, normals, progress_callback);
+      [coeff_matrix, incident_wave_matrix] = Texternal.setup(...
+          Nmax, rtp, progress_callback);
 
       total_orders = ott.utils.combined_index(Nmax, Nmax);
 
@@ -319,7 +169,7 @@ classdef Pointmatch < ott.Tmatrix
 
       % Generate T-matrix
 
-      if p.Results.z_rotational_symmetry == 0
+      if Texternal.shape.zRotSymmetry == 0
 
         % Infinite rotational symmetry
 
@@ -339,7 +189,7 @@ classdef Pointmatch < ott.Tmatrix
           omodes = modes;
           iomodes = [ omodes; emodes ];
 
-          if p.Results.z_mirror_symmetry
+          if Texternal.shape.xySymmetry
 
             % Correct the incident modes to include even/odd modes
             even_modes = logical(mod(n + mi, 2));
@@ -378,11 +228,12 @@ classdef Pointmatch < ott.Tmatrix
           end
 
           % Output progress
-          progress_callback({'inv', mi, Nmax});
+          progress_callback(struct('stage', 'inv', ...
+              'iteration', mi, 'total', Nmax));
 
         end
 
-      elseif p.Results.z_rotational_symmetry ~= 1
+      elseif Texternal.shape.zRotSymmetry ~= 1
 
         % Discrete rotational symmetry
 
@@ -394,7 +245,7 @@ classdef Pointmatch < ott.Tmatrix
         for mi = -Nmax:Nmax
 
           % Calculate which modes preseve symmetry, m = +/- ip
-          axial_modes = mod(m - mi, p.Results.z_rotational_symmetry) == 0;
+          axial_modes = mod(m - mi, Texternal.shape.zRotSymmetry) == 0;
           incm_modes = m == mi;
           modes = [ axial_modes; axial_modes ];
           imodes = [ incm_modes; incm_modes ];
@@ -404,7 +255,7 @@ classdef Pointmatch < ott.Tmatrix
           omodes = modes;
           iomodes = [ omodes; emodes ];
 
-          if p.Results.z_mirror_symmetry
+          if Texternal.shape.xySymmetry
 
             % Correct the incident modes to include even/odd modes
             even_modes = logical(mod(n + mi, 2));
@@ -443,13 +294,14 @@ classdef Pointmatch < ott.Tmatrix
           end
 
           % Output progress
-          progress_callback({'inv', mi, Nmax});
+          progress_callback(struct('stage', 'inv', ...
+              'iteration', mi, 'total', Nmax));
 
         end
 
       else
 
-        if p.Results.z_mirror_symmetry
+        if Texternal.shape.xySymmetry
 
           % Only mirror symmetry
           % Parity is conserved, even modes go to even modes, etc.
@@ -490,33 +342,94 @@ classdef Pointmatch < ott.Tmatrix
         end
       end
 
-      % Store the T-matrix data
-      if p.Results.internal
-        tmatrix.data = T2;
-        tmatrix.idata = [];
-      else
-        tmatrix.data = T;
-        tmatrix.idata = T2;
+      Texternal.data = T;
+      Texternal = Texternal.setType('scattered');
+
+      if nargout == 2
+        Tinternal = Texternal;
+        Tinternal.data = T2;
+        Tinternal = Tinternal.setType('internal');
       end
-
-      % Store the type of T-matrix
-      tmatrix.type = 'scattered';
     end
+  end
 
-    function tmatrix2 = getInternal(tmatrix)
-      %GETINTERNAL get a T-matrix object for the internal T-matrix data
+  methods (Access=protected)
 
-      if isempty(tmatrix.idata)
-        error('Internal T-matrix data has been cleaned');
+    function [coeff_matrix, incident_wave_matrix] = setup(tmatrix, ...
+        Nmax, rtp, progress_callback)
+      % Calculate the coefficient and incident wave matrices
+
+      % Calculate normals
+      normals = tmatrix.shape.normals(rtp);
+
+      npoints = size(rtp, 2);
+      total_orders = ott.utils.combined_index(Nmax, Nmax);
+
+      r = rtp(1, :).';
+      theta = rtp(2, :).';
+      phi = rtp(3, :).';
+
+      % 3 vector components at each point, c/d,p/q coefficient per order
+      coeff_matrix = zeros(6*npoints,4*total_orders);
+      incident_wave_matrix = zeros(6*npoints,2*total_orders);
+
+      k_relative = tmatrix.relativeMedium.wavenumber;
+
+      import ott.utils.vswf;
+      import ott.utils.perpcomponent;
+
+      for n = 1:Nmax
+        for m = -n:n
+
+          % INCIDENT-SCATTERED
+          [M1,N1,~,~,M2,N2] = vswf(n,m,tmatrix.k_medium*r,theta,phi);
+          [M3,N3] = vswf(n,m,tmatrix.k_particle*r,theta,phi,3);
+
+          ci = ott.utils.combined_index(n,m);
+
+          M1 = perpcomponent(M1,normals);
+          N1 = perpcomponent(N1,normals);
+          M2 = perpcomponent(M2,normals);
+          N2 = perpcomponent(N2,normals);
+          M3 = perpcomponent(M3,normals);
+          N3 = perpcomponent(N3,normals);
+          M1 = M1(:);
+          N1 = N1(:);
+          M2 = M2(:);
+          N2 = N2(:);
+          M3 = M3(:);
+          N3 = N3(:);
+
+          % 1 is outgoing field, 3 is particle field, 2 is incoming field
+          coeff_matrix(:,ci) = - [ M1; N1 ];
+          coeff_matrix(:,ci+total_orders) = - [ N1; M1 ];
+          coeff_matrix(:,ci+2*total_orders) = [ M3; k_relative*N3 ];
+          coeff_matrix(:,ci+3*total_orders) = [ N3; k_relative*M3 ];
+
+          incident_wave_matrix(:,ci) = [ M2; N2 ];
+          incident_wave_matrix(:,ci+total_orders) = [ N2; M2 ];
+
+        end
+
+        % Output progress
+        progress_callback(struct('stage', 'setup', ...
+            'iteration', ci, 'total', total_orders));
       end
-
-      % TODO: We should probably store that the matrix is internal
-      tmatrix2 = ott.Tmatrix(tmatrix.idata);
     end
+  end
 
-    function cleanInternal(tmatrix)
-      %CLEANINTERNAL remove the internal T-matrix data
-      tmatrix.idata = [];
+  methods (Hidden)
+    function shape = getGeometry(tmatrix, wavelength)
+      % Get sphere shape with radius in specified units
+      shape = tmatrix.shape .* wavelength;
+    end
+  end
+
+  methods % Getters/setter
+    function tmatrix = set.shape(tmatrix, val)
+      assert(isa(val, 'ott.shapes.Shape'), ...
+          'shape must be a ott.shapes.Shape');
+      tmatrix.shape = val;
     end
   end
 end

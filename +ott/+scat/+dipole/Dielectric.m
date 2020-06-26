@@ -1,4 +1,5 @@
-classdef Dielectric < ott.scat.dipole.Dipole
+classdef Dielectric < ott.scat.dipole.Dipole ...
+    & ott.scat.utils.RelativeMediumProperty
 % A dielectric dipole instance
 %
 % The dipole polarizability is calculated from the particle relative
@@ -14,6 +15,11 @@ classdef Dielectric < ott.scat.dipole.Dipole
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+% TODO: Should this be renamed to "Electric" and we have a
+%     "Magnetic" dipole variant too?
+
+% TODO: This should use ott.beam.medium.Relative
 
   properties
     index_relative       % Relative refractive index

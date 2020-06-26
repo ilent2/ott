@@ -1,4 +1,5 @@
-classdef Mie < ott.scat.vswf.Tmatrix
+classdef Mie < ott.scat.vswf.Tmatrix ...
+    & ott.scat.utils.RelativeMediumProperty
 % Construct T-matrix with Mie scattering coefficients.
 %
 % The Mie coefficients describe the scattering of a sphere.
@@ -25,7 +26,6 @@ classdef Mie < ott.scat.vswf.Tmatrix
 
   properties (SetAccess=protected)
     radius    % (numeric) Sphere radius (relative units)
-    relativeMedium  % (ott.beam.medium.Relative) Relative particle material
   end
 
   methods (Static)
@@ -170,6 +170,16 @@ classdef Mie < ott.scat.vswf.Tmatrix
           'position', tmatrix.position*wavelength, ...
           'rotation', tmatrix.rotation);
     end
+
+    function val = validateMedium(particle, val)
+      % Check number of materials and isotropic
+
+      val = validateMedium@ott.scat.utils.RelativeMediumProperty(...
+          particle, val);
+
+      assert(numel(val) == 1, 'relativeMedium must be a single material');
+      assert(val.isIsotropic, 'relativeMedium must be isotropic');
+    end
   end
 
   methods % Getters/setters
@@ -177,12 +187,6 @@ classdef Mie < ott.scat.vswf.Tmatrix
       assert(isnumeric(val) && isscalar(val) && val > 0, ...
           'radius must be positive numeric scalar');
       tmatrix.radius = val;
-    end
-
-    function tmatrix = set.relativeMedium(tmatrix, val)
-      assert(isa(val, 'ott.beam.medium.Relative'), ...
-          'relativeMedium must be ott.beam.medium.Relative');
-      tmatrix.relativeMedium = val;
     end
   end
 end

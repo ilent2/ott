@@ -1,5 +1,5 @@
 classdef Tmatrix < ott.scat.Particle ...
-    & ott.scat.utils.BeamForce & matlab.mixin.Heterogeneous ...
+    & ott.scat.utils.BeamForce ...
     & ott.utils.RotationPositionProp
 % Class representing the T-matrix of a scattering particle or lens.
 % This class can either be instantiated directly or used as a base
@@ -859,38 +859,6 @@ classdef Tmatrix < ott.scat.Particle ...
       shape = ott.shapes.Sphere(radius, ...
           'position', tmatrix.position*p.Results.wavelength, ...
           'rotation', tmatrix.rotation);
-    end
-  end
-
-  methods (Sealed)
-    function shape = ott.shapes.Shape(tmatrix, varargin)
-      % Get a shape describing the T-matrix.
-      %
-      % By default, this method returns the Nmax sphere.  In sub-classes,
-      % this method returns a shape that describes the particle geomtry
-      % (use :meth:`NmaxSphere` to always get the Nmax sphere).
-      %
-      % Optional named arguments
-      %   - wavelength (numeric) -- Wavelength of medium, used to
-      %     scale coordinates of generated shape.  (default: 1.0)
-      %
-      % All arguments are passed to the :meth:`getGeometry` method.
-
-      p = inputParser;
-      p.addParameter('wavelength', 1.0);
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      wavelength = p.Results.wavelength;
-      assert(isnumeric(wavelength) && isscalar(wavelength) ...
-          && wavelength > 0, ...
-          'wavelength must be positive numeric scalar');
-
-      shape = ott.shapes.Shape.empty(1, 0);
-      for ii = 1:numel(tmatrix)
-        shape = [shape, tmatrix(ii).getGeometry(wavelength, unmatched{:})];
-      end
     end
   end
 
