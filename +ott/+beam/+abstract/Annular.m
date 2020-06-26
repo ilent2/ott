@@ -1,10 +1,11 @@
 classdef Annular < ott.beam.properties.Annular ...
-    & ott.beam.properties.Material ...
+    & ott.beam.properties.VariableMedium ...
     & ott.beam.abstract.CastBoth ...
-    & ott.beam.properties.VariablePower
+    & ott.beam.properties.VariablePower ...
+    & ott.beam.properties.Beam
 % Abstract description of annular beams.
 % Inherits from :class:`ott.beam.properties.Annular` and
-% :class:`ott.beam.properties.Material` and :class:`CastBoth`.
+% :class:`ott.beam.properties.VariableMedium` and :class:`CastBoth`.
 %
 % Properties
 %   - angles
@@ -25,6 +26,8 @@ classdef Annular < ott.beam.properties.Annular ...
       % Construct an array of like-properties
       args = ott.beam.properties.Annular.likeProperties(other, args);
       args = ott.beam.properties.VariablePower.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
+      args = ott.beam.properties.Beam.likeProperties(other, args);
       args = ott.beam.abstract.CastBoth.likeProperties(other, args);
     end
 
@@ -60,7 +63,7 @@ classdef Annular < ott.beam.properties.Annular ...
       unmatched = ott.utils.unmatchedArgs(p);
 
       beam = beam@ott.beam.properties.Annular(p.Results.angles);
-      beam = beam@ott.beam.properties.Material(unmatched{:}, ...
+      beam = beam@ott.beam.properties.Beam(unmatched{:}, ...
           'power', p.Results.power);
     end
 

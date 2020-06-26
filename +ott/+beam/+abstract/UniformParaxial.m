@@ -1,9 +1,10 @@
 classdef UniformParaxial < ott.beam.abstract.CastNearfield ...
-    & ott.beam.properties.Material ...
-    & ott.beam.properties.FarfieldMapping
+    & ott.beam.properties.VariableMedium ...
+    & ott.beam.properties.FarfieldMapping...
+    & ott.beam.properties.Beam
 % A beam with a uniform paraxial far-field.
 % Inherits from :class:`CastNearfield`
-% and :class:`ott.beam.properties.Material`
+% and :class:`ott.beam.properties.VariableMedium`
 % and :class:`ott.beam.properties.FarfieldMapping`.
 %
 % Properties
@@ -28,7 +29,8 @@ classdef UniformParaxial < ott.beam.abstract.CastNearfield ...
         args = ott.utils.addDefaultParameter(...
             'polarisation', other.polarisation, args);
       end
-      args = ott.beam.properties.Material.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
+      args = ott.beam.properties.Beam.likeProperties(other, args);
       args = ott.beam.properties.FarfieldMapping.likeProperties(other, args);
     end
 
@@ -68,7 +70,7 @@ classdef UniformParaxial < ott.beam.abstract.CastNearfield ...
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.properties.Material(unmatched{:});
+      beam = beam@ott.beam.properties.Beam(unmatched{:});
       beam = beam@ott.beam.properties.FarfieldMapping(...
           'mapping', p.Results.mapping, 'hemisphere', p.Results.hemisphere);
       beam.polarisation = p.Results.polarisation;

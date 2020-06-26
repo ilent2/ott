@@ -41,8 +41,6 @@ classdef PlaneWave < ott.beam.properties.PlaneWaveArray ...
 % Properties inherited from Beam
 %   - power         -- The power of the beam (infinite)
 %   - wavelength    -- Wavelength of beam in medium (default: 1.0)
-%   - permittivity  -- Material relative permittivity (default: 1.0)
-%   - permeability  -- Material relative permeability (default: 1.0)
 %   - wavenumber    -- Wave-number of beam in medium
 %   - impedance     -- Impedance of the medium
 %

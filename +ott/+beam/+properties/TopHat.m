@@ -1,4 +1,5 @@
-classdef TopHat < ott.beam.properties.Material
+classdef TopHat < ott.beam.properties.Beam ...
+    & ott.beam.properties.VariableMedium
 % Properties of a collimated Top-Hat beam.
 %
 % Properties
@@ -22,7 +23,8 @@ classdef TopHat < ott.beam.properties.Material
         args = ott.utils.addDefaultParameter('polarisation', ...
             other.polarisation, args);
       end
-      args = ott.beam.properties.Material.likeProperties(other, args);
+      args = ott.beam.properties.Beam.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
     end
   end
 
@@ -41,7 +43,7 @@ classdef TopHat < ott.beam.properties.Material
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.properties.Material(unmatched{:});
+      beam = beam@ott.beam.properties.Beam(unmatched{:});
       beam.radius = p.Results.radius;
       beam.polarisation = p.Results.polarisation;
     end

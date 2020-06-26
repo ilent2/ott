@@ -1,4 +1,5 @@
-classdef Bessel < ott.beam.properties.Material
+classdef Bessel < ott.beam.properties.Beam ...
+    & ott.beam.properties.VariableMedium
 % Properties of a Bessel beam.
 %
 % Properties
@@ -23,7 +24,8 @@ classdef Bessel < ott.beam.properties.Material
         args = ott.utils.addDefaultParameter('field', other.field, args);
         args = ott.utils.addDefaultParameter('lmode', other.lmode, args);
       end
-      args = ott.beam.properties.Material.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
+      args = ott.beam.properties.Beam.likeProperties(other, args);
     end
 
     function Etp = CartesianFieldWeights(angle, Exy)
@@ -83,7 +85,7 @@ classdef Bessel < ott.beam.properties.Material
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.properties.Material(unmatched{:});
+      beam = beam@ott.beam.properties.Beam(unmatched{:});
       beam = beam.setData(p.Results.angle, p.Results.field, p.Results.lmode);
     end
 

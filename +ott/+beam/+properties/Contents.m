@@ -7,7 +7,6 @@
 %
 % Generic classes
 %   Beam              -- Base class for beam properties.
-%   Material          -- Base class for beams with materials.
 %   FarfieldMapping   -- Adds properties and methods for far-field mapping
 %   Empty             -- Empty beam array element
 %
@@ -15,6 +14,9 @@
 %   InfinitePower     -- Infinite power property
 %   VariablePower     -- Variable power property
 %   ZeroPower         -- Zero power property
+%
+% Medium property
+%   VariableMedium    -- Variable medium property
 %
 % Cast methods
 %   CastBoth          -- Cast beam for field calculation

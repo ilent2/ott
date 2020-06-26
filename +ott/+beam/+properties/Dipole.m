@@ -1,4 +1,5 @@
-classdef Dipole < ott.beam.properties.Material
+classdef Dipole < ott.beam.properties.Beam ...
+    & ott.beam.properties.VariableMedium
 % Properties of dipoles.
 % Inherits from :class:`ott.beam.properties.Beam`.
 %
@@ -31,7 +32,8 @@ classdef Dipole < ott.beam.properties.Material
         args = ott.utils.addDefaultParameter(...
             'polarization', other.polarization, args);
       end
-      args = ott.beam.properties.Material.likeProperties(other, args);
+      args = ott.beam.properties.Beam.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
     end
   end
 
@@ -50,7 +52,7 @@ classdef Dipole < ott.beam.properties.Material
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.properties.Material(unmatched{:});
+      beam = beam@ott.beam.properties.Beam(unmatched{:});
       beam = beam.setDipoles(p.Results.location, p.Results.polarization);
     end
 

@@ -1,8 +1,13 @@
 classdef VariablePower
 % Adds a variable power property to a Beam.
 %
+% Doesn't provide a constructor, uses properties.Beam.
+%
 % Properties
 %   - power       -- Power property
+%
+% Static methods
+%   - likeProperties    -- Adds power to the properties list
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -15,7 +20,9 @@ classdef VariablePower
   methods (Static)
     function args = likeProperties(other, args)
       % Construct an array of like-properties
-      args = ott.utils.addDefaultParameter('power', other.power, args);
+      if isa(other, 'ott.beam.prperties.VariablePower')
+        args = ott.utils.addDefaultParameter('power', other.power, args);
+      end
     end
   end
 

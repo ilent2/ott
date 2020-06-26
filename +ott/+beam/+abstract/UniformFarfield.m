@@ -1,7 +1,8 @@
 classdef UniformFarfield < ott.beam.abstract.CastNearfield ...
-    & ott.beam.properties.Material
+    & ott.beam.properties.VariableMedium ...
+    & ott.beam.properties.Beam
 % A beam with a uniform far-field.
-% Inherits from :class:`Beam` and :class:`ott.beam.properties.Material`.
+% Inherits from :class:`Beam` and :class:`ott.beam.properties.VariableMedium`.
 %
 % Properties
 %   - polarisation        - Far-field polarisation (theta/phi)
@@ -27,7 +28,8 @@ classdef UniformFarfield < ott.beam.abstract.CastNearfield ...
         args = ott.utils.addDefaultParameter(...
             'polarisation', other.polarisation, args);
       end
-      args = ott.beam.properties.Material.likeProperties(other, args);
+      args = ott.beam.properties.Beam.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
     end
 
     function beam = like(other, varargin)
@@ -60,7 +62,7 @@ classdef UniformFarfield < ott.beam.abstract.CastNearfield ...
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.properties.Material(unmatched{:});
+      beam = beam@ott.beam.properties.Beam(unmatched{:});
       beam.polarisation = p.Results.polarisation;
     end
   end

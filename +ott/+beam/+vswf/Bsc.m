@@ -1,6 +1,6 @@
 classdef Bsc < ott.beam.Beam ...
     & ott.beam.properties.AnyArrayType ...
-    & ott.beam.properties.Material
+    & ott.beam.properties.VariableMedium
 % Class representing beam shape coefficients.
 % Inherits from :class:`ott.beam.Beam` 
 % and :class:`ott.beam.properties.AnyArrayType`.
@@ -117,7 +117,7 @@ classdef Bsc < ott.beam.Beam ...
       end
       args = ott.beam.Beam.likeProperties(other, args);
       args = ott.beam.properties.AnyArrayType.likeProperties(other, args);
-      args = ott.beam.properties.Material.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
     end
 
     function beam = like(other, varargin)
@@ -199,7 +199,6 @@ classdef Bsc < ott.beam.Beam ...
 
       % Call base classes
       beam = beam@ott.beam.properties.AnyArrayType(p.Results.array_type);
-      beam = beam@ott.beam.properties.Material();
       beam = beam@ott.beam.Beam(unmatched{:});
 
       % Store properties

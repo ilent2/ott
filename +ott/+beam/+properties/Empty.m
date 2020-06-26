@@ -1,5 +1,6 @@
-classdef Empty < ott.beam.properties.Material ...
-    & ott.beam.properties.ZeroPower
+classdef Empty < ott.beam.properties.Beam ...
+    & ott.beam.properties.ZeroPower ...
+    & ott.beam.properties.VariableMedium
 % Properties of scattered beams
 %
 % Properties
@@ -9,9 +10,16 @@ classdef Empty < ott.beam.properties.Material ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+  methods (Static)
+    function args = likeProperties(other, args)
+      args = ott.beam.properties.Beam.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
+    end
+  end
+
   methods
     function beam = Empty(varargin)
-      beam = beam@ott.beam.properties.Material(varargin{:});
+      beam = beam@ott.beam.properties.Beam(varargin{:});
     end
   end
 

@@ -1,10 +1,11 @@
 classdef FocussedTopHat < ott.beam.properties.FocussedTopHat ...
-    & ott.beam.properties.Material ...
+    & ott.beam.properties.VariableMedium ...
     & ott.beam.abstract.CastBoth ...
-    & ott.beam.properties.VariablePower
+    & ott.beam.properties.VariablePower ...
+    & ott.beam.properties.Beam
 % Abstract description of a focussed top-hat beam.
 % Inherits from :class:`ott.beam.properties.FocussedTopHat` and
-% :class:`ott.beam.properties.Material` and :class:`CastBoth`.
+% :class:`ott.beam.properties.VariableMedium` and :class:`CastBoth`.
 %
 % Properties
 %   - angle
@@ -24,7 +25,8 @@ classdef FocussedTopHat < ott.beam.properties.FocussedTopHat ...
     function args = likeProperties(other, args)
       % Construct an array of like-properties
       args = ott.beam.properties.FocussedTopHat.likeProperties(other, args);
-      args = ott.beam.properties.Material.likeProperties(other, args);
+      args = ott.beam.properties.Beam.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
       args = ott.beam.properties.VariablePower.likeProperties(other, args);
       args = ott.beam.abstract.CastBoth.likeProperties(other, args);
     end
@@ -60,7 +62,7 @@ classdef FocussedTopHat < ott.beam.properties.FocussedTopHat ...
       unmatched = ott.utils.unmatchedArgs(p);
 
       beam = beam@ott.beam.properties.FocussedTopHat(p.Results.angle);
-      beam = beam@ott.beam.properties.Material(unmatched{:}, ...
+      beam = beam@ott.beam.properties.Beam(unmatched{:}, ...
           'power', p.Results.power);
     end
 

@@ -1,6 +1,7 @@
-classdef (Abstract) PlaneWave < ott.beam.properties.Material
+classdef (Abstract) PlaneWave < ott.beam.properties.Beam ...
+    & ott.beam.properties.VariableMedium
 % Properties of scattered beams.
-% Inherits from :class:`Material`.
+% Inherits from :class:`Beam`.
 %
 % Static methods
 %   - likeProperties    -- Construct argument list of like-properties
@@ -53,7 +54,8 @@ classdef (Abstract) PlaneWave < ott.beam.properties.Material
         args = ott.utils.addDefaultParameter(...
             'directionSet', other.directionSet, args);
       end
-      args = ott.beam.properties.Material.likeProperties(other, args);
+      args = ott.beam.properties.Beam.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
     end
 
     function directionSet = DirectionSet(direction, polarisation1)
@@ -117,7 +119,7 @@ classdef (Abstract) PlaneWave < ott.beam.properties.Material
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.properties.Material(unmatched{:});
+      beam = beam@ott.beam.properties.Beam(unmatched{:});
       beam = beam.setData(p.Results.origin, ...
           p.Results.directionSet, p.Results.field);
     end

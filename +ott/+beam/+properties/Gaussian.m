@@ -1,4 +1,5 @@
-classdef Gaussian < ott.beam.properties.Material
+classdef Gaussian < ott.beam.properties.Beam ...
+    & ott.beam.properties.VariableMedium
 % Properties of a paraxial Gaussian beam.
 % Inherits from :class:`ott.beam.properties.Beam`.
 %
@@ -27,7 +28,8 @@ classdef Gaussian < ott.beam.properties.Material
         args = ott.utils.addDefaultParameter(...
             'polarisation', other.polarisation, args);
       end
-      args = ott.beam.properties.Material.likeProperties(other, args);
+      args = ott.beam.properties.Beam.likeProperties(other, args);
+      args = ott.beam.properties.VariableMedium.likeProperties(other, args);
     end
   end
 
@@ -53,7 +55,7 @@ classdef Gaussian < ott.beam.properties.Material
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.properties.Material(unmatched{:});
+      beam = beam@ott.beam.properties.Beam(unmatched{:});
       beam.polarisation = p.Results.polarisation;
       beam.waist = p.Results.waist;
     end
