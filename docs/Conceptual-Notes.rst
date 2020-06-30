@@ -168,3 +168,40 @@ at present not all OTT functions support arbitrary mapping functions.
    with the :math:`sin(\theta)` mapping
    and (c) a :math:`tan(\theta)` mapping.
 
+Beam truncation angle (for :class:`ott.BscPmGauss`)
+===================================================
+
+.. warning:: This section will move in a future release.
+
+:class:`ott.BscPmGauss` can be used to simulate various Gaussian-like
+beams.  By default, the class doesn't truncate the beams as a
+normals microscope objective would, this can be seen in the following
+example (shown in figure :numref:`conception-truncation-angle`)::
+
+   figure();
+   NA = 0.8;
+
+   subplot(1, 2, 1);
+   beam = ott.BscPmGauss('NA', NA, 'index_medium', 1.33);
+   beam.basis = 'incoming';
+   beam.visualiseFarfield('dir', 'neg');
+   title('Default');
+
+   subplot(1, 2, 2);
+   beam = ott.BscPmGauss('NA', NA, 'index_medium', 1.33, ...
+         'truncation_angle', asin(NA./1.33));
+   beam.basis = 'incoming';
+   beam.visualiseFarfield('dir', 'neg');
+   title('Truncated');
+
+.. _conception-truncation-angle:
+.. figure:: images/Conception/truncationAngle.png
+   :alt: Image describing truncation_angle paramter
+
+   Example output from the :class:`ott.BscPmGauss` showing the
+   far-field intensity patterns of two Gaussian beams with the
+   same numerical aperture.  (left) shows the default output, where
+   the Gaussian falls off gradually to the edge of the hemisphere.
+   (right) shows a beam truncated, effectively simulating a
+   microscope back-aperture.
+

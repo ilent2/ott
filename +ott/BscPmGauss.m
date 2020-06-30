@@ -88,6 +88,13 @@ classdef BscPmGauss < ott.BscPointmatch
       %        "small angle approximation" which is valid for thin
       %        lenses ONLY. Does not preserve high order mode shape
       %        at large angles.
+      %
+      %   - truncation_angle (numeric) -- Adds a hard edge to the
+      %     beam, this can be useful for simulating the back-aperture
+      %     of a microscope objective.  Default: ``pi/2`` (i.e. no edge).
+      %
+      %   - truncation_angle_deg -- Same as `truncation_angle` but
+      %     with degrees instead of radians.
 
       beam = beam@ott.BscPointmatch(varargin{:});
       beam.type = 'incident';
