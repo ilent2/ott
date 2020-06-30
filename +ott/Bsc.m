@@ -1,9 +1,17 @@
 classdef Bsc
 %Bsc abstract class representing beam shape coefficients
 %
-% Any units can be used for the properties as long as they are
-% consistent in all specified properties.  Calculated quantities
-% will have these units.
+% Most quantities have SI dimensions.  Any SI units can be used for
+% these quantities (for example m or microns) as long as the units
+% are consistent.
+%
+% Beam power (i.e., the Bsc.power property) can be converted to SI
+% units by multiplying by `1/(2*Z*k^2)` where Z is the medium impedance
+% and k is the medium wave number (this does not affect force calculation).
+% Changing the beam power is not recommended in this
+% or earlier versions of the toolbox since this effects both
+% accuracy and run-time.  This behaviour will be changed (fixed) in
+% a future release.
 %
 % Properties
 %   - a           --  Beam shape coefficients a vector
@@ -485,6 +493,9 @@ classdef Bsc
       %
       % If either calcH or calcE is false, the function still returns
       % E and H as matricies of all zeros.
+      %
+      % For cross(E, conj(H))/2 to give the correct power, you will need
+      % to divide H by the impedance of the medium (in appropriate units).
 
       ip = inputParser;
       ip.addParameter('calcE', true);
@@ -633,6 +644,10 @@ classdef Bsc
       %
       % If either calcH or calcE is false, the function still returns
       % E and H as matrices of all zeros for the corresponding field.
+      %
+      % To get the correct Poynting vector, i.e. cross(E, conj(H))/2,
+      % you will need to divide H by the medium impedance and divide
+      % both E and H by the wavenumber (TODO: and maybe another factor???).
 
       p = inputParser;
       p.addParameter('calcE', true);
@@ -1088,6 +1103,10 @@ classdef Bsc
     function beam = set.power(beam, p)
       % set.power set the beam power
       beam = sqrt(p / beam.power) * beam;
+
+      warning('ott:Bsc:set_power_not_recomended', ...
+          ['Changing the beam power in this or previous versions', newline, ...
+          'of OTT not recomended, see documentation for more info']);
     end
 
     function lambda = get.wavelength(beam)

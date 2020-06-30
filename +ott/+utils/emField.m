@@ -119,10 +119,6 @@ for nn = 1:max(un)
         hnU=hn(indR);
         dhnU=dhn(indR);
 
-        [jnr,djnr]=sbesselj(nn,r_new);
-        jnrU=jnr(indR);
-        djnrU=djnr(indR);
-
         % Create full Y, Ytheta, Yphi, expimphi matrices (opt, R2018a)
         expimphif = expimphi(indPhi, :);
         YExpf = Y(indTheta, :).*expimphif;
