@@ -154,8 +154,8 @@ classdef Bsc
       %     functions.  Pass empty arrays for unused values.
       %   - field_type -- (enum) Type of field to calculate.
       %     Supported types include:
-      %       - 'irradiance'  -- :math:`\sqrt{Ex^2 + Ey^2 + Ez^2}`
-      %       - 'E2' -- :math:`Ex^2 + Ey^2 + Ez^2`
+      %       - 'irradiance'  -- :math:`\sqrt{|Ex|^2 + |Ey|^2 + |Ez|^2}`
+      %       - 'E2' -- :math:`|Ex|^2 + |Ey|^2 + |Ez|^2`
       %       - 'Sum(Abs(E))' -- :math:`|Ex| + |Ey| + |Ez|`
       %
       %       - Re(Er), Re(Et), Re(Ep), Re(Ex), Re(Ey), Re(Ez)
