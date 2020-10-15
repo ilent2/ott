@@ -655,13 +655,18 @@ classdef Bsc
       p.addParameter('saveData', false);
       p.addParameter('data', []);
       p.addParameter('coord', 'cartesian');
+      p.addParameter('cidx', []);
       p.parse(varargin{:});
 
       % Scale the locations by the wave number (unitless coordinates)
       rtp(1, :) = rtp(1, :) * abs(beam.k_medium);
 
       % Get the indices required for the calculation
-      [n,m]=ott.utils.combined_index(find(abs(beam.a)|abs(beam.b)));
+      cidx = p.Results.cidx;
+      if isempty(cidx)
+        cidx = find(abs(beam.a)|abs(beam.b));
+      end
+      [n,m]=ott.utils.combined_index(cidx);
       nm = [ n; m ];
 
       ci = ott.utils.combined_index(n, m);
@@ -749,7 +754,7 @@ classdef Bsc
 
       % Setup outputs
       if nargout == 2
-        varargout{1} = theta;
+        varargout{1} = ptheta;
         varargout{2} = I;
       end
       
@@ -987,6 +992,7 @@ classdef Bsc
       p.addParameter('mask', []);
       p.addParameter('showVisualisation', nargout == 0);
       p.addParameter('combine', []);
+      p.addParameter('cidx', []);   % Used with savedata
       p.parse(varargin{:});
 
       if iscell(p.Results.range)
@@ -1053,7 +1059,7 @@ classdef Bsc
         % Calculate the electric field
         [E, ~, data] = beam.beam(ii).emFieldXyz(xyz.', ...
             'saveData', p.Results.saveData, 'data', data, ...
-            'calcE', true', 'calcH', false);
+            'calcE', true', 'calcH', false, 'cidx', p.Results.cidx);
 
         % Generate the requested field
         dataout = beam.GetVisualisationData(p.Results.field, ...
@@ -1779,7 +1785,9 @@ classdef Bsc
       end
 
       % If the T is scattered, we can save time by throwing away columns
-      if strcmpi(tmatrix(1).type, 'scattered')
+      % Only works when we don't grow the beam in translation
+      if strcmpi(tmatrix(1).type, 'scattered') ...
+          && isempty(p.Results.position)
         maxNmax2 = min(maxNmax2, beam.Nmax);
       end
 
