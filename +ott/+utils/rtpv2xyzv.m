@@ -6,6 +6,7 @@ function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
 %
 %   [vec_cart,pos_cart] = rtpv2xyzv(vec,pos)
 %   As above, but with 3xN matrices as inputs and outputs.
+%   vec can also be 3xNxM, but pos must be a 3xN matrix.
 %
 % Parameters
 %   - r      -- radial distance [0, Inf)
@@ -24,17 +25,19 @@ function [xv,yv,zv,x,y,z] = rtpv2xyzv(rv,thetav,phiv,r,theta,phi)
 
 if nargin == 2
   
-  assert(size(thetav, 1) == 3, 'pos must be 3xN matrix');
-  assert(size(rv, 1) == 3, 'vec must be 3xN matrix');
+  assert(size(thetav, 1) == 3 && ismatrix(thetav), 'pos must be 3xN matrix');
+  assert(size(rv, 1) == 3, 'vec must be 3xNxM matrix');
   assert(size(rv, 2) == size(thetav, 2), ...
-      'Number of points in vec and pos must match');
+      'Second dimension of vec and pos must match');
   
    r = thetav(1,:).';
    theta = thetav(2,:).';
    phi = thetav(3,:).';
-   phiv = rv(3,:).';
-   thetav = rv(2,:).';
-   rv = rv(1,:).';
+   
+   szrv = size(rv);
+   phiv = reshape(rv(3,:), [numel(r), 1, szrv(3:end)]);
+   thetav = reshape(rv(2,:), [numel(r), 1, szrv(3:end)]);
+   rv = reshape(rv(1,:), [numel(r), 1, szrv(3:end)]);
 elseif nargin == 6
 
   % Ensure inputs are columns
@@ -62,16 +65,16 @@ J=[sin(theta).*cos(phi),cos(theta).*cos(phi),-sin(phi);...
     sin(theta).*sin(phi),cos(theta).*sin(phi),cos(phi);...
     cos(theta),-sin(theta),zeros(size(theta))];
 
-%Pack the spherical three vectors
-rtpv=[rv,thetav,phiv];
+% Pack the spherical three vectors
+rtpv = cat(2, rv, thetav, phiv);
 
-%Separate the Jacobian and multiply for each unit vector.
-xv = dot(J(1:length(theta),:),rtpv,2);
-yv = dot(J(length(theta)+1:2*length(theta),:),rtpv,2);
-zv = dot(J(2*length(theta)+1:3*length(theta),:),rtpv,2);
+% Separate the Jacobian and multiply for each unit vector.
+xv = sum(J(1:length(theta),:) .* rtpv, 2);
+yv = sum(J(length(theta)+1:2*length(theta),:) .* rtpv, 2);
+zv = sum(J(2*length(theta)+1:3*length(theta),:) .* rtpv, 2);
 
 if nargout < 3
-   xv = [ xv(:), yv(:), zv(:) ].';
+   xv = permute(cat(2, xv, yv, zv), [2, 1 3:ndims(rtpv)]);
    yv = [ x(:), y(:), z(:) ].';
 end
 
