@@ -48,6 +48,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 %   - uminus    -- Negation of beam vectors
 %   - minus     -- Subtraction of beam vectors
 %   - plus      -- Addition of beam vectors
+%   - real      -- Extract real part of BSC data
+%   - imag      -- Extract imag part of BSC data
+%   - abs       -- Calculate absolute value of BSC data
 %
 % Field calculation methods
 %   - efield     -- Calculate electric field around the origin
@@ -72,6 +75,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 %   - visFarfield       -- Generate a visualisation at the far-field
 %   - visFarfieldSlice  -- Visualise the field on a angular slice
 %   - visFarfieldSphere -- Visualise the filed on a sphere
+%
+% Casts
+%   - ott.bsc.Bsc     -- Downcast BSC superclass to base class
+%   - ott.tmatrix.Tmatrix -- Create T-matrix from beam array
 
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
@@ -274,6 +281,19 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       beam = ott.bsc.Bsc(other.a, other.b);
     end
 
+    function tmatrix = ott.tmatrix.Tmatrix(beam)
+      % Create T-matrix from beam array
+      %
+      % Usage
+      %   tmatrix = ott.tmatrix.Tmatrix(beam)
+      %
+      % Each beam in the beam array becomes a column of the T-matrix.
+      % Uses :meth:`getCoefficients` to get the T-matrix data.
+
+      data = beam.getCoefficients();
+      tmatrix = ott.tmatrix.Tmatrix(data);
+    end
+
     %
     % Field calculation functions
     %
@@ -327,8 +347,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
           ci, rtp(2, :), rtp(3, :));
 
       % Re-arrange a/b for multiplication
-      ai = permute(ai, [1, 3, 2]);
-      bi = permute(bi, [1, 3, 2]);
+      ai = permute(full(ai), [1, 3, 2]);
+      bi = permute(full(bi), [1, 3, 2]);
 
       % Calculate field components
       Etheta = sum(ai .* Yphi + bi .* Ytheta, 1);
@@ -593,8 +613,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Get beam coefficients
       [ai, bi] = beam.getCoefficients(ci);
-      ai = permute(ai, [1, 3, 2]);
-      bi = permute(bi, [1, 3, 2]);
+      ai = permute(full(ai), [1, 3, 2]);
+      bi = permute(full(bi), [1, 3, 2]);
 
       % Calculate field components
       Er = sum(Nn.*n.*(n+1)./rtp(1, :).*hn.*Y.*bi, 1);
@@ -1099,7 +1119,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Usage
       %   b = issparse(beam)
 
-      b = issparse(beam.a) & issparse(beam.b);
+      b = false(size(beam));
+      for ii = 1:numel(beam)
+        b(ii) = issparse(beam(ii).a) & issparse(beam(ii).b);
+      end
     end
 
     function beam = full(beam)
@@ -1110,8 +1133,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       ott.utils.nargoutCheck(beam, nargout);
 
-      beam.a = full(beam.a);
-      beam.b = full(beam.b);
+      for ii = 1:numel(beam)
+        beam(ii).a = full(beam(ii).a);
+        beam(ii).b = full(beam(ii).b);
+      end
     end
 
     function beam = sparse(beam)
@@ -1125,8 +1150,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       ott.utils.nargoutCheck(beam, nargout);
 
-      beam.a = sparse(beam.a);
-      beam.b = sparse(beam.b);
+      for ii = 1:numel(beam)
+        beam(ii).a = sparse(beam(ii).a);
+        beam(ii).b = sparse(beam(ii).b);
+      end
     end
 
     function beam = makeSparse(beam, varargin)
@@ -1147,28 +1174,31 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % both conditions are kept.
 
       ott.utils.nargoutCheck(beam, nargout);
-
+      
       p = inputParser;
       p.addParameter('AbsTol', [], @isnumeric);
       p.addParameter('RelTol', 1.0e-15, @isnumeric);
       p.parse(varargin{:});
+      
+      for ii = 1:numel(beam)
 
-      [oa, ob] = beam.getCoefficients();
-      pw = abs(oa).^2 + abs(ob).^2;
+        [oa, ob] = beam(ii).getCoefficients();
+        pw = abs(oa).^2 + abs(ob).^2;
 
-      non_zero = true(size(pw));
-      if ~isempty(p.Results.AbsTol)
-        non_zero = non_zero & pw > p.Results.AbsTol;
+        non_zero = true(size(pw));
+        if ~isempty(p.Results.AbsTol)
+          non_zero = non_zero & pw > p.Results.AbsTol;
+        end
+        if ~isempty(p.Results.RelTol)
+          non_zero = non_zero & pw > p.Results.RelTol*sum(pw, 1);
+        end
+
+        oa(~non_zero) = 0;
+        ob(~non_zero) = 0;
+
+        beam(ii).a = sparse(oa);
+        beam(ii).b = sparse(ob);
       end
-      if ~isempty(p.Results.RelTol)
-        non_zero = non_zero & pw > p.Results.RelTol*beam.power;
-      end
-
-      oa(~non_zero) = 0;
-      ob(~non_zero) = 0;
-
-      beam.a = sparse(oa);
-      beam.b = sparse(ob);
     end
 
     %
@@ -1213,7 +1243,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %
       % Usage
       %   beam = beam.setNmax(nmax, ...)   or    beam.Nmax = nmax
-      %   Set the Nmax, a warning is issued if truncation occurs.
+      %   Set the Nmax, a optional warning is issued if truncation occurs.
       %
       % Optional named arguments
       %   - AbsTol (numeric) -- Absolute tolerance for removing elements.
@@ -1421,8 +1451,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       end
 
       % Get data from all beams
-      oa = zeros(numel(ci), numel(beam));
-      ob = zeros(numel(ci), numel(beam));
+      oa = zeros(numel(ci), numel(beam), 'like', beam(1).a);
+      ob = zeros(numel(ci), numel(beam), 'like', beam(1).b);
       for ii = 1:numel(beam)
         oa(ci <= na(ii), ii) = beam(ii).a(ci <= na(ii));
         ob(ci <= nb(ii), ii) = beam(ii).b(ci <= nb(ii));
@@ -1645,6 +1675,36 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         S = struct('type', '()', 'subs', {subs});
         beam = beam + subsref(beamin, S);
       end
+    end
+
+    function beam = real(beam)
+      % Extract real part of beam shape coefficients
+      %
+      % Usage
+      %   beam = real(beam)
+
+      [oa, ob] = beam.getCoefficients();
+      beam = ott.bsc.Bsc(real(oa), real(ob));
+    end
+
+    function beam = imag(beam)
+      % Extract imaginary part of beam shape coefficients
+      %
+      % Usage
+      %   beam = imag(beam)
+
+      [oa, ob] = beam.getCoefficients();
+      beam = ott.bsc.Bsc(imag(oa), imag(ob));
+    end
+
+    function beam = abs(beam)
+      % Calculate absolute value of BSC data
+      %
+      % Usage
+      %   beam = abs(beam)
+
+      [oa, ob] = beam.getCoefficients();
+      beam = ott.bsc.Bsc(abs(oa), abs(ob));
     end
 
     %

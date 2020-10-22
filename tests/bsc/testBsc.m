@@ -173,19 +173,33 @@ end
 
 function testSparse(testCase)
 
-  abeam = ott.bsc.Bsc([1; 2; 3]);
-  testCase.verifyFalse(issparse(abeam), 'full check');
+  beam = ott.bsc.Bsc([1; 2; 3]);
+  testCase.verifyFalse(issparse(beam), 'full check');
 
-  sbeam = sparse(abeam);
+  sbeam = sparse(beam);
   testCase.verifyTrue(issparse(sbeam), 'sparse check');
   testCase.verifyTrue(issparse(sbeam.a), 'is sparse');
-  testCase.verifyEqual(full(sbeam.a), abeam.a, 'sparse');
+  testCase.verifyEqual(full(sbeam.a), beam.a, 'sparse');
 
   fbeam = full(sbeam);
   testCase.verifyFalse(issparse(fbeam), 'after cast check');
 
-  sbeam2 = abeam.makeSparse();
+  sbeam2 = beam.makeSparse();
   testCase.verifyTrue(issparse(sbeam2), 'sparse check');
+
+  % Again with beam array
+
+  beam = [beam, beam];
+  testCase.verifyFalse(any(issparse(beam)), 'A: full check');
+
+  beam2 = sparse(beam);
+  testCase.verifyTrue(all(issparse(beam2)), 'A: sparse check');
+
+  beam3 = full(beam2);
+  testCase.verifyFalse(any(issparse(beam3)), 'A: full check after');
+
+  beam4 = beam.makeSparse();
+  testCase.verifyTrue(all(issparse(beam4)), 'A: make sparse');
 
 end
 
@@ -284,6 +298,31 @@ function testFieldCoverage(testCase)
   Hp = abeam.hparaxial([0;0.5]);
   [Ef, Hf] = abeam.ehfarfield([0;0.5]);
   Hf = abeam.hfarfield([0;0.5]);
+
+end
+
+function testRealImagAbs(testCase)
+
+  beam = ott.bsc.Bsc([1i; 2; 3i]);
+
+  abeam = abs(beam);
+  testCase.verifyEqual(abeam.a, [1; 2; 3], 'abs');
+
+  abeam = real(beam);
+  testCase.verifyEqual(abeam.a, [0; 2; 0], 'real');
+
+  abeam = imag(beam);
+  testCase.verifyEqual(abeam.a, [1; 0; 3], 'imag');
+
+end
+
+function testTmatrixCast(testCase)
+
+  beam = ott.bsc.Bsc([1i; 2; 3i]);
+  beam = [beam, beam, beam, beam, beam, beam];
+
+  tmatrix = ott.tmatrix.Tmatrix(beam);
+  testCase.verifyEqual(tmatrix.Nmax, [1, 1], 'Nmax');
 
 end
 
