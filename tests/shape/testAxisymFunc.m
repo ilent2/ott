@@ -44,12 +44,12 @@ function testSurf(testCase)
   shape = ott.shape.AxisymFunc.BiconcaveDisc();
 
   h = figure();
+  testCase.addTeardown(@close, h);
 
   p = shape.surf('showNormals', true);
   testCase.verifyClass(p, 'matlab.graphics.primitive.Patch');
 
   axis equal;
-  close(h);
 
 end
 

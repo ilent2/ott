@@ -41,11 +41,10 @@ function testSurf(testCase)
   plane = ott.shape.Plane(normal, 'offset', offset);
 
   h = figure();
+  testCase.addTeardown(@close, h);
 
   p = plane.surf('scale', 2.0);
   testCase.verifyClass(p, 'matlab.graphics.primitive.Patch');
-
-  close(h);
 
 end
 

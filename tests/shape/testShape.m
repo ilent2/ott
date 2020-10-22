@@ -143,7 +143,8 @@ function testIntersect(testCase)
   shape = ott.shape.Sphere(radius);
   ints = shape.intersect(x0, x1);
 
-%   figure();
+%   h = figure();
+%   testCase.addTeardown(@close, h);
 %   plot3(ints(1, :), ints(2, :), ints(3, :), '*');
 %   axis equal;
 
