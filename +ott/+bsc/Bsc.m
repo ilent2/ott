@@ -36,6 +36,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 %   - gather     -- Apply gather to beam data
 %   - rotate*    -- (Inherited) Functions for rotating the beam
 %   - translate* -- (Inherited) Functions for translating the beam
+%   - translateZ -- Translation along the theta=0 (z) axis
 %   - getCoefficients -- Get a/b vectors with additional options
 %   - setCoefficients -- Set a/b vectors with additional options
 %
@@ -1936,6 +1937,55 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         varargout{1} = [sx(:) sy(:) sz(:)].';
       end
     end
+
+    %
+    % Translation functions
+    %
+
+    function [beam, A, B] = translateZ(beam, z, varargin)
+      % Apply translation along z axis
+      %
+      % Usage
+      %   beam = beam.translateZ(z, ...)
+      %
+      %   [beam, A, B] = beam.translateZ(z, ...)
+      %   Returns A, B for repeated translation calculations.
+      %
+      % Optional named arguments
+      %   - Nmax (numeric) -- Requested minimum Nmax for translated beam.
+      %     Default: ``beam.Nmax``.
+      %
+      %   - basis (enum) -- Type of translation, must be either
+      %     'incoming', 'outgoing' or 'regular'.  Default is 'regular'
+      %     which should be used for most types of translations.
+      %     'outgoing' should be applied when the beam is a scattered beam.
+
+      p = inputParser;
+      p.addParameter('basis', 'regular');
+      p.addParameter('Nmax', beam.Nmax);
+      p.parse(varargin{:});
+
+      ott.utils.nargoutCheck(beam, nargout);
+
+      % Determine beam type
+      switch p.Results.basis
+        case 'incoming'
+          translation_type = 'sbesselh2';
+        case 'outgoing'
+          translation_type = 'sbesselh1';
+        case 'regular'
+          translation_type = 'sbesselj';
+      end
+
+      % Calculate tranlsation matrices
+      [A, B] = ott.utils.translate_z(p.Results.Nmax, ...
+          z, 'type', translation_type);
+
+      % Apply translation to beam
+      beam = [A, B; B, A] * beam;
+
+    end
+
   end
 
   methods (Hidden)
@@ -1986,50 +2036,6 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         nend = max(numel(beam(ii).a), numel(beam(ii).b));
         beam(ii) = D{ii}(:, 1:nend) * beam(ii);
       end
-
-    end
-
-    function [beam, A, B] = translateZInternal(beam, z, varargin)
-      % Apply translation along z axis
-      %
-      % Usage
-      %   beam = beam.translateZInternal(z, ...)
-      %
-      %   [beam, A, B] = beam.translateZInternal(z, ...)
-      %   Returns A, B for repeated translation calculations.
-      %
-      % Optional named arguments
-      %   - Nmax (numeric) -- Requested minimum Nmax for translated beam.
-      %     Default: ``beam.Nmax``.
-      %
-      %   - basis (enum) -- Type of translation, must be either
-      %     'incoming', 'outgoing' or 'regular'.  Default is 'regular'
-      %     which should be used for most types of translations.
-      %     'outgoing' should be applied when the beam is a scattered beam.
-
-      p = inputParser;
-      p.addParameter('basis', 'regular');
-      p.addParameter('Nmax', beam.Nmax);
-      p.parse(varargin{:});
-
-      ott.utils.nargoutCheck(beam, nargout);
-
-      % Determine beam type
-      switch p.Results.basis
-        case 'incoming'
-          translation_type = 'sbesselh2';
-        case 'outgoing'
-          translation_type = 'sbesselh1';
-        case 'regular'
-          translation_type = 'sbesselj';
-      end
-
-      % Calculate tranlsation matrices
-      [A, B] = ott.utils.translate_z(p.Results.Nmax, ...
-          z, 'type', translation_type);
-
-      % Apply translation to beam
-      beam = [A, B; B, A] * beam;
 
     end
 
@@ -2106,12 +2112,12 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
           if nargout > 1
             [newbeam, D{ii}] = ibsc.rotate(R);
-            [newbeam, Az{ii}, Bz{ii}] = newbeam.translateZInternal(...
+            [newbeam, Az{ii}, Bz{ii}] = newbeam.translateZ(...
                 rtp(1), 'Nmax', oNmax, 'basis', p.Results.basis);
             newbeam = D{ii}' * newbeam;
           else
             newbeam = ibsc.rotate(R);
-            newbeam = newbeam.translateZInternal(rtp(1), ...
+            newbeam = newbeam.translateZ(rtp(1), ...
                 'Nmax', oNmax, 'basis', p.Results.basis);
             newbeam = newbeam.rotate(R.');
           end

@@ -107,6 +107,18 @@ classdef PlaneWave < ott.bsc.Bsc
       beam = beam@ott.bsc.Bsc(p.Results.a, p.Results.b);
       beam.direction = p.Results.direction;
     end
+
+    function beam = translateZ(beam, z, varargin)
+      % Apply translation along z axis using phase shift.
+      %
+      % Usage
+      %   beam = beam.translateZ(z)
+
+      ott.utils.nargoutCheck(beam, nargout);
+
+      xyz = [0*z(:), 0*z(:), z(:)].';
+      beam = beam.translateXyzInternal(xyz);
+    end
   end
 
   methods (Hidden)
@@ -118,18 +130,6 @@ classdef PlaneWave < ott.bsc.Bsc
 
       rbeam = rotateInternal@ott.bsc.Bsc(beam, R, varargin{:});
       beam = ott.bsc.PlaneWave(rbeam.a, rbeam.b, R * beam.direction);
-    end
-
-    function beam = translateZInternal(beam, z, varargin)
-      % Apply translation along z axis using phase shift.
-      %
-      % Usage
-      %   beam = beam.translateZInternal(z)
-
-      ott.utils.nargoutCheck(beam, nargout);
-
-      xyz = [0*z(:), 0*z(:), z(:)].';
-      beam = beam.translateXyzInternal(xyz);
     end
 
     function beam = translateXyzInternal(beam, xyz, varargin)

@@ -114,14 +114,12 @@ classdef Annular < ott.bsc.Bsc
       beam = beam@ott.bsc.Bsc(p.Results.a, p.Results.b);
       beam.theta = p.Results.theta;
     end
-  end
 
-  methods (Hidden)
-    function beam = translateZInternal(beam, z, varargin)
+    function beam = translateZ(beam, z, varargin)
       % Apply translation along z using a phase shift.
       %
       % Usage
-      %   beam = beam.translateZInternal(z)
+      %   beam = beam.translateZ(z)
 
       ott.utils.nargoutCheck(beam, nargout);
 
