@@ -16,7 +16,7 @@ function testFromStarShape(testCase)
 
   shape = ott.shape.Sphere(0.1);
   index = 1.2;
-  tmatrix = ott.tmatrix.Pointmatch.FromStarShape(shape, index);
+  tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, index);
 
   testCase.verifyEqual(tmatrix.relative_index, index, 'index');
   testCase.verifyEqual(tmatrix.xySymmetry, true, 'xy');
@@ -88,7 +88,7 @@ function testInternalMie(testCase)
 
   shape = ott.shape.Sphere(1.0);
   index = 1.2;
-  [~, tmatrix] = ott.tmatrix.Pointmatch.FromStarShape(shape, index);
+  [~, tmatrix] = ott.tmatrix.Pointmatch.FromShape(shape, index);
   
   tmatrix.Nmax = Tmie.Nmax;
   testCase.verifyEqual(tmatrix.data, Tmie.data, ...

@@ -21,7 +21,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
 %
 % Static methods
 %   - DefaultProgressCallback   -- Default progress call-back method
-%   - FromStarShape   -- Construct T-matrix from star shape
+%   - FromShape   -- Construct T-matrix from star shape
 %
 % This class is based on tmatrix_pm.m from ottv1.
 
@@ -62,14 +62,14 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       end
     end
 
-    function varargout = FromStarShape(shape, varargin)
+    function varargout = FromShape(shape, varargin)
       % Construct T-matrix using point matching from a star shaped object
       %
       % Usage
-      %   tmatrix = Pointmatch(shape, relative_index, ...)
+      %   tmatrix = Pointmatch.FromShape(shape, relative_index, ...)
       %   Calculate external T-matrix.
       %
-      %   [external, internal] = Pointmatch(shape, relative_index, ...)
+      %   [external, internal] = Pointmatch.FromShape(...)
       %   Calculate external and internal T-matrices.
       %
       % Parameters
