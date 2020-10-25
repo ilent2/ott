@@ -138,11 +138,20 @@ classdef AxisymInterp < ott.shape.Shape ...
       shape.points = p.Results.points;
     end
 
-    function [xyz, nxyz, ds] = boundaryPoints(shape, npts)
+    function [points, normals, ds] = boundaryPoints(shape, npts)
       % Calculate points for line integration
       %
       % Usage
-      %   [xyz, nxyz, ds] = shape.boundaryPoints(npts, ...)
+      %   [points, normals, ds] = shape.boundaryPoints(npts, ...)
+      %
+      % Ouputs
+      %   - points -- (2xN numeric) Array of coordinates on surface
+      %     with the format [radius; theta].
+      %
+      %   - normals -- (2xN numeric) Array of surface normals for points.
+      %     Format: [nradius; ntheta].
+      %
+      %   - ds -- (1xN numeric) Surface area elements for each point.
       %
       % Parameters
       %   - npts (numeric) -- Number of equally spaced points along surface.
@@ -151,6 +160,9 @@ classdef AxisymInterp < ott.shape.Shape ...
       ds = shape.perimeter / npts / 2.0;
 
       % The following is based on axisym_boundarypoints from OTTv1
+      
+      rho = shape.points(1, :);
+      z = shape.points(2, :);
 
       % Calculate length of each line segment
       s=sqrt((rho(2:end)-rho(1:end-1)).^2+(z(2:end)-z(1:end-1)).^2);
@@ -182,7 +194,7 @@ classdef AxisymInterp < ott.shape.Shape ...
               zt=cumsum(dz)-dz/2-sdeficit*dz(1);
               zout(ncum+(1:Nused))=z(ii-1)+zt;
 
-              nxyz(:, ncum+(1:Nused))=repmat(nc,[length(zt),1]);
+              nxyz(:, ncum+(1:Nused))=repmat(nc,[1, length(zt)]);
 
               sdeficit=(N-Nused+sdeficit);
           else
@@ -204,22 +216,25 @@ classdef AxisymInterp < ott.shape.Shape ...
 
       % Package output
       xyz = [rhoout,zeros(size(rhoout)),zout].';
+      [nrtp, rtp] = ott.utils.xyzv2rtpv(nxyz, xyz);
+      points = rtp([1, 2], :);
+      normals = nrtp([1, 2], :);
 
       % Calculate area
       if nargout >= 3
-        dst=zeros(size(rtp, 1),3);
+        dst=zeros(3, size(rtp, 2));
 
         %calcultes area elements
-        dst(2:end-1,1)=(rhoout(3:end)-rhoout(1:end-2))/2;
-        dst(2:end-1,3)=(zout(3:end)-zout(1:end-2))/2;
+        dst(1, 2:end-1)=(rhoout(3:end)-rhoout(1:end-2))/2;
+        dst(3, 2:end-1)=(zout(3:end)-zout(1:end-2))/2;
         dst(1,1)=(mean(rhoout(1:2))-rho(1));
-        dst(1,3)=(mean(zout(1:2))-z(1));
-        dst(end,1)=(rho(end)-mean(rhoout(end-1:end)));
-        dst(end,3)=(z(end)-mean(zout(end-1:end)));
+        dst(3,1)=(mean(zout(1:2))-z(1));
+        dst(1,end)=(rho(end)-mean(rhoout(end-1:end)));
+        dst(3,end)=(z(end)-mean(zout(end-1:end)));
 
         % a general axisymmetric conic region has the
         % following area (sans factor of 2*pi):
-        ds=(rtp(:,1).*sqrt(sum(abs(dst).^2,2)).*sin(rtp(:,2)));
+        ds=(points(1, :).*sqrt(sum(abs(dst).^2,1)).*sin(points(2, :)));
       end
     end
 

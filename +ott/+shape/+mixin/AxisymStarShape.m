@@ -15,6 +15,9 @@ classdef AxisymStarShape < ott.shape.mixin.StarShape ...
 %
 % Abstract methods
 %   - normalsTInternal
+%
+% Supported casts
+%   - ott.shape.AxisymInterp
 
 % Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
@@ -22,6 +25,39 @@ classdef AxisymStarShape < ott.shape.mixin.StarShape ...
 
   methods (Abstract)
     normalsTInternal(obj)
+  end
+
+  methods
+    function shape = ott.shape.AxisymInterp(shape, varargin)
+      % Cast shape to a AxisymInterp shape
+      %
+      % Usage
+      %   shape = ott.shape.AxisymInterp(shape, ...)
+      %
+      % Optional named arguments
+      %   - resolution (numeric) -- Number of faces in the theta direction.
+      %     Default: ``20``.
+      %
+      % Additional named parameters are passed to constructor.
+
+      p = inputParser;
+      p.addParameter('resolution', 20);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Evaluate surface locations
+      theta = linspace(0, pi, p.Results.resolution + 1);
+      R = shape.starRadii(theta, 0*theta);
+
+      % Convert to cylindrical coordinates
+      points = [R.*sin(theta); R.*cos(theta)];
+
+      % Construct AxisymInterp
+      shape = ott.shape.AxisymInterp(points, ...
+          'position', shape.position, 'rotation', shape.rotation, ...
+          unmatched{:});
+    end
   end
 
   methods (Hidden)
