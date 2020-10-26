@@ -21,16 +21,16 @@ function testShapePreserved(testCase)
 
   xyz = rand(3, 4);
   
-  [r, ~, ~] = ott.utils.xyz2rtp(xyz(1, :), xyz(2, :), xyz(3, :))
+  [r, ~, ~] = ott.utils.xyz2rtp(xyz(1, :), xyz(2, :), xyz(3, :));
   testCase.verifyEqual(size(r), [1, 4]);
   
-  [r, ~, ~] = ott.utils.xyz2rtp(xyz(1, :).', xyz(2, :).', xyz(3, :).')
+  [r, ~, ~] = ott.utils.xyz2rtp(xyz(1, :).', xyz(2, :).', xyz(3, :).');
   testCase.verifyEqual(size(r), [4, 1]);
   
-  [r, ~, ~] = ott.utils.rtp2xyz(xyz(1, :), xyz(2, :), xyz(3, :))
+  [r, ~, ~] = ott.utils.rtp2xyz(xyz(1, :), xyz(2, :), xyz(3, :));
   testCase.verifyEqual(size(r), [1, 4]);
   
-  [r, ~, ~] = ott.utils.rtp2xyz(xyz(1, :).', xyz(2, :).', xyz(3, :).')
+  [r, ~, ~] = ott.utils.rtp2xyz(xyz(1, :).', xyz(2, :).', xyz(3, :).');
   testCase.verifyEqual(size(r), [4, 1]);
 
 end

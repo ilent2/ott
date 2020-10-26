@@ -323,9 +323,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       p.parse(varargin{:});
 
       % Ensure rtp size is 3xN
-      if size(rtp, 1) == 2
-        rtp = [ones(1, size(rtp, 2)); rtp];
-      end
+      [~, rtp] = ott.utils.rtpFarfield(rtp);
 
       ci = beam.getCombinedIndex();
       [n, ~] = ott.utils.combined_index(ci);
@@ -367,6 +365,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %   [H, data] = beam.hfarfield(rtp, ...)
       %
       % See :meth:`efarfield` for further details.
+      
+      % Ensure rtp size is 3xN
+      [~, rtp] = ott.utils.rtpFarfield(rtp);
 
       % Calculate E as normal
       [varargout{1:nargout}] = beam.efarfield(rtp, varargin{:});
@@ -392,6 +393,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Optional named parameters
       %   - data (ott.utils.VswfData) -- Field data for repeated field
       %     calculation.  Default is an empty VswfData structure.
+      
+      % Ensure rtp size is 3xN
+      [~, rtp] = ott.utils.rtpFarfield(rtp);
 
       % Calculate E as normal
       [E, data] = beam.efarfield(rtp, varargin{:});

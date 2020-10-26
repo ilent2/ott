@@ -1,4 +1,4 @@
-function tests = testBsc
+function tests = testAnnular
   tests = functiontests(localfunctions);
 end
 
@@ -30,11 +30,11 @@ function testTranslateZ(testCase)
   beam = ott.bsc.Annular.FromBessel(Nmax, theta, Etp, lmode);
 
   % Calculate translation with Annular
-  tbeam = beam.translateZInternal(1);
+  tbeam = beam.translateZ(1);
 
   % Calculate translation with Bsc
   bsc = ott.bsc.Bsc(beam);
-  tbsc = bsc.translateZInternal(1);
+  tbsc = bsc.translateZ(1);
 
   % Compare coefficients
   ab1 = tbeam.getCoefficients(1:ott.utils.combined_index(10, 10));

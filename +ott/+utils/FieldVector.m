@@ -46,8 +46,8 @@ classdef FieldVector < double
       %   field = FieldVector(rtp, vrtp, 'spherical')
 
       if nargin == 0
-        loc = [];
-        vec = [];
+        loc = zeros(3, 0);
+        vec = zeros(3, 0);
         basis = 'cartesian';
       end
 
@@ -107,6 +107,12 @@ classdef FieldVector < double
   end
 
   methods % Getters/setters
+    function field = set.locations(field, val)
+      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 3, ...
+        'locations must be 3xN numeric matrix');
+      field.locations = val;
+    end
+    
     function val = get.vxyz(field)
       if strcmpi(field.basis, 'cartesian')
         val = double(field);
