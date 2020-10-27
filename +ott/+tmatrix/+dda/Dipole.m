@@ -37,7 +37,7 @@ classdef Dipole
 % using/distributing this file.
 
   properties (SetAccess=protected)
-    location         % (3xN numeric) Dipole locations
+    locations         % (3xN numeric) Dipole locations
     polarization     % (3NxM numeric) Dipole polarizations
   end
 
@@ -58,11 +58,11 @@ classdef Dipole
       % Construct a new dipole array
       %
       % Usage
-      %   beam = Dipole(location, polarization, ...)
+      %   beam = Dipole(locations, polarization, ...)
       %   Parameters can also be passed as named arguments.
       %
       % Parameters
-      %   - location (3xN numeric) -- Locations of dipoles
+      %   - locations (3xN numeric) -- Locations of dipoles
       %   - polarization (3NxM) -- Dipole polarizations sorted
       %     packaged in [x1;y1;z1; x2;y2;z2; ...] order.
       %
@@ -82,7 +82,7 @@ classdef Dipole
       %     in a future release).
 
       p = inputParser;
-      p.addOptional('location', [], @isnumeric);
+      p.addOptional('locations', [], @isnumeric);
       p.addOptional('polarization', [], @isnumeric);
       p.addParameter('parity', 'even');
       p.addParameter('rorder', 0);
@@ -90,14 +90,14 @@ classdef Dipole
       p.addParameter('zRotSymmetry', 1);
       p.parse(varargin{:});
 
-      beam = beam.setDipoles(p.Results.location, p.Results.polarization);
+      beam = beam.setDipoles(p.Results.locations, p.Results.polarization);
       beam.parity = p.Results.parity;
       beam.xySymmetry = p.Results.xySymmetry;
       beam.rorder = p.Results.rorder;
       beam.zRotSymmetry = p.Results.zRotSymmetry;
     end
 
-    function beam = setDipoles(beam, location, polarization)
+    function beam = setDipoles(beam, locations, polarization)
       % Set the dipole position and polarization data
       %
       % Usage
@@ -110,14 +110,14 @@ classdef Dipole
 
       ott.utils.nargoutCheck(beam, nargout);
 
-      assert(isnumeric(location) && ismatrix(location) ...
-          && size(location, 1) == 3, ...
+      assert(isnumeric(locations) && ismatrix(locations) ...
+          && size(locations, 1) == 3, ...
           'location must be 3xN numeric matrix');
       assert(isnumeric(polarization) && ismatrix(polarization) ...
-          && size(polarization, 1) == numel(location), ...
+          && size(polarization, 1) == numel(locations), ...
           'polarization must be 3NxM numeric matrix');
 
-      beam.location = location;
+      beam.locations = locations;
       beam.polarization = polarization;
     end
 
@@ -139,7 +139,7 @@ classdef Dipole
       % Optional named arguments
       %   - low_memory (logical) -- If true, evaluates the low-memory
       %     version of F.  Default: ``false``.
-      
+
       % Convert to Cartesian coordinates
       [~, rtp] = ott.utils.rtpFarfield(rtp);
       xyz = ott.utils.rtp2xyz(rtp);
@@ -153,7 +153,7 @@ classdef Dipole
       % Evaluates the magnetic far-field matrix for a set of points
       %
       % See :meth:`efarfield_matrix` for usage and parameters.
-      
+
       % Convert to Cartesian coordinates
       [~, rtp] = ott.utils.rtpFarfield(rtp);
       xyz = ott.utils.rtp2xyz(rtp);
@@ -284,10 +284,10 @@ classdef Dipole
       %     Either [radius; theta; phi] or [theta; phi].  Radius is ignored.
       %
       % Unmatched parameters are passed to :meth:`efarfield_matrix`.
-      
+
       % Ensure rtp is 3xN
       [~, rtp] = ott.utils.rtpFarfield(rtp);
-      
+
       % Calculate the near-field matrix
       F = beam.efarfield_matrix(rtp, varargin{:});
 
@@ -309,7 +309,7 @@ classdef Dipole
       %     Either [radius; theta; phi] or [theta; phi].  Radius is ignored.
       %
       % Unmatched parameters are passed to :meth:`hfarfield_matrix`.
-      
+
       % Ensure rtp is 3xN
       [~, rtp] = ott.utils.rtpFarfield(rtp);
 
@@ -473,7 +473,7 @@ classdef Dipole
       D = permute(D, [1, 3, 2]);
       D = reshape(D, [3*n_targets, 3]);
     end
-    
+
     function F = combine_rotsym_matrix(F, zorder, parity)
       % Warning: Function usage/definition may change without notice
 
@@ -493,72 +493,93 @@ classdef Dipole
         end
       end
     end
-  end
 
-  methods (Hidden)
-    function F = field_matrix_internal(beam, locs, field_func, varargin)
-      % Calculate the field-matrices
+    function F = build_field_matrix(vxyz, txyz, func, varargin)
+      % Build field/interaction matrix
+      %
+      % Usage
+      %   F = ott.tmatrix.dda.Dipole.build_field_matrix(vxyz, txyz, func, ...)
+      %
+      % Parameters
+      %   - vxyz -- (3xN numeric) Dipole locations
+      %
+      %   - txyz -- (3xN numeric) Target locations
+      %
+      %   - func -- (function handle) Field function with the signature
+      %     ``func(col_idx, rot_idx, mirror_idx, dxyz, txyz, M)``
+      %     where ``_idx`` are the column, rotation and mirror indices,
+      %     ``dxyz`` and ``txyz`` are the dipole locations, and ``M`` is
+      %     a rotation matrix.
+      %
+      % Optional named parameters
+      %   - low_memory -- (logical) If matrix should be low memory variant.
+      %
+      %   - xySymmetry -- (logical) If matrix has xy symmetry.
+      %
+      %   - parity -- (enum) Either 'even' or 'odd' for beam parity.
+      %
+      %   - zRotSymmetry -- (numeric) Degree of z rotational symmetry.
+      %
+      %   - rorder -- (numeric) Rotational order of beam.
 
       p = inputParser;
       p.addParameter('low_memory', false);
+      p.addParameter('xySymmetry', false);
+      p.addParameter('zRotSymmetry', 1);
+      p.addParameter('parity', 'even');
+      p.addParameter('rorder', 1);
       p.parse(varargin{:});
 
-      % Calculate amount of work we have to do
-      full_rotsym_sz = beam.zRotSymmetry;
-      if full_rotsym_sz == 0
-        full_rotsym_sz = 4;
-      end
-      if beam.xySymmetry
-        full_mirror_sz = 2;
-      else
-        full_mirror_sz = 1;
+      % Calculate amount of work to do
+      rotsym_wk = p.Results.zRotSymmetry;
+      mirror_wk = p.Results.xySymmetry + 1;
+      if rotsym_wk == 0
+        rotsym_wk = 4;
       end
 
-      % Calculate rotsym and mirror sizes for F
+      % Calculate matrix sizes
       if p.Results.low_memory
         rotsym_sz = 1;
         mirror_sz = 1;
       else
-        rotsym_sz = full_rotsym_sz;
-        mirror_sz = full_mirror_sz;
+        rotsym_sz = rotsym_wk;
+        mirror_sz = mirror_wk;
       end
-
-      % Get sizes of xyz and dipoles
-      npts = size(locs, 2);
-      nrows = 3 * npts;
+      ncols = size(vxyz, 2);
+      nrows3 = 3*size(txyz, 2);
 
       % Allocate memory for F
-      F = zeros(nrows, 3, mirror_sz, rotsym_sz, beam.ndipoles);
+      F = zeros(nrows3, 3, mirror_sz, rotsym_sz, ncols);
 
-      % Calculate phase factor for rotational symmetry
+      % Calculate phase factors for mirror/rotational symmetry
       if p.Results.low_memory
-        midx = 1:full_rotsym_sz;
-        rphase_factor = exp(1i*beam.rorder*2*pi*(midx-1)/full_rotsym_sz);
-        if strcmpi(beam.parity, 'even')
+        midx = 1:rotsym_wk;
+        rphase_factor = exp(1i*p.Results.rorder*2*pi*(midx-1)/rotsym_wk);
+        if strcmpi(p.Results.parity, 'even')
           mphase_factor = [1, 1];
         else
           mphase_factor = [1, -1];
         end
       end
 
-      % Get Spherical Coordinates
-      rtp = ott.utils.xyz2rtp(beam.location);
+      % Get Spherical Coordinates of voxels
+      vrtp = ott.utils.xyz2rtp(vxyz);
 
-      for ii = 1:beam.ndipoles        % Loop over each dipole
+      for ii = 1:size(vxyz, 2)        % Loop over each dipole
 
         % Calculate cartesian to spherical conversion for each dipole
-        M_cart2sph = ott.utils.cart2sph_mat(rtp(2, ii), rtp(3, ii));
+        M_cart2sph = ott.utils.cart2sph_mat(vrtp(2, ii), vrtp(3, ii));
 
-        for jj = 1:full_rotsym_sz     % duplicates for z mirror symmetry
+        for jj = 1:rotsym_wk     % duplicates for z mirror symmetry
 
           % Calculate spherical to cartesian for each mirror version
           M_sph2cart = ott.utils.sph2cart_mat(...
-              rtp(2, ii), rtp(3, ii) + 2*pi*(jj-1)/full_rotsym_sz);
+              vrtp(2, ii), vrtp(3, ii) + 2*pi*(jj-1)/rotsym_wk);
 
-          dipole_xyz = ott.utils.rtp2xyz(rtp(1, ii), ...
-            rtp(2, ii), rtp(3, ii) + 2*pi*(jj-1)/full_rotsym_sz);
+          dipole_xyz = ott.utils.rtp2xyz(vrtp(1, ii), ...
+            vrtp(2, ii), vrtp(3, ii) + 2*pi*(jj-1)/rotsym_wk);
 
-          for kk = 1:full_mirror_sz     % duplicates for z rotational symmetry
+          for kk = 1:mirror_wk     % duplicates for z rotational symmetry
 
             % Apply mirror symmetry rotation
             if kk == 1
@@ -569,7 +590,7 @@ classdef Dipole
             end
 
             % Calculate columns of F
-            Fc = field_func(dipole_xyz, locs, M_dipole);
+            Fc = func(ii, jj, kk, dipole_xyz, txyz, M_dipole);
 
             if p.Results.low_memory
               F(:, :, 1, 1, ii) = F(:, :, 1, 1, ii) ...
@@ -583,7 +604,27 @@ classdef Dipole
 
       % Convert from 3xN*3*M*L*O to 3xN*3xM*L*O
       F = permute(F, [1, 2, 5, 4, 3]);
-      F = reshape(F, [nrows, 3*beam.ndipoles, rotsym_sz, mirror_sz]);
+      F = reshape(F, [nrows3, 3*ncols, rotsym_sz, mirror_sz]);
+    end
+  end
+
+  methods (Hidden)
+    function F = field_matrix_internal(beam, locs, field_func, varargin)
+      % Calculate the field-matrices
+
+      p = inputParser;
+      p.addParameter('low_memory', false);
+      p.parse(varargin{:});
+
+      % Don't need row/col indices for our field funcs, so discard them
+      func = @(~, ~, ~, a, b, c) field_func(a, b, c);
+
+      F = beam.build_field_matrix(beam.locations, locs, func, ...
+          'low_memory', p.Results.low_memory, ...
+          'xySymmetry', beam.xySymmetry, ...
+          'zRotSymmetry', beam.zRotSymmetry, ...
+          'rorder', beam.rorder, ...
+          'parity', beam.parity);
     end
   end
 
@@ -594,14 +635,14 @@ classdef Dipole
       beam.polarization = val;
     end
 
-    function beam = set.location(beam, val)
+    function beam = set.locations(beam, val)
       assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 3, ...
           'location must be 3xN numeric matrix');
-      beam.location = val;
+      beam.locations = val;
     end
 
     function n = get.ndipoles(beam)
-      n = size(beam.location, 2);
+      n = size(beam.locations, 2);
     end
 
     function n = get.nbeams(beam)

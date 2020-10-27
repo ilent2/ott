@@ -12,7 +12,7 @@ function testConstruction(testCase)
   polarization = [0;0;1];
   beam = ott.tmatrix.dda.Dipole(xyz, polarization);
 
-  testCase.verifyEqual(beam.location, xyz, 'xyz');
+  testCase.verifyEqual(beam.locations, xyz, 'xyz');
   testCase.verifyEqual(beam.polarization, polarization, 'pol');
   testCase.verifyEqual(beam.xySymmetry, false, 'xy-sym');
   testCase.verifyEqual(beam.zRotSymmetry, 1, 'z-sym');

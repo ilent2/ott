@@ -39,7 +39,7 @@ function testSolve(testCase)
   Einc = beam.efield(xyz);
   dipoles = dda.solve(Einc);
 
-  testCase.verifyInstance(dipoles, 'ott.tmatrix.dda.Dipole', 'instance');
+  testCase.verifyInstanceOf(dipoles, 'ott.tmatrix.dda.Dipole', 'instance');
 
 end
 
