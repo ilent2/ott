@@ -23,6 +23,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 % Static methods
 %   - FromDenseBeamVectors -- Construct beam from dense beam vectors.
 %   - VisualisationData    -- Calculate visualisation data.
+%   - BasisSet             -- Generate basis set of VSWF beams
 %
 % Methods
 %   - Bsc        -- Class constructor
@@ -232,6 +233,36 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
               'Unknown value for field_type.');
       end
     end
+
+    function varargout = BasisSet(ci)
+      % Generate basis set of VSWF beams
+      %
+      % Usage
+      %   beams = ott.bsc.Bsc.BasisSet(ci)
+      %   Returns an array of ``2*numel(ci)`` beams for basis set.
+      %
+      %   [TE, TM] = ott.bsc.Bsc.BasisSet(ci)
+      %   Returns two arrays for ``a`` modes and ``b`` modes.
+
+      assert(isvector(ci) && isnumeric(ci) && all(ci > 0), ...
+          'ci must be positive numeric vector');
+
+      % Mode indices
+      Z = sparse(max(ci), numel(ci));
+      I = sparse(ci, 1:numel(ci), ones(size(ci)), max(ci), numel(ci));
+
+      % Generate beams
+      TE = ott.bsc.Bsc(I, Z);
+      TM = ott.bsc.Bsc(Z, I);
+
+      % Package output
+      if nargout == 1
+        varargout{1} = [TE, TM];
+      else
+        varargout{1} = TE;
+        varargout{2} = TM;
+      end
+    end
   end
 
   methods
@@ -365,7 +396,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %   [H, data] = beam.hfarfield(rtp, ...)
       %
       % See :meth:`efarfield` for further details.
-      
+
       % Ensure rtp size is 3xN
       [~, rtp] = ott.utils.rtpFarfield(rtp);
 
@@ -393,7 +424,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Optional named parameters
       %   - data (ott.utils.VswfData) -- Field data for repeated field
       %     calculation.  Default is an empty VswfData structure.
-      
+
       % Ensure rtp size is 3xN
       [~, rtp] = ott.utils.rtpFarfield(rtp);
 
@@ -578,7 +609,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
     end
 
     function [E, data] = efieldRtp(beam, rtp, varargin)
-      % Calculate E-field around beam focus
+      % Calculate E-field around beam focus.
+      %
+      % If the radius is zero, sets the radius to 1e-100.
       %
       % Usage
       %   [E, data] = beam.efieldRtp(rtp, ...)
@@ -607,6 +640,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Multiply r by 2*pi
       rtp(1, :) = rtp(1, :) * 2*pi;
 
+      % Replace near zero elements to avoid nans
+      rtp(1, rtp(1, :) == 0) = 1e-100;
+
       ci = beam.getCombinedIndex();
       [n, ~] = ott.utils.combined_index(ci);
       Nn = 1./sqrt(n.*(n+1));
@@ -622,7 +658,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       bi = permute(full(bi), [1, 3, 2]);
 
       % Calculate field components
-      Er = sum(Nn.*n.*(n+1)./rtp(1, :).*hn.*Y.*bi, 1);
+      Er = sum(Nn.*n.*(n+1).*(hn./rtp(1, :)).*Y.*bi, 1);
       Etheta = sum(Nn .* (ai .* Yphi .* hn + bi .* Ytheta .* dhn), 1);
       Ephi = sum(Nn .* (-ai .* Ytheta .* hn + bi .* Yphi .* dhn), 1);
 
@@ -632,7 +668,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
     end
 
     function [H, data] = hfieldRtp(beam, rtp, varargin)
-      % Calculate H-field around beam focus
+      % Calculate H-field around beam focus.
+      %
+      % If the radius is zero, sets the radius to 1e-100.
       %
       % Usage
       %   [E, data] = beam.hfieldRtp(rtp, ...)
@@ -660,6 +698,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Multiply r by 2*pi
       rtp(1, :) = rtp(1, :) * 2*pi;
+
+      % Replace near zero elements to avoid nans
+      rtp(1, rtp(1, :) == 0) = 1e-100;
 
       ci = beam.getCombinedIndex();
       [n, ~] = ott.utils.combined_index(ci);
@@ -810,6 +851,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Generate visualisation data
       imout = beam.VisualisationData(p.Results.field, Ef);
+      imout = reshape(imout, sz);
 
       % Display the visualisation
       beam.visualiseShowPlot(...
@@ -885,7 +927,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Generate grid of coordinates
       default_sz = [80, 80];
-      [xrange, yrange, ~] = beam.visualiseGetRange(p.Results.range, ...
+      [xrange, yrange, sz] = beam.visualiseGetRange(p.Results.range, ...
           p.Results.size, default_sz);
       [xx, yy] = meshgrid(xrange, yrange);
       nxy = [xx(:), yy(:)].';
@@ -896,6 +938,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Generate visualisation data
       imout = beam.VisualisationData(p.Results.field, E);
+      imout = reshape(imout, sz);
 
       % Display the visualisation
       beam.visualiseShowPlot(...
@@ -969,6 +1012,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Generate visualisation data
       imout = beam.VisualisationData(p.Results.field, E);
+      imout = reshape(imout, size(X));
 
       % Generate visualisation
       if nargout == 0 || ~isempty(p.Results.plot_axes)
@@ -1179,12 +1223,12 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % both conditions are kept.
 
       ott.utils.nargoutCheck(beam, nargout);
-      
+
       p = inputParser;
       p.addParameter('AbsTol', [], @isnumeric);
       p.addParameter('RelTol', 1.0e-15, @isnumeric);
       p.parse(varargin{:});
-      
+
       for ii = 1:numel(beam)
 
         [oa, ob] = beam(ii).getCoefficients();
@@ -1459,8 +1503,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       oa = zeros(numel(ci), numel(beam), 'like', beam(1).a);
       ob = zeros(numel(ci), numel(beam), 'like', beam(1).b);
       for ii = 1:numel(beam)
-        oa(ci <= na(ii), ii) = beam(ii).a(ci <= na(ii));
-        ob(ci <= nb(ii), ii) = beam(ii).b(ci <= nb(ii));
+        oa(ci <= na(ii), ii) = beam(ii).a(ci(ci <= na(ii)));
+        ob(ci <= nb(ii), ii) = beam(ii).b(ci(ci <= nb(ii)));
       end
 
       % Package output

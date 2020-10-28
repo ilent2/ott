@@ -28,8 +28,9 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 %   - gather      -- Apply gather to T-matrix data
 %   - setType     -- Set the T-matrix type property (doesn't change data)
 %   - columnCheck -- Calculate and check T-matrix column power
+%   - mergeCols   -- Merge columns of tmatrices
 %
-% Mathematical operations
+% Mathematical and matrix operations
 %   - times       -- Scalar multiplication of data
 %   - mtimes      -- Scalar and matrix multiplication of data
 %   - rdivide     -- Scalar division of data
@@ -39,6 +40,7 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 %   - plus        -- Addition of data
 %   - real        -- Extract real part of T-matrix
 %   - imag        -- Extract imaginary part of T-matrix
+%   - diag        -- Extract the diagonal of the T-matrix
 %
 % Casts
 %   - ott.bsc.Bsc -- Convert each T-matrix column to beam vector
@@ -662,6 +664,34 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       tmatrix.data = abs(tmatrix.data);
     end
 
+    function varargout = diag(tmatrix, k)
+      % Extract the T-matrix diagonal
+      %
+      % Usage
+      %   d = diag(tmatrix)
+      %   Returns the diagonal in vector format
+      %
+      %   d = diag(tmatrix, K)
+      %   Extracts the K-th diagonal of the T-matrix.
+      %
+      %   [dA, dB] = diag(...)
+      %   Returns the diagonal of the upper and lower parts separately.
+
+      if nargin == 1
+        k = 0;
+      end
+
+      dA = diag(tmatrix.data(1:end/2, 1:end/2), k);
+      dB = diag(tmatrix.data(end/2+1:end, end/2+1:end), k);
+
+      if nargout == 1
+        varargout{1} = [dA; dB];
+      else
+        varargout{1} = dA;
+        varargout{2} = dB;
+      end
+    end
+
     %
     % Other T-matrix methods
     %
@@ -735,6 +765,34 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       if nargout ~= 0
         varargout{1} = column_power;
       end
+    end
+
+    function tmatrix = mergeCols(tmatrix, tmatrix2, ci)
+      % Merge columns of two T-matrices
+      %
+      % Usage
+      %   tmatrix = tmatrix.mergeCols(tmatrix2, ci)
+      %   Keeps all cols of the first T-matrix except thouse replaced
+      %   by tmatrix2 (specified by ci).
+      %
+      % Parameters
+      %   - tmatrix1, tmatrix2 -- T-matrices to merge
+      %
+      %   - ci -- (N numeric) Combined indices of T-matrix columns
+      %     to replace.  For each ``ci`` entry, keeps 2 columns from
+      %     ``tmatrix2`` (i.e., both TE and TM modes).
+
+      ott.utils.nargoutCheck(tmatrix, nargout);
+
+      % Check sizes match
+      oNmax = max(tmatrix.Nmax, tmatrix2.Nmax);
+      tmatrix.Nmax = oNmax;
+      tmatrix2.Nmax = oNmax;
+
+      % Replace columns
+      midpoint = size(tmatrix.data, 2)/2;
+      tmatrix.data(:, [ci, ci+midpoint]) = ...
+          tmatrix2.data(:, [ci, ci+midpoint]);
     end
   end
 

@@ -32,4 +32,28 @@ function testShapeVolume(testCase)
 
 end
 
+function testNmax1(testCase)
 
+  tmatrix1 = ott.tmatrix.Mie(1, 'relative_index', 2, 'Nmax', 1);
+  tmatrix2 = ott.tmatrix.Mie(1, 'relative_index', 2, 'Nmax', 2);
+  
+  D2 = diag(tmatrix2);
+  
+  testCase.verifyEqual(diag(tmatrix1), D2([1:3, 9:11]));
+
+end
+
+function testValuesFromOtt15(testCase)
+
+  % Compare to values from OTTv1.5
+  v15data = [-0.9074 + 0.2898i, -0.8633 + 0.3435i, ...
+    -0.8665 + 0.3401i, -0.8390 + 0.3675i];
+  v15data = diag([[1, 1, 1].*v15data(1), [1, 1, 1, 1, 1].*v15data(2), ...
+                  [1, 1, 1].*v15data(3), [1, 1, 1, 1, 1].*v15data(4)]);
+  
+  tmatrix = ott.tmatrix.Mie(1.0, 'relative_index', 1.2, 'Nmax', 1);
+  
+  testCase.verifyEqual(full(tmatrix.data), v15data, ...
+      'AbsTol', 1e-4, 'v15data');
+                
+end

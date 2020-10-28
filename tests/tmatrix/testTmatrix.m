@@ -275,3 +275,23 @@ function testMtimes(testCase)
   testCase.verifyEqual(S.data, tmatrix1.data * 2.0, 'T.*S');
 
 end
+
+function testDiag(testCase)
+
+  dataA = randn(3);
+  dataB = randn(3);
+  dataC = randn(3);
+  data = [dataA, dataC; -dataC, dataB];
+  tmatrix = ott.tmatrix.Tmatrix(data);
+  
+  testCase.verifyEqual(diag(tmatrix), diag(data), 'diag');
+  
+  testCase.verifyEqual(diag(tmatrix, 1), ...
+      [diag(dataA, 1); diag(dataB, 1)], 'diag k = 1');
+  
+  [da, db] = diag(tmatrix);
+  testCase.verifySize(da, [3, 1], 'sz da');
+  testCase.verifySize(db, [3, 1], 'sz db');
+  testCase.verifyEqual([da; db], diag(data), '[da; db]');
+
+end

@@ -59,6 +59,14 @@ function testFromDenseEmpty(testCase)
 
 end
 
+function testBasisSet(testCase)
+
+  bsc = ott.bsc.Bsc.BasisSet(1:3);
+  target = ott.bsc.Bsc([eye(3), zeros(3)], [zeros(3), eye(3)]);
+  
+  testCase.verifyEqual(bsc, sparse(target));
+end
+
 function testSetNmax(testCase)
 
   bsc = ott.bsc.Bsc([10;10;10;0.1]);
@@ -120,6 +128,10 @@ function testGetCoefficients(testCase)
   [a, b] = beam.getCoefficients([1, 2, 3]);
   testCase.verifyEqual(a, [1, 1; 2, 2; 3, 3], 'a');
   testCase.verifyEqual(b, [4, 4; 5, 5; 6, 6], 'b');
+  
+  [a, b] = beam.getCoefficients(3);
+  testCase.verifyEqual(a, [3, 3], 'a');
+  testCase.verifyEqual(b, [6, 6], 'b');
 
   ab = beam.getCoefficients();
   testCase.verifySize(ab, [16, 2], 'size');
@@ -234,6 +246,9 @@ function testVisNearfield(testCase)
   abeam.visNearfield('axis', {[1;0;0], [0;1;0]}, 'range', [-1, 1, -1, 1]);
   abeam.visNearfield('axis', {[1;0;0], [0;1;0], [0;0;1]}, ...
       'range', {linspace(0, 1), linspace(0, 2)});
+    
+  im = abeam.visNearfield();
+  testCase.verifySize(im, [80, 80]);
 
 end
 
@@ -244,6 +259,9 @@ function testVisFarfield(testCase)
 
   abeam = ott.bsc.Bsc([1; 2; 3]);
   abeam.visFarfield();
+    
+  im = abeam.visFarfield();
+  testCase.verifySize(im, [80, 80]);
 
 end
 
@@ -264,6 +282,18 @@ function testVisFarfieldSphere(testCase)
 
   abeam = ott.bsc.Bsc([1; 2; 3]);
   abeam.visFarfieldSphere();
+
+end
+
+function testFarfieldSphereModesMatch(testCase)
+
+  beam1 = ott.bsc.Bsc([1;0;0]);
+  beam2 = ott.bsc.Bsc([0;0;1]);
+  
+  s1 = beam1.visFarfieldSphere();
+  s2 = beam2.visFarfieldSphere();
+  
+  testCase.verifyEqual(s1, s2, 'AbsTol', 1e-16);
 
 end
 

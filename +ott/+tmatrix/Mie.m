@@ -174,12 +174,12 @@ classdef Mie < ott.tmatrix.Tmatrix
       % External: These differ from some definitions of a,b (a = -b, b = -a)
       b = -( mu*j1d.*j0 - m*j0d.*j1 ) ./ ( mu*j1d.*h0 - m*h0d.*j1 );
       a = -( mu*j0d.*j1 - m*j1d.*j0 ) ./ ( mu*h0d.*j1 - m*j1d.*h0 );
-      Texternal=sparse(1:2*clength, 1:2*clength, [a(indexing);b(indexing)]);
+      Texternal=sparse(1:2*clength, 1:2*clength, [a(indexing),b(indexing)]);
 
       % Internal: Calculate internal T-matrix
       d = ( h0d.*j0 - j0d.*h0 ) ./ ( m*j1.*h0d - j1d.*h0 );
       c = ( j0d.*h0 - h0d.*j0 ) ./ ( m*j1d.*h0 - h0d.*j1 );
-      Tinternal=sparse(1:2*clength, 1:2*clength, [c(indexing);d(indexing)]);
+      Tinternal=sparse(1:2*clength, 1:2*clength, [c(indexing),d(indexing)]);
 
       % Assign outputs
       if nargout == 2

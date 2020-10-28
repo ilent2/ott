@@ -150,12 +150,12 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       % Usage
       %   shape = shape * scalar     or     shape = scalar * shape
 
-      if isscalar(a)
+      if isnumeric(a)
         shape = b.scale(a);
-      elseif isscalar(b)
+      elseif isnumeric(b)
         shape = a.scale(b);
       else
-        error('Either a or b must be a scalar');
+        error('Either a or b must be numeric');
       end
     end
 
@@ -170,10 +170,10 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       % Usage
       %   shape = shape ./ scalar
 
-      if isscalar(b)
+      if isnumeric(b)
         shape = a.scale(1./b);
       else
-        error('b must be a scalar');
+        error('b must be numeric');
       end
     end
 

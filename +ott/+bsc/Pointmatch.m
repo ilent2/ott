@@ -32,9 +32,7 @@ classdef Pointmatch < ott.bsc.Bsc
       p.parse(varargin{:});
 
       % Generate basis set of beams
-      Z = sparse(max(ci), numel(ci));
-      I = sparse(ci, 1:numel(ci), ones(size(ci)), max(ci), numel(ci));
-      vswfBasis = ott.bsc.Bsc([I, Z], [Z, I]);
+      vswfBasis = ott.bsc.Bsc.BasisSet(ci);
 
       % Calculate coefficient matrix
       % Note: This doesn't have any assumptions about TEM fields
@@ -76,9 +74,7 @@ classdef Pointmatch < ott.bsc.Bsc
       p.parse(varargin{:});
 
       % Generate basis set of beams
-      Z = sparse(max(ci), numel(ci));
-      I = sparse(ci, 1:numel(ci), ones(size(ci)), max(ci), numel(ci));
-      vswfBasis = ott.bsc.Bsc([I, Z], [Z, I]);
+      vswfBasis = ott.bsc.Bsc.BasisSet(ci);
 
       % Calculate coefficient matrix
       % Note: This doesn't have any assumptions about TEM fields
