@@ -356,3 +356,15 @@ function testTmatrixCast(testCase)
 
 end
 
+function testDipoleFieldValues(testCase)
+
+  beams = ott.bsc.Bsc.BasisSet(1:3);
+  E0 = beams.efield([0;0;0]);
+  
+  I = vecnorm(E0.vxyz(1:3, :));
+  
+  % Compare to dipole field values from OTTv1.5
+  testCase.verifyEqual(I, [0, 0, 0, 0.2303, 0.2303, 0.2303], ...
+      'AbsTol', 1e-4, 'dipole field values');
+
+end

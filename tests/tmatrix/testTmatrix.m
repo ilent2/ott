@@ -295,3 +295,13 @@ function testDiag(testCase)
   testCase.verifyEqual([da; db], diag(data), '[da; db]');
 
 end
+
+function testMergeCols(testCase)
+
+  tmatrix1 = ott.tmatrix.Tmatrix(zeros(6));
+  tmatrix2 = ott.tmatrix.Tmatrix(eye(6));
+  target = ott.tmatrix.Tmatrix(diag([0,0,1,0,0,1]));
+  
+  tmatrix = tmatrix1.mergeCols(tmatrix2, 3);
+  testCase.verifyEqual(tmatrix, target);
+end

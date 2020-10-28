@@ -658,7 +658,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       bi = permute(full(bi), [1, 3, 2]);
 
       % Calculate field components
-      Er = sum(Nn.*n.*(n+1).*(hn./rtp(1, :)).*Y.*bi, 1);
+      Er = sum(Nn.*n.*(n+1)./rtp(1, :).*hn.*Y.*bi, 1);
       Etheta = sum(Nn .* (ai .* Yphi .* hn + bi .* Ytheta .* dhn), 1);
       Ephi = sum(Nn .* (-ai .* Ytheta .* hn + bi .* Yphi .* dhn), 1);
 
@@ -2010,7 +2010,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       p = inputParser;
       p.addParameter('basis', 'regular');
-      p.addParameter('Nmax', beam.Nmax);
+      p.addParameter('Nmax', max([beam.Nmax]));
       p.parse(varargin{:});
 
       ott.utils.nargoutCheck(beam, nargout);
@@ -2052,7 +2052,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %     Default: ``beam.Nmax``.
 
       p = inputParser;
-      p.addParameter('Nmax', beam.Nmax);
+      p.addParameter('Nmax', max([beam.Nmax]));
       p.parse(varargin{:});
 
       ott.utils.nargoutCheck(beam, nargout);
@@ -2119,7 +2119,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %     'outgoing' should be applied when the beam is a scattered beam.
 
       p = inputParser;
-      p.addParameter('Nmax', beam.Nmax);
+      p.addParameter('Nmax', max([beam.Nmax]));
       p.addParameter('basis', 'regular');
       p.parse(varargin{:});
 

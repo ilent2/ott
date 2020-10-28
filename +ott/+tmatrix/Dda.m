@@ -78,6 +78,8 @@ classdef Dda < ott.tmatrix.Tmatrix
           @(~, s, r) ott.tmatrix.dda.polarizability.LDR(s, r));
       p.addParameter('relative_index', 1.0);
       p.addParameter('low_memory', false);
+      p.addParameter('xySymmetry', shape.xySymmetry);
+      p.addParameter('zRotSymmetry', shape.zRotSymmetry);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -86,7 +88,9 @@ classdef Dda < ott.tmatrix.Tmatrix
       dda = ott.tmatrix.dda.Dda.FromShape(shape, ...
           'spacing', p.Results.spacing, ...
           'polarizability', p.Results.polarizability, ...
-          'relative_index', p.Results.relative_index);
+          'relative_index', p.Results.relative_index, ...
+          'xySymmetry', p.Results.xySymmetry, ...
+          'zRotSymmetry', p.Results.zRotSymmetry);
 
       % Select the high memory implementation
       if ~p.Results.low_memory
@@ -402,11 +406,11 @@ classdef Dda < ott.tmatrix.Tmatrix
       if isfinite(tmatrix.pmrtp(1, 1))
         [fMN, data] = beam.efieldRtp(tmatrix.pmrtp, 'data', data, ...
             'basis', 'outgoing');
-        fMN = fMN.vxyz;
+        fMN = fMN.vxyz.*2;
       else
         [fMN, data] = beam.efarfield(tmatrix.pmrtp, 'data', data, ...
             'basis', 'outgoing');
-        fMN = fMN.vxyz./(2*pi)./2;
+        fMN = fMN.vxyz./(2*pi);
       end
 
       % Package

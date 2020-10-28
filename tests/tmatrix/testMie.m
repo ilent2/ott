@@ -51,7 +51,7 @@ function testValuesFromOtt15(testCase)
   v15data = diag([[1, 1, 1].*v15data(1), [1, 1, 1, 1, 1].*v15data(2), ...
                   [1, 1, 1].*v15data(3), [1, 1, 1, 1, 1].*v15data(4)]);
   
-  tmatrix = ott.tmatrix.Mie(1.0, 'relative_index', 1.2, 'Nmax', 1);
+  tmatrix = ott.tmatrix.Mie(1.0, 'relative_index', 1.2, 'Nmax', 2);
   
   testCase.verifyEqual(full(tmatrix.data), v15data, ...
       'AbsTol', 1e-4, 'v15data');

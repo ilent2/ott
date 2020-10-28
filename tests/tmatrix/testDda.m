@@ -8,21 +8,21 @@ end
 
 function testSphereFromShape(testCase)
 
-  radius = 0.2;
-  nrel = 1.2;
+  radius = 0.15;
+  nrel = 1.1;
   shape = ott.shape.Sphere(radius);
   Tdda = ott.tmatrix.Dda.FromShape(shape, ...
-      'relative_index', nrel, 'spacing', 1/41);
+      'relative_index', nrel, 'spacing', 1/20);
   Tmie = ott.tmatrix.Mie.FromShape(shape, 'relative_index', nrel);
 
   testCase.assertEqual(Tdda.Nmax, Tmie.Nmax, 'Nmax');
-  testCase.verifyEqual(Tdda.data, Tmie.data, 'AbsTol', 1e-5, 'data');
+  testCase.verifyEqual(Tdda.data, Tmie.data, 'AbsTol', 1e-2, 'data');
 
 end
 
 function testDipoleSphere(testCase)
 
-  xyz = [0;0;0];
+  xyz = [0;0.0;0.0];
   nrel = 1.2;
   
   radius = 0.01;
@@ -30,19 +30,13 @@ function testDipoleSphere(testCase)
   
   dda = ott.tmatrix.dda.Dda(xyz, ...
     ott.tmatrix.dda.polarizability.CM(d, nrel)*eye(3));
-  Tdda = ott.tmatrix.Dda(dda, 'Nmax', 1);
+  Tdda = ott.tmatrix.Dda(dda, 'Nmax', 2);
   
   shape = ott.shape.Sphere(radius);
   Tmie = ott.tmatrix.Mie.FromShape(shape, ...
-      'relative_index', nrel, 'Nmax', 1);
-  
-  Tdda_diag = diag(Tdda);
-  Tmie_diag = diag(Tmie);
-  testCase.verifyEqual(Tdda_diag, Tmie_diag, 'diag');
-%   testCase.verifyEqual(Tdda_diag(4:end), Tmie_diag(4:end), ...
-%     'RelTol', 0.001, 'Upper Mie coefficeints not equal');
-%   testCase.verifyEqual(Tdda.data, full(Tmie.data), ...
-%     'AbsTol', 1e-6, 'Upper Mie coefficeints not equal');
+      'relative_index', nrel, 'Nmax', 2);
+
+  testCase.verifyEqual(Tdda.data, Tmie.data, 'AbsTol', 1e-8, 'diag');
 
 end
 

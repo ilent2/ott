@@ -84,37 +84,3 @@ function testDipoleFarfield(testCase)
   testCase.verifyEqual(farfield.vxyz, nearfield./P, 'AbsTol', 1.0e-3, 'h');
 
 end
-
-
-function testDipoleSphere(testCase)
-
-  xyz = [0;0;0];
-  nrel = 1.2;
-  
-  radius = 0.01;
-  d = (4*pi/3).^(1/3) .* radius;
-  
-  dda = ott.tmatrix.dda.Dda(xyz, ...
-    ott.tmatrix.dda.polarizability.CM(d, nrel)*eye(3));
-  
-%   [~, beam] = ott.bsc.Bsc.BasisSet(3);
-  [beam, ~] = ott.bsc.Bsc.BasisSet(3);
-  
-  Einc = beam.efield(xyz);
-  dbeam = dda.solve(Einc);
-  
-  shape = ott.shape.Sphere(radius);
-  Tmie = ott.tmatrix.Mie.FromShape(shape, ...
-      'relative_index', nrel, 'Nmax', 1);
-    
-  sbeam = Tmie * beam;
-  
-  Tdda_diag = diag(Tdda);
-  Tmie_diag = diag(Tmie);
-  testCase.verifyEqual(Tdda_diag, Tmie_diag, 'diag');
-%   testCase.verifyEqual(Tdda_diag(4:end), Tmie_diag(4:end), ...
-%     'RelTol', 0.001, 'Upper Mie coefficeints not equal');
-%   testCase.verifyEqual(Tdda.data, full(Tmie.data), ...
-%     'AbsTol', 1e-6, 'Upper Mie coefficeints not equal');
-
-end
