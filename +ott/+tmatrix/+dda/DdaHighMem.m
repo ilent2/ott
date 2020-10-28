@@ -115,7 +115,8 @@ classdef DdaHighMem < ott.tmatrix.dda.Dda
 
       A = dda.interaction;
       if ~ismatrix(A)
-        A = combine_rotsym_matrix(A, p.Results.rorder, p.Results.parity);
+        A = ott.tmatrix.dda.Dipole.combine_rotsym_matrix(...
+            A, p.Results.rorder, p.Results.parity);
       end
     end
   end

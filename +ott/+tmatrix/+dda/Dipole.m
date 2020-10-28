@@ -375,16 +375,15 @@ classdef Dipole
       % Calculate distance and unit vector from dipole to targets
       r_vec = target_xyz - dipole_xyz;
       r_jk = vecnorm(r_vec);
-      r_hat = r_vec./r_jk;
 
       % Compute the cross-product matrix
       rcross = zeros(3, 3, n_targets);
-      rcross(1, 2, :) = -r_hat(3, :);
-      rcross(1, 3, :) = r_hat(2, :);
-      rcross(2, 3, :) = -r_hat(1, :);
-      rcross(2, 1, :) = r_hat(3, :);
-      rcross(3, 1, :) = -r_hat(2, :);
-      rcross(3, 2, :) = r_hat(1, :);
+      rcross(1, 2, :) = -r_vec(3, :);
+      rcross(1, 3, :) = r_vec(2, :);
+      rcross(2, 3, :) = -r_vec(1, :);
+      rcross(2, 1, :) = r_vec(3, :);
+      rcross(3, 1, :) = -r_vec(2, :);
+      rcross(3, 2, :) = r_vec(1, :);
 
       % Reshape arrays for multiplication
       r_jk = reshape(r_jk, [1, 1, n_targets]);
@@ -403,7 +402,7 @@ classdef Dipole
       D = reshape(D, [3*n_targets, 3]);
     end
 
-    function D = efarfield_matrix_column(dipole_xyz, n_vec, M)
+    function D = hfarfield_matrix_column(dipole_xyz, n_vec, M)
       % Calculate a column of the far-field matrix
 
       assert(size(dipole_xyz, 1) == 3, 'dipole_xyz must be 3xN array');
@@ -440,7 +439,7 @@ classdef Dipole
       D = reshape(D, [3*n_targets, 3]);
     end
 
-    function D = hfarfield_matrix_column(dipole_xyz, n_vec, M)
+    function D = efarfield_matrix_column(dipole_xyz, n_vec, M)
       % Calculate a column of the magnetic far-field matrix
 
       assert(size(dipole_xyz, 1) == 3, 'dipole_xyz must be 3xN array');

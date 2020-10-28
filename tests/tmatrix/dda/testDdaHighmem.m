@@ -21,17 +21,19 @@ end
 
 function testSolve(testCase)
 
-  xyz = [0;0;0];
+  xyz = [1;1;1];
   alpha = eye(3);
-  dda1 = ott.tmatrix.dda.Dda(xyz, alpha);
-  dda2 = ott.tmatrix.dda.DdaHighMem(xyz, alpha);
+  dda1 = ott.tmatrix.dda.Dda(xyz, alpha, ...
+      'xySymmetry', true, 'zRotSymmetry', 4);
+  dda2 = ott.tmatrix.dda.DdaHighMem(xyz, alpha, ...
+      'xySymmetry', true, 'zRotSymmetry', 4);
 
-  beam = ott.bsc.Bsc(1, 0);
-  Einc = beam.efield(xyz);
+  Einc = [1;2;3];
   dipoles1 = dda1.solve(Einc);
   dipoles2 = dda2.solve(Einc);
 
-  testCase.verifyEqual(dipoles1, dipoles2, 'match low memory');
+  testCase.verifyEqual(dipoles1.polarization, ...
+      dipoles2.polarization, 'AbsTol', 1e-16, 'match low memory');
 
 end
 

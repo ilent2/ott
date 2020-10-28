@@ -17,19 +17,35 @@ classdef Dda < ott.tmatrix.Tmatrix
 %
 % Properties
 %   - dda      -- DDA instance used for field calculation
-%   - pmradius -- Radius for point matching (either Inf or a finite value)
+%   - pmrtp    -- (3xN numeric) Locations for point matching
 %
 % Static methods
-%   - FromShape   -- Construct from a geometric shape
+%   - FromShape    -- Construct from a geometric shape
+%   - DefaultPmrtp -- Build default ``pmrtp`` locatiosn for point matching
+%   - DefaultProgressCallback -- Default progress callback for method
 %
 % See also :meth:`Dda`, :pkg:`ott.tmatrix.dda`.
 
   properties (SetAccess=protected)
     dda       % DDA instance used for field calculation
-    pmradius  % Radius for point matching (either Inf or a finite value)
+    pmrtp     % (3xN numeric) Locations for point matching
   end
 
   methods (Static)
+    function DefaultProgressCallback(data)
+      % Default progress callback for Dda
+      %
+      % Prints the progress to the terminal.
+      %
+      % Usage
+      %   DefaultProgressCallback(data)
+      %
+      % Parameters
+      %   - data (struct) -- Structure with two fields: index and total.
+
+      disp(['Iteration ' num2str(data.index) ' / ' num2str(max(data.total))]);
+    end
+
     function varargout = FromShape(shape, varargin)
       % Construct a T-matrix from a geometric shape
       %
@@ -51,7 +67,7 @@ classdef Dda < ott.tmatrix.Tmatrix
       %     relative refractive index or homogeneous value.  Ignored if
       %     polarizability is a 3x3 tensor.
       %
-      %   - lowMemory -- (logical) If we should use the low memory DDA
+      %   - low_memory -- (logical) If we should use the low memory DDA
       %     implementation.  Default: ``false``.
       %
       % Additional parameters passed to class constructor.
@@ -61,79 +77,56 @@ classdef Dda < ott.tmatrix.Tmatrix
       p.addParameter('polarizability', ...
           @(~, s, r) ott.tmatrix.dda.polarizability.LDR(s, r));
       p.addParameter('relative_index', 1.0);
+      p.addParameter('low_memory', false);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
       % Construct a DDA representation
-      dda = ott.tmatrix.dda.Dda.FromShape(...
-          'spacing', p.Results.
+      dda = ott.tmatrix.dda.Dda.FromShape(shape, ...
+          'spacing', p.Results.spacing, ...
+          'polarizability', p.Results.polarizability, ...
+          'relative_index', p.Results.relative_index);
 
       % Select the high memory implementation
-      if ~p.Results.lowMemory
+      if ~p.Results.low_memory
         dda = ott.tmatrix.dda.DdaHighMem(dda);
       end
 
       % Calculate the T-matrix
       [varargout{1:nargout}] = ott.tmatrix.Dda(dda, unmatched{:});
     end
-  end
 
-  methods
-    function [tmatrix, incData, pmData] = Dda(dda_calc, varargin)
-      % Construct a T-matrix using a DDA simulation for field calculation
+    function pmrtp = DefaultPmrtp(Nmax, varargin)
+      % Build default grid of points for point matching
       %
       % Usage
-      %   tmatrix = Dda(dda_calc, ...)
+      %   pmrtp = DefaultPmrtp(Nmax, ...)
       %
       % Parameters
-      %   - dda_calc -- (ott.tmatrix.dda.Dda instance) The DDA instance
-      %     which will be used for field calculations.
+      %   - Nmax -- (numeric) Row Nmax for generated T-matrix.
       %
-      % Optional named arguments
-      %   - Nmax -- (numeric) Size of the VSWF expansion used for the
-      %     T-matrix point matching (determines T-matrix rows).
-      %     Default: ``ott.utis.ka2nmax(2*pi*shape.maxRadius)`` (may
-      %     need different values to give convergence for some shapes).
+      % Optional named parameters
+      %   - radius -- (numeric) Radius for point matching locations.
+      %     Must be positive scalar or Inf for far-field point matching.
+      %     Default: ``Inf``.
       %
-      %   - ci -- (N numeric) Number of modes to calculate scattering for.
-      %     This determines number of T-matrix columns.
-      %     Default: ``1:ott.utils.combined_index(Nmax, Nmax)`` (all modes).
-      %
-      %   - pmradius --(numeric) Radius for point matching.
-      %     Default: ``Inf`` (i.e., far-field point matching).
-      %
-      %   - angulargrid ({theta, phi}) -- Angular grid of points for
+      %   - angulargrid -- ({theta, phi}) Angular grid of points for
       %     calculation of radii.  Default is equally spaced angles with
       %     the number of points determined by Nmax.
+      %
+      %   - xySymmetry -- (logical) If the generated grid should be for
+      %     mirror symmetry DDA.  Default: ``false``.
+      %
+      %   - zRotSymmetry -- (numeric) If the generated grid should be for
+      %     rotationally symmetric DDA.  Default: ``1``.
 
       p = inputParser;
-      p.addParameter('Nmax', []);
-      p.addParameter('pmradius', Inf, ...
-          @(x) isnumeric(x) && isscalar(x) && x > 0);
-      p.addParameter('ci', []);
+      p.addParameter('radius', Inf, @isnumeric);
       p.addParameter('angulargrid', []);
-      p.addParameter('incData', ott.utils.VswfData());
-      p.addParameter('pmData', ott.utils.VswfData());
+      p.addParameter('xySymmetry', false);
+      p.addParameter('zRotSymmetry', 1);
       p.parse(varargin{:});
-
-      % Get or calculate Nmax
-      Nmax = p.Results.Nmax;
-      if isempty(Nmax)
-        Nmax = ott.utils.ka2nmax(2*pi*shape.maxRadius);
-      else
-        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
-            'Nmax must be positive numeric scalar');
-      end
-
-      % Get or calculate ci for calculation
-      ci = p.Results.ci;
-      if isempty(ci)
-        ci = 1:ott.utils.combined_index(Nmax, Nmax);
-      else
-        assert(isnumeric(ci) && isvector(ci) && all(ci > 0), ...
-            'ci must be positive numeric vector');
-      end
 
       % Get or calculate angular grid
       angulargrid = p.Results.angulargrid;
@@ -147,9 +140,9 @@ classdef Dda < ott.tmatrix.Tmatrix
         % We can reduce the number of point around the z-axis when we
         % have z rotational symmetry since modes will only scatter to
         % other modes with a multiple of the rotational symmetry factor.
-        if dda.zRotSymmetry > 1
-          nphi = ceil(nphi ./ dda.zRotSymmetry);
-        elseif dda.zRotSymmetry == 0
+        if p.Results.zRotSymmetry > 1
+          nphi = ceil(nphi ./ p.Results.zRotSymmetry);
+        elseif p.Results.zRotSymmetry == 0
 
           % TODO: When we work out how to infinite rotational DDA
           %   we should change this value to 1, for now its 3.
@@ -158,7 +151,7 @@ classdef Dda < ott.tmatrix.Tmatrix
 
         % Similarly, we can reduce the number of point in theta
         % when we have z-mirror symmetry since we match twice
-        if dda.xySymmetry
+        if p.Results.xySymmetry
           ntheta = ceil(ntheta ./ 2);
         end
 
@@ -169,10 +162,10 @@ classdef Dda < ott.tmatrix.Tmatrix
 
         % We also need to rescale our points by a similar amount
         % This avoids making the problem rank deficient
-        if dda.zRotSymmetry > 1
-          phi = phi ./ dda.zRotSymmetry;
+        if p.Results.zRotSymmetry > 1
+          phi = phi ./ p.Results.zRotSymmetry;
         end
-        if dda.xySymmetry
+        if p.Results.xySymmetry
           theta = theta ./ 2;
         end
 
@@ -188,121 +181,399 @@ classdef Dda < ott.tmatrix.Tmatrix
             'number of theta and phi points must match');
       end
 
-      incData = p.Results.incData;
-      pmData = p.Results.pmData;
+      % Create array of angular grid points
+      pmrtp = [p.Results.radius*ones(size(theta(:))), theta(:), phi(:)].';
+    end
+  end
 
-      % Generate basis set of beams
-      Z = sparse(max(ci), numel(ci));
-      I = sparse(ci, 1:numel(ci), ones(size(ci)), max(ci), numel(ci));
-      vswfBasis = ott.bsc.Bsc([I, Z], [Z, I]);
+  methods
+    function [tmatrix, incData, pmData] = Dda(dda, varargin)
+      % Construct a T-matrix using a DDA simulation for field calculation
+      %
+      % Usage
+      %   tmatrix = Dda(dda, ...)
+      %
+      %   [tmatrix, incData, pmData] = Dda(dda, ...)
+      %   Also returns the VSWF data structures used for calculating the
+      %   incident field and the point matching field.
+      %
+      % Parameters
+      %   - dda -- (ott.tmatrix.dda.Dda instance) The DDA instance
+      %     used for field calculations.
+      %
+      % Optional named arguments
+      %   - Nmax -- (numeric) Size of the VSWF expansion used for the
+      %     T-matrix point matching (determines T-matrix rows).
+      %     Default: ``ott.utils.ka2nmax(2*pi*shape.maxRadius)`` (may
+      %     need different values to give convergence for some shapes).
+      %
+      %   - ci -- (N numeric) Number of modes to calculate scattering for.
+      %     This determines number of T-matrix columns.
+      %     Default: ``1:ott.utils.combined_index(Nmax, Nmax)`` (all modes).
+      %
+      %   - pmrtp -- (3xN numeric) Coordinatse for point matching.
+      %     Radial coordinate must all be finite or all be Inf.
+      %     Default uses ``ott.tmatrix.Dda.DefaultPmrtp``.
+      %
+      %   - incData (ott.utils.VswfData) -- Data structure for repeated
+      %     incident field calculations.
+      %     Default: ``ott.utils.VswfData()``.
+      %
+      %   - pmData (ott.utils.VswfData) -- Data structure for repeated
+      %     point matching field calculations.
+      %     Default: ``ott.utils.VswfData()``.
+      %
+      % Unmatched parameters passed to :meth:`calculate_columns`.
 
-      % Calculate fields for point matching
-      if isfinite(p.Results.pmradius)
-        [pmE, pmData] = vswfBasis.efieldRtp(rtp, 'data', pmData);
-        pmE = reshape(pmE.vxyz(2:3, :), 3*size(rtp, 2), 2*numel(ci));
+      p = inputParser;
+      p.KeepUnmatched = true;
+      p.addParameter('Nmax', []);
+      p.addParameter('ci', []);
+      p.addParameter('pmrtp', []);
+      p.addParameter('incData', ott.utils.VswfData());
+      p.addParameter('pmData', ott.utils.VswfData());
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      % Store dda instance
+      tmatrix.dda = dda;
+
+      % Get or calculate Nmax
+      Nmax = p.Results.Nmax;
+      if isempty(Nmax)
+        rmax = max(vecnorm(dda.locations));
+        Nmax = ott.utils.ka2nmax(2*pi*rmax);
       else
-        [pmE, pmData] = vswfBasis.efarfield(rtp, 'data', pmData, ...
-            'basis', 'outgoing');
-        pmE = reshape(pmE.vrtp(2:3, :), 2*size(rtp, 2), 2*numel(ci));
+        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
+            'Nmax must be positive numeric scalar');
       end
 
-      % Calculate incident fields at dipole locations
-      [incE, incData] = vswfBasis.efield(dda.voxels, 'data', incData);
-      incE = reshape(incE.vxyz, 3*size(dda.voxels, 2), 2*numel(ci));
+      % Get or calculate ci for calculation
+      ci = p.Results.ci;
+      if isempty(ci)
+        ci = 1:ott.utils.combined_index(Nmax, Nmax);
+      else
+        assert(isnumeric(ci) && isvector(ci) && all(ci > 0), ...
+            'ci must be positive numeric vector');
+      end
 
-      % Get mode indices from ci
-      [nmodes, mmodes] = ott.utils.combined_index(ci);
+      % Get or calculate pmrtp
+      pmrtp = p.Results.pmrtp;
+      if isempty(pmrtp)
+        pmrtp = ott.tmatrix.Dda.DefaultPmrtp(Nmax, ...
+            'xySymmetry', dda.xySymmetry, ...
+            'zRotSymmetry', dda.zRotSymmetry);
+      else
+        assert(ismatrix(pmrtp) && isnumeric(pmrtp) ...
+            && size(pmrtp, 1) == 3, ...
+            'pmrtp must be 3xN numeric matrix');
+        assert(all(pmrtp(1, :) == pmrtp(1, 1)) && pmrtp(1, 1) > 0, ...
+            'prtp(1, :) must be constant positive value');
+      end
+      tmatrix.pmrtp = pmrtp;
+
+      % Calculate column Nmax
+      [nmodes, ~] = ott.utils.combined_index(ci);
+      cNmax = max(nmodes);
 
       % Calculate total number of orders
-      total_orders_cols = ott.utils.combined_index(max(nmodes), max(nmodes));
+      total_orders_cols = ott.utils.combined_index(cNmax, cNmax);
       total_orders_rows = ott.utils.combined_index(Nmax, Nmax);
 
       % Allocate memory for T-matrix data
-      data = zeros(2*total_orders_rows, 2*total_orders_cols);
+      tmatrix.data = sparse(2*total_orders_rows, 2*total_orders_cols);
+      tmatrix = tmatrix.setType('scattered');
 
-      % rorder is the most expensive dda step, do it first
-      for mm = mod(reshape(mmodes, 1, []), 2*dda.zRotSymmetry)
+      % Calculate columns
+      [tmatrix, incData, pmData] = tmatrix.calculate_columns(ci, ...
+          p.Results.incData, p.Results.pmData, unmatched{:});
+    end
 
-        % TODO: Display progress ((mm+1)/2*z_rotation)
+    function [tmatrix, incData, pmData] = calculate_columns(tmatrix, ...
+        ci, incData, pmData, varargin)
+      % Calculate T-matrix columns
+      %
+      % This function is called by the class constructor but could also
+      % be called separately for parallel T-matrix calculation.
+      %
+      % Usage
+      %   [tmatrix, incData, pmData] = tmatrix.calculate_columns(...
+      %       ci, incData, pmData, ...)
+      %
+      % Parameters
+      %   - ci -- (N numeric) Combined indices for columns.
+      %
+      %   - incData -- (ott.utils.VswfData) Data structure for VSWF
+      %     incident field calculations.
+      %
+      %   - pmData -- (ott.utils.VswfData) Data structure for point
+      %     matching VSWF field calculations.
+      %
+      % Optional named parameters
+      %   - solver -- (function_handle) Solver to use.  Good solvers to try
+      %     include ``gmres``, ``bicgstab`` and ``\``.
+      %     Default: ``@(A, E) A \ E``.
+      %
+      %   - low_memory -- (logical) If the method should use the reduced
+      %     memory dipole field calculation.
+      %     Default: ``false`` if ``dda`` is a :class:`DdaHighMem` instance
+      %     and ``true`` otherwise.
+      %
+      %   - progress (function_handle) -- Function to call for progress
+      %     updates during method evaluation.  Takes one argument, see
+      %     :meth:`DefaultProgressCallback` for more information.
+      %     Default: ``@DefaultProgressCallback``.
 
-        % Find our indices
-        ourIdx = mod(mmodes, 2*dda.zRotSymmetry) == mm;
-        ourIdx2 = [ourIdx, ourIdx];
+      p = inputParser;
+      p.addParameter('low_memory', ...
+          ~isa(tmatrix.dda, 'ott.tmatrix.dda.DdaHighMem'));
+      p.addParameter('progress', @ott.tmatrix.Dda.DefaultProgressCallback);
+      p.addParameter('solver', @(A, E) A \ E, @(x) isa(x, 'function_handle'));
+      p.parse(varargin{:});
 
-        % Calculate even part
-        if z_mirror
+      ott.utils.nargoutCheck(tmatrix, nargout);
 
-          p = mod(mmodes(mm) + nmodes(mm), 2) == 0;
-          ourIdxEvn = [p, ~p] & ourIdx2;
-          ourIdxOdd = [~p, p] & ourIdx2;
+      % Pre-calculate incident fields
+      [Ei, incData] = tmatrix.calculate_incident_field(ci, incData);
 
-          dipolesEvn = dda.solve(incE(:, ourIdxEvn), ...
-              'parity', 'even', 'rorder', mm);
-          dipolesOdd = dda.solve(incE(:, ourIdxOdd), ...
-              'parity', 'odd', 'rorder', mm);
+      % Pre-calculate outgoing fields for PM
+      [MN, pmData] = tmatrix.calculate_outgoing_field(pmData);
 
-          % Calculate fields for point matching
-          if isfinite(p.Results.pmradius)
-            pmEevn = dipolesEvn.efieldRtp(rtp);
-            pmEevn = reshape(pmEevn.vxyz, 3*size(rtp, 2), sum(ourIdxEvn));
+      % Pre-calculate transfer matrix for faster calculations
+      F = tmatrix.calculate_scattered_matrix(p.Results.low_memory);
 
-            pmEodd = dipolesOdd.efieldRtp(rtp);
-            pmEodd = reshape(pmEodd.vxyz, 3*size(rtp, 2), sum(ourIdxOdd));
-          else
-            pmEevn = dipoleEvn.efarfield(rtp);
-            pmEevn = reshape(pmEevn.vrtp(2:3, :), ...
-                2*size(rtp, 2), sum(ourIdxEvn));
+      [nmodes, mmodes] = ott.utils.combined_index(ci(:).');
 
-            pmEodd = dipoleOdd.efarfield(rtp);
-            pmEodd = reshape(pmEodd.vrtp(2:3, :), ...
-                2*size(rtp, 2), sum(ourIdxOdd));
-          end
+      for m = unique(mmodes)
 
-          error('Not yet implemented');
+        % Report progress
+        p.Results.progress(struct(...
+          'index', sum(mmodes < m), 'total', numel(mmodes)));
 
-        else
-          dipoles = dda.solve(incE(:, ourIdx2), 'rorder', mm);
+        % Calculate which nmodes/Ei we need for calculation
+        ournmodes = nmodes(mmodes == m);
+        ourEi = Ei(:, [mmodes == m, mmodes == m]);
 
-          % Calculate fields for point matching
-          if isfinite(p.Results.pmradius)
-            pmEout = dipoles.efieldRtp(rtp);
-            pmEout = reshape(pmEout.vxyz, 3*size(rtp, 2), sum(ourIdx2));
-          else
-            pmEout = dipole.efarfield(rtp);
-            pmEout = reshape(pmEout.vrtp(2:3, :), 2*size(rtp, 2), sum(ourIdx2));
-          end
+        % Calculate scattered fields
+        En = tmatrix.calculate_scattered_fields(m, ournmodes, ...
+          ourEi, F, p.Results.solver);
 
-          if z_rotation == 1
-            % No rotational symmetry
-            data(:, [ci, total_orders_cols+ci]) = pmE \ pmEout;
-          else
-
-            [alln, allm] = ott.utils.combined_index((1:total_orders_rows).');
-
-            if z_rotation > 1
-              % Calculate which modes preseve symmetry, m = +/- ip
-              axial_modes = mod(allm - mmodes(mm), z_rotation) == 0;
-            elseif z_rotation == 0
-              % Modes only scatter to modes with same m
-              axial_modes = allm == mmodes(mm);
-            else
-              error('Invalid z_rotation value');
-            end
-
-            modes = [axial_modes; axial_modes];
-
-            pq1 = pmE(:, modes) \ pmEout(:, [ourIdx, 0*ourIdx]);
-            pq2 = pmE(:, modes) \ pmEout(:, [0*ourIdx, ourIdx]);
-
-            data(modes, ci) = pq1;
-            data(modes, total_orders_cols+ci) = pq2;
-          end
-        end
+        % Do point matching for each column
+        tmatrix = tmatrix.calculate_pm_columns(m, ournmodes, MN, En);
       end
 
-      % Package T-matrix
-      tmatrix.data = data;
-      tmatrix = tmatrix.setType('scattered');
+      % Final Report progress
+      p.Results.progress(struct(...
+        'index', numel(mmodes), 'total', numel(mmodes)));
+    end
+  end
+
+  methods (Hidden)
+    function [Ei, data] = calculate_incident_field(tmatrix, ci, data)
+      % Pre-calculate the incident field data
+      %
+      % Usage
+      %   [Ei, data] = tmatrix.calculate_incident_field(ci, data)
+
+      % Calculate VSWF basis set
+      beam = ott.bsc.Bsc.BasisSet(ci);
+
+      % Calculate FieldVector data
+      [fE, data] = beam.efield(tmatrix.dda.locations.*1.2, ...
+          'data', data, 'basis', 'regular');
+
+      % Package for DDA
+      Ei = reshape(fE.vxyz, 3*size(tmatrix.dda.locations, 2), 2*numel(ci));
+    end
+
+    function [MN, data] = calculate_outgoing_field(tmatrix, data)
+      % Pre-calculate the outgoing fields and transfer matrix for PM
+      %
+      % Usage
+      %   [MN, data] = tmatrix.calculate_outgoing_field(data)
+
+      % Get modes to match
+      ci = 1:size(tmatrix.data, 1)/2;
+
+      % Calculate VSWF basis set
+      beam = ott.bsc.Bsc.BasisSet(ci);
+
+      % Calculate Field vectors
+      if isfinite(tmatrix.pmrtp(1, 1))
+        [fMN, data] = beam.efieldRtp(tmatrix.pmrtp, 'data', data, ...
+            'basis', 'outgoing');
+        fMN = fMN.vxyz;
+      else
+        [fMN, data] = beam.efarfield(tmatrix.pmrtp, 'data', data, ...
+            'basis', 'outgoing');
+        fMN = fMN.vxyz./(2*pi)./2;
+      end
+
+      % Package
+      MN = reshape(fMN, 3*size(tmatrix.pmrtp, 2), 2*numel(ci));
+    end
+
+    function F = calculate_scattered_matrix(tmatrix, low_memory)
+      % Pre-calculate dipole scattered field matrix if not low_memory
+
+      if low_memory
+        F = [];  % Nothing to do
+      else
+        dipoles = ott.tmatrix.dda.Dipole(tmatrix.dda.locations, ...
+          zeros(3*size(tmatrix.dda.locations, 2), 0), ...
+          'xySymmetry', tmatrix.dda.xySymmetry, ...
+          'zRotSymmetry', tmatrix.dda.zRotSymmetry);
+
+        if isfinite(tmatrix.pmrtp(1, 1))
+          xyz = ott.utils.rtp2xyz(tmatrix.pmrtp);
+          F = dipoles.enearfield_matrix(xyz, 'low_memory', false);
+        else
+          F = dipoles.efarfield_matrix(tmatrix.pmrtp, 'low_memory', false);
+        end
+      end
+    end
+
+    function E = calculate_scattered_fields_internal(tmatrix, dipoles, F)
+      % Calculate scattered fields at specific locations
+
+      if isempty(F)
+        if isfinite(tmatrix.pmrtp(1, 1))
+          xyz = ott.utils.rtp2xyz(tmatrix.pmrtp);
+          E = dipoles.efield(xyz, 'low_memory', true);
+        else
+          E = dipoles.efarfield(tmatrix.pmrtp, 'low_memory', true);
+        end
+        
+        % Reshape to match F*dipoles output
+        E = reshape(E.vxyz, 3*size(tmatrix.pmrtp, 2), []);
+      else
+        E = F * dipoles;
+      end
+    end
+
+    function En = calculate_scattered_fields(tmatrix, ...
+        m, nmodes, Ei, F, solver)
+      % Solve DDA problem and calculate scattered fields
+
+      if tmatrix.dda.xySymmetry
+        evn = mod(m + nmodes, 2) == 0;
+
+        dipolesOdd = tmatrix.dda.solve(Ei(:, [evn, ~evn]), ...
+            'parity', 'odd', 'rorder', m, 'solver', solver);
+        dipolesEvn = tmatrix.dda.solve(Ei(:, [~evn, evn]), ...
+            'parity', 'even', 'rorder', m, 'solver', solver);
+
+        Eodd = tmatrix.calculate_scattered_fields_internal(dipolesOdd, F);
+        Eevn = tmatrix.calculate_scattered_fields_internal(dipolesEvn, F);
+
+        En = zeros(size(Eodd, 1), 2*numel(nmodes));
+        En(:, [evn, evn]) = [Eodd(:, 1:sum(evn)), Eevn(:, sum(~evn)+1:end)];
+        En(:, ~[evn, evn]) = [Eevn(:, 1:sum(~evn)), Eodd(:, sum(evn)+1:end)];
+
+      else
+        dipoles = tmatrix.dda.solve(Ei, 'rorder', m, 'solver', solver);
+        En = tmatrix.calculate_scattered_fields_internal(dipoles, F);
+      end
+    end
+
+    function tmatrix = calculate_pm_columns(tmatrix, m, nmodes, MN, En)
+      % Calculate individual column pair of T-matrix
+
+      ott.utils.nargoutCheck(tmatrix, nargout);
+
+      total_orders_cols = size(tmatrix.data, 2)/2;
+      total_orders_rows = size(tmatrix.data, 1)/2;
+
+      [alln, allm] = ott.utils.combined_index((1:total_orders_rows).');
+
+      % Find even modes
+      even_modes = logical(mod(alln + allm, 2));
+
+      z_rotation = tmatrix.dda.zRotSymmetry;
+      z_mirror = tmatrix.dda.xySymmetry;
+
+      for n = nmodes
+
+        % Calculate column index
+        ci = ott.utils.combined_index(n, m);
+
+        % Get mode fields
+        E_TE = En(:, [nmodes == n, false(1, numel(nmodes))]);
+        E_TM = En(:, [false(1, numel(nmodes)), nmodes == n]);
+
+        if z_rotation == 1
+          % No rotational symmetry
+
+          if z_mirror
+            % Only mirror symmetry
+            % Parity is conserved, even modes go to even modes, etc.
+            % Reference: https://arxiv.org/pdf/physics/0702045.pdf
+
+            modes = [ even_modes; ~even_modes ];
+
+            if ~logical(mod(n + m, 2))
+              modes = ~modes;
+            end
+
+            pq1 = MN(:, modes) \ E_TE;
+            pq2 = MN(:, ~modes) \ E_TM;
+
+            tmatrix.data(modes,ci) = pq1;
+            tmatrix.data(~modes,ci+total_orders_cols) = pq2;
+
+          else
+
+            pq1 = MN\E_TE;
+            pq2 = MN\E_TM;
+
+            tmatrix.data(:,ci) = pq1;
+            tmatrix.data(:,ci+total_orders_cols) = pq2;
+
+          end
+
+        else
+
+          if z_rotation > 1
+            % Calculate which modes preseve symmetry, m = +/- ip
+            axial_modes = mod(allm - m, z_rotation) == 0;
+          elseif z_rotation == 0
+            % Modes only scatter to modes with same m
+            axial_modes = allm == m;
+          else
+            error('Invalid z_rotation value');
+          end
+
+          modes = [axial_modes; axial_modes];
+
+          if z_mirror
+
+            % Correct the MN modes to include only even/odd modes
+            if logical(mod(n + m, 2))
+              modes_evn = modes & [ even_modes; ~even_modes ];
+              modes_odd = modes & [ ~even_modes; even_modes ];
+            else
+              modes_odd = modes & [ even_modes; ~even_modes ];
+              modes_evn = modes & [ ~even_modes; even_modes ];
+            end
+
+            pq1 = MN(:, modes_evn) \ E_TE;
+            pq2 = MN(:, modes_odd) \ E_TM;
+
+            tmatrix.data(modes_evn,ci) = pq1;
+            tmatrix.data(modes_odd,ci+total_orders_cols) = pq2;
+
+          else
+
+            pq1 = MN(:, modes) \ E_TE;
+            pq2 = MN(:, modes) \ E_TM;
+
+            tmatrix.data(modes,ci) = pq1;
+            tmatrix.data(modes,ci+total_orders_cols) = pq2;
+
+          end
+        end
+
+      end
     end
   end
 end

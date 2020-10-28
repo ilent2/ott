@@ -124,7 +124,7 @@ classdef Dda
       % Construct new DDA solver instance.
       %
       % Usage
-      %   dda = Dda(locations, interaction, ...)
+      %   dda = Dda(locations, polarizabilities, ...)
       %
       % Parameters
       %   - voxels -- (3xN numeric) Voxel locations in Cartesian coordinates.
