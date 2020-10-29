@@ -24,7 +24,8 @@ p = shape.surf();
 camlight; lighting gouraud;
 title('Sphere (Mie)');
 
-T = ott.tmatrix.Mie.FromShape(shape, relative_index);
+T = ott.tmatrix.Mie.FromShape(shape, ...
+  'relative_index', relative_index);
 
 %% Spheroid (Smarties)
 
@@ -38,7 +39,8 @@ p = shape.surf();
 camlight; lighting gouraud;
 title('Spheroid (Smarties)');
 
-T = ott.tmatrix.Smarties.FromShape(shape, relative_index);
+T = ott.tmatrix.Smarties.FromShape(shape, ...
+  'relative_index', relative_index);
 
 %% Cylinder (Pointmatch, DDA, EBCM)
 
@@ -51,7 +53,8 @@ shape.surf('surfOptions', {'EdgeColor', 'none'});
 camlight; lighting gouraud;
 title(['Cylinder' newline '(Pointmatch, Dda, Ebcm)']);
 
-T = ott.tmatrix.Tmatrix.SmartCylinder(shape, relative_index);
+T = ott.tmatrix.Tmatrix.SmartCylinder(shape, ...
+    'relative_index', relative_index);
 
 %% Star shaped (Pointmatch)
 
@@ -85,7 +88,8 @@ camlight; lighting gouraud;
 title(['Star shaped' newline '(Pointmatch)']);
 
 % Create T-matrix for only one shape
-T = ott.tmatrix.Pointmatch.FromShape(shape(1), relative_index);
+T = ott.tmatrix.Pointmatch.FromShape(shape(1).*0.1, ...
+    'relative_index', relative_index);
 
 %% Rotationally symmetric (EBCM)
 
@@ -101,7 +105,7 @@ camlight; lighting gouraud;
 title(['Axially Symmetric' newline '(Ebcm)']);
 
 % Create T-matrix for only one shape
-T = ott.tmatrix.Ebcm.FromShape(shape(1), relative_index);
+T = ott.tmatrix.Ebcm.FromShape(shape(1), 'relative_index', relative_index);
 
 %% Layered spheres (MieLayered)
 
@@ -116,7 +120,7 @@ title(['Concentric/Layered Spheres' newline '(MieLayered)']);
 
 % Pass in whole array and array of indices
 r_indices = [1.5, 1.2, 1.1];
-T = ott.tmatrix.MieLayered.FromShape(shape, r_indices);
+T = ott.tmatrix.MieLayered.FromShape(shape, 'relative_indices', r_indices);
 
 %% Arbitrary shapes (Dda)
 
@@ -128,7 +132,7 @@ camlight; lighting gouraud;
 title(['Arbitrary Shape' newline '(Dda)']);
 
 T = ott.tmatrix.Dda.FromShape(shape./shape.maxRadius.*0.1, ...
-    relative_index);
+    'relative_index', relative_index);
 
 %% Tweak positioning
 

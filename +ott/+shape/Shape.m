@@ -284,7 +284,8 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       % Calculate radii for star shaped particles.
       %
       % Checks that the particle is star shaped, then uses intersect
-      % to determine the surface locations.
+      % to determine the surface locations.  For intersect, starts each
+      % ray from the shape center (i.e., ``shape.position``).
       %
       % Usage
       %   R = shape.starRadii(theta, phi)
@@ -302,10 +303,14 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       directions = ott.utils.rtp2xyz(ones(size(theta)), theta, phi);
 
       % Find intersections
-      locs = shape.intersect(zeros(size(directions)), directions);
+      locs = shape.intersect(shape.position .* ones(size(directions)), ...
+          directions);
 
       % Calculate radii
       R = vecnorm(locs);
+      
+      % Ensure output size matches input
+      R = reshape(R, size(theta));
     end
 
     function [locs, norms] = intersectBoundingBox(shape, x0, x1, varargin)

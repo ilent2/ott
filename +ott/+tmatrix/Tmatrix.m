@@ -135,7 +135,7 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       tmatrix = ott.tmatrix.Dda.FromShape(shape, relative_index);
     end
 
-    function tmatrix = SmartCylinder(shape, relative_index, varargin)
+    function tmatrix = SmartCylinder(shape, varargin)
       % Constructs a T-matrix for a cylinder using smart method selection
       %
       % Either uses DDA, EBCM or Pointmatch depending on the cylinder's
@@ -164,8 +164,11 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       %     from the paper. Default: ``'ten'``.
 
       p = inputParser;
+      p.addOptional('relative_index', 1.0);
       p.addParameter('tolerance', 'ten');
       p.parse(varargin{:});
+      
+      relative_index = p.Results.relative_index;
 
       assert(isscalar(shape), 'shape must be a single shape');
       if ~isa(shape, 'ott.shape.Cylinder')

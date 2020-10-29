@@ -22,6 +22,7 @@ classdef (InferiorClasses = {?ott.shape.mixin.IntersectTriMesh}) ...
 
       % Find closest location
       [~, idx] = min(dist, [], 2);
+      idx = sub2ind([size(locs, 2), size(locs, 3)], idx(:).', 1:numel(idx));
       locs = locs(:, idx);
       norms = norms(:, idx);
     end

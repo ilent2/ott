@@ -47,8 +47,14 @@ classdef TriangularMesh < ott.shape.Shape ...
       %
       % Faces vertices should be ordered so normals face outwards for
       % volume and inside functions to work correctly.
+      %
+      % Any faces formed by duplicate vertices are removed.
 
       shape = shape@ott.shape.Shape(varargin{:});
+      
+      % Filter faces with duplicate vertices
+      badf = faces(1, :) == faces(2, :) | faces(1, :) == faces(3, :);
+      faces(:, badf) = [];
 
       shape.verts = verts;
       shape.faces = faces;
@@ -165,7 +171,7 @@ classdef TriangularMesh < ott.shape.Shape ...
 
       % Determine which points are inside triangles
       % Add a tolerance to make faces overlap slightly
-      tol = -1.0e-2;
+      tol = -eps(1);
       I = dot(cross(P2-P1, P-P1), N) >= tol & ...
           dot(cross(P3-P2, P-P2), N) >= tol & ...
           dot(cross(P1-P3, P-P3), N) >= tol;
@@ -181,12 +187,12 @@ classdef TriangularMesh < ott.shape.Shape ...
       norms = N(:, idx);
     end
 
-    function [P, N, dist] = intersectAllInternal(shape, vecs)
+    function [P, N, dist] = intersectAllInternal(shape, x0, x1)
       % Find all face intersections, returns a 3xNxM matrix
 
       % Reshape points (3x1xM)
-      Q1 = reshape(vecs.origin, 3, 1, []);
-      D = reshape(vecs.direction, 3, 1, []);
+      Q1 = reshape(x0, 3, 1, []);
+      D = reshape(x1 - x0, 3, 1, []);
 
       % Calculate normals (3xN)
       N = shape.norms;
@@ -206,9 +212,11 @@ classdef TriangularMesh < ott.shape.Shape ...
       P = Q1 + dist.*D;
 
       % Determine which points are inside triangles
-      I = dot(cross(P2-P1, P-P1), N) >= 0 & ...
-          dot(cross(P3-P2, P-P2), N) >= 0 & ...
-          dot(cross(P1-P3, P-P3), N) >= 0;
+      % Add a tolerance to make faces overlap slightly
+      tol = -eps(1);
+      I = dot(cross(P2-P1, P-P1), N) >= tol & ...
+          dot(cross(P3-P2, P-P2), N) >= tol & ...
+          dot(cross(P1-P3, P-P3), N) >= tol;
 
       % Remove intersections in the opposite direction
       found = dist >= 0 & I;
