@@ -20,7 +20,7 @@ import sys
 # -- Project information -----------------------------------------------------
 
 project = u'OTT'
-copyright = u'2019, Isaac Lenton'
+copyright = u'2020, Isaac Lenton'
 author = u'Isaac Lenton'
 
 # The short X.Y version
