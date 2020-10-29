@@ -24,7 +24,7 @@ classdef Dda < ott.tmatrix.Tmatrix
 %   - DefaultPmrtp -- Build default ``pmrtp`` locatiosn for point matching
 %   - DefaultProgressCallback -- Default progress callback for method
 %
-% See also :meth:`Dda`, :pkg:`ott.tmatrix.dda`.
+% See also :meth:`Dda`, :mod:`ott.tmatrix.dda`.
 
   properties (SetAccess=protected)
     dda       % DDA instance used for field calculation
@@ -447,7 +447,7 @@ classdef Dda < ott.tmatrix.Tmatrix
         else
           E = dipoles.efarfield(tmatrix.pmrtp, 'low_memory', true);
         end
-        
+
         % Reshape to match F*dipoles output
         E = reshape(E.vxyz, 3*size(tmatrix.pmrtp, 2), []);
       else

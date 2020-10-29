@@ -22,7 +22,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
 % Static methods
 %   - FromShape       -- Construct a T-matrix from a shape description
 %
-% See also Smarties, :class:`ott.tmatrix.Mie` and :pkg:`ott.tmatrix.smarties`.
+% See also Smarties, :class:`ott.tmatrix.Mie` and :mod:`ott.tmatrix.smarties`.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

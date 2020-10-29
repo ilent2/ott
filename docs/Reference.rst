@@ -16,7 +16,7 @@ the start of each of the following sections.
    :maxdepth: 2
 
    Beam-Package.rst
-   Scat-Package.rst
+   Tmatrix-Package.rst
    Shape-Package.rst
    Drag-Package.rst
    Dynamics-Package.rst

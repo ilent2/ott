@@ -18,7 +18,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
 %
 % Additional methods/properties inherited from :class:`Tmatrix`.
 %
-% This class is based on tmatrix_ebcm_axisym.m from ottv1.
+% This class is based on ``tmatrix_ebcm_axisym.m`` from OTTv1.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
