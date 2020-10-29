@@ -5,12 +5,13 @@ classdef StlLoader < ott.shape.TriangularMesh
 % Properties
 %   - filename  -- Name of the file this object loaded
 %
-% Additional properties inherited from base class.
-% See also StlLoader, ott.shape.TriangularMesh, ott.shape.WavefrontObj.
+% Additional methods and properties inherited from base class.
 %
 % This class uses a 3rd party STL file reader:
-%  https://au.mathworks.com/matlabcentral/fileexchange/22409-stl-file-reader
-% See tplicenses/stl_EricJohnson.txt for information about licensing.
+% `<https://au.mathworks.com/matlabcentral/fileexchange/22409-stl-file-reader>`_
+% See ``tplicenses/stl_EricJohnson.txt`` for information about licensing.
+%
+% See also StlLoader, ott.shape.TriangularMesh, ott.shape.WavefrontObj.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -24,7 +25,7 @@ classdef StlLoader < ott.shape.TriangularMesh
       % Function to read STL file
       %
       % This is from STL file reader version 1.2.0.0 (1.6 MB) by Eric Johnson
-      % See tplicenses/stl_EricJohnson.txt for information about licensing.
+      % See ``tplicenses/stl_EricJohnson.txt`` for information about licensing.
 
       F = [];
       V = [];
@@ -96,7 +97,7 @@ classdef StlLoader < ott.shape.TriangularMesh
       % Only supports binary STL files.
       %
       % This function uses 3rd party code,
-      % see tplicenses/stl_EricJohnson.txt for licensing information.
+      % see ``tplicenses/stl_EricJohnson.txt`` for licensing information.
 
       assert(nargin >= 1, 'Filename not supplied');
 

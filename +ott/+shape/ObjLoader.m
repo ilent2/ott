@@ -6,7 +6,7 @@ classdef ObjLoader < ott.shape.TriangularMesh
 %   - filename      -- Filename for loaded OBJ file
 %
 % The file format is described at
-% https://en.wikipedia.org/wiki/Wavefront_.obj_file
+% `<https://en.wikipedia.org/wiki/Wavefront_.obj_file>`_
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
