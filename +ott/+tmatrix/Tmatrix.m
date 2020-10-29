@@ -42,6 +42,10 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 %   - imag        -- Extract imaginary part of T-matrix
 %   - diag        -- Extract the diagonal of the T-matrix
 %
+% Static methods
+%   - FromShape   -- Take a guess at a suitable T-matrix method
+%   - SmartCylinder -- Smart method selection for cylindrical particles
+%
 % Casts
 %   - ott.bsc.Bsc -- Convert each T-matrix column to beam vector
 %   - ott.tmatrix.Tmatrix -- Downcast T-matrix superclass to base class
@@ -61,6 +65,182 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
     Nmax          % Current size of T-matrix
     total         % Total version of the T-matrix
     scattered     % Scattered version of the T-matrix
+  end
+
+  methods (Static)
+    function tmatrix = FromShape(shape, relative_index)
+      % Take a guess at a suitable T-matrix method.
+      %
+      % The T-matrix can only be calculated easily and accurately for
+      % a few very specific cases; as such, this function defaults to
+      % DDA for most particles which may result in very slow calculations
+      % (or failures due to memory limitations).  The resulting T-matrices
+      % may not be accurate and it is recommended to inspect the fields
+      % and compare results with another method.
+      %
+      % This method does the following
+      %   - spheres -- Uses :class:`Mie`.
+      %   - spheroids -- Uses :class:`Smarties`
+      %   - cylinders -- Uses :meth:`SmartCylinder`.  This method may also
+      %     work well for other semi-elongated rotationally symmetry shapes.
+      %   - rotationally symmetric -- Uses :class:`Ebcm`.
+      %   - star shaped -- Uses :class:`Pointmatch`.
+      %   - otherwise -- Uses :class:`Dda`.
+      %
+      % For many types of particles it would be better to use another
+      % method (such as geometric optics for very large particles).
+      % This method may change in future releases when other methods
+      % are added or when limits of existing methods are further explored.
+      %
+      % Usage
+      %   tmatrix = ott.tmatrix.Tmatrix.FromShape(shape, relative_index)
+      %
+      % Parameters
+      %   - shape (ott.shape.Shape) -- Shape to generate T-matrix for.
+      %     Shape dimensions should be in units of wavelength.
+      %
+      %   - relative_index (numeric) -- Relative refractive index.
+
+      if isa(shape, 'ott.shape.Sphere')
+        tmatrix = ott.tmatrix.Mie.FromShape(shape, relative_index);
+        return;
+      end
+
+      if shape.zRotSymmetry == 0 && isa(shape, 'ott.shape.Ellipsoid')
+        tmatrix = ott.tmatrix.Smarties.FromShape(shape, relative_index);
+        return;
+      end
+
+      if isa(shape, 'ott.shape.Superellipsoid') ...
+          && shape.isEllipsoid && shape.zRotSymmetry == 0
+        tmatrix = ott.tmatrix.Smarties.FromShape(shape, relative_index);
+        return;
+      end
+
+      if isa(shape, 'ott.shape.Cylinder')
+        tmatrix = ott.tmatrix.Tmatrix.SmartCylinder(shape, relative_index);
+        return;
+      end
+
+      if shape.zRotSymmetry == 0
+        tmatrix = ott.tmatrix.Ebcm.FromShape(shape, relative_index);
+        return;
+      end
+
+      if shape.starShaped
+        tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, relative_index);
+        return;
+      end
+
+      tmatrix = ott.tmatrix.Dda.FromShape(shape, relative_index);
+    end
+
+    function tmatrix = SmartCylinder(shape, relative_index, varargin)
+      % Constructs a T-matrix for a cylinder using smart method selection
+      %
+      % Either uses DDA, EBCM or Pointmatch depending on the cylinder's
+      % aspect ratio and material.  Pointmatching is the preferred method,
+      % otherwise defaults to EBCM or DDA if error tolerance is not met.
+      %
+      % Uses the results from
+      %
+      %   Qi et al.,
+      %   Optics Letters Vol. 39, Issue 16, pp. 4827-4830 (2014)
+      %   https://doi.org/10.1364/OL.39.004827
+      %
+      % Usage
+      %   tmatrix = SmartCylinder(shape, relative_index, ...)
+      %
+      % Parameters
+      %   - shape (ott.shape.Shape) -- Shape to generate T-matrix for.
+      %     Shape dimensions should be in units of wavelength.
+      %     If the shape is not a cylinder, attempts to cast to Cylinder.
+      %
+      %   - relative_index (numeric) -- Relative refractive index.
+      %
+      % Optional named arguments
+      %   - tolerance (enum) -- Error tolerance, can either be
+      %     'one' or 'ten' for approximately 1% and 10% contours
+      %     from the paper. Default: ``'ten'``.
+
+      p = inputParser;
+      p.addParameter('tolerance', 'ten');
+      p.parse(varargin{:});
+
+      assert(isscalar(shape), 'shape must be a single shape');
+      if ~isa(shape, 'ott.shape.Cylinder')
+        shape = ott.shape.Cylinder(shape);
+      end
+
+      % EBCM 1% data
+      ebcm1 = {};
+      ebcm1.x = [73, 169, 198, 228, 261, 391, 586, 718, 718, ...
+          657, 523, 457, 262, 73];
+      ebcm1.y = [409, 406, 418, 423, 397, 412, 400, 375, 223, ...
+          193, 195, 165, 204, 390];
+      ebcm1.x = (ebcm1.x - 73) * 2.0 / (718 - 73);
+      ebcm1.y = -(ebcm1.y - 438) * 6.0 / (438 - 9);
+
+      % PM 1% data
+      pm1 = {};
+      pm1.x = [297, 355, 394, 718, 718, 591, 525, 391, 361, 297];
+      pm1.y = [943, 933, 946, 894, 868, 846, 874, 864, 913, 913];
+      pm1.x = (pm1.x - 73) * 2.0 / (718 - 73);
+      pm1.y = -(pm1.y - 985) * 6.0 / (985 - 555);
+
+      % EBCM 10% data
+      ebcm10 = {};
+      ebcm10.x = [73, 193, 718, 718, 525, 328, 229, 160, 73];
+      ebcm10.y = [430, 426, 381, 37, 94, 177, 214, 274, 375];
+      ebcm10.x = (ebcm10.x - 73) * 2.0 / (718 - 73);
+      ebcm10.y = -(ebcm10.y - 438) * 6.0 / (438 - 9);
+
+      % PM 10% data
+      pm10 = {};
+      pm10.x = [130, 160, 328, 397, 462, 522, 589, 718, 718, ...
+          654, 589, 522, 328, 265, 130];
+      pm10.y = [961, 970, 967, 951, 946, 946, 925, 912, 753, ...
+          784, 798, 798, 865, 874, 948];
+      pm10.x = (pm10.x - 73) * 2.0 / (718 - 73);
+      pm10.y = -(pm10.y - 985) * 6.0 / (985 - 555);
+
+      % Paper parameters were in physical units
+      lambda = 1.064;
+      diameter = lambda * shape.radius * 2;
+      len = shape.height;
+
+      switch p.Results.tolerance
+        case 'ten'
+          if inpolygon(diameter, len, pm10.x, pm10.y)
+            method = 'pm';
+          elseif inpolygon(diameter, len, ebcm10.x, ebcm10.y)
+              method = 'ebcm';
+          else
+              method = 'dda';
+          end
+        case 'one'
+          if inpolygon(diameter, len, pm1.x, pm1.y)
+            method = 'pm';
+          elseif inpolygon(diameter, len, ebcm1.x, ebcm1.y)
+            method = 'ebcm';
+          else
+            method = 'dda';
+          end
+        otherwise
+          error('tolerance must be ''one'' or ''ten''');
+      end
+
+      switch method
+        case 'dda'
+          tmatrix = ott.tmatrix.Dda.FromShape(shape, relative_index);
+        case 'ebcm'
+          tmatrix = ott.tmatrix.Ebcm.FromShape(shape, relative_index);
+        case 'pm'
+          tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, relative_index);
+        otherwise
+          error('Internal error');
+      end
+    end
   end
 
   methods

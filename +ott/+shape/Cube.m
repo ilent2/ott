@@ -62,7 +62,7 @@ classdef Cube < ott.shape.Shape ...
 
       % Determine which dimensions are inside
       tol = 1.0e-3.*shape.width;
-      insideDims = abs(xyz) < (shape.width./2 + tol);
+      inside = abs(xyz) < (shape.width./2 + tol);
 
       % Calculate normals
       n = sign(xyz) .* double(~inside);

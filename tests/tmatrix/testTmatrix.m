@@ -6,6 +6,27 @@ function setupOnce(testCase)
   addpath('../../');
 end
 
+function testSmartCylinder(testCase)
+
+  shape = ott.shape.Cylinder(0.5, 0.5);
+  tmatrix = ott.tmatrix.Tmatrix.SmartCylinder(shape, 1.2);
+  
+  tmatrix = ott.tmatrix.Tmatrix.SmartCylinder(shape, 1.2, ...
+      'tolerance', 'one');
+
+end
+
+function testFromShape(testCase)
+
+  shape = ott.shape.Sphere(1.0);
+  tmatrix = ott.tmatrix.Tmatrix.FromShape(shape, 1.2);
+  testCase.verifyInstanceOf(tmatrix, 'ott.tmatrix.Mie', 'mie');
+  
+  shape = ott.shape.Cube(0.1);
+  tmatrix = ott.tmatrix.Tmatrix.FromShape(shape, 1.2);
+  testCase.verifyInstanceOf(tmatrix, 'ott.tmatrix.Pointmatch', 'cube');
+end
+
 function testConstructEmpty(testCase)
 
   tmatrix = ott.tmatrix.Tmatrix();
@@ -254,6 +275,14 @@ function testDivide(testCase)
   S = tmatrix / 2;
   testCase.verifyEqual(S.data, tmatrix.data./2);
 
+end
+
+function testTime(testCase)
+
+  tmatrix1 = ott.tmatrix.Tmatrix(randn(6));
+  tmatrix2 = ott.tmatrix.Tmatrix(randn(6));
+  S = tmatrix1 .* tmatrix2;
+  testCase.verifyEqual(S.data, tmatrix1.data.*tmatrix2.data, 'times');
 end
 
 function testMtimes(testCase)
