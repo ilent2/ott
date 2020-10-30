@@ -10,7 +10,9 @@
 % Contents
 %   tmatrix.m     - T-matrix package overview
 %   drag.m        - Drag package overview
-%   shape.m       - Shape package overview
+%   shapes.m      - Shape package overview
+%   beams.m       - Beam package overview
+%   particles.m   - Particle package overview
 %
 % Support files
 %   monkey.stl    - A example STL file
