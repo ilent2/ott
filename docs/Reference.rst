@@ -17,6 +17,7 @@ the start of each of the following sections.
 
    Beam-Package.rst
    Particle-Package.rst
+   Bsc-Package.rst
    Tmatrix-Package.rst
    Shape-Package.rst
    Drag-Package.rst

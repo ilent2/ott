@@ -1,13 +1,11 @@
 % examples/packageOverview Code used to generate package overview figures
 %
-% Files in this directory were used to generate the package overview
-% figures.  Most files show how a shape can be created and used as the
-% input to one of the drag/tmatrix/bsc methods.
-%
-% The files generate visualisations of the shapes, these shape
-% visualisations are used in the package overview figures.
+% These files generate visualisations of shapes/beams, these
+% visualisations are used in the package overview figures of the
+% documentation.
 %
 % Contents
+%   bscs.m        - BSC package overview
 %   tmatrix.m     - T-matrix package overview
 %   drag.m        - Drag package overview
 %   shapes.m      - Shape package overview

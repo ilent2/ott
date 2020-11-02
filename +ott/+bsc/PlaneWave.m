@@ -105,7 +105,9 @@ classdef PlaneWave < ott.bsc.Bsc
       p.parse(varargin{:});
 
       beam = beam@ott.bsc.Bsc(p.Results.a, p.Results.b);
-      beam.direction = p.Results.direction;
+      for ii = 1:numel(beam)
+        beam(ii).direction = p.Results.direction(:, ii);
+      end
     end
 
     function beam = translateZ(beam, z, varargin)
