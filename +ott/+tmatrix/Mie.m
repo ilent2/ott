@@ -147,7 +147,7 @@ classdef Mie < ott.tmatrix.Tmatrix
 
       Nmax = p.Results.Nmax;
       if isempty(Nmax)
-        if p.Results.internal && nargout == 1
+        if p.Results.internal || nargout ~= 1
           Nmax = ott.utils.ka2nmax(r1);
         else
           Nmax = ott.utils.ka2nmax(r0);

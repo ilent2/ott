@@ -76,7 +76,7 @@ Shape
 
 .. autoclass:: Shape
    :members: Shape, not, or, and, getBoundingBox, writeWavefrontObj,
-      intersect, voxels, isosurface, insideRtp, insideXyz,
+      intersect, voxels, surf, isosurface, insideRtp, insideXyz,
       normalsRtp, normalsXyz
 
 .. _simple-geometric-shapes:

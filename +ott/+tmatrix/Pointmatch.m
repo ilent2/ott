@@ -98,7 +98,9 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       p.addOptional('relative_index', 1.0, @isnumeric);
       p.addParameter('angulargrid', []);
       p.addParameter('Nmax', []);
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Get or calculate Nmax
       Nmax = p.Results.Nmax;
@@ -150,7 +152,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       [varargout{1:nargout}] = ott.tmatrix.Pointmatch(...
           rtp, nrtp, p.Results.relative_index, 'Nmax', Nmax, ...
           'zRotSymmetry', shape.zRotSymmetry, ...
-          'xySymmetry', shape.xySymmetry);
+          'xySymmetry', shape.xySymmetry, unmatched{:});
     end
   end
 
@@ -186,6 +188,10 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       %   - xySymmetry (logical) -- If the particle is mirror symmetry
       %     about the xy-plane.  Default: ``false``.
       %
+      %   - internal (logical) -- If true, the returned T-matrix is
+      %     an internal T-matrix.  Ignored for two outputs.
+      %     Default: ``false``.
+      %
       %   - progress (function_handle) -- Function to call for progress
       %     updates during method evaluation.  Takes one argument, see
       %     :meth:`DefaultProgressCallback` for more information.
@@ -200,6 +206,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       p.addParameter('progress', []);
       p.addParameter('zRotSymmetry', 1);
       p.addParameter('xySymmetry', false);
+      p.addParameter('internal', false);
       p.parse(varargin{:});
 
       Texternal.zRotSymmetry = p.Results.zRotSymmetry;
@@ -212,7 +219,12 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       % Get or calculate Nmax
       Nmax = p.Results.Nmax;
       if isempty(Nmax)
-        Nmax = ott.utils.ka2nmax(2*pi*max(Texternal.rtp(1, :)));
+        maxR = max(Texternal.rtp(1, :));
+        if p.Results.internal || nargout ~= 1
+          Nmax = ott.utils.ka2nmax(2*pi*maxR*Texternal.relative_index);
+        else
+          Nmax = ott.utils.ka2nmax(2*pi*maxR);
+        end
       else
         assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
             'Nmax must be positive numeric scalar');
@@ -410,14 +422,24 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
 
         end
       end
-
-      Texternal.data = T;
-      Texternal = Texternal.setType('scattered');
-
+      
       if nargout == 2
+
+        Texternal.data = T;
+        Texternal = Texternal.setType('scattered');
+        
         Tinternal = Texternal;
         Tinternal.data = T2;
         Tinternal = Tinternal.setType('internal');
+        
+      else
+        if p.Results.internal
+          Texternal.data = T2;
+          Texternal = Texternal.setType('internal');
+        else
+          Texternal.data = T;
+          Texternal = Texternal.setType('scattered');
+        end
       end
     end
   end

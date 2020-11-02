@@ -71,7 +71,7 @@ function testStarRadiiSphere(testCase)
   radii = sphere.starRadii(theta, phi);
   
   testCase.verifyEqual(radii, radius*ones(size(theta)), ...
-      'AbsTol', 3e-2, 'radius');
+      'AbsTol', 3.1e-2, 'radius');
 
 end
 

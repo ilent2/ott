@@ -68,7 +68,7 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
   end
 
   methods (Static)
-    function tmatrix = FromShape(shape, relative_index)
+    function tmatrix = FromShape(shape, varargin)
       % Take a guess at a suitable T-matrix method.
       %
       % The T-matrix can only be calculated easily and accurately for
@@ -100,39 +100,55 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       %     Shape dimensions should be in units of wavelength.
       %
       %   - relative_index (numeric) -- Relative refractive index.
+      %
+      %   - internal (logical) -- If the T-matrix should be an internal
+      %     T-matrix.  Default: ``false``.
+
+      p = inputParser;
+      p.addOptional('relative_index', 1.0);
+      p.addParameter('internal', false);
+      p.parse(varargin{:});
+      relative_index = p.Results.relative_index;
 
       if isa(shape, 'ott.shape.Sphere')
-        tmatrix = ott.tmatrix.Mie.FromShape(shape, relative_index);
+        tmatrix = ott.tmatrix.Mie.FromShape(shape, relative_index, ...
+            'internal', p.Results.internal);
         return;
       end
 
       if shape.zRotSymmetry == 0 && isa(shape, 'ott.shape.Ellipsoid')
-        tmatrix = ott.tmatrix.Smarties.FromShape(shape, relative_index);
+        tmatrix = ott.tmatrix.Smarties.FromShape(shape, relative_index, ...
+            'internal', p.Results.internal);
         return;
       end
 
       if isa(shape, 'ott.shape.Superellipsoid') ...
           && shape.isEllipsoid && shape.zRotSymmetry == 0
-        tmatrix = ott.tmatrix.Smarties.FromShape(shape, relative_index);
+        tmatrix = ott.tmatrix.Smarties.FromShape(shape, relative_index, ...
+            'internal', p.Results.internal);
         return;
       end
 
       if isa(shape, 'ott.shape.Cylinder')
-        tmatrix = ott.tmatrix.Tmatrix.SmartCylinder(shape, relative_index);
+        tmatrix = ott.tmatrix.Tmatrix.SmartCylinder(shape, relative_index, ...
+            'internal', p.Results.internal);
         return;
       end
 
       if shape.zRotSymmetry == 0
-        tmatrix = ott.tmatrix.Ebcm.FromShape(shape, relative_index);
+        tmatrix = ott.tmatrix.Ebcm.FromShape(shape, relative_index, ...
+            'internal', p.Results.internal);
         return;
       end
 
       if shape.starShaped
-        tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, relative_index);
+        tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, relative_index, ...
+            'internal', p.Results.internal);
         return;
       end
 
-      tmatrix = ott.tmatrix.Dda.FromShape(shape, relative_index);
+      tmatrix = ott.tmatrix.Dda.FromShape(shape, relative_index, ...
+            'internal', p.Results.internal);
     end
 
     function tmatrix = SmartCylinder(shape, varargin)
@@ -165,8 +181,14 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 
       p = inputParser;
       p.addOptional('relative_index', 1.0);
+      p.addParameter('internal', false);
       p.addParameter('tolerance', 'ten');
       p.parse(varargin{:});
+      
+      if p.Results.internal
+        warning('ott:tmatrix:tmatrix:SmartCylinder:internal', ...
+          'internal method not fully supported for SmartCylinder');
+      end
       
       relative_index = p.Results.relative_index;
 
@@ -235,11 +257,14 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 
       switch method
         case 'dda'
-          tmatrix = ott.tmatrix.Dda.FromShape(shape, relative_index);
+          tmatrix = ott.tmatrix.Dda.FromShape(shape, relative_index, ...
+              'internal', p.Results.internal);
         case 'ebcm'
-          tmatrix = ott.tmatrix.Ebcm.FromShape(shape, relative_index);
+          tmatrix = ott.tmatrix.Ebcm.FromShape(shape, relative_index, ...
+              'internal', p.Results.internal);
         case 'pm'
-          tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, relative_index);
+          tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, relative_index, ...
+              'internal', p.Results.internal);
         otherwise
           error('Internal error');
       end

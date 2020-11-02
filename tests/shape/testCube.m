@@ -22,3 +22,16 @@ function testConstructor(testCase)
 
 end
 
+function testIntersectInternal(testCase)
+
+  width = 1;
+  shape = ott.shape.Cube(width);
+  
+  t1 = shape.intersect([0;0;0], [2;0;0]);
+  testCase.verifyEqual(t1, [0.5;0;0], 't1');
+  
+  t2 = shape.intersectInternal([0, 0; 0, 0; 0, 0], [2, 0; 0, 2; 0, 0]);
+  testCase.verifyEqual(t2, [0.5, 0; 0, 0.5; 0, 0], 't2');
+
+end
+

@@ -72,8 +72,11 @@ classdef Cube < ott.shape.Shape ...
 
     end
 
-    function [locs, norms, dist] = intersectAllInternal(shape, x0, x1)
-      % Calculate intersection with faces, returns 3x2xN locs
+    function [P, N, dist] = intersectAllInternal(shape, x0, x1)
+      % Calculate intersection with faces
+      %
+      % Always returns 3x2xN array of intersections.  If the ray starts
+      % from inside the geometry, the second column is NaN.
 
       % Reshape points (3x1xM)
       Q1 = reshape(x0, 3, 1, []);
@@ -90,36 +93,34 @@ classdef Cube < ott.shape.Shape ...
 
       % Calculate distance to intersection
       dist = dot(P0 - Q1, N)./dot(D, N);
-
-      % Remove points before origin and tangent points
-      dist(dist < 0 | ~isfinite(dist)) = nan;
       
       % Calculate intersection points (3x6xM)
       P = Q1 + dist.*D;
 
       % Remove points outside faces
-      w = shape.width./2;
+      w = shape.width./2 + eps(1);
       I = [abs(P(1, 1:2, :)) > w | abs(P(2, 1:2, :)) > w, ...
            abs(P(2, 3:4, :)) > w | abs(P(3, 3:4, :)) > w, ...
            abs(P(1, 5:6, :)) > w | abs(P(3, 5:6, :)) > w];
-      dist(:, I) = nan;
-
-      % Find first intersection
+      
+      % Remove intersections in the opposite direction
+      found = dist >= 0 & ~I;
+      dist(~found) = nan;
+      P(:, ~found) = nan;
+      N(:, ~found) = nan;
+      
+      % Sort intersection and keep max 2
       [~, idx1] = min(dist, [], 2);
-
-      % Find second intersection
       dist2 = dist;
+      idx1 = sub2ind([size(dist, 2), size(dist, 3)], idx1(:).', 1:numel(idx1));
       dist2(:, idx1) = nan;
       [~, idx2] = min(dist2, [], 2);
-
-      % Select our two points
-      dist = dist([idx1, idx2]);
-      norms = N(:, [idx1, idx2]);
-      locs = P(:, [idx1, idx2]);
-
-      % Change norms/locs to nans
-      norms(:, isnan(dist)) = nan;
-      locs(:, isnan(dist)) = nan;
+      idx2 = sub2ind([size(dist, 2), size(dist, 3)], idx2(:).', 1:numel(idx2));
+      idx = [idx1; idx2];
+      
+      dist = reshape(dist(:, idx), 1, 2, []);
+      P = reshape(P(:, idx), 3, 2, []);
+      N = reshape(N(:, idx), 3, 2, []);
     end
 
     function varargout = intersectInternal(shape, varargin)

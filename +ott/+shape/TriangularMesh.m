@@ -51,7 +51,7 @@ classdef TriangularMesh < ott.shape.Shape ...
       % Any faces formed by duplicate vertices are removed.
 
       shape = shape@ott.shape.Shape(varargin{:});
-      
+
       % Filter faces with duplicate vertices
       badf = faces(1, :) == faces(2, :) | faces(1, :) == faces(3, :);
       faces(:, badf) = [];
@@ -159,7 +159,7 @@ classdef TriangularMesh < ott.shape.Shape ...
       % Ensure size of D and N match
       N = repmat(N, 1, 1, size(Q1, 3));
       Q1 = repmat(Q1, 1, size(N, 2), 1);
-      
+
       % Get vertex coordinates (3xN)
       P1 = repmat(shape.verts(:, shape.faces(1, :)), 1, 1, size(Q1, 3));
       P2 = repmat(shape.verts(:, shape.faces(2, :)), 1, 1, size(Q1, 3));
@@ -175,7 +175,7 @@ classdef TriangularMesh < ott.shape.Shape ...
       I = dot(cross(P2-P1, P-P1), N) >= tol & ...
           dot(cross(P3-P2, P-P2), N) >= tol & ...
           dot(cross(P1-P3, P-P3), N) >= tol;
-        
+
       % Discard points that don't intersect
       dist(:, ~I) = nan;
       N(:, ~I) = nan;
@@ -196,7 +196,7 @@ classdef TriangularMesh < ott.shape.Shape ...
 
       % Calculate normals (3xN)
       N = shape.norms;
-      
+
       % Ensure size of D and N match
       N = repmat(N, 1, 1, size(D, 3));
       D = repmat(D, 1, size(N, 2), 1);

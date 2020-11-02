@@ -89,7 +89,7 @@ subplot(rows, cols, idx); idx = idx + 1;
 
 beam = ott.beam.Gaussian();
 shape = ott.shape.Sphere();
-particle = ott.particle.Particle.FromShape(shape, ...
+particle = ott.particle.Fixed.FromShape(shape, ...
     'internal', true, 'relative_index', 1.2);
 sbeam = particle * beam;
 sbeam.visNearfield('axis', 'y');
