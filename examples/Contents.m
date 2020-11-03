@@ -2,8 +2,14 @@
 %
 % This directory and sub-directories contain examples for the optical
 % tweezers toolbox.  These examples are intended to demonstrate the
-% main features of the toolbox.  For further details, see the user
-% manual.
+% main features of the toolbox.
+%
+% Examples in this directory are split into 'basic' and 'advanced'.
+% The basic examples provide a description of several main features of
+% the toolbox and are almost verbatim with the examples included in the
+% documentation.  The advanced examples provided significantly less
+% describing text/detail and focus on more advanced features of the toolbox.
+% For further details, see the user manual.
 %
 % If OTT is installed as a Matlab Add-on, these examples can be opened
 % using, for example, ``open examples/ottBeams.m`` directly from the
