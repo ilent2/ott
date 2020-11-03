@@ -19,7 +19,7 @@ arrays of beams (:class:`Coherent`, :class:`Incoherent`), and
 Unlike :class:`+ott.+bsc.Bsc` instances, :class:`Beam` instances
 use SI units (i.e., force in Newtons, distance in meters).
 
-Internally, the :class:`Beam` classes use :class:`ott.bsc.Bsc` to represent
+Internally, the :class:`Beam` classes use :class:`+ott.+bsc.Bsc` to represent
 the fields.  Most class properties are defined in separate classes (declared
 in the :mod:`+properties` sub-package.
 In a future release of OTT, the :class:`Beam` interface may

@@ -55,7 +55,7 @@ the start by passing a list of named arguments to the constructor::
 
    beam = ott.beam.Gaussian('power', 0.1, 'wavelength', 532e-9);
 
-Many of the :class:`+ott.+beam` classes provide alternative construction
+Many of the :mod:`+ott.+beam` classes provide alternative construction
 methods for convenience, for example, the Gaussian and Laguerre--Gaussian
 beams provide a ``FromNa`` method that accepts a numerical aperture value
 as the first argument.
