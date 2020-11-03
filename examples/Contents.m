@@ -23,10 +23,10 @@
 %
 % Advanced examples
 %   ottLandscape.m      -- Calculate trap stiffness for a range of particles
-%   ottDynamics.m       -- Dynamics simulation of an optically trapped sphere
+%   ottDynamics.m       -- Dynamics simulation of an optically trapped particle
 %   ottWallEffect.m     -- Dynamics simulation of a sphere near a wall
-%   ottDdaVaterite.m    -- Simulate a birefringent particle using DDA
 %   ottNonSpherical.m   -- Calculate force/torque on a non-spherical particle
+%   ottDdaVaterite.m    -- Simulate a birefringent particle using DDA
 %   ottNeuralNetwork.m  -- Train and use a neural network for simulation
 %
 % Sub-directories
