@@ -3,7 +3,7 @@
 % This file is an example from the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-% Add toolbox to path (uncomment this line if OTT was manually installed)
+% Add toolbox to path (uncomment this line if OTT is not already on the path)
 %addpath('../../');
 
 hf = figure();
