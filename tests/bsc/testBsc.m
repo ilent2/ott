@@ -27,6 +27,14 @@ function testConstructArray(testCase)
 
 end
 
+function testConstructCopy(testCase)
+
+  bsc = ott.bsc.Bsc([1;2;3], [0;0;0]);
+  bscCopy = ott.bsc.Bsc(bsc);
+  
+  testCase.verifyEqual(bscCopy, bsc);
+end
+
 function testConstructFromDense(testCase)
 
   a = [1, 2, 3, 4, 5, 7, 8].';
@@ -106,13 +114,9 @@ function testForceTorque(testCase)
   a = ott.bsc.Bsc([1; 2; 3], [4; 5; 6]);
   b = ott.bsc.Bsc([1; 2; 3; 7; 8; 9; 10; 11], [4; 5; 6]);
 
-  [f, t, s] = a.forcetorque(b);
   f0 = a.force(b);
   t0 = a.torque(b);
   s0 = a.spin(b);
-  testCase.verifyEqual(f0, f, 'force');
-  testCase.verifyEqual(t0, t, 'torque');
-  testCase.verifyEqual(s0, s, 'spin');
 
 end
 
@@ -234,69 +238,6 @@ function testSum(testCase)
 
 end
 
-function testVisNearfield(testCase)
-
-  f = figure();
-  testCase.addTeardown(@close, f);
-
-  abeam = ott.bsc.Bsc([1; 2; 3]);
-  abeam.visNearfield();
-
-  abeam.visNearfield('axis', 'x', 'range', [5, 5]);
-  abeam.visNearfield('axis', {[1;0;0], [0;1;0]}, 'range', [-1, 1, -1, 1]);
-  abeam.visNearfield('axis', {[1;0;0], [0;1;0], [0;0;1]}, ...
-      'range', {linspace(0, 1), linspace(0, 2)});
-    
-  im = abeam.visNearfield();
-  testCase.verifySize(im, [80, 80]);
-
-end
-
-function testVisFarfield(testCase)
-
-  f = figure();
-  testCase.addTeardown(@close, f);
-
-  abeam = ott.bsc.Bsc([1; 2; 3]);
-  abeam.visFarfield();
-    
-  im = abeam.visFarfield();
-  testCase.verifySize(im, [80, 80]);
-
-end
-
-function testVisFarfieldSlice(testCase)
-
-  f = figure();
-  testCase.addTeardown(@close, f);
-
-  abeam = ott.bsc.Bsc([1; 2; 3]);
-  abeam.visFarfieldSlice(0.0);
-
-end
-
-function testVisFarfieldSphere(testCase)
-
-  f = figure();
-  testCase.addTeardown(@close, f);
-
-  abeam = ott.bsc.Bsc([1; 2; 3]);
-  abeam.visFarfieldSphere();
-
-end
-
-function testFarfieldSphereModesMatch(testCase)
-
-  beam1 = ott.bsc.Bsc([1;0;0]);
-  beam2 = ott.bsc.Bsc([0;0;1]);
-  
-  s1 = beam1.visFarfieldSphere();
-  s2 = beam2.visFarfieldSphere();
-  
-  testCase.verifyEqual(s1, s2, 'AbsTol', 1e-16);
-
-end
-
 function testPower(testCase)
 
   abeam = ott.bsc.Bsc([1; 2; 3]);
@@ -305,29 +246,10 @@ function testPower(testCase)
 
 end
 
-function testIntensityMoment(testCase)
-
-  abeam = ott.bsc.Bsc([1; 2; 3]);
-  [moment, ints] = abeam.intensityMoment();
-
-end
-
 function testTranslateXyz(testCase)
 
   abeam = ott.bsc.Bsc([1; 2; 3]);
   bbeam = abeam.translateXyz([0;0;1]);
-
-end
-
-function testFieldCoverage(testCase)
-
-  abeam = ott.bsc.Bsc([1; 2; 3]);
-  H = abeam.hfield([0;0;1]);
-  [E, H] = abeam.ehfield([0;0;1]);
-  [Ep, Hp] = abeam.ehparaxial([0;0.5]);
-  Hp = abeam.hparaxial([0;0.5]);
-  [Ef, Hf] = abeam.ehfarfield([0;0.5]);
-  Hf = abeam.hfarfield([0;0.5]);
 
 end
 
@@ -356,10 +278,18 @@ function testTmatrixCast(testCase)
 
 end
 
+function testHfieldRtp(testCase)
+
+  beam = ott.bsc.Bsc([1i; 2; 3i]);
+  rtp = randn(3, 5);
+  E = beam.hfieldRtp(rtp);
+  
+end
+
 function testDipoleFieldValues(testCase)
 
   beams = ott.bsc.Bsc.BasisSet(1:3);
-  E0 = beams.efield([0;0;0]);
+  E0 = beams.efieldRtp([0;0;0]);
   
   I = vecnorm(E0.vxyz(1:3, :));
   

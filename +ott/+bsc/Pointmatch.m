@@ -7,15 +7,15 @@ classdef Pointmatch < ott.bsc.Bsc
 %   - FromFarfield    -- Construct from far-field points
 
   methods (Static)
-    function [beam, data] = FromNearfield(xyz, Exyz, ci, varargin)
+    function [beam, data] = FromNearfield(rtp, Ertp, ci, varargin)
       % Construct a beam using near-field point matching
       %
       % Usage
-      %   [beam, data] = ott.bsc.Pointmatch.FromNearfield(xyz, Exyz, ci, ...)
+      %   [beam, data] = ott.bsc.Pointmatch.FromNearfield(rtp, Ertp, ci, ...)
       %
       % Parameters
-      %   - xyz (3xN numeric) -- Locations for point matching
-      %   - Exyz (3xN numeric) -- Field values for point matching
+      %   - rtp (3xN numeric) -- Locations for point matching
+      %   - Ertp (3xN numeric) -- Field values for point matching
       %   - ci (numeric) -- Combed index Modes to include in point matching.
       %
       % Optional named parameters
@@ -36,11 +36,11 @@ classdef Pointmatch < ott.bsc.Bsc
 
       % Calculate coefficient matrix
       % Note: This doesn't have any assumptions about TEM fields
-      [ourE, data] = vswfBasis.efield(xyz, 'data', p.Results.data, ...
+      [ourE, data] = vswfBasis.efieldRtp(rtp, 'data', p.Results.data, ...
           'basis', p.Results.basis);
 
       % Do point-matching step
-      fab = reshape(ourE.vxyz, 3*size(xyz, 2), 2*numel(ci)) \ Exyz(:);
+      fab = reshape(ourE.vrtp, 3*size(rtp, 2), 2*numel(ci)) \ Ertp(:);
 
       % Package output
       beam = ott.bsc.Bsc(fab(1:end/2), fab(end/2+1:end));

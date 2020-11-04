@@ -141,3 +141,20 @@ function testNegativeDifferentNmax(testCase)
       'Incorrect B matrix values [7 5]');
 end
 
+function testZeroNmax(testCase)
+
+  Nmax = 0;
+  dz = 1.0;
+  [A, B] = ott.utils.translate_z(Nmax, dz);
+  
+  testCase.verifySize(A, [0, 0], '0');
+  testCase.verifySize(B, [0, 0], '0');
+  
+  Nmax = [0, 1];
+  dz = 1.0;
+  [A, B] = ott.utils.translate_z(Nmax, dz);
+  
+  testCase.verifySize(A, [0, 3], '0');
+  testCase.verifySize(B, [0, 3], '0');
+
+end

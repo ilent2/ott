@@ -9,10 +9,10 @@ end
 function testPmNearfield(testCase)
 
   target = ott.bsc.Bsc([1;0;0;0;0;0;0;0], [0;0;0;0;0;0;0;0]);
-  xyz = randn(3, 100);
-  E = target.efield(xyz);
+  rtp = randn(3, 100);
+  E = target.efieldRtp(rtp);
 
-  pmbeam = ott.bsc.Pointmatch.FromNearfield(xyz, E.vxyz, 1:8);
+  pmbeam = ott.bsc.Pointmatch.FromNearfield(rtp, E.vrtp, 1:8);
 
   testCase.verifyEqual(pmbeam.a, target.a, 'AbsTol', 1e-15);
   testCase.verifyEqual(pmbeam.b, target.b, 'AbsTol', 1e-15);

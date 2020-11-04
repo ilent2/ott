@@ -16,6 +16,8 @@ classdef FieldVector < double
 % Methods
 %   - plus        -- Add field vectors
 %   - minus       -- Subtract field vectors
+%   - mtimes,times      -- Scalar multiplication
+%   - mrdivide,rdivide  -- Scalar division
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -88,8 +90,15 @@ classdef FieldVector < double
 
     end
 
+    function vec = times(v1, v2)
+      % Scalar multiplication of vector data
+
+      % Defer to mtimes method
+      vec = v1 * v2;
+    end
+
     function vec = mtimes(v1, v2)
-      % Add field vectors
+      % Scalar multiplication
 
       if isscalar(v1)
         % Keep scalar mtimes
@@ -100,9 +109,23 @@ classdef FieldVector < double
       	vec = ott.utils.FieldVector(v1.locations, ...
             builtin('mtimes', v1, v2), v1.basis);
       else
-        error('Unsupported addition for FieldVector');
+        error('Only scalar multiplciation supported for FieldVector');
       end
 
+    end
+
+    function vec = rdivide(v1, s)
+      % Scalar division
+      vec = v1 / s;
+    end
+
+    function vec = mrdivide(v1, s)
+      % Scalar division
+
+      assert(isscalar(s) && isnumeric(s), ...
+          'second element to mrdivide must be numeric scalar');
+      vec = ott.utils.FieldVector(v1.locations, ...
+          builtin('mrdivide', v1, s), v1.basis);
     end
   end
 

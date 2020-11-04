@@ -22,7 +22,6 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 %
 % Static methods
 %   - FromDenseBeamVectors -- Construct beam from dense beam vectors.
-%   - VisualisationData    -- Calculate visualisation data.
 %   - BasisSet             -- Generate basis set of VSWF beams
 %
 % Methods
@@ -55,28 +54,14 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 %   - abs       -- Calculate absolute value of BSC data
 %
 % Field calculation methods
-%   - efield     -- Calculate electric field around the origin
-%   - hfield     -- Calculate magnetic field around the origin
-%   - ehfield    -- Calculate electric and magnetic fields around the origin
+%   - efieldRtp  -- Calculate electric field around the origin
+%   - hfieldRtp  -- Calculate magnetic field around the origin
 %   - efarfield  -- Calculate electric fields in the far-field
-%   - hfarfield  -- Calculate magnetic fields in the far-field
-%   - ehfarfield -- Calculate electric and magnetic fields in the far-field
-%   - eparaxial  -- Calculate electric fields in the paraxial far-field
-%   - hparaxial  -- Calculate magnetic fields in the paraxial far-field
-%   - ehparaxial -- Calculate electric and magnetic paraxial far-fields
 %
 % Force and torque related methods
-%   - intensityMoment -- Calculate moment of beam intensity in the far-field
 %   - force           -- Calculate the change in momentum between two beams
 %   - torque          -- Calculate change in angular momentum between beams
 %   - spin            -- Calculate change in spin momentum between beams
-%   - forcetorque     -- Calculate the force and the torque between beams
-%
-% Field visualisation methods
-%   - visNearfield      -- Generate a visualisation around the origin
-%   - visFarfield       -- Generate a visualisation at the far-field
-%   - visFarfieldSlice  -- Visualise the field on a angular slice
-%   - visFarfieldSphere -- Visualise the filed on a sphere
 %
 % Casts
 %   - ott.bsc.Bsc     -- Downcast BSC superclass to base class
@@ -136,104 +121,6 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       bsc = ott.bsc.Bsc(fa, fb);
     end
 
-    function data = VisualisationData(field_type, field)
-      % Helper to generate the visualisation data output.
-      %
-      % Usage
-      %   VisualisationData(field_type, fieldvector)
-      %   Takes a field_type string and a :class:`ott.utils.FieldVector`
-      %   with the coordinates and field vectors.
-      %
-      % Parameters
-      %   - fieldvector (3xN FieldVector) -- Field vector values
-      %     and coordinate locations.
-      %
-      %   - field_type -- (enum) Type of field to calculate.
-      %     Supported types include:
-      %
-      %     - irradiance  -- :math:`\sqrt{Ex^2 + Ey^2 + Ez^2}`
-      %     - E2          -- :math:`Ex^2 + Ey^2 + Ez^2`
-      %     - Sum(Abs(E)) -- :math:`|Ex| + |Ey| + |Ez|`
-      %
-      %     - Re(Er), Re(Et), Re(Ep), Re(Ex), Re(Ey), Re(Ez)
-      %     - Abs(Er), Abs(Et), Abs(Ep), Abs(Ex), Abs(Ey), Abs(Ez)
-      %     - Arg(Er), Arg(Et), Arg(Ep), Arg(Ex), Arg(Ey), Arg(Ez)
-
-      assert(size(field, 1) == 3, 'fieldvector must be 3xN matrix');
-      assert(isa(field, 'ott.utils.FieldVector'), ...
-          'fieldvector must be a instance of FieldVector');
-
-      % Generate the requested field
-      switch field_type
-        case 'irradiance'
-          data = sqrt(sum(abs(field.vxyz).^2, 1));
-        case 'E2'
-          data = sum(abs(field.vxyz).^2, 1);
-        case 'sum(Abs(E))'
-          data = sum(abs(field.vxyz), 1);
-
-        case 'Re(Er)'
-          data = real(field.vrtp(1, :));
-        case 'Re(Et)'
-          data = real(field.vrtp(2, :));
-        case 'Re(Ep)'
-          data = real(field.vrtp(3, :));
-
-        case 'Re(Ex)'
-          data = real(field.vxyz(1, :));
-        case 'Re(Ey)'
-          data = real(field.vxyz(2, :));
-        case 'Re(Ez)'
-          data = real(field.vxyz(3, :));
-
-        case 'Abs(Er)'
-          data = abs(field.vrtp(1, :));
-        case 'Abs(Et)'
-          data = abs(field.vrtp(2, :));
-        case 'Abs(Ep)'
-          data = abs(field.vrtp(3, :));
-
-        case 'Abs(Ex)'
-          data = abs(field.vxyz(1, :));
-        case 'Abs(Ey)'
-          data = abs(field.vxyz(2, :));
-        case 'Abs(Ez)'
-          data = abs(field.vxyz(3, :));
-
-        case 'Arg(Er)'
-          data = angle(field.vrtp(1, :));
-        case 'Arg(Et)'
-          data = angle(field.vrtp(2, :));
-        case 'Arg(Ep)'
-          data = angle(field.vrtp(3, :));
-
-        case 'Arg(Ex)'
-          data = angle(field.vxyz(1, :));
-        case 'Arg(Ey)'
-          data = angle(field.vxyz(2, :));
-        case 'Arg(Ez)'
-          data = angle(field.vxyz(3, :));
-
-        case 'Er'
-          data = field.vrtp(1, :);
-        case 'Et'
-          data = field.vrtp(2, :);
-        case 'Ep'
-          data = field.vrtp(3, :);
-
-        case 'Ex'
-          data = field.vxyz(1, :);
-        case 'Ey'
-          data = field.vxyz(2, :);
-        case 'Ez'
-          data = field.vxyz(3, :);
-
-        otherwise
-          error('ott:bsc:Bsc:GetVisualisationData:unknown_field_type', ...
-              'Unknown value for field_type.');
-      end
-    end
-
     function varargout = BasisSet(ci)
       % Generate basis set of VSWF beams
       %
@@ -272,45 +159,43 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Usage
       %   beam = Bsc() Constructs an empty Bsc beam.
       %
-      %   beam = Bsc(a, b, ...) constructs beam from a/b coefficients.
+      %   beam = Bsc(a, b) constructs beam from a/b coefficients.
+      %
+      %   beam = Bsc(bsc) construct by copying existing beam coefficients.
       %
       % Parameters
       %   - a,b (numeric) -- Vectors of VSWF coefficients
 
       p = inputParser;
-      p.addOptional('a', zeros(0, 1), @isnumeric);
+      p.addOptional('a', zeros(0, 1), ...
+          @(x) isnumeric(x) || isa(x, 'ott.bsc.Bsc'));
       p.addOptional('b', zeros(0, 1), @isnumeric);
       p.parse(varargin{:});
+      
+      oa = p.Results.a;
+      ob = p.Results.b;
+      
+      if nargin == 1 && isa(oa, 'ott.bsc.Bsc')
+        [oa, ob] = oa.getCoefficients();
+      end
 
-      if ~ismatrix(p.Results.a) || size(p.Results.a, 2) > 1 ...
-          || ~ismatrix(p.Results.b) || size(p.Results.b, 2) > 1
+      if ~ismatrix(oa) || size(oa, 2) > 1 ...
+          || ~ismatrix(ob) || size(ob, 2) > 1
         % Construct array of beams
-        sza = size(p.Results.a);
-        szb = size(p.Results.b);
+        sza = size(oa);
+        szb = size(ob);
         assert(numel(sza) == numel(szb) && all(sza == szb), ...
           'dimensions of ''a'' and ''b'' must match');
         beam = repmat(beam, 1, sza(2:end));
         for ii = 1:numel(beam)
-          beam(ii).a = p.Results.a(:, ii);
-          beam(ii).b = p.Results.b(:, ii);
+          beam(ii).a = oa(:, ii);
+          beam(ii).b = ob(:, ii);
         end
       else
         % Construct single beam
-        beam.a = p.Results.a;
-        beam.b = p.Results.b;
+        beam.a = oa;
+        beam.b = ob;
       end
-    end
-
-    function beam = ott.bsc.Bsc(other)
-      % Cast to Bsc class
-      %
-      % Usage
-      %   bsc = ott.bsc.Bsc(other)
-      %
-      % Parameters
-      %   - other (instance of ott.bsc.Bsc) -- The class to cast to Bsc.
-
-      beam = ott.bsc.Bsc(other.a, other.b);
     end
 
     function tmatrix = ott.tmatrix.Tmatrix(beam)
@@ -387,225 +272,6 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Package output
       Ertp = [zeros(size(Etheta)); Etheta; Ephi];
       E = ott.utils.FieldVector(rtp, Ertp, 'spherical');
-    end
-
-    function varargout = hfarfield(beam, rtp, varargin)
-      % Calculate H far-field (uses :meth:`efarfield`)
-      %
-      % Usage
-      %   [H, data] = beam.hfarfield(rtp, ...)
-      %
-      % See :meth:`efarfield` for further details.
-
-      % Ensure rtp size is 3xN
-      [~, rtp] = ott.utils.rtpFarfield(rtp);
-
-      % Calculate E as normal
-      [varargout{1:nargout}] = beam.efarfield(rtp, varargin{:});
-
-      % Swap theta and phi components
-      H = varargout{1};
-      H = ott.utils.FieldVector(rtp, ...
-          -1i .* H.vrtp([1, 3, 2], :), 'spherical');
-      varargout{1} = H;
-    end
-
-    function [E, H, data] = ehfarfield(beam, rtp, varargin)
-      % Calculate E and H far-fields
-      %
-      % Usage
-      %   [E, H, data] = beam.ehfarfield(rtp, ...)
-      %   E and H are of type :class:`ott.utils.FieldVector`.
-      %
-      % Parameters
-      %   - rtp (3xN | 2xN numeric) -- Spherical coordinates for field
-      %     calculation. Packaged [r; theta; phi] or [theta; phi].
-      %
-      % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-
-      % Ensure rtp size is 3xN
-      [~, rtp] = ott.utils.rtpFarfield(rtp);
-
-      % Calculate E as normal
-      [E, data] = beam.efarfield(rtp, varargin{:});
-
-      % Swap theta and phi components
-      H = ott.utils.FieldVector(rtp, ...
-          -1i .* E.vrtp([1, 3, 2], :), 'spherical');
-    end
-
-    function varargout = eparaxial(beam, xy, varargin)
-      % Calculate E paraxial far-field
-      %
-      % Usage
-      %   [E, data] = beam.eparaxial(xy, ...)
-      %   E is of type :class:`ott.utils.FieldVector`.
-      %
-      % Parameters
-      %   - xy (2xN numeric) -- Paraxial coordinates for field
-      %     calculation. Packaged [x; y].
-      %
-      % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - mapping (enum) -- Mapping for paraxial projection.
-      %     See :func:`ott.utils.paraxial2rtp` for details.
-      %     Default: ``'sin'``.
-      %
-      %   - direction (enum | 2 numeric) -- Mapping direction.
-      %     See :func:`ott.utils.paraxial2rtp` for details.
-      %     Default: ``'pos'``.
-      %
-      %   - basis (enum) -- Basis for field calculation.  Must be either
-      %     'incoming' or 'outgoing'.  Default: ``'incoming'``.
-
-      p = inputParser;
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
-      p.addParameter('mapping', 'sin');
-      p.addParameter('basis', 'incoming');
-      p.addParameter('direction', 'pos');
-      p.parse(varargin{:});
-
-      rtp = ott.utils.paraxial2rtp(xy, ...
-          p.Results.mapping, p.Results.direction);
-      [varargout{1:nargout}] = beam.efarfield(rtp, ...
-        'data', p.Results.data, 'basis', p.Results.basis);
-    end
-
-    function varargout = hparaxial(beam, xy, varargin)
-      % Calculate H paraxial far-field
-      %
-      % Usage
-      %   [H, data] = beam.hparaxial(xy, ...)
-      %   H is of type :class:`ott.utils.FieldVector`.
-      %
-      % Parameters
-      %   - xy (2xN numeric) -- Paraxial coordinates for field
-      %     calculation. Packaged [x; y].
-      %
-      % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - mapping (enum) -- Mapping for paraxial projection.
-      %     See :func:`ott.utils.paraxial2rtp` for details.
-      %     Default: ``'sin'``.
-      %
-      %   - direction (enum | 2 numeric) -- Mapping direction.
-      %     See :func:`ott.utils.paraxial2rtp` for details.
-      %     Default: ``'pos'``.
-      %
-      %   - basis (enum) -- Basis for field calculation.  Must be either
-      %     'incoming' or 'outgoing'.  Default: ``'incoming'``.
-
-      p = inputParser;
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
-      p.addParameter('mapping', 'sin');
-      p.addParameter('direction', 'pos');
-      p.addParameter('basis', 'incoming');
-      p.parse(varargin{:});
-
-      rtp = ott.utils.paraxial2rtp(xy, ...
-          p.Results.mapping, p.Results.direction);
-      [varargout{1:nargout}] = beam.hfarfield(rtp, ...
-        'data', p.Results.data, 'basis', p.Results.basis);
-    end
-
-    function varargout = ehparaxial(beam, xy, varargin)
-      % Calculate E and H paraxial far-fields
-      %
-      % Usage
-      %   [E, H, data] = beam.ehparaxial(xy, ...)
-      %   E and H are of type :class:`ott.utils.FieldVector`.
-      %
-      % Parameters
-      %   - xy (2xN numeric) -- Paraxial coordinates for field
-      %     calculation. Packaged [x; y].
-      %
-      % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - mapping (enum) -- Mapping for paraxial projection.
-      %     See :func:`ott.utils.paraxial2rtp` for details.
-      %     Default: ``'sin'``.
-      %
-      %   - direction (enum | 2 numeric) -- Mapping direction.
-      %     See :func:`ott.utils.paraxial2rtp` for details.
-      %     Default: ``'pos'``.
-
-      p = inputParser;
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
-      p.addParameter('mapping', 'sin');
-      p.addParameter('direction', 'pos');
-      p.parse(varargin{:});
-
-      rtp = ott.utils.paraxial2rtp(xy, ...
-          p.Results.mapping, p.Results.direction);
-      [varargout{1:nargout}] = beam.ehfarfield(rtp, 'data', p.Results.data);
-    end
-
-    function varargout = efield(beam, xyz, varargin)
-      % Calculate E field from Cartesian coordinates.
-      %
-      % Usage
-      %   [E, data] = beam.efield(xyz, ...)
-      %   E is of type :class:`ott.utils.FieldVector`.
-      %
-      % Parameters
-      %   - xyz (3xN numeric) -- Cartesian coordinates for field calculation.
-      %     Units of wavelength.  Packaged [x; y; z].
-      %
-      % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-
-      rtp = ott.utils.xyz2rtp(xyz);
-      [varargout{1:nargout}] = beam.efieldRtp(rtp, varargin{:});
-    end
-
-    function varargout = hfield(beam, xyz, varargin)
-      % Calculate H field from Cartesian coordinates.
-      %
-      % Usage
-      %   [H, data] = beam.hfield(xyz, ...)
-      %   H is of type :class:`ott.utils.FieldVector`.
-      %
-      % Parameters
-      %   - xyz (3xN numeric) -- Cartesian coordinates for field calculation.
-      %     Units of wavelength.  Packaged [x; y; z].
-      %
-      % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-
-      rtp = ott.utils.xyz2rtp(xyz);
-      [varargout{1:nargout}] = beam.hfieldRtp(rtp, varargin{:});
-    end
-
-    function varargout = ehfield(beam, xyz, varargin)
-      % Calculate E and H fields from Cartesian coordinates.
-      %
-      % Usage
-      %   [E, H, data] = beam.ehfield(xyz, ...)
-      %   E and H are of type :class:`ott.utils.FieldVector`.
-      %
-      % Parameters
-      %   - xyz (3xN numeric) -- Cartesian coordinates for field calculation.
-      %     Units of wavelength.  Packaged [x; y; z].
-      %
-      % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-
-      rtp = ott.utils.xyz2rtp(xyz);
-      [varargout{1:nargout}] = beam.ehfieldRtp(rtp, varargin{:});
     end
 
     function [E, data] = efieldRtp(beam, rtp, varargin)
@@ -724,438 +390,6 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Package output
       Hrtp = -1i*[Hr; Htheta; Hphi];
       H = ott.utils.FieldVector(rtp, Hrtp, 'spherical');
-    end
-
-    function [E, H, data] = ehfieldRtp(beam, rtp, varargin)
-      % Calculate E and H fields in spherical coordinates.
-      %
-      % Usage
-      %   [E, H, data] = beam.ehfieldRtp(rtp, ...)
-      %   E and H are of type :class:`ott.utils.FieldVector`.
-      %
-      % Parameters
-      %   - rtp (3xN numeric) -- Spherical coordinates for field calculation.
-      %     Units of wavelength.  Packaged [r; theta; phi].
-      %
-      % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-
-      p = inputParser;
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
-      p.parse(varargin{:});
-
-      data = p.Results.data;
-      [E, data] = beam.efieldRtp(rtp, 'data', data);
-      [H, data] = beam.hfieldRtp(rtp, 'data', data);
-    end
-
-    %
-    % Visualisation functions
-    %
-
-    function varargout = visNearfield(beam, varargin)
-      % Create a visualisation of the beam
-      %
-      % Usage
-      %   beam.visualise(...) displays an image of the beam in the current
-      %   figure window.
-      %
-      %   [im, data] = beam.visualise(...) returns a image of the beam.
-      %   If the beam object is an array, returns an image for each beam.
-      %   Also returns a :class:`ott.utils.VswfData` structure for fast
-      %   repeated calculations.
-      %
-      % Optional named arguments
-      %   - size (2 numeric) -- Number of rows and columns in image.
-      %     Default: ``[80, 80]``.
-      %
-      %   - field (enum) -- Type of visualisation to generate, see
-      %     :meth:`VisualisationData` for valid options.
-      %     Default: ``'irradiance'``.
-      %
-      %   - axis (enum|cell) -- Describes the slice to visualise.
-      %     Can either be 'x', 'y' or 'z' for a plane perpendicular to
-      %     the x, y and z axes respectively; or a cell array with 2
-      %     or 3 unit vectors (3x1) for x, y, [z] directions.
-      %     Default: ``'z'``.
-      %
-      %   - offset (numeric) -- Plane offset along axis (default: 0.0)
-      %
-      %   - range (numeric|cell) -- Range of points to visualise.
-      %     Can either be a cell array { x, y }, two scalars for
-      %     range [-x, x], [-y, y] or 4 scalars [ x0, x1, y0, y1 ].
-      %     Default: ``[1, 1].*beam.wavelength``.
-      %
-      %   - mask (function_handle) Describes regions to remove from the
-      %     generated image.  Function should take one argument for the
-      %     3xN field xyz field locations and return a logical array mask.
-      %     Default: ``[]``.
-      %
-      %   - plot_axes (axes handle) -- Axes to place the visualisation in.
-      %     If empty, no visualisation is generated.
-      %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
-      %
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - basis (enum) -- Vector spherical wave function basis to
-      %     visualise.  Must be one of 'incoming', 'outgoing' or 'regular'.
-      %     Default: ``'regular'``.
-
-      p = inputParser;
-      p.addParameter('field', 'irradiance');
-      p.addParameter('basis', 'regular');
-      p.addParameter('size', []);
-      p.addParameter('axis', 'z');
-      p.addParameter('offset', 0.0);
-      p.addParameter('range', [1, 1].*ott.utils.nmax2ka(beam.Nmax)./(2*pi));
-      p.addParameter('mask', []);
-      p.addParameter('plot_axes', []);
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
-      p.parse(varargin{:});
-
-      % Get range and size of data
-      default_sz = [80, 80];
-      [xrange, yrange, sz] = beam.visualiseGetRange(p.Results.range, ...
-          p.Results.size, default_sz);
-
-      % Generate grid of positions
-      assert(isscalar(p.Results.offset) && isnumeric(p.Results.offset), ...
-          'offset must be numeric scalar');
-      [xx, yy, zz] = meshgrid(xrange, yrange, p.Results.offset);
-
-      % Change the grid to the user requested orientation
-      [xyz, labels] = beam.visualiseGetXyz(xx, yy, zz, p.Results.axis);
-
-      % Calculate mask
-      if isempty(p.Results.mask)
-        mask = true(sz);
-      else
-        mask = p.Results.mask(xyz);
-      end
-
-      % Calculate which points are needed
-      our_xyz = xyz(:, mask(:));
-
-      % Calculate fields
-      [E, data] = beam.efield(our_xyz, 'data', p.Results.data, ...
-          'basis', p.Results.basis);
-
-      % Unpack masked image (use nans for other values)
-      Ef = nan(size(xyz));
-      Ef(:, mask(:)) = E.vxyz;
-      Ef = ott.utils.FieldVector(xyz, Ef, 'cartesian');
-
-      % Generate visualisation data
-      imout = beam.VisualisationData(p.Results.field, Ef);
-      imout = reshape(imout, sz);
-
-      % Display the visualisation
-      beam.visualiseShowPlot(...
-          nargout, p.Results.plot_axes, imout, ...
-          {xrange, yrange}, labels);
-
-      % Assign output
-      if nargout >= 1
-        varargout{1} = imout;
-        if nargout >= 2
-          varargout{2} = data;
-        end
-      end
-    end
-
-    function varargout = visFarfield(beam, varargin)
-      % Create a visualisation of the beam by projecting the far-field
-      % onto a plane.
-      %
-      % Usage
-      %   beam.visualiseFarfield(...) displays an image of the beam
-      %   in the current axes.
-      %
-      %   im = beam.visualise(...) returns a image of the beam.
-      %   If the beam object is an array, returns an image for each beam.
-      %
-      % Optional named arguments
-      %   - size (2 numeric) -- Number of rows and columns in image.
-      %     Default: ``[80, 80]``.
-      %
-      %   - field (enum) -- Type of visualisation to generate, see
-      %     :meth:`VisualisationData` for valid options.
-      %     Default: ``'irradiance'``.
-      %
-      %   - range (numeric|cell) -- Range of points to visualise.
-      %     Can either be a cell array { x, y }, two scalars for
-      %     range [-x, x], [-y, y] or 4 scalars [ x0, x1, y0, y1 ].
-      %     Default: ``[1, 1]``.
-      %
-      %   - direction (enum|2 numeric|3x3 numeric) -- Direction to visualise.
-      %     Either 'pos', 'neg' for the positive and negative z hemispheres,
-      %     [roty, rotz] for the rotation angles (in degrees), or
-      %     a 3x3 rotation matrix to apply to the coordinates.
-      %     Default: ``'pos'``.
-      %
-      %   - mapping (enum) -- Mapping from theta-phi to far-field.
-      %     Must be one of 'sin', 'tan' or 'theta'.
-      %     Default: ``'sin'``.
-      %
-      %   - plot_axes (axes handle) -- Axes to place the visualisation in.
-      %     If empty, no visualisation is generated.
-      %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
-      %
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - basis (enum) -- Vector spherical wave function basis to
-      %     visualise.  Must be one of 'incoming' or 'outgoing'.
-      %     Default: ``'incoming'``.
-
-      % Parse arguments
-      p = inputParser;
-      p.addParameter('field', 'irradiance');
-      p.addParameter('basis', 'incoming');
-      p.addParameter('size', []);
-      p.addParameter('direction', 'pos');
-      p.addParameter('range', [1, 1]);
-      p.addParameter('mapping', 'sin');
-      p.addParameter('plot_axes', []);
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
-      p.parse(varargin{:});
-
-      % Generate grid of coordinates
-      default_sz = [80, 80];
-      [xrange, yrange, sz] = beam.visualiseGetRange(p.Results.range, ...
-          p.Results.size, default_sz);
-      [xx, yy] = meshgrid(xrange, yrange);
-      nxy = [xx(:), yy(:)].';
-
-      % Calculate fields
-      [E, data] = beam.eparaxial(nxy, 'data', p.Results.data, ...
-          'basis', p.Results.basis, 'mapping', p.Results.mapping);
-
-      % Generate visualisation data
-      imout = beam.VisualisationData(p.Results.field, E);
-      imout = reshape(imout, sz);
-
-      % Display the visualisation
-      beam.visualiseShowPlot(...
-          nargout, p.Results.plot_axes, imout, ...
-          {xrange, yrange}, {'Direction 1', 'Direction 2'});
-
-      % Assign output
-      if nargout >= 1
-        varargout{1} = imout;
-        if nargout >= 2
-          varargout{2} = data;
-        end
-      end
-    end
-
-    function varargout = visFarfieldSphere(beam, varargin)
-      % Generate a spherical surface visualisation of the far-field
-      %
-      % Usage
-      %   beam.visualiseFarfieldSphere(...)
-      %   Generate a visualisation of the far-field in the current axes.
-      %
-      %   [I, XYZ, data] = beam.visualiseFarfieldSphere(...)
-      %   Outputs the field value and three coordinate matrices that
-      %   can be passed to ``surf(XYZ{1}, XYZ{2}, XYZ{3})``
-      %
-      % Optional named arguments
-      %   - field (enum) -- Type of visualisation to generate, see
-      %     :meth:`VisualisationData` for valid options.
-      %     Default: ``'irradiance'``.
-      %
-      %   - normalise (logical) -- If the field value should be normalized.
-      %     Default: ``false``.
-      %
-      %   - type (enum) -- Type of surface visualisation.
-      %     Can be either 'sphere' or '3dpolar'.
-      %     Default: ``'sphere'``.
-      %
-      %   - npts (numeric) -- Number of points for sphere surface.
-      %     Passed to ``sphere(npts)``.  Default: ``100``.
-      %
-      %   - plot_axes (axes handle) -- Axes to place the visualisation in.
-      %     If empty, no visualisation is generated.
-      %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
-      %
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - basis (enum) -- Vector spherical wave function basis to
-      %     visualise.  Must be one of 'incoming' or 'outgoing'.
-      %     Default: ``'incoming'``.
-
-      p = inputParser;
-      p.addParameter('field', 'irradiance');
-      p.addParameter('basis', 'incoming');
-      p.addParameter('normalise', false);
-      p.addParameter('type', 'sphere');
-      p.addParameter('npts', 100);
-      p.addParameter('plot_axes', []);
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
-      p.parse(varargin{:});
-
-      % Generate grid
-      [X,Y,Z] = sphere(p.Results.npts);
-
-      % Calculate fields
-      rtp = ott.utils.xyz2rtp(X, Y, Z);
-      [E, data] = beam.efarfield(rtp, 'data', p.Results.data, ...
-          'basis', p.Results.basis);
-
-      % Generate visualisation data
-      imout = beam.VisualisationData(p.Results.field, E);
-      imout = reshape(imout, size(X));
-
-      % Generate visualisation
-      if nargout == 0 || ~isempty(p.Results.plot_axes)
-
-        % Get the default axes
-        our_axes = p.Results.plot_axes;
-        if isempty(our_axes)
-          our_axes = gca();
-        end
-
-        % Check that we only have one visualisation to show
-        if ~ismatrix(imout)
-          warning('ott:beam:Beam:non_matrix_plot', ...
-              'Multiple beams generated, only showing first');
-        end
-
-        I = imout(:, :, 1);
-        if p.Results.normalise
-          I = I ./ max(abs(I(:)));
-        end
-
-        switch p.Results.type
-          case 'sphere'
-            surf(our_axes, X, Y, Z, I, ...
-                'facecolor','interp','edgecolor','none');
-          case '3dpolar'
-            surf(our_axes, abs(I).*X,abs(I).*Y,abs(I).*Z,I,...
-              'facecolor','interp','edgecolor','none');
-          otherwise
-            error('Unknown visualisation type');
-        end
-
-        zlabel(our_axes, 'Z');
-        xlabel(our_axes, 'X');
-        ylabel(our_axes, 'Y');
-        view(our_axes, 50, 20);
-        axis(our_axes, 'equal');
-      end
-
-      % Assign output data
-      if nargout >= 1
-        varargout{1} = imout;
-        if nargout >= 2
-          varargout{2} = {X, Y, Z};
-          if nargout >= 3
-            varargout{3} = data;
-          end
-        end
-      end
-    end
-
-    function varargout = visFarfieldSlice(beam, varargin)
-      % Generate a 2-D slice through the far-field
-      %
-      % Usage
-      %   beam.visualiseFarfieldSlice(phi, ...)
-      %   Generates a 2-D slice at angle phi around the z-axis.
-      %   If `phi` is not prsent, uses default of ``[0, pi/2]``.
-      %   Plots into the current axes.
-      %
-      %   [im, theta, data] = beam.visualiseFarfieldSlice(...)
-      %   Outputs the calculated values and corresponding angles.
-      %
-      % Optional named arguments
-      %   - field (enum) -- Type of visualisation to generate, see
-      %     :meth:`VisualisationData` for valid options.
-      %     Default: ``'irradiance'``.
-      %
-      %   - normalise (logical) -- If the field value should be normalized.
-      %     Default: ``false``.
-      %
-      %   - npts (numeric) -- Number of points for sphere surface.
-      %     Passed to ``sphere(npts)``.  Default: ``100``.
-      %
-      %   - plot_axes (axes handle) -- Axes to place the visualisation in.
-      %     If empty, no visualisation is generated.
-      %     Default: ``gca()`` if ``nargout == 0`` otherwise ``[]``.
-      %
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - basis (enum) -- Vector spherical wave function basis to
-      %     visualise.  Must be one of 'incoming' or 'outgoing'.
-      %     Default: ``'incoming'``.
-
-      p = inputParser;
-      p.addOptional('phi', [0, pi/2], @isnumeric);
-      p.addParameter('field', 'irradiance');
-      p.addParameter('basis', 'incoming');
-      p.addParameter('normalise', false);
-      p.addParameter('npts', 100);
-      p.addParameter('plot_axes', []);
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
-      p.parse(varargin{:});
-
-      % Generate grid
-      ptheta = linspace(0, 2*pi, p.Results.npts);
-      [r, theta, phi] = ott.utils.matchsize(0, ptheta(:), p.Results.phi);
-      rtp = [r(:), theta(:), phi(:)].';
-
-      % Calculate fields
-      [E, data] = beam.efarfield(rtp, 'data', p.Results.data, ...
-          'basis', p.Results.basis);
-
-      % Generate visualisation data
-      imout = beam.VisualisationData(p.Results.field, E);
-
-      % Generate visualisation
-      if nargout == 0 || ~isempty(p.Results.plot_axes)
-
-        % Get the default axes
-        our_axes = p.Results.plot_axes;
-        if isempty(our_axes)
-          our_axes = gca();
-        end
-
-        % Check that we only have one visualisation to show
-        if ~ismatrix(imout)
-          warning('ott:beam:Beam:non_matrix_plot', ...
-              'Multiple beams generated, only showing first');
-        end
-
-        I = imout(:, :, 1);
-        if p.Results.normalise
-          I = I ./ max(abs(I(:)));
-        end
-
-        % Generate plot
-        polaraxes(our_axes);
-        polarplot(ptheta, I);
-      end
-
-      % Assign outputs
-      if nargout >= 1
-        varargout{1} = imout;
-        if nargout >= 2
-          varargout{2} = theta;
-          if nargout >= 3
-            varargout{3} = data;
-          end
-        end
-      end
     end
 
     %
@@ -1688,8 +922,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         [oa, ob] = b.getCoefficients();
         if size(a, 2) == 2*size(oa, 1)
           ab = a * [oa; ob];
-          beam = ott.bsc.Bsc(ab(1:size(ab, 1)/2, :), ...
-              ab(1+size(ab, 1)/2:end, :));
+          beam = ott.bsc.Bsc(ab(1:end/2, :), ...
+              ab(1+end/2:end, :));
         else
           beam = ott.bsc.Bsc(a * oa, a * ob);
         end
@@ -1760,107 +994,22 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
     % Force calculation methods
     %
 
-    function [moment, ints, data] = intensityMoment(beam, varargin)
-      % Calculate moment of the beam intensity in the far-field.
-      %
-      % By comparing the moment of the incident beam to the scattered
-      % beam, this method should produce a similar estimate for the force
-      % as :meth:`force`.
+    function varargout = force(ibeam, sbeam)
+      % Calculate change in linear momentum between beams.
       %
       % Usage
-      %   [moment, int, data] = beam.intensityMoment(...)
+      %   force = ibeam.force(sbeam)
       %
-      % Optional named arguments
-      %   - theta_range (2 numeric) -- Range of angles to integrate over.
-      %     Default: ``[0, pi]``.
-      %
-      %   - ntheta (numeric) -- Number of theta points.  (Default: 100)
-      %   - nphi (numeric) -- Number of phi points.  (Default: 100)
-      %
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - basis (enum) -- Vector spherical wave function basis to
-      %     visualise.  Must be one of 'incoming' or 'outgoing'.
-      %     Default: ``'incoming'``.
-
-      p = inputParser;
-      p.addParameter('basis', 'incoming');
-      p.addParameter('theta_range', [0, pi]);
-      p.addParameter('ntheta', 100);
-      p.addParameter('nphi', 100);
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
-      p.parse(varargin{:});
-
-      % Setup grid
-      [theta, phi] = ott.utils.angulargrid(p.Results.ntheta, p.Results.nphi);
-      dtheta = diff(theta(1:2));
-      dphi = diff(phi(1:2));
-
-      % Truncate the theta range
-      keep = theta > p.Results.theta_range(1) & theta < p.Results.theta_range(2);
-      theta = theta(keep);
-      phi = phi(keep);
-
-      rtp = [ones(numel(theta), 1), theta(:), phi(:)].';
-
-      % Calculate Cartesian coordinates
-      % negate z, So integrals match sign convention used in :meth:`force`.
-      uxyz = ott.utils.rtp2xyz(rtp);
-      uxyz(3, :) = -uxyz(3, :);
-
-      % Calculate field and E2
-      [E, data] = beam.efarfield(rtp, 'data', p.Results.data, ...
-          'basis', p.Results.basis);
-      Eirr = beam.VisualisationData('E2', E);
-
-      % Calculate intensity
-      ints = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
-
-      % Calculate moment in Cartesian coordinates
-      Eirr_xyz = uxyz .* Eirr;
-      moment = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
-    end
-
-    function [force, torque, spin] = forcetorque(ibeam, sbeam)
-      % Calculate change in momentum between beams
-      %
-      % Usage
-      %   [f, t, s] = ibeam.forcetorque(sbeam) calculates the force,
-      %   torque and spin between the incident beam ``ibeam`` and
-      %   scattered beam ``sbeam``.
-      %   Outputs 3x[N...] matrix depending on the number and shape of beams.
+      %   [fx, fy, fz] = ibeam.force(sbeam)
       %
       % To convert the force to SI units, divide by the speed in the medium
       % (assuming the beam power is in SI units).
       %
-      % To convert torque/spin to SI units, divide by the angular frequency
-      % (assuming the beam power is in SI units).
-      %
-      % The scattered beam must be a total field beam (incoming-outgoing).
+      % The scattered beam must be a total field beam (incoming+outgoing).
       %
       % This uses mathematical result of Farsund et al., 1996, in the form of
       % Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
       % E_{inc}=sum_{nm}(aM+bN);
-
-      % Dispatch to other methods to calculate quantities
-      force = ibeam.force(sbeam);
-      if nargout > 1
-        torque = ibeam.torque(sbeam);
-        if nargout > 2
-          spin = ibeam.spin(sbeam);
-        end
-      end
-    end
-
-    function varargout = force(ibeam, sbeam)
-      % Calculate change in linear momentum between beams.
-      % For details on usage/arguments see :meth:`forcetorque`.
-      %
-      % Usage
-      %   force = ibeam.force(sbeam)
-      %   [fx, fy, fz] = ibeam.force(sbeam)
 
       % Get the abpq terms for the calculation
       [ai, bi, p, q, n, m, ...
@@ -1905,11 +1054,20 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
     function varargout = torque(ibeam, sbeam)
       % Calculate change in angular momentum between beams
-      % For details on usage/arguments see :meth:`forcetorque`.
       %
       % Usage
       %   torque = ibeam.torque(sbeam)
+      %
       %   [tx, ty, tz] = ibeam.torque(sbeam)
+      %
+      % % To convert torque/spin to SI units, divide by the angular frequency
+      % (assuming the beam power is in SI units).
+      %
+      % The scattered beam must be a total field beam (incoming+outgoing).
+      %
+      % This uses mathematical result of Farsund et al., 1996, in the form of
+      % Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
+      % E_{inc}=sum_{nm}(aM+bN);
 
       % Get the abpq terms for the calculation
       [ai, bi, p, q, n, m, ~, ~, ~, ~, ...
@@ -1938,11 +1096,20 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
     function varargout = spin(ibeam, sbeam)
       % Calculate change in spin between beams
-      % For details on usage/arguments see :meth:`forcetorque`.
       %
       % Usage
       %   torque = ibeam.torque(sbeam)
+      %
       %   [tx, ty, tz] = ibeam.torque(sbeam)
+      %
+      % To convert torque/spin to SI units, divide by the angular frequency
+      % (assuming the beam power is in SI units).
+      %
+      % The scattered beam must be a total field beam (incoming+outgoing).
+      %
+      % This uses mathematical result of Farsund et al., 1996, in the form of
+      % Chricton and Marsden, 2000, and our standard T-matrix notation S.T.
+      % E_{inc}=sum_{nm}(aM+bN);
 
       % Get the abpq terms for the calculation
       [ai, bi, p, q, n, m, ...
@@ -2026,7 +1193,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       end
 
       % Calculate tranlsation matrices
-      [A, B] = ott.utils.translate_z(p.Results.Nmax, ...
+      [A, B] = ott.utils.translate_z(...
+          [p.Results.Nmax, max([beam.Nmax])], ...
           z, 'type', translation_type);
 
       % Apply translation to beam
@@ -2068,21 +1236,27 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
           'Number of rotations must match number of beams or be scalar');
 
       Nwork = max([Nrots, Nbeams]);
-      if Nwork > 1
-        D = cell(1, Nwork);
-        for ii = 1:Nwork
+      if Nrots > 1
+        D = cell(1, Nrots);
+        for ii = 1:Nrots
           D = ott.utils.wigner_rotation_matrix(...
               max([beam.Nmax, p.Results.Nmax]), R(:, (1:3) + (ii-1)*3));
+        end
+        
+        if numel(beam) == 1
+          ibeam = beam;
+          for ii = 1:Nrots
+            beam(ii) = D{ii} * ibeam;
+          end
+        else
+          for ii = 1:Nrots
+            beam(ii) = D{ii} * beam(ii);
+          end
         end
       else
         D = {ott.utils.wigner_rotation_matrix(...
             max([beam.Nmax, p.Results.Nmax]), R)};
-      end
-
-      % Apply wigner matrices to beam
-      for ii = 1:numel(beam)
-        nend = max(numel(beam(ii).a), numel(beam(ii).b));
-        beam(ii) = D{ii}(:, 1:nend) * beam(ii);
+        beam = D{1} * beam;
       end
 
     end
@@ -2263,133 +1437,6 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       p=p(ci, :);
       q=q(ci, :);
 
-    end
-  end
-
-  methods (Static, Hidden)
-    function visualiseShowPlot(vis_nargout, our_axes, imout, ...
-        ranges, labels)
-      % Helper function for generating the visualisation
-      % Called by :meth:`visualise`.
-      %
-      % Usage
-      %   beam.visualiseShowPlot(vis_nargout, our_axes, imout, ranges, labels)
-
-      if vis_nargout == 0 || ~isempty(our_axes)
-
-        % Get the default axes
-        if isempty(our_axes)
-          our_axes = gca();
-        end
-
-        % Check that we only have one visualisation to show
-        if ~ismatrix(imout)
-          warning('ott:beam:Beam:non_matrix_plot', ...
-              'Multiple beams generated, only showing first');
-        end
-
-        % Generate the plot
-        imagesc(our_axes, ranges{1}, ranges{2}, imout(:, :, 1), ...
-            'AlphaData', ~isnan(imout(:, :, 1)));
-        xlabel(our_axes, labels{1});
-        ylabel(our_axes, labels{2});
-        axis(our_axes, 'image');
-      end
-    end
-
-    function [xrange, yrange, sz] = visualiseGetRange(range, sz, default_sz)
-      % Get the xrange and yrange dimensions of the plot
-      %
-      % Usage
-      %   [xrange, yrange, sz] = visualiseGetRange(range, sz, default_sz)
-
-      if iscell(range)
-
-        if ~isempty(sz)
-          warning('Ignoring size parameter');
-        end
-
-        xrange = range{1};
-        yrange = range{2};
-        sz = [length(yrange), length(xrange)];
-
-      elseif length(range) == 2
-
-        if isempty(sz)
-          sz = default_sz;
-        end
-        assert(isnumeric(sz) && numel(sz) == 2, ...
-            'size must be 2 element numeric vector');
-
-        xrange = linspace(-1, 1, sz(2))*range(1);
-        yrange = linspace(-1, 1, sz(1))*range(2);
-
-      elseif length(range) == 4
-
-        if isempty(sz)
-          sz = default_sz;
-        end
-        assert(isnumeric(sz) && numel(sz) == 2, ...
-            'size must be 2 element numeric vector');
-
-        xrange = linspace(range(1), range(2), sz(2));
-        yrange = linspace(range(3), range(4), sz(1));
-
-      else
-        error('ott:Bsc:visualise:range_error', ...
-            'Incorrect type or size of range arguments');
-      end
-    end
-
-    function [xyz, labels] = visualiseGetXyz(xx, yy, zz, our_axis)
-      % Helper function for :meth:`visualise`
-      %
-      % Usage
-      %   [xyz, labels] = beam.visualiseGetXyz(xx, yy, zz, axis)
-      %
-      %   [~, labels] = beam.visualiseGetXyz([], [], [], axis)
-
-      % TODO: Should we split this function?
-
-      % Change the grid to the user requested orientation
-      if ischar(our_axis)
-        switch our_axis
-          case 'x'
-            xyz = [zz(:), yy(:), xx(:)].';
-            labels = {'Z', 'Y'};
-          case 'y'
-            xyz = [yy(:), zz(:), xx(:)].';
-            labels = {'Z', 'X'};
-          case 'z'
-            xyz = [xx(:), yy(:), zz(:)].';
-            labels = {'X', 'Y'};
-          otherwise
-            error('Unknown axis name specified');
-        end
-      elseif iscell(our_axis) && numel(our_axis) >= 2
-        dir1 = our_axis{1}(:);
-        dir2 = our_axis{2}(:);
-        if numel(our_axis) == 3
-          dir3 = our_axis{3}(:);
-        else
-          dir3 = cross(dir1(:), dir2(:));
-        end
-
-        assert(isnumeric(dir1) && numel(dir1) == 3 ...
-            && isnumeric(dir2) && numel(dir2) == 3 ...
-            && isnumeric(dir3) && numel(dir3) == 3, ...
-            'direction vectors must be 3 element numeric');
-
-        labels = {'Direction 1', 'Direction 2'};
-
-        if ~isempty(xx) && ~isempty(yy) && ~isempty(zz)
-          xyz = dir1.*xx(:).' + dir2.*yy(:).' + dir3.*zz(:).';
-        else
-          xyz = [];
-        end
-      else
-        error('axis must be character or a 2 or 3 element cell array');
-      end
     end
   end
 
