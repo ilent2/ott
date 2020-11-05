@@ -28,3 +28,13 @@ function testEvaluate(testCase)
 
 end
 
+function testEmptyInputs(testCase)
+
+  data = ott.utils.VswfData();
+  ci = zeros(1, 0);
+  theta = linspace(0, 5, 5);
+  phi = linspace(0, 10, 5);
+  [Y, Ydt, Ydp, data2] = data.evaluateYtp(ci, theta, phi);
+
+end
+

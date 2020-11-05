@@ -14,7 +14,7 @@ classdef PlaneWave < ott.bsc.Bsc
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties
+  properties (SetAccess=protected)
     direction       % Propagation direction of plane wave
   end
 
@@ -44,10 +44,13 @@ classdef PlaneWave < ott.bsc.Bsc
       assert(isnumeric(Nmax) && isscalar(Nmax) ...
           && Nmax >= 0 && round(Nmax) == Nmax, ...
           'Nmax should be an single positive integer');
+      assert(isnumeric(direction) && size(direction, 1) == 3, ...
+        'direction must be 3xN numeric');
+      assert(isnumeric(polarisation) && size(polarisation, 1) == 3, ...
+        'polarisation must be 3xN numeric');
 
       % Get spherical coordinates for plane wave vectors
-      rtp = ott.utils.xyzv2rtpv(direction, zeros(size(direction)));
-      Ertp = ott.utils.xyzv2rtpv(polarisation, zeros(size(polarisation)));
+      [Ertp, rtp] = ott.utils.xyzv2rtpv(polarisation, direction);
 
       ablength = ott.utils.combined_index(Nmax, Nmax);
 
@@ -61,8 +64,8 @@ classdef PlaneWave < ott.bsc.Bsc
         leniter=2*n+1;
 
         %expand theta and phi components of field to match spherical harmonics
-        ET=repmat(Ertp(2, :), [1,leniter]);
-        EP=repmat(Ertp(3, :), [1,leniter]);
+        ET=repmat(Ertp(2, :), [leniter,1]);
+        EP=repmat(Ertp(3, :), [leniter,1]);
 
         %power normalisation.
         Nn = 1/sqrt(n*(n+1));
@@ -72,9 +75,9 @@ classdef PlaneWave < ott.bsc.Bsc
         [~, dtY, dpY, data] = data.evaluateYtp(ci, rtp(2, :), rtp(3, :));
 
         %equivalent to dot((1i)^(n+1)*C,E);
-        a(iter,:) = 4*pi*Nn*(-1i)^(n+1)*(dpY'.*ET - dtY'.*EP).';
+        a(iter,:) = 4*pi*Nn*(-1i)^(n+1)*(conj(dpY).*ET - conj(dtY).*EP);
         %equivalent to dot((1i)^(n)*B,E);
-        b(iter,:) = 4*pi*Nn*(-1i)^(n)  *(dtY'.*ET + dpY'.*EP).';
+        b(iter,:) = 4*pi*Nn*(-1i)^(n)  *(conj(dtY).*ET + conj(dpY).*EP);
       end
 
       beam = ott.bsc.PlaneWave(a, b, direction);
@@ -131,7 +134,9 @@ classdef PlaneWave < ott.bsc.Bsc
       % internal beam direction vector.
 
       rbeam = rotateInternal@ott.bsc.Bsc(beam, R, varargin{:});
-      beam = ott.bsc.PlaneWave(rbeam.a, rbeam.b, R * beam.direction);
+      
+      [oa, ob] = rbeam.getCoefficients();
+      beam = ott.bsc.PlaneWave(oa, ob, R * [beam.direction]);
     end
 
     function beam = translateXyzInternal(beam, xyz, varargin)
@@ -144,16 +149,24 @@ classdef PlaneWave < ott.bsc.Bsc
 
       assert(isnumeric(xyz) && ismatrix(xyz) && size(xyz, 1) == 3, ...
           'xyz must be 3xN numeric matrix');
-
-      ibeam = beam;
-
-      for ii = 1:size(xyz, 2)
-        dz = dot(repmat(xyz(:, ii), 1, numel(ibeam)), [ibeam.direction]);
-        dz = exp(1i.*dz.*2*pi);
-
-        % Apply translation
-        beam(ii) = ibeam .* dz;
+        
+      beamDir = [beam.direction];
+      
+      assert(size(beamDir, 2) == size(xyz, 2) || size(beamDir, 2) == 1 ...
+          || size(xyz, 2) == 1, ...
+          'beam array and position array must have compatible sizes');
+        
+      % Ensure array have compatible sizes
+      if size(beamDir, 2) == 1
+        beamDir = repmat(beamDir, 1, size(xyz, 2));
       end
+      if size(xyz, 2) == 1, xyz = repmat(xyz, 1, numel(beam)); end
+
+      dz = dot(xyz, beamDir);
+      dz = exp(1i.*dz.*2*pi);
+
+      % Apply translation
+      beam = beam .* dz;
     end
   end
 

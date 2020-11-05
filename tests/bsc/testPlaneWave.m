@@ -16,6 +16,10 @@ function testFromDirection(testCase)
   testCase.verifyClass(beam, 'ott.bsc.PlaneWave');
   testCase.verifyEqual(beam.Nmax, Nmax, 'Nmax');
   testCase.verifyEqual(beam.direction, dir, 'direction');
+  
+  % Test fields are correct
+  Exyz = beam.efieldRtp([0;0;0]).vxyz;
+  testCase.verifyEqual(abs(Exyz), abs(pol), 'AbsTol', 1e-15, 'field direction');
 
 end
 
@@ -47,9 +51,13 @@ function testRotate(testCase)
   dir = [0;0;1];
   pol = [1;0;0];
   beam = ott.bsc.PlaneWave.FromDirection(Nmax, dir, pol);
-
+  
   beam = beam.rotateY(pi/2);
   testCase.verifyEqual(beam.direction, [1;0;0], ...
       'AbsTol', 1.0e-12, 'new direction');
+    
+  target = ott.bsc.PlaneWave.FromDirection(Nmax, [1;0;0], [0;0;-1]);
+  testCase.verifyEqual(beam.getCoefficients(), target.getCoefficients(), ...
+      'RelTol', 1.0e-14, 'AbsTol', 1.0e-13, 'beam data');
 
 end

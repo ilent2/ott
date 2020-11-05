@@ -94,10 +94,12 @@ classdef SpharmData
       Yphi(:, ~keep) = nan;
 
       % Retrieve stored data
-      oexpimphi = data.expimphi(dm, dphi(keep));
-      Y(:, keep) = data.Y(dci, dtheta(keep)) .* oexpimphi;
-      Ytheta(:, keep) = data.Ytheta(dci, dtheta(keep)) .* oexpimphi;
-      Yphi(:, keep) = data.Yphi(dci, dtheta(keep)) .* oexpimphi;
+      if ~isempty(Y)
+        oexpimphi = data.expimphi(dm, dphi(keep));
+        Y(:, keep) = data.Y(dci, dtheta(keep)) .* oexpimphi;
+        Ytheta(:, keep) = data.Ytheta(dci, dtheta(keep)) .* oexpimphi;
+        Yphi(:, keep) = data.Yphi(dci, dtheta(keep)) .* oexpimphi;
+      end
     end
 
     function data = updateCi(data, ci)
@@ -163,7 +165,7 @@ classdef SpharmData
       new_phi = phi(dphi == 0);
 
       % Update expimphi
-      if ~isempty(new_phi)
+      if ~isempty(new_phi) && ~isempty(data.um)
         data.uphi = [data.uphi, new_phi(:).'];
         data.expimphi = [data.expimphi, exp(1i*data.um.' .* new_phi(:).')];
       end

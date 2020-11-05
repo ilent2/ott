@@ -992,8 +992,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
           && size(rv, 2) == numel(beam), ...
           'second argument must be row vector matching N-beams');
 
-      beam.a = beam.a .* rv;
-      beam.b = beam.b .* rv;
+      [oa, ob] = beam.getCoefficients();
+      beam = beam.setCoefficients(oa .* rv, ob .* rv);
     end
 
     function beam = mtimes(a,b)

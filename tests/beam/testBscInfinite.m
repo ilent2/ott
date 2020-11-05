@@ -8,20 +8,46 @@ end
 
 function testConstruct(testCase)
 
-  bsc = ott.bsc.Bsc(ones(8, 1), 0);
+  Nmax = 20;
+  dir = [0;0;1];
+  pol = [1;0;0];
+  bsc = ott.bsc.PlaneWave.FromDirection(Nmax, dir, pol);
   beam = ott.beam.BscInfinite(bsc);
 
   testCase.assertEqual(beam.data, bsc, 'data not set');
 
-  % Check large get data
-  testCase.verifyError(beam.getData(3), ...
-      'ott:beam:BscInfinite:Nmax_outside_range');
+end
 
-  % Check large translation
-  testCase.verifyErrorFree(beam.getData(2));
-  beam.position = [1;0;0];
-  testCase.verifyError(beam.getData(2), ...
-      'ott:beam:BscInfinite:Nmax_outside_range');
+function testFieldValues(testCase)
+
+  Nmax = 20;
+  dir = [0;0;1];
+  pol = [1;0;0];
+  bsc = ott.bsc.PlaneWave.FromDirection(Nmax, dir, pol);
+  beam = ott.beam.BscInfinite(bsc);
+
+  testCase.verifyWarning(@() beam.efarfield([0;0;0]), ...
+    'ott:beam:BscInfinite:farfield_is_finite', 'efarfield');
+  testCase.verifyWarning(@() beam.hfarfield([0;0;0]), ...
+    'ott:beam:BscInfinite:farfield_is_finite', 'hfarfield');
+  testCase.verifyWarning(@() beam.ehfarfield([0;0;0]), ...
+    'ott:beam:BscInfinite:farfield_is_finite', 'ehfarfield');
+  
+  large = [1;1;1];
+  testCase.verifyError(@() beam.efield(large), ...
+    'ott:beam:BscBeam:recalculate_not_implemented', 'efield');
+  testCase.verifyError(@() beam.hfield(large), ...
+    'ott:beam:BscBeam:recalculate_not_implemented', 'hfield');
+  testCase.verifyError(@() beam.ehfield(large), ...
+    'ott:beam:BscBeam:recalculate_not_implemented', 'ehfield');
+  
+  testCase.verifyError(@() beam.efieldRtp(large), ...
+    'ott:beam:BscBeam:recalculate_not_implemented', 'efieldRtp');
+  testCase.verifyError(@() beam.hfieldRtp(large), ...
+    'ott:beam:BscBeam:recalculate_not_implemented', 'hfieldRtp');
+  testCase.verifyError(@() beam.ehfieldRtp(large), ...
+    'ott:beam:BscBeam:recalculate_not_implemented', 'ehfieldRtp');
 
 end
+
 

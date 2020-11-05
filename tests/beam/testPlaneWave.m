@@ -12,9 +12,16 @@ function testConstruct(testCase)
   Nmax = 2;
   beam = ott.beam.PlaneWave(polarisation, 'initial_Nmax', Nmax);
 
-  testCase.verifyEqual(beam.data.Nmax, Nmax, 'Nmax');
   testCase.verifyEqual(beam.polarisation, polarisation, 'pol');
-  testCase.verifyEqual(beam.data.direction, [0;0;1], 'direction');
+  
+  testCase.assertClass(beam.data, 'ott.bsc.PlaneWave', 'class data');
+  testCase.verifyEqual(beam.Nmax, Nmax, 'Nmax');
+  testCase.verifyEqual(beam.data(1).direction, [0;0;1], 'direction');
+  
+  % Check Nmax grows
+  newNmax = 13;
+  bsc = ott.bsc.Bsc(beam,newNmax);
+  testCase.verifyEqual(bsc.Nmax, newNmax);
 
 end
 

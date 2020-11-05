@@ -39,8 +39,6 @@ classdef BscBeam < ott.beam.ArrayType
     function beam = BscBeam(varargin)
       % Construct a Bsc beam instance.
       %
-      % This constructor is intended only for use by the sub-classes.
-      %
       % Usage
       %   beam = BscBeam(data, ...)
       %
@@ -97,6 +95,8 @@ classdef BscBeam < ott.beam.ArrayType
       if nargin < 2
         Nmax = max(0, max([0, beam.data.Nmax]) - tNmax);
       end
+      assert(isnumeric(Nmax) && isscalar(Nmax), ...
+        'Nmax must be numeric scalar');
 
       if isempty(beam.data) || max([beam.data.Nmax]) < (Nmax + tNmax)
         beam = beam.recalculate(Nmax + tNmax);
@@ -212,13 +212,7 @@ classdef BscBeam < ott.beam.ArrayType
       %     calculation.  Default is an empty VswfData structure.
 
       rtp = ott.utils.xyz2rtp(xyz);
-      bsc = ott.bsc.Bsc(beam);
-      [varargout{1:nargout}] = bsc.efieldRtp(...
-          rtp./[beam.wavelength;1;1], varargin{:});
-
-      if nargout >= 1
-        varargout{1} = varargout{1} ./ beam.wavenumber;
-      end
+      [varargout{1:nargout}] = beam.efieldRtp(rtp, varargin{:});
     end
 
     function varargout = hfield(beam, xyz, varargin)
@@ -237,13 +231,7 @@ classdef BscBeam < ott.beam.ArrayType
       %     calculation.  Default is an empty VswfData structure.
 
       rtp = ott.utils.xyz2rtp(xyz);
-      bsc = ott.bsc.Bsc(beam);
-      [varargout{1:nargout}] = bsc.hfieldRtp(...
-          rtp./[beam.wavelength;1;1], varargin{:});
-
-      if nargout >= 1
-        varargout{1} = varargout{1} ./ beam.wavenumber ./ beam.impedance;
-      end
+      [varargout{1:nargout}] = beam.hfieldRtp(rtp, varargin{:});
     end
 
     function varargout = ehfield(beam, xyz, varargin)
@@ -409,7 +397,7 @@ classdef BscBeam < ott.beam.ArrayType
 
     function val = get.defaultVisRange(beam)
       val = [1,1] .* ott.utils.nmax2ka(...
-          max([1, beam.data.Nmax]))./beam.wavenumber;
+          max([1, beam.data.Nmax]))./beam.wavenumber ./ sqrt(2);
     end
   end
 end
