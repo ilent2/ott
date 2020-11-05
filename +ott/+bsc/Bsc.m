@@ -23,6 +23,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 % Static methods
 %   - FromDenseBeamVectors -- Construct beam from dense beam vectors.
 %   - BasisSet             -- Generate basis set of VSWF beams
+%   - PmNearfield   -- Construct using near-field point matching
+%   - PmFarfield    -- Construct using far-field point matching
 %
 % Methods
 %   - Bsc        -- Class constructor
@@ -44,6 +46,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 %   - sum       -- Combine array of beams using summation
 %   - times     -- Scalar multiplication of beam vectors
 %   - mtimes    -- Scalar and matrix multiplication of beam vectors
+%   - safeTimes -- Matrix multiplication with support for shrinking
 %   - rdivide   -- Scalar division of beam vectors
 %   - mrdivide  -- Scalar division of beam vectors
 %   - uminus    -- Negation of beam vectors
@@ -70,7 +73,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties
+  properties (SetAccess=protected)
     a          % Beam shape coefficients `a` vector
     b          % Beam shape coefficients `b` vector
   end
@@ -149,6 +152,100 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         varargout{1} = TE;
         varargout{2} = TM;
       end
+    end
+
+    function [beam, data] = PmNearfield(rtp, Ertp, ci, varargin)
+      % Construct a beam using near-field point matching
+      %
+      % Usage
+      %   [beam, data] = ott.bsc.Bsc.PmNearfield(rtp, Ertp, ci, ...)
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Locations for point matching
+      %   - Ertp (3xN numeric) -- Field values for point matching
+      %   - ci (numeric) -- Combed index Modes to include in point matching.
+      %
+      % Optional named parameters
+      %   - basis (enum) -- Near-field basis, can be any of
+      %     'incoming', 'regular', or 'outgoing'.  Default: 'regular'.
+      %
+      %   - data (ott.utils.VswfData) -- Field data for repeated field
+      %     calculation.  Default is an empty VswfData structure.
+
+      p = inputParser;
+      p.addParameter('basis', 'regular');
+      p.addParameter('data', ott.utils.VswfData(), ...
+          @(x) isa(x, 'ott.utils.VswfData'));
+      p.parse(varargin{:});
+      
+      assert(size(Ertp, 1) == 3, ...
+        'Ertp must be a 3xNxM array');
+
+      % Generate basis set of beams
+      vswfBasis = ott.bsc.Bsc.BasisSet(ci);
+
+      % Calculate coefficient matrix
+      % Note: This doesn't have any assumptions about TEM fields
+      [ourE, data] = vswfBasis.efieldRtp(rtp, 'data', p.Results.data, ...
+          'basis', p.Results.basis);
+
+      % Do point-matching step
+      fab = reshape(ourE.vrtp, 3*size(rtp, 2), 2*numel(ci)) \ Ertp(:);
+
+      % Package output
+      beam = ott.bsc.Bsc(fab(1:end/2), fab(end/2+1:end));
+    end
+
+    function [beam, data] = PmFarfield(rtp, Ertp, ci, varargin)
+      % Construct a beam using far-field point matching
+      %
+      % Usage
+      %   [beam, data] = ott.bsc.Bsc.PmFarfield(rtp, Ertp, ci, ...)
+      %
+      % Parameters
+      %   - rtp (2xN | 3xN numeric) -- Locations for point matching
+      %
+      %   - Ertp (2xNxM | 3xNxM numeric) -- Field values for point matching
+      %     Ignores radial component if 3xN numeric input.
+      %     Third dimension describes the number of beams to generate.
+      %
+      %   - ci (L numeric) -- Combed index Modes to include in point matching.
+      %
+      % Optional named parameters
+      %   - basis (enum) -- Near-field basis, can be any of
+      %     'incoming', or 'outgoing'.  Default: 'incoming'.
+      %
+      %   - data (ott.utils.VswfData) -- Field data for repeated field
+      %     calculation.  Default is an empty VswfData structure.
+
+      p = inputParser;
+      p.addParameter('basis', 'incoming');
+      p.addParameter('data', ott.utils.VswfData(), ...
+          @(x) isa(x, 'ott.utils.VswfData'));
+      p.parse(varargin{:});
+      
+      assert(any(size(Ertp, 1) == [2, 3]), ...
+        'Ertp must be a 2xNxM or 3xNxM array');
+
+      % Generate basis set of beams
+      vswfBasis = ott.bsc.Bsc.BasisSet(ci);
+
+      % Calculate coefficient matrix
+      % Note: This doesn't have any assumptions about TEM fields
+      [ourE, data] = vswfBasis.efarfield(rtp, 'data', p.Results.data, ...
+          'basis', p.Results.basis);
+
+      % Remove radial component
+      if size(Ertp, 1) == 3
+        Ertp = Ertp(2:3, :, :);
+      end
+
+      % Do point-matching step
+      fab = reshape(ourE.vrtp(2:3, :), 2*size(rtp, 2), 2*numel(ci)) ...
+          \ reshape(Ertp, [], size(Ertp, 3));
+
+      % Package output
+      beam = ott.bsc.Bsc(fab(1:end/2, :), fab(end/2+1:end, :));
     end
   end
 
@@ -679,9 +776,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       ott.utils.nargoutCheck(beam, nargout);
 
       if nargin == 2
-        if isa(a, 'ott.beam.vswf.Bsc')
-          b = a.b;
-          a = a.a;
+        if isa(a, 'ott.bsc.Bsc')
+          [a, b] = a.getCoefficients();
         else
           assert(isnumeric(a) && ismatrix(a), 'ab must be numeric matrix');
           assert(mod(size(a, 1), 2) == 0, 'ab must be 2NxM in size');
@@ -691,15 +787,13 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       end
 
       assert(all(size(a) == size(b)), 'size of a and b must match');
-      assert(nargout == 1, 'Expected one output from function');
+      assert(numel(beam) == size(a, 2), ...
+        'a/b must have same number of colums as number of beams');
 
-      assert(isempty(a) || ...
-          (size(a, 1) >= 3 && ...
-          sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1))), ...
-        'number of multipole terms must be empty, 3, 8, 15, 24, ...');
-
-      beam.a = a;
-      beam.b = b;
+      for ii = 1:numel(beam)
+        beam(ii).a = a(:, ii);
+        beam(ii).b = b(:, ii);
+      end
     end
 
     function varargout = getCoefficients(beam, ci)
@@ -927,6 +1021,43 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         else
           beam = ott.bsc.Bsc(a * oa, a * ob);
         end
+      end
+    end
+    
+    function beam = safeTimes(D, beam)
+      % Apply matrix multiplication, shrinking matrix colums as needed.
+      %
+      % Applies the operation::
+      %
+      %   a = D * a;  b = D * b;
+      %
+      % But shrinks the number of columns in D to match the number of
+      % rows in a/b.  Raises an error if D is smaller than a/b.
+      %
+      % Usage
+      %   beam = safeTimes(D, beam)
+      %
+      % Paramters
+      %   - D (matrix | cell) -- The matrix or cell array of matrices
+      %     to apply.  If cell, must be the same number of elements
+      %     as number of beams (or number of beams must be 1).
+      
+      if iscell(D)
+        if numel(D) == 1
+          beam = safeTimes(D{1}, beam);
+        elseif numel(D) == numel(beam)
+          for ii = 1:numel(D)
+            beam(ii) = safeTimes(D{ii}, beam(ii));
+          end
+        elseif numel(beam) == 1
+          for ii = 1:numel(D)
+            beam(ii) = safeTimes(D{ii}, beam(1));
+          end
+        end
+      else
+        [oa, ob] = beam.getCoefficients();
+        safeD = D(:, 1:size(oa, 1));
+        beam = ott.bsc.Bsc(safeD * oa, safeD * ob);
       end
     end
 
@@ -1213,7 +1344,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %
       % Usage
       %   [beam, D] = beam.rotateInternal(R)
-      %   Returns the rotated beam and the wigner rotation matrix.
+      %   Returns the rotated beam and a cell array of the square wigner
+      %   rotation matrices used to apply the rotation.
       %
       % Optional named arguments
       %   - Nmax (numeric) -- Requested minimum Nmax for rotated beam.
@@ -1235,30 +1367,15 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       assert(Nrots == 1 || Nbeams == 1 || Nrots == Nbeams, ...
           'Number of rotations must match number of beams or be scalar');
 
-      Nwork = max([Nrots, Nbeams]);
-      if Nrots > 1
-        D = cell(1, Nrots);
-        for ii = 1:Nrots
-          D = ott.utils.wigner_rotation_matrix(...
-              max([beam.Nmax, p.Results.Nmax]), R(:, (1:3) + (ii-1)*3));
-        end
-        
-        if numel(beam) == 1
-          ibeam = beam;
-          for ii = 1:Nrots
-            beam(ii) = D{ii} * ibeam;
-          end
-        else
-          for ii = 1:Nrots
-            beam(ii) = D{ii} * beam(ii);
-          end
-        end
-      else
-        D = {ott.utils.wigner_rotation_matrix(...
-            max([beam.Nmax, p.Results.Nmax]), R)};
-        beam = D{1} * beam;
+      % Calculate rotation matrix for each requested rotation
+      D = cell(1, Nrots);
+      for ii = 1:Nrots
+        D = ott.utils.wigner_rotation_matrix(...
+            max([beam.Nmax, p.Results.Nmax]), R(:, (1:3) + (ii-1)*3));
       end
 
+      % Apply rotation matrices to beam coefficients
+      beam = safeTimes(D, beam);
     end
 
     function [beam, Az, Bz, D] = translateXyzInternal(beam, xyz, varargin)

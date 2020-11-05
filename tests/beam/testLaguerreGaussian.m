@@ -24,3 +24,9 @@ function testConstruct(testCase)
 
 end
 
+function testFromNa(testCase)
+
+  NA = 0.9;
+  beam = ott.beam.LaguerreGaussian.FromNa(NA);
+
+end

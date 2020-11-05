@@ -5,7 +5,7 @@
 %
 % Classes
 %   Bsc         -- Base class for all Bsc functionality
-%   Pointmatch  -- Provides point matching methods for creating Bsc
+%   LgParaxial  -- Point matching with a reduced LG basis in paraxial limit
 %   PlaneWave   -- Specialisation for plane wave Bsc (nicer translations)
 %   Annular     -- Specialisation for annular Bsc (nicer translations)
 %

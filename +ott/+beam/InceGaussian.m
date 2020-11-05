@@ -28,6 +28,30 @@ classdef InceGaussian < ott.beam.BscFinite ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+  methods (Static)
+    function beam = FromNa(Na, varargin)
+      % Construct a InceGaussian beam specifying NA instead of beam waist.
+      %
+      % Usage
+      %   beam = InceGaussian.FromNa(NA, ...)
+      %
+      % For other parameters, see class constructor.
+
+      p = inputParser;
+      p.addOptional('lmode', 1, @isnumeric);    % Not used
+      p.addOptional('porder', 0, @isnumeric);
+      p.addParameter('mapping', 'sin');
+      p.addParameter('index_medium', 1.0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+
+      waist = ott.bsc.LgParaxial.WaistFromNa(Na, p.Results.index_medium, ...
+          p.Results.porder, p.Results.mapping);
+
+      beam = ott.beam.InceGaussian(waist, varargin{:});
+    end
+  end
+
   methods
     function beam = InceGaussian(varargin)
       % Construct a VSWF Ince--Gaussian beam representation.
@@ -38,9 +62,9 @@ classdef InceGaussian < ott.beam.BscFinite ...
       % Optional named arguments
       %   - waist (numeric) -- Beam waist [m].  Default: ``1e-6``.
       %
-      %   - lmode (numeric) -- Azimuthal mode order.  Default: ``0``.
+      %   - lmode (numeric) -- Azimuthal mode order.  Default: ``1``.
       %
-      %   - porder (numeric) -- Paraxial mode order.  Default: ``0``.
+      %   - porder (numeric) -- Paraxial mode order.  Default: ``1``.
       %
       %   - ellipticity (numeric) -- Ellipticity of the beam.  Default: ``1``.
       %
@@ -62,11 +86,15 @@ classdef InceGaussian < ott.beam.BscFinite ...
       %     Default: ``1.0``.
       %
       %   - power (numeric) -- Beam power [W].  Default: ``1.0``.
+      %   - calculate (logical) -- If the beam should be calculated after
+      %     construction.  Set to false if you intend to change beam
+      %     properties immediately after construction.
+      %     Uses :meth:`recalculate`.  Default: ``true``.
 
       p = inputParser;
       p.addOptional('waist', 1.0e-6, @isnumeric);
-      p.addOptional('lmode', 0, @isnumeric);
-      p.addOptional('porder', 0, @isnumeric);
+      p.addOptional('lmode', 1, @isnumeric);
+      p.addOptional('porder', 1, @isnumeric);
       p.addOptional('ellipticity', 1, @isnumeric);
       p.addOptional('parity', 'even', ...
           @(x) sum(strcmpi(x, {'even', 'odd'})) == 1);
@@ -75,6 +103,7 @@ classdef InceGaussian < ott.beam.BscFinite ...
       p.addParameter('mapping', 'sin');
       p.addParameter('index_medium', 1.0);
       p.addParameter('power', 1.0);
+      p.addParameter('calculate', true);
       p.parse(varargin{:});
 
       beam.waist = p.Results.waist;
@@ -88,15 +117,29 @@ classdef InceGaussian < ott.beam.BscFinite ...
       beam.index_medium = p.Results.index_medium;
       beam.power = p.Results.power;
 
-      beam = beam.recalculate([]);
+      if p.Results.calculate
+        beam = beam.recalculate([]);
+      end
     end
-  end
 
-  methods (Hidden)
-    function [data, vswfData] = recalculateInternal(beam, Nmax, vswfData)
-      % Re-calculate BSC data for specified Nmax.
+    function beam = recalculate(beam, ~)
+      % Re-calculate data for beam.
+      %
+      % This function can be called to pre-compute the beam data for
+      % the current beam parameters.  It is automatically called when
+      % the beam is used, however, calling the function explicitly can
+      % speed up run-time.
+      %
+      % Usage
+      %   beam = beam.recalcualte(Nmax)
+      %
+      % Parameters
+      %   - Nmax (numeric) -- Parameter is ignored.
 
-      % TODO
+      beam.data = ott.bsc.LgParaxial.FromIgMode(beam.waist, ...
+          beam.lmode, beam.porder, beam.parity, beam.ellipticity, ...
+          beam.polbasis, beam.polfield);
+      beam.data = beam.data ./ beam.data.power .* beam.power;
     end
   end
 end

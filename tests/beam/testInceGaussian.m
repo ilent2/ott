@@ -10,9 +10,9 @@ function testConstruct(testCase)
 
   waist = 1.0e-6;
   lmode = 1;
-  porder = 2;
+  porder = 3;
   ellip = 3;
-  parity = 'even';
+  parity = 'odd';
   beam = ott.beam.InceGaussian(waist, lmode, porder, ellip, parity);
 
   testCase.verifyEqual(beam.waist, waist, 'w');
@@ -25,6 +25,13 @@ function testConstruct(testCase)
   testCase.verifyEqual(beam.mapping, 'sin', 'mapping');
   testCase.verifyEqual(beam.polfield, [1, 1i], 'polfield');
   testCase.verifyEqual(beam.polbasis, 'cartesian', 'polbasis');
+
+end
+
+function testFromNa(testCase)
+
+  NA = 0.9;
+  beam = ott.beam.InceGaussian.FromNa(NA);
 
 end
 

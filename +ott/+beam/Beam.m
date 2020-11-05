@@ -66,9 +66,9 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 %   - hfieldRtp  -- Calculate magnetic field around the origin (sph. coords.)
 %   - efarfield  -- Calculate electric fields in the far-field
 %   - hfarfield  -- Calculate magnetic fields in the far-field
-%   - force           -- Calculate the change in momentum between two beams
-%   - torque          -- Calculate change in angular momentum between beams
-%   - spin            -- Calculate change in spin momentum between beams
+%   - force      -- Calculate the change in momentum between two beams
+%   - torque     -- Calculate change in angular momentum between beams
+%   - spin       -- Calculate change in spin momentum between beams
 
 % Copyright 2018-2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.

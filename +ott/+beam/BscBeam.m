@@ -399,8 +399,11 @@ classdef BscBeam < ott.beam.ArrayType
 
   methods % Getters/setters
     function beam = set.data(beam, val)
+      if isempty(val)
+        val = ott.bsc.Bsc.empty();
+      end
       assert(isa(val, 'ott.bsc.Bsc'), ...
-          'data must be a ott.bsc.Bsc instance');
+          'data must be a ott.bsc.Bsc instance or empty');
       beam.data = val;
     end
 
