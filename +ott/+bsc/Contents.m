@@ -9,6 +9,9 @@
 %   PlaneWave   -- Specialisation for plane wave Bsc (nicer translations)
 %   Annular     -- Specialisation for annular Bsc (nicer translations)
 %
+% Sub-directories
+%   private     -- Functions used by classes (not user friendly yet)
+%
 % Copyright 2020 Isaac Lenton (aka ilent2)
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.

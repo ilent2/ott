@@ -1,7 +1,8 @@
-classdef Mathieu < ott.beam.BscInfinite & ott.beam.properties.Mathieu
+classdef Mathieu < ott.beam.BscWBessel & ott.beam.properties.Mathieu
 % Construct a VSWF representation of a Mathieu beam.
 % Inherits from :class:`+ott.+beam.BscInfinite` and
-% :class:`+ott.+beam.+properties.Mathieu`.
+% :class:`+ott.+beam.+properties.Mathieu` and
+% :class:`+ott.+beam.+mixin.BesselBscCast`.
 %
 % Properties
 %   - theta       -- Annular angle [radians]
@@ -32,7 +33,7 @@ classdef Mathieu < ott.beam.BscInfinite & ott.beam.properties.Mathieu
       %   - parity (enum) -- Parity of beam.  Either 'even' or 'odd'
       %     Default: ``'even'``.
       %
-      %   - initial_Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
+      %   - Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
       %     This parameter automatically grows when the beam is used.
       %     See also :meth:`recalculate` and :meth:`getData`.
 
@@ -42,24 +43,24 @@ classdef Mathieu < ott.beam.BscInfinite & ott.beam.properties.Mathieu
       p.addOptional('ellipticity', 1, @isnumeric);
       p.addOptional('parity', 'even', ...
           @(x) sum(strcmpi(x, {'even', 'odd'})) == 1);
-      p.addParameter('initial_Nmax', 0, @isnumeric);
+      p.addParameter('Nmax', 0, @isnumeric);
       p.parse(varargin{:});
 
       beam.theta = p.Results.theta;
       beam.morder = p.Results.morder;
       beam.ellipticity = p.Results.ellipticity;
       beam.parity = p.Results.parity;
-      beam = beam.recalculate(p.Results.initial_Nmax);
+      beam = beam.recalculate(p.Results.Nmax);
     end
-  end
 
-  methods (Hidden)
-    function [data, vswfData] = recalculateInternal(beam, Nmax, vswfData)
+    function beam = recalculate(beam, Nmax)
       % Re-calculate BSC data for specified Nmax.
 
-      [data, vswfData] = ott.bsc.Annular.FromMathieu(Nmax, ...
-          beam.theta, beam.morder, beam.ellipticity, ...
-          beam.parity, 'data', vswfData);
+      % TODO: Support for different polarisations?
+
+      [beam.data, beam.besselWeights] = ott.bsc.Annular.FromMathieu(...
+          beam.theta, beam.morder, beam.ellipticity, beam.parity, ...
+          'Nmax', Nmax);
     end
   end
 end

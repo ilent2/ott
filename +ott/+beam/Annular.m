@@ -1,24 +1,25 @@
-classdef Annular < ott.beam.BscInfinite ...
+classdef Annular < ott.beam.BscWBessel ...
     & ott.beam.properties.Polarisation & ott.beam.properties.Lmode ...
     & ott.beam.properties.Profile
 % Construct a VSWF representation of a finite Annular beam
-% Inherits from :class:`+ott.+beam.BscInfinite` and
+% Inherits from :class:`+ott.+beam.BscWBessel` and
 % :class:`+ott.+beam.+properties.Polarisation` and
 % :class:`+ott.+beam.+properties.Profile` and
 % :class:`+ott.+beam.+properties.Lmode`.
 %
-% Represents beams internally as an array of Bessel-like beams, hence
-% the class inherits from :class:`+ott.+beam.BscInfinite`.
+% Represents beams internally as an array of Bessel-like beams.
+% Applies the beam weights when the data is requested.
 %
 % Properties
 %   - polbasis      -- Polarisation basis ('polar' or 'cartesian')
 %   - polfield      -- Polarisation field (theta/phi or x/y)
 %   - theta         -- Low and upper angles of the annular
-%   - profile       -- Anular profile (function_handle | beam | 'uniform')
+%   - profile       -- Anular profile (function_handle)
 %   - lmode         -- Orbital angular momentum number
 %
 % Static methods
 %   - InterpProfile   -- Generate a beam profile using interpolation
+%   - BeamProfile     -- Generate a beam profile from another beam
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -46,9 +47,27 @@ classdef Annular < ott.beam.BscInfinite ...
       %
       % All other parameters passed to constructor.
 
-      F = griddedInterpolant(theta, A):
+      F = griddedInterpolant(theta, A);
       beam = ott.beam.Annular([theta(1), theta(end)], ...
           @(t) F(t), varargin{:});
+    end
+
+    function beam = BeamProfile(theta, beam, varargin)
+      % Construct a annular beam masking another beam.
+      %
+      % Usage
+      %   beam = BeamProfile(theta, other_beam, ...)
+      %
+      % Parameters
+      %   - theta (2 numeric) -- Theta range for annular.
+      %
+      %   - other_beam (ott.beam.Beam) -- The beam to use.  Uses the
+      %     beams efarfield method to calculate fields.
+      %
+      % All other parameters passed to constructor.
+
+      beam = ott.beam.Annular(theta, ...
+          @(theta) beam.efarfield([theta(:), 0*theta(:)].'), varargin{:});
     end
   end
 
@@ -63,11 +82,8 @@ classdef Annular < ott.beam.BscInfinite ...
       %   - theta (2 numeric) -- Angles specifying range for annular (radians).
       %     Default: ``[2*pi/8, 3*pi/8]``
       %
-      %   - profile ('uniform' | function_handle | beam) -- Specifies the
-      %     angular profile of the beam.  Can be either a
-      %     :class:`Beam` or :class:`Bsc` instance, a function handle
-      %     with the signature ``@(theta) intensity`` or ``'uniform'``.
-      %     Default: ``'uniform'``.
+      %   - profile (function_handle) -- Specifies the angular profile
+      %     of the beam.  Default: ``@(theta) ones(size(theta))``.
       %
       %   - lmode (numeric) -- Azimuthal mode number.  Adds an orbital
       %     component to the beam.  Default: ``0`` (no OAM).
@@ -78,7 +94,7 @@ classdef Annular < ott.beam.BscInfinite ...
       %   - polfield (2 numeric) -- Field in either the theta/phi or
       %     x/y directions.  Default: ``[1, 1i]``.
       %
-      %   - initial_Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
+      %   - Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
       %     This parameter automatically grows when the beam is used.
       %     See also :meth:`recalculate` and :meth:`getData`.
 
@@ -88,7 +104,7 @@ classdef Annular < ott.beam.BscInfinite ...
       p.addParameter('lmode', 0);
       p.addParameter('polbasis', 'cartesian');
       p.addParameter('polfield', [1, 1i]);
-      p.addParameter('initial_Nmax', 0);
+      p.addParameter('Nmax', 0);
       p.parse(varargin{:});
 
       beam.theta = p.Results.theta;
@@ -97,8 +113,12 @@ classdef Annular < ott.beam.BscInfinite ...
       beam.polbasis = p.Results.polbasis;
       beam.polfield = p.Results.polfield;
 
-      beam = beam.recalculate(p.Results.initial_Nmax);
+      beam = beam.recalculate(p.Results.Nmax);
     end
+
+    % TODO: recalculate
+
+    % TODO: besselApplyWeights function
   end
 
   methods % Getters/setters

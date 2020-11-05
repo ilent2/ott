@@ -18,10 +18,6 @@ classdef PlaneWave < ott.beam.BscInfinite
     polarisation    % (2 numeric) Polarisation in the x/y directions
   end
 
-  properties (Dependent)
-    Nmax            % Current Nmax of the stored data
-  end
-
   methods
     function beam = PlaneWave(varargin)
       % Construct a new plane wave beam VSWF representation.
@@ -36,17 +32,17 @@ classdef PlaneWave < ott.beam.BscInfinite
       %     these are the x/y directions (for a beam propagating in z).
       %     Default: ``[1, 1i]``.
       %
-      %   - initial_Nmax (numeric) -- Initial beam Nmax.  Default: ``20``.
+      %   - Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
       %     This parameter automatically grows when the beam is used but
       %     can be explicitly set for repeated use.
 
       p = inputParser;
       p.addOptional('polarisation', [1, 1i]);
-      p.addParameter('initial_Nmax', 20);
+      p.addParameter('Nmax', 0);
       p.parse(varargin{:});
 
       beam.polarisation = p.Results.polarisation;
-      beam = beam.recalculate(p.Results.initial_Nmax);
+      beam = beam.recalculate(p.Results.Nmax);
     end
 
     function bsc = ott.bsc.Bsc(beam, Nmax)
@@ -104,13 +100,6 @@ classdef PlaneWave < ott.beam.BscInfinite
       assert(isnumeric(val) && numel(val) == 2, ...
           'polarisation must be 2 element numeric vector');
       beam.polarisation = [val(1), val(2)];
-    end
-
-    function val = get.Nmax(beam)
-      val = max([beam.data.Nmax]);
-    end
-    function beam = set.Nmax(beam, val)
-      beam = beam.recalculate(val);
     end
   end
 end

@@ -12,11 +12,18 @@ classdef BscInfinite < ott.beam.BscBeam
 % a larger Nmax whenever points outside the valid range are requested.
 % Far-field functions raise a warning that fields may not look as expected.
 %
+% Properties
+%   - Nmax         -- Nmax of the stored data
+%
 % For methods/properties, see :class:`BscBeam`.
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+  properties (Dependent)
+    Nmax            % Current Nmax of the stored data
+  end
 
   methods
     function beam = BscInfinite(varargin)
@@ -134,6 +141,15 @@ classdef BscInfinite < ott.beam.BscBeam
       % Create new beam with updated data and calculate fields
       beam = ott.beam.BscBeam(ott.bsc.Bsc(beam, oNmax));
       [varargout{1:nargout}] = beam.hfieldRtp(rtp, varargin{:});
+    end
+  end
+
+  methods % Getters/setters
+    function val = get.Nmax(beam)
+      val = max([beam.data.Nmax]);
+    end
+    function beam = set.Nmax(beam, val)
+      beam = beam.recalculate(val);
     end
   end
 end

@@ -8,10 +8,12 @@
 
 % Base classes
 %   Beam              -- Base class for beam representations
+%   Empty             -- A beam with no fields
 %   Scattered         -- Description of beams scattered by particles
 %   BscBeam           -- Base class for BSC beams
 %   BscFinite         -- Base class for finite BSC beams
 %   BscInfinite       -- Base class for infinite Bsc beams
+%   BscWBessel        -- Base class for Annular/Bessel like beams
 %
 % Beam types
 %   Gaussian          -- Gaussian beam

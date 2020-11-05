@@ -14,11 +14,11 @@ function testConstruct(testCase)
   polbasis = 'polar';
   Nmax = 2;
   beam = ott.beam.Bessel(theta, polfield, lmode, 'polbasis', polbasis, ...
-      'initial_Nmax', Nmax);
+      'Nmax', Nmax);
 
   testCase.verifyEqual(beam.polfield, polfield, 'polfield');
-  testCase.verifyEqual(beam.polbasis, polfield, 'polbasis');
-  testCase.verifyEqual(beam.data.Nmax, Nmax, 'Nmax');
+  testCase.verifyEqual(beam.polbasis, polbasis, 'polbasis');
+  testCase.verifyEqual(beam.Nmax, Nmax, 'Nmax');
   testCase.verifyEqual(beam.lmode, lmode, 'lmode');
   testCase.verifyEqual(beam.theta, theta, 'theta');
 

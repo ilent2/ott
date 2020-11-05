@@ -15,7 +15,7 @@ function testConstruct(testCase)
   Nmax = 2;
   beam = ott.beam.Annular(theta, profile, ...
       'polbasis', polbasis, 'polfield', polfield, ...
-      'initial_Nmax', Nmax);
+      'Nmax', Nmax);
 
   testCase.verifyEqual(beam.theta, theta, 'theta');
   testCase.verifyEqual(beam.profile, profile, 'profile');
@@ -30,7 +30,8 @@ function testConstructGaussian(testCase)
 
   theta = [0, pi];   % full range, no masking
   profile = ott.beam.Gaussian();
-  beam = ott.beam.Annular(theta, profile, 'initial_Nmax', profile.Nmax);
+  beam = ott.beam.Annular.BeamProfile(theta, profile, ...
+      'Nmax', profile.data.Nmax);
 
   testCase.verifyEqual(beam.profile, profile, 'profile');
   testCase.verifyEqual(beam.data.a, profile.a, 'beam a');
@@ -38,7 +39,7 @@ function testConstructGaussian(testCase)
 
 end
 
-function testConstructInterp(testtCase)
+function testConstructInterp(testCase)
   % Construct using a set of points
 
   theta = linspace(0, pi/2);
@@ -48,7 +49,7 @@ function testConstructInterp(testtCase)
   Nmax = 2;
   beam = ott.beam.Annular.InterpProfile(theta, amp, ...
       'polbasis', polbasis, 'polfield', polfield, ...
-      'initial_Nmax', Nmax);
+      'Nmax', Nmax);
 
 end
 

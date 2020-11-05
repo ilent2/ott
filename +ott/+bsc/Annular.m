@@ -14,11 +14,182 @@ classdef Annular < ott.bsc.Bsc
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties
+  properties (SetAccess=protected)
     theta         % Angle describing annular
   end
 
   methods (Static)
+    function [bsc, weights] = FromMathieu(varargin)
+      % Construct a Webber beam using Bessel point-matching
+      %
+      % Usage
+      %   bsc = MathieuBeam(angle, morder, ellipticity, parity, Lmax, ...)
+      %   Construct a Webber beam.
+      %
+      %   [bsc, weights] = WebberBeam(angle, a, parity, Lmax, ...)
+      %   Calculate modes and weights for Webber beam.
+      %
+      % Parameters
+      %   - angle (numeric) -- Angle in far-field.
+      %
+      %   - morder (numeric) -- Mathieu beam mode.
+      %   - ellipticity (numeric) -- Ellipticity of Mathieu beam.
+      %
+      %   - parity (enum) -- Parity of beam (even or odd).
+      %
+      %   - Lmax (numeric) -- Maximum azimuthal mode number.
+      %     If Nmax is specified, defaults to Nmax.
+      %     This determines the number of points for point matching.
+      %
+      % Optional named parameters
+      %   - Nmax (numeric) -- Truncation for VSWF coefficients.
+      %     For a simpler interface for creating beams without explicit
+      %     `Nmax`, see :class:`vswf.PlaneWave`.  Default: ``0``.
+
+      p = inputParser;
+      p.addOptional('angle', [], @isnumeric);
+      p.addOptional('morder', [], @isnumeric);
+      p.addOptional('ellipticity', [], @isnumeric);
+      p.addOptional('parity', [], @(x) any(strcmpi(x, {'even', 'odd'})));
+      p.addOptional('Lmax', [], @isnumeric);
+      p.addParameter('Nmax', 0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      Lmax = p.Results.Lmax;
+      if isempty(Lmax)
+        Lmax = p.Results.Nmax;
+      end
+
+      assert(isnumeric(Lmax) && isscalar(Lmax), ...
+          'Lmax must be numeric scalar');
+
+      morder = p.Results.morder;
+      assert(isnumeric(morder) && isscalar(morder), ...
+          'morder must be numeric scalar');
+
+      ellip = p.Results.ellipticity;
+      assert(isnumeric(ellip) && isscalar(ellip), ...
+          'ellipticity must be numeric scalar');
+
+      % Generate points for PM
+      % Choose points which avoid 0 and pi
+      Npts = 2*Lmax+1;
+      phi = linspace(0, 2*pi, Npts+2);
+      phi = phi(1:end-1) + (phi(2) - phi(1))./2;
+
+      % Calculate MB
+      switch p.Results.parity
+        case 'odd'
+          A = MathieuFunctions(phi, morder, ellip, 'se');
+        case 'even'
+          A = MathieuFunctions(phi, morder, ellip, 'ce');
+        otherwise
+          error('Unknown parity value, must be even or odd');
+      end
+
+      % Calculate weights
+      lmode = -Lmax:Lmax;
+      bval = exp(1i.*lmode.*phi.');
+      weights = bval \ A.';
+
+      % Calculate Bessel modes
+      Etp = ones(2, numel(lmode));
+      bsc = ott.bsc.Annular.FromBessel(p.Results.Nmax, ...
+          p.Results.angle, Etp, lmode, unmatched{:});
+
+      % Apply weights if needed
+      if nargout == 1
+        bsc = bsc .* weights.';
+      end
+    end
+
+    function [bsc, weights] = FromWebber(varargin)
+      % Construct a Webber beam using Bessel point-matching
+      %
+      % Usage
+      %   bsc = WebberBeam(angle, a, parity, Lmax, ...)
+      %   Construct a Webber beam.
+      %
+      %   [bsc, weights] = WebberBeam(angle, a, parity, Lmax, ...)
+      %   Calculate modes and weights for Webber beam.
+      %
+      % Parameters
+      %   - angle (numeric) -- Angle in far-field.
+      %
+      %   - a (numeric) -- Parameter describing Webber beam.
+      %
+      %   - parity (enum) -- Parity of beam (even or odd).
+      %
+      %   - Lmax (numeric) -- Maximum azimuthal mode number.
+      %     If Nmax is specified, defaults to Nmax.
+      %     This determines the number of points for point matching.
+      %
+      % Optional named parameters
+      %   - Nmax (numeric) -- Truncation for VSWF coefficients.
+      %     For a simpler interface for creating beams without explicit
+      %     `Nmax`, see :class:`vswf.PlaneWave`.  Default: ``0``.
+
+      p = inputParser;
+      p.addOptional('angle', [], @isnumeric);
+      p.addOptional('a', [], @isnumeric);
+      p.addOptional('parity', [], @(x) any(strcmpi(x, {'even', 'odd'})));
+      p.addOptional('Lmax', [], @isnumeric);
+      p.addParameter('Nmax', 0);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      Lmax = p.Results.Lmax;
+      if isempty(Lmax)
+        Lmax = p.Results.Nmax;
+      end
+
+      assert(isnumeric(Lmax) && isscalar(Lmax), ...
+          'Lmax must be numeric scalar');
+
+      a = p.Results.a;
+      assert(isnumeric(a) && isscalar(a), ...
+          'a must be numeric scalar');
+
+      % Generate points for PM
+      % Choose points which avoid 0 and pi
+      Npts = 2*Lmax+1;
+      phi = linspace(0, 2*pi, Npts+2);
+      phi = phi(1:end-1) + (phi(2) - phi(1))./2;
+
+      % Equation (6) from
+      % https://iopscience.iop.org/article/10.1088/1367-2630/14/3/033018
+      Ae = 1./(2*sqrt(pi*abs(sin(phi)))) .* exp(1i*a.*log(abs(tan(phi./2))));
+
+      % Add parity
+      % TODO: We can probably do this smartly with mmodes
+      switch p.Results.parity
+        case 'even'
+          A = Ae;
+        case 'odd'
+          A = [Ae(phi <= pi)./1i, -Ae(phi > pi)./1i];
+        otherwise
+          error('Unknown value for parity');
+      end
+
+      % Calculate weights
+      lmode = -Lmax:Lmax;
+      bval = exp(1i.*lmode.*phi.');
+      weights = bval \ A.';
+
+      % Calculate Bessel modes
+      Etp = ones(2, numel(lmode));
+      bsc = ott.bsc.Annular.FromBessel(p.Results.Nmax, ...
+          p.Results.angle, Etp, lmode, unmatched{:});
+
+      % Apply weights if needed
+      if nargout == 1
+        bsc = bsc .* weights.';
+      end
+    end
+
     function [beam, data] = FromBessel(Nmax, theta, Etp, lmode, varargin)
       % Construct a Annular beam from the specified Bessel parameters.
       %
@@ -44,6 +215,12 @@ classdef Annular < ott.bsc.Bsc
       assert(isnumeric(Nmax) && isscalar(Nmax) ...
           && Nmax >= 0 && round(Nmax) == Nmax, ...
           'Nmax should be an single positive integer');
+      assert(isnumeric(Etp) && ismatrix(Etp) && size(Etp, 1) == 2, ...
+        'Etp must be 2xN numeric matrix');
+        
+      % Ensure size of inputs match
+      [theta, lmode, Etheta, Ephi] = ott.utils.matchsize(...
+          theta(:), lmode(:), Etp(1, :).', Etp(2, :).');
 
       %% calculate the mode indices we are going to find.
       nTheta = length(theta);
@@ -51,10 +228,6 @@ classdef Annular < ott.bsc.Bsc
       b = zeros((Nmax*(Nmax+2)), nTheta);
 
       indexes= (1:nTheta).';
-      lmode = lmode.';
-      theta = theta.';
-      Etheta = Etp(1, :).';
-      Ephi = Etp(2, :).';
 
       data = p.Results.data;
 
@@ -112,7 +285,9 @@ classdef Annular < ott.bsc.Bsc
       p.parse(varargin{:});
 
       beam = beam@ott.bsc.Bsc(p.Results.a, p.Results.b);
-      beam.theta = p.Results.theta;
+      for ii = 1:numel(beam)
+        beam(ii).theta = p.Results.theta(ii);
+      end
     end
 
     function beam = translateZ(beam, z, varargin)

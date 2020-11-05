@@ -14,10 +14,58 @@ function testFromBessel(testCase)
   lmode = 0;
   beam = ott.bsc.Annular.FromBessel(Nmax, theta, Etp, lmode);
 
-  testCase.verifyClass(beam, 'ott.bsc.Annular');
+  testCase.assertClass(beam, 'ott.bsc.Annular');
   testCase.verifyEqual(beam.Nmax, Nmax, 'Nmax');
-  testCase.verifyEqual(beam.theta, theta, 'Nmax');
+  testCase.verifyEqual(beam.theta, theta, 'theta');
 
+end
+
+function testFromMathieu(testCase)
+
+  theta = pi/4;
+  morder = 1;
+  ellipticity = 1;
+  parity = 'even';
+  Nmax = 5;
+  [beam, besselWeights] = ott.bsc.Annular.FromMathieu(...
+      theta, morder, ellipticity, parity, ...
+      'Nmax', Nmax);
+
+  testCase.assertClass(beam, 'ott.bsc.Annular');
+  testCase.verifyEqual(beam(1).Nmax, Nmax, 'Nmax');
+  testCase.verifyEqual(beam(1).theta, theta, 'theta');
+  testCase.verifySize(beam, [1, numel(besselWeights)], 'size');
+
+end
+
+function testFromWebber(testCase)
+
+  theta = pi/4;
+  alpha = 1;
+  parity = 'even';
+  Nmax = 5;
+  [beam, besselWeights] = ott.bsc.Annular.FromWebber(...
+      theta, alpha, parity, 'Nmax', Nmax);
+
+  testCase.assertClass(beam, 'ott.bsc.Annular');
+  testCase.verifyEqual(beam(1).Nmax, Nmax, 'Nmax');
+  testCase.verifyEqual(beam(1).theta, theta, 'theta');
+  testCase.verifySize(beam, [1, numel(besselWeights)], 'size');
+
+end
+
+function testArray(testCase)
+
+  Nmax = 3;
+  theta = [0.5, 0.2];
+  Etp = [1;0];
+  lmode = 0;
+  beam = ott.bsc.Annular.FromBessel(Nmax, theta, Etp, lmode);
+
+  testCase.assertClass(beam, 'ott.bsc.Annular');
+  testCase.assertSize(beam, [1, 2], 'size');
+  testCase.verifyEqual([beam.Nmax], [1,1]*Nmax, 'Nmax');
+  testCase.verifyEqual([beam.theta], theta, 'theta');
 end
 
 function testTranslateZ(testCase)

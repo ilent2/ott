@@ -10,7 +10,7 @@ function testConstruct(testCase)
 
   polarisation = [1, 0];
   Nmax = 2;
-  beam = ott.beam.PlaneWave(polarisation, 'initial_Nmax', Nmax);
+  beam = ott.beam.PlaneWave(polarisation, 'Nmax', Nmax);
 
   testCase.verifyEqual(beam.polarisation, polarisation, 'pol');
   

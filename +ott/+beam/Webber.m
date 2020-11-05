@@ -1,4 +1,4 @@
-classdef Webber < ott.beam.BscInfinite & ott.beam.properties.Webber
+classdef Webber < ott.beam.BscWBessel & ott.beam.properties.Webber
 % Construct a VSWF representation of a Bessel beam.
 % Inherits from :class:`+ott.+beam.BscInfinite` and
 % :class:`+ott.+beam.+properties.Webber`.
@@ -29,7 +29,7 @@ classdef Webber < ott.beam.BscInfinite & ott.beam.properties.Webber
       %   - parity (enum) -- Parity of beam.  Either 'even' or 'odd'
       %     Default: ``'even'``.
       %
-      %   - initial_Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
+      %   - Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
       %     This parameter automatically grows when the beam is used.
       %     See also :meth:`recalculate` and :meth:`getData`.
 
@@ -38,22 +38,22 @@ classdef Webber < ott.beam.BscInfinite & ott.beam.properties.Webber
       p.addOptional('alpha', 1, @isnumeric);
       p.addOptional('parity', 'even', ...
           @(x) sum(strcmpi(x, {'even', 'odd'})) == 1);
-      p.addParameter('initial_Nmax', 0, @isnumeric);
+      p.addParameter('Nmax', 0, @isnumeric);
       p.parse(varargin{:});
 
       beam.theta = p.Results.theta;
       beam.alpha = p.Results.alpha;
       beam.parity = p.Results.parity;
-      beam = beam.recalculate(p.Results.initial_Nmax);
+      beam = beam.recalculate(p.Results.Nmax);
     end
-  end
 
-  methods (Hidden)
-    function [data, vswfData] = recalculateInternal(beam, Nmax, vswfData)
+    function beam = recalculate(beam, Nmax)
       % Re-calculate BSC data for specified Nmax.
 
-      [data, vswfData] = ott.bsc.Annular.FromWebber(Nmax, ...
-          beam.theta, beam.alpha, beam.parity, 'data', vswfData);
+      % TODO: Support for different polarisations?
+
+      [beam.data, beam.besselWeights] = ott.bsc.Annular.FromWebber(...
+          beam.theta, beam.alpha, beam.parity, 'Nmax', Nmax);
     end
   end
 end
