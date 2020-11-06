@@ -45,6 +45,11 @@ Beam
 
 .. autoclass:: Beam
 
+Empty
+-----
+
+.. autoclass:: Empty
+
 BscBeam
 -------
 

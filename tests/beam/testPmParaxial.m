@@ -35,7 +35,7 @@ function testConstructInterp(testCase)
   Nmax = 1;
   beam = ott.beam.PmParaxial.InterpProfile(X, Y, amp, ...
       'polbasis', polbasis, 'polfield', polfield, ...
-      'initial_Nmax', Nmax);
+      'Nmax', Nmax);
 
 end
 

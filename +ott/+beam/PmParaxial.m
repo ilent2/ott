@@ -78,7 +78,7 @@ classdef PmParaxial < ott.beam.BscInfinite ...
       %   - polbasis (enum) -- Polarisation basis.  Can be either
       %     'polar' or 'cartesian'.  Default: ``'cartesian'``.
       %
-      %   - initial_Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
+      %   - Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
       %     This parameter automatically grows when the beam is used.
       %     See also :meth:`recalculate` and :meth:`getData`.
 
@@ -87,7 +87,7 @@ classdef PmParaxial < ott.beam.BscInfinite ...
       p.addParameter('truncation_angle', []);
       p.addParameter('polfield', [1, 1i]);
       p.addParameter('polbasis', 'cartesian');
-      p.addParameter('initial_Nmax', 0);
+      p.addParameter('Nmax', 0);
       p.addParameter('basis', 'auto');
       p.parse(varargin{:});
 
@@ -96,7 +96,7 @@ classdef PmParaxial < ott.beam.BscInfinite ...
       beam.polfield = p.Results.polfield;
       beam.polbasis = p.Results.polbasis;
       beam.basis = p.Results.basis;
-      beam = beam.recalculate(p.Results.initial_Nmax);
+      beam = beam.recalculate(p.Results.Nmax);
     end
   end
 

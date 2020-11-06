@@ -6,6 +6,18 @@ function setupOnce(testCase)
   addpath('../../');
 end
 
+function testConstruct(testCase)
+
+  beam1 = ott.beam.BscBeam();
+  beam2 = ott.beam.BscBeam();
+  beams = [beam1, beam2];
+  
+  beamA = ott.beam.Array(beams);
+  
+  testCase.verifyEqual(beamA.data, beams, 'data');
+  testCase.verifyEqual(beamA.arrayType, 'array', 'type');
+end
+
 function testCoherent(testCase)
 
   beam(1) = ott.beam.Gaussian();

@@ -50,6 +50,8 @@ extensions = [
 
 numfig = True;
 
+highlight_language = 'matlab'
+
 # Packages should be displayed as otslm.simple not +otslm.+simple
 matlab_keep_package_prefix = False
 
