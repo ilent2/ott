@@ -121,18 +121,9 @@ classdef Smarties < ott.tmatrix.Tmatrix
       tmatrix.relative_index = p.Results.relative_index;
 
       % Get/Check Nmax
-      Nmax = p.Results.Nmax;
-      if isempty(Nmax)
-        r = max(tmatrix.ordinary, tmatrix.extraordinary);
-        if p.Results.internal && nargout == 1
-          Nmax = ott.utils.ka2nmax(2*pi*r*tmatrix.relative_index);
-        else
-          Nmax = ott.utils.ka2nmax(2*pi*r);
-        end
-      else
-        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
-            'Nmax must be positive numeric scalar');
-      end
+      Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
+          p.Results.Nmax, max(tmatrix.ordinary, tmatrix.extraordinary), ...
+          tmatrix.relative_index, p.Results.internal || nargout ~= 1);
 
       % Get or estimate npts from inputs
       npts = p.Results.npts;

@@ -145,17 +145,8 @@ classdef Mie < ott.tmatrix.Tmatrix
       r0 = 2*pi * tmatrix.radius;
       r1 = 2*pi * m * tmatrix.radius;
 
-      Nmax = p.Results.Nmax;
-      if isempty(Nmax)
-        if p.Results.internal || nargout ~= 1
-          Nmax = ott.utils.ka2nmax(r1);
-        else
-          Nmax = ott.utils.ka2nmax(r0);
-        end
-      else
-        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
-            'Nmax must be positive numeric scalar');
-      end
+      Nmax = tmatrix.getValidateNmax(p.Results.Nmax, tmatrix.radius, ...
+          tmatrix.relative_index, p.Results.internal || nargout ~= 1);
 
       n = 1:Nmax;
       clength = ott.utils.combined_index(Nmax, Nmax);

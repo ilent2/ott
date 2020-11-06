@@ -188,6 +188,10 @@ function testResizing(testCase)
 
   T = ott.tmatrix.Tmatrix(eye(6), 'type', 'scattered');
   Tnew1 = T;
+  
+  % Test same size
+  Tnew1.Nmax = Tnew1.Nmax;
+  testCase.verifyEqual(Tnew1, T, 'should not change');
 
   Tnew1.Nmax = Tnew1.Nmax + 5;
   testCase.verifyEqual(Tnew1.Nmax, T.Nmax + 5, ...

@@ -101,7 +101,8 @@ classdef MieLayered < ott.tmatrix.Tmatrix
       assert(numel(tmatrix.relative_indices) == numel(tmatrix.radii), ...
           'number of radii must match number of relativeMedium');
 
-      Nmax = p.Results.Nmax;
+      Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
+          p.Results.Nmax, max(tmatrix.radii), 1, false);
 
       n_layer = [tmatrix.relative_indices, 1];
       k_layer = n_layer .* 2*pi;

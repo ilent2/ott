@@ -16,7 +16,7 @@ function testSphereFromShape(testCase)
   Tmie = ott.tmatrix.Mie.FromShape(shape, 'relative_index', nrel);
 
   testCase.assertEqual(Tdda.Nmax, Tmie.Nmax, 'Nmax');
-  testCase.verifyEqual(Tdda.data, Tmie.data, 'AbsTol', 1e-2, 'data');
+  testCase.verifyEqual(Tdda.data, Tmie.data, 'AbsTol', 5e-3, 'data');
 
 end
 

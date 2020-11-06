@@ -28,6 +28,10 @@ classdef Empty < ott.beam.Beam
     data = ott.beam.Beam.empty(0);
   end
 
+  properties (Dependent)
+    defaultVisRange
+  end
+
   methods
     function beam = Empty(varargin)
       % Construct a new empty beam instance.
@@ -39,6 +43,27 @@ classdef Empty < ott.beam.Beam
 
       beam = beam@ott.beam.Beam(varargin{:});
     end
+
+    %
+    % Force calculation methods
+    %
+
+    function [moment, ints, data] = intensityMoment(beam, varargin)
+      % Calculate moment of the beam intensity in the far-field.
+      %
+      % For :class:`Empty` beams, this returns zeros.
+      %
+      % Usage
+      %   [moment, int, data] = beam.intensityMoment(...)
+
+      data = [];
+      moment = zeros(3, 1);
+      int = 0;
+    end
+
+    %
+    % Field calculation methods (return zeros)
+    %
 
     function [E, vswfData] = efield(beam, xyz, varargin)
       % Returns zeros the same size as input coordinates.
@@ -192,6 +217,10 @@ classdef Empty < ott.beam.Beam
   methods % Getters/setters
     function beam = set.data(beam, ~)
       warning('Setting beam data has no effect for Empty beams');
+    end
+
+    function val = get.defaultVisRange(beam)
+      val = [1,1];
     end
   end
 end

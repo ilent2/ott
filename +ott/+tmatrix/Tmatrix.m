@@ -1005,6 +1005,21 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
   end
 
   methods (Static, Hidden)
+    function Nmax = getValidateNmax(Nmax, radius, relidx, internal)
+      % Validate or calculate a good default Nmax
+
+      if isempty(Nmax)
+        if internal
+          Nmax = max(ott.utils.ka2nmax(2*pi * radius * [1, relidx]));
+        else
+          Nmax = ott.utils.ka2nmax(2*pi * radius);
+        end
+      else
+        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
+            'Nmax must be positive numeric scalar');
+      end
+    end
+
     function setNmaxWarning(warn_action, warn_field, msg)
       % Helper function for setNmax warnings
 

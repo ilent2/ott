@@ -45,6 +45,9 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 % Force and torque related methods
 %   - forcetorque     -- Calculate the force and the torque between beams
 %   - intensityMoment -- Calculate moment of beam intensity in far-field
+%   - force      -- Calculate the change in momentum between two beams
+%   - torque     -- Calculate change in angular momentum between beams
+%   - spin       -- Calculate change in spin momentum between beams
 %
 % Field visualisation methods
 %   - visNearfield      -- Generate a visualisation around the origin
@@ -66,9 +69,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 %   - hfieldRtp  -- Calculate magnetic field around the origin (sph. coords.)
 %   - efarfield  -- Calculate electric fields in the far-field
 %   - hfarfield  -- Calculate magnetic fields in the far-field
-%   - force      -- Calculate the change in momentum between two beams
-%   - torque     -- Calculate change in angular momentum between beams
-%   - spin       -- Calculate change in spin momentum between beams
 
 % Copyright 2018-2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
@@ -97,9 +97,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
     hfieldRtp(~)   % Calculate magnetic field around the origin (sph. coords.)
     efarfield(~)   % Calculate electric fields in the far-field
     hfarfield(~)   % Calculate magnetic fields in the far-field
-    force(~)       % Calculate the change in momentum between two beams
-    torque(~)      % Calculate change in angular momentum between beams
-    spin(~)        % Calculate change in spin momentum between beams
   end
 
   properties (Abstract)
@@ -413,6 +410,43 @@ classdef Beam < matlab.mixin.Heterogeneous ...
     % Force and torque related methods
     %
 
+    function f = force(beam, other, varargin)
+      % Calculate the difference in momentum between beams.
+      %
+      % The default implementation uses :meth:`intensityMoment`.
+      % This method should be overloaded if there is a more optimal
+      % method for your time of beam.
+      %
+      % Usage
+      %   force = beam.force(other_beam)
+      %
+      % Returns
+      %   - 3x1 numeric vector.
+
+      fbeam = beam.intensityMoment();
+      obeam = other.intensityMoment();
+
+      f = fbeam - obeam;
+    end
+
+    function t = torque(ibeam, varargin)
+      % Calculate the angular momentum difference between beams.
+      %
+      % There is no default implementation of this method.  This function
+      % simply returns nans.
+
+      t = nan(3, 1);
+    end
+
+    function t = spin(ibeam, varargin)
+      % Calculate the spin angular momentum between beams.
+      %
+      % There is no default implementation of this method.  This function
+      % simply returns nans.
+
+      t = nan(3, 1);
+    end
+
     function [force, torque, spin] = forcetorque(ibeam, sbeam, varargin)
       % Calculate force, torque and spin (in SI units)
       %
@@ -439,38 +473,42 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       end
     end
 
-    function [moment, ints, data] = intensityMoment(beam, varargin)
-      % Calculate moment of the beam intensity in the far-field.
+    function varargout = intensityMoment(beam, varargin)
+      % Calculate moments of the beam intensity in the far-field.
       %
-      % By comparing the moment of the incident beam to the scattered
-      % beam, this method should produce a similar estimate for the force
-      % as :meth:`force`.
+      % Calculates the moment of far-field energy flux::
+      %
+      %   S = |E|^2
+      %
+      % Using this quantities, it should be possible to get a reasonable
+      % estimate for the force.
       %
       % Usage
-      %   [moment, int, data] = beam.intensityMoment(...)
+      %   [S, I, ...] = beam.intensityMoment(...)
+      %
+      % Returns
+      %   - S (3x1 numeric) -- Moment of energy density
+      %   - I (1 numeric) -- Total energy flux
       %
       % Optional named arguments
       %   - theta_range (2 numeric) -- Range of angles to integrate over.
       %     Default: ``[0, pi]``.
       %
       %   - ntheta (numeric) -- Number of theta points.  (Default: 100)
+      %
       %   - nphi (numeric) -- Number of phi points.  (Default: 100)
       %
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - basis (enum) -- Vector spherical wave function basis to
-      %     visualise.  Must be one of 'incoming' or 'outgoing'.
-      %     Default: ``'incoming'``.
+      % Additional parameters passed to far-field calculation functions.
+      % Additional outputs from far-field calculation functions are
+      % returned after first three arguments.
 
       p = inputParser;
-      p.addParameter('basis', 'incoming');
       p.addParameter('theta_range', [0, pi]);
       p.addParameter('ntheta', 100);
       p.addParameter('nphi', 100);
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       % Setup grid
       [theta, phi] = ott.utils.angulargrid(p.Results.ntheta, p.Results.nphi);
@@ -491,16 +529,15 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       uxyz(3, :) = -uxyz(3, :);
 
       % Calculate field and E2
-      [E, data] = beam.efarfield(rtp, 'data', p.Results.data, ...
-          'basis', p.Results.basis);
+      [E, varargout{4:nargout}] = beam.efarfield(rtp, unmatched{:});
       Eirr = beam.VisualisationData('E2', E);
 
       % Calculate intensity
-      ints = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
+      I = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
 
       % Calculate moment in Cartesian coordinates
       Eirr_xyz = uxyz .* Eirr;
-      moment = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
+      S = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
     end
 
     %

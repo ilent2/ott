@@ -98,18 +98,15 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       p.addOptional('relative_index', 1.0, @isnumeric);
       p.addParameter('angulargrid', []);
       p.addParameter('Nmax', []);
+      p.addParameter('internal', false);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
       % Get or calculate Nmax
-      Nmax = p.Results.Nmax;
-      if isempty(Nmax)
-        Nmax = ott.utils.ka2nmax(2*pi*shape.maxRadius);
-      else
-        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
-            'Nmax must be positive numeric scalar');
-      end
+      Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
+          p.Results.Nmax, shape.maxRadius, ...
+          p.Results.relative_index, p.Results.internal || nargout ~= 1);
 
       % Get or calculate angular grid
       angulargrid = p.Results.angulargrid;
@@ -217,18 +214,9 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       Texternal.rtp(1, :) = Texternal.rtp(1, :);
 
       % Get or calculate Nmax
-      Nmax = p.Results.Nmax;
-      if isempty(Nmax)
-        maxR = max(Texternal.rtp(1, :));
-        if p.Results.internal || nargout ~= 1
-          Nmax = ott.utils.ka2nmax(2*pi*maxR*Texternal.relative_index);
-        else
-          Nmax = ott.utils.ka2nmax(2*pi*maxR);
-        end
-      else
-        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
-            'Nmax must be positive numeric scalar');
-      end
+      Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
+          p.Results.Nmax, max(Texternal.rtp(1, :)), ...
+          Texternal.relative_index, p.Results.internal || nargout ~= 1);
 
       % Handle default argument for progress callback
       progress_cb = p.Results.progress;

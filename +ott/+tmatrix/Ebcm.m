@@ -58,6 +58,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       p = inputParser;
       p.addRequired('shape', @(x) isa(x, 'ott.shape.Shape'));
       p.addOptional('relative_index', 1.0);
+      p.addParameter('internal', false);
       p.addParameter('Nmax', []);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
@@ -71,13 +72,9 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       end
 
       % Get Nmax for npts calculation
-      Nmax = p.Results.Nmax;
-      if isempty(Nmax)
-        Nmax = ott.utils.ka2nmax(2*pi*shape.maxRadius);
-      else
-        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
-            'Nmax must be positive numeric scalar');
-      end
+      Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
+          p.Results.Nmax, shape.maxRadius, ...
+          p.Results.relative_index, p.Results.internal || nargout ~= 1);
 
       % Calculate desired number of boundary points
       npts = ceil(ott.utils.combined_index(Nmax, Nmax).^2/20+5);
@@ -88,7 +85,8 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       % Construct T-matrices
       [varargout{1:nargout}] = ott.tmatrix.Ebcm(points, normals, ds, ...
           'relative_index', p.Results.relative_index, 'Nmax', Nmax, ...
-          'xySymmetry', xySymmetry, unmatched{:});
+          'xySymmetry', xySymmetry, 'internal', p.Results.internal, ...
+          unmatched{:});
     end
   end
 
@@ -168,18 +166,9 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       calcExternalData = nargout == 2 || (nargout == 1 && ~p.Results.internal);
 
       % Get or estimate Nmax from the inputs
-      Nmax = p.Results.Nmax;
-      if isempty(Nmax)
-        maxRadius = max(Texternal.points(1, :));
-        if p.Results.internal
-          Nmax = ott.utils.ka2nmax(maxRadius*2*pi*Texternal.index_relative);
-        else
-          Nmax = ott.utils.ka2nmax(maxRadius*2*pi);
-        end
-      else
-        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
-            'Nmax must be positive numeric scalar');
-      end
+      Nmax = ott.tmatrix.Tmatrix.getValidateNmax(p.Results.Nmax, ...
+          max(Texternal.points(1, :)), ...
+          Texternal.relative_index, p.Results.internal || nargout ~= 1);
 
       % Get kr inside/outside particle
       kr=2*pi*Texternal.relative_index*Texternal.points(1, :);

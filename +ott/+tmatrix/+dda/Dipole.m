@@ -377,13 +377,7 @@ classdef Dipole
       r_jk = vecnorm(r_vec);
 
       % Compute the cross-product matrix
-      rcross = zeros(3, 3, n_targets);
-      rcross(1, 2, :) = -r_vec(3, :);
-      rcross(1, 3, :) = r_vec(2, :);
-      rcross(2, 3, :) = -r_vec(1, :);
-      rcross(2, 1, :) = r_vec(3, :);
-      rcross(3, 1, :) = -r_vec(2, :);
-      rcross(3, 2, :) = r_vec(1, :);
+      rcross = ott.utils.crossProductMatrix(r_vec);
 
       % Reshape arrays for multiplication
       r_jk = reshape(r_jk, [1, 1, n_targets]);
@@ -415,13 +409,7 @@ classdef Dipole
       n_targets = size(n_vec, 2);
 
       % Compute the cross-product matrix
-      rcross = zeros(3, 3, n_targets);
-      rcross(1, 2, :) = -n_vec(3, :);
-      rcross(1, 3, :) = n_vec(2, :);
-      rcross(2, 3, :) = -n_vec(1, :);
-      rcross(2, 1, :) = n_vec(3, :);
-      rcross(3, 1, :) = -n_vec(2, :);
-      rcross(3, 2, :) = n_vec(1, :);
+      rcross = ott.utils.crossProductMatrix(n_vec);
 
       % Reshape arrays for multiplication
       k_rd = reshape(k_rd, [1, 1, n_targets]);

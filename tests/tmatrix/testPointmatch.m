@@ -84,13 +84,14 @@ end
 
 function testInternalMie(testCase)
 
-  [~, Tmie] = ott.tmatrix.Mie(1.0, 'relative_index', 1.2);
-
   shape = ott.shape.Sphere(1.0);
   index = 1.2;
+  
+  [~, Tmie] = ott.tmatrix.Mie(shape.radius, ...
+      'relative_index', index);
+
   [~, tmatrix] = ott.tmatrix.Pointmatch.FromShape(shape, index);
   
-  tmatrix.Nmax = Tmie.Nmax;
   testCase.verifyEqual(tmatrix.data, Tmie.data, ...
     'AbsTol', 1.0e-6, 'internal');
 end

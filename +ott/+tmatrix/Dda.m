@@ -243,14 +243,8 @@ classdef Dda < ott.tmatrix.Tmatrix
       tmatrix.dda = dda;
 
       % Get or calculate Nmax
-      Nmax = p.Results.Nmax;
-      if isempty(Nmax)
-        rmax = max(vecnorm(dda.locations));
-        Nmax = ott.utils.ka2nmax(2*pi*rmax);
-      else
-        assert(isnumeric(Nmax) && isscalar(Nmax) && Nmax > 0, ...
-            'Nmax must be positive numeric scalar');
-      end
+      Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
+          p.Results.Nmax, max(vecnorm(dda.locations)), 1, false);
 
       % Get or calculate ci for calculation
       ci = p.Results.ci;
@@ -383,7 +377,8 @@ classdef Dda < ott.tmatrix.Tmatrix
       beam = ott.bsc.Bsc.BasisSet(ci);
 
       % Calculate FieldVector data
-      [fE, data] = beam.efield(tmatrix.dda.locations.*1.2, ...
+      rtp = ott.utils.xyz2rtp(tmatrix.dda.locations);
+      [fE, data] = beam.efieldRtp(rtp, ...
           'data', data, 'basis', 'regular');
 
       % Package for DDA

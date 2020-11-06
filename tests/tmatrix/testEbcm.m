@@ -31,14 +31,17 @@ function testInternalMie(testCase)
   radius = 1.0;
   shape = ott.shape.Sphere(radius);
   index = 1.2;
-  [~, tmatrix] = ott.tmatrix.Ebcm.FromShape(shape, 'relative_index', index);
+  Nmax = 12;
+  [~, tmatrix] = ott.tmatrix.Ebcm.FromShape(shape, ...
+      'relative_index', index, 'Nmax', Nmax);
 
   testCase.verifyEqual(tmatrix.relative_index, index, 'index');
   testCase.verifyEqual(tmatrix.invMethod, 'inv', 'invMethod');
   testCase.verifyEqual(tmatrix.xySymmetry, true, 'xySymmetry');
 
   % Compare to Mie result
-  [~, Tmie] = ott.tmatrix.Mie(radius, 'relative_index', index);
+  [~, Tmie] = ott.tmatrix.Mie(radius, 'relative_index', index, ...
+      'Nmax', Nmax);
   testCase.verifyEqual(tmatrix.data, Tmie.data, 'AbsTol', 2.0e-2, 'data');
 
 end
