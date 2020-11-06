@@ -8,9 +8,10 @@ classdef Scattered < ott.beam.Beam
 % methods also provide an option for showing the particle outline.
 %
 % Properties
-%   - incident    - Beam data incident on the particle
-%   - scattered   - Beam data scattered by the particle???
-%   - particle    - Particle responsible for scattering
+%   - incident    -- Beam data incident on the particle
+%   - scattered   -- Beam data scattered by the particle
+%   - internal    -- Internal beam data (optional)
+%   - particle    -- Particle responsible for scattering (optional)
 %
 % Field calculation methods
 %   - efield     -- Calculate electric field around the origin
@@ -43,14 +44,13 @@ classdef Scattered < ott.beam.Beam
 % using/distributing this file.
 
   properties
-    data        % Incident and scattered beam data [scattered, incident]
-    internal    % Internal beam data (optional)
+    incident    % Incident beam
+    scattered   % Scattered beam
+    internal    % Internal beam (optional)
     particle    % Particle instance (optional)
   end
 
   properties (Dependent)
-    incident    % Incident component of the data
-    scattered   % Scattered component of the data
     shape       % Either particle or the shape property of particle
   end
 
@@ -91,7 +91,8 @@ classdef Scattered < ott.beam.Beam
           @(x) isempty(x) || isa(x, 'ott.beam.Beam'));
       p.parse(varargin{:});
 
-      beam.data = [p.Results.scattered, p.Results.incident];
+      beam.scattered = p.Results.scattered;
+      beam.incident = p.Results.incident;
       beam.particle = p.Results.particle;
       beam.internal = p.Results.internal;
     end
@@ -345,7 +346,7 @@ classdef Scattered < ott.beam.Beam
       % Calculate external fields
       E = zeros(size(rtp));
       H = E;
-      [E(:, ~binside), H(:, binside), vswfData] = odata.ehfieldRtp(...
+      [E(:, ~binside), H(:, ~binside), vswfData] = odata.ehfieldRtp(...
           rtp(:, ~binside), unmatched{:});
 
       % Calculate internal fields
@@ -669,7 +670,8 @@ classdef Scattered < ott.beam.Beam
       % Get beam data for exterior
       switch p.Results.type
         case 'total'
-          odata = ott.beam.Coherent(beam.data);
+          odata = ott.beam.Array([beam.incident, beam.scattered], ...
+              'arrayType', 'coherent');
         case 'incident'
           odata = beam.incident;
         case 'scattered'
@@ -679,31 +681,24 @@ classdef Scattered < ott.beam.Beam
               'Unknown type specified, must be incident, scattered or total');
       end
     end
+
+    function val = defaultVisRangeInternal(beam)
+      [odata, ~] = beam.getAndParseType('type', 'total');
+      val = odata.defaultVisRange;
+    end
   end
 
   methods % Getters/setters
-    function val = get.incident(beam)
-      val = beam.data(2);
-    end
     function beam = set.incident(beam, val)
       assert(isa(val, 'ott.beam.Beam') && isscalar(val), ...
           'incident must be a single ott.beam.Beam instance');
-      beam.data(2) = val;
+      beam.incident = val;
     end
 
-    function val = get.scattered(beam)
-      val = beam.data(1);
-    end
     function beam = set.scattered(beam, val)
       assert(isa(val, 'ott.beam.Beam') && isscalar(val), ...
           'scattered must be a single ott.beam.Beam instance');
-      beam.data(1) = val;
-    end
-
-    function beam = set.data(beam, val)
-      assert(isa(val, 'ott.beam.Beam'), 'data must be a ott.beam.Beam');
-      assert(numel(val) == 2, 'data must be 2 element');
-      beam.data = val;
+      beam.scattered = val;
     end
 
     function beam = set.particle(beam, val)

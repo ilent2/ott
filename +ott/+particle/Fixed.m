@@ -102,54 +102,74 @@ classdef Fixed < ott.particle.Particle
   end
 
   methods
-    function particle = Fixed(shape, drag, tmatrix, varargin)
+    function particle = Fixed(varargin)
       % Construct a new particle instance with fixed properties
       %
       % Usage
       %   particle = Fixed(shape, drag, tmatrix, ...)
       %
-      % Parameters
+      % Optional named arguments
       %   - shape (ott.shape.Shape) -- Geometry description.  Units: m.
+      %
       %   - drag (ott.drag.Stokes) -- Drag tensor description.
+      %
       %   - tmatrix (ott.tmatrix.Tmatrix) -- Scattering description.
       %
-      % Optional named arguments
       %   - tinternal (ott.tmatrix.Tmatrix) -- Internal T-matrix.
 
       p = inputParser;
+      p.addOptional('shape', [], @(x) isa(x, 'ott.shape.Shape'));
+      p.addOptional('drag', [], @(x) isa(x, 'ott.drag.Stokes'));
+      p.addOptional('tmatrix', [], @(x) isa(x, 'ott.tmatrix.Tmatrix'));
       p.addParameter('tinternal', []);
       p.parse(varargin{:});
 
-      particle.drag = drag;
-      particle.shape = shape;
-      particle.tmatrix = tmatrix;
+      particle.drag = p.Results.drag;
+      particle.shape = p.Results.shape;
+      particle.tmatrix = p.Results.tmatrix;
       particle.tinternal = p.Results.tinternal;
     end
   end
 
   methods % Getters/setters
     function particle = set.shape(particle, val)
-      assert(isa(val, 'ott.shape.Shape'), ...
-        'shape must be a ott.shape.Shape instance');
-      particle.shape = val;
+      if isempty(val)
+        particle.shape = val;
+      else
+        assert(isa(val, 'ott.shape.Shape'), ...
+          'shape must be a ott.shape.Shape instance');
+        particle.shape = val;
+      end
     end
 
     function particle = set.drag(particle, val)
-      assert(isa(val, 'ott.drag.Stokes'), ...
-        'drag must be a ott.drag.Stokes instance');
-      particle.drag = val;
+      if isempty(val)
+        particle.drag = [];
+      else
+        assert(isa(val, 'ott.drag.Stokes'), ...
+          'drag must be a ott.drag.Stokes instance');
+        particle.drag = val;
+      end
     end
 
     function particle = set.tmatrix(particle, val)
-      assert(isa(val, 'ott.tmatrix.Tmatrix'), ...
-        'tmatrix must be a ott.tmatrix.Tmatrix instance');
-      particle.tmatrix = val;
+      if isempty(val)
+        particle.tmatrix = [];
+      else
+        assert(isa(val, 'ott.tmatrix.Tmatrix'), ...
+          'tmatrix must be a ott.tmatrix.Tmatrix instance');
+        particle.tmatrix = val;
+      end
     end
 
     function particle = set.tinternal(particle, val)
-      assert(isempty(val) || isa(val, 'ott.tmatrix.Tmatrix'), ...
-          'tinternal must be empty or ott.tmatrix.Tmatrix instance');
-      particle.tinternal = val;
+      if isempty(val)
+        particle.tinternal = [];
+      else
+        assert(isa(val, 'ott.tmatrix.Tmatrix'), ...
+            'tinternal must be empty or ott.tmatrix.Tmatrix instance');
+        particle.tinternal = val;
+      end
     end
   end
 end

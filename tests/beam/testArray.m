@@ -12,7 +12,7 @@ function testConstruct(testCase)
   beam2 = ott.beam.BscBeam();
   beams = [beam1, beam2];
   
-  beamA = ott.beam.Array(beams);
+  beamA = ott.beam.Array(beams, 'arrayType', 'array');
   
   testCase.verifyEqual(beamA.data, beams, 'data');
   testCase.verifyEqual(beamA.arrayType, 'array', 'type');
@@ -24,12 +24,16 @@ function testCoherent(testCase)
   beam(2) = ott.beam.Gaussian();
   beam(1).position = [-1;0;0]*1e-6;
   beam(2).position = [1;0;0]*1e-6;
+  sz = [10,10];
 
-  e = beam.visNearfield('range', [1,1]*5e-6, 'field', 'Ex');
-  es = sum(e, 3);
+  e1 = beam(1).visNearfield('range', [1,1]*5e-6, ...
+    'field', 'Ex', 'size', sz);
+  e2 = beam(2).visNearfield('range', [1,1]*5e-6, ...
+    'field', 'Ex', 'size', sz);
+  es = e1 + e2;
 
-  cbeam = ott.beam.Coherent(beam);
-  e = cbeam.visNearfield('range', [1, 1]*5e-6, 'field', 'Ex');
+  cbeam = ott.beam.Array(beam, 'arrayType', 'coherent');
+  e = cbeam.visNearfield('range', [1, 1]*5e-6, 'field', 'Ex', 'size', sz);
 
   testCase.verifyEqual(e, es, 'Ex');
 
@@ -41,12 +45,17 @@ function testIncoherent(testCase)
   beam(2) = ott.beam.Gaussian();
   beam(1).position = [-1;0;0]*1e-6;
   beam(2).position = [1;0;0]*1e-6;
+  sz = [10,10];
 
-  e = beam.visNearfield('range', [1,1]*5e-6, 'field', 'irradiance');
-  es = sum(e, 3);
+  e1 = beam(1).visNearfield('range', [1,1]*5e-6, ...
+    'field', 'irradiance', 'size', sz);
+  e2 = beam(2).visNearfield('range', [1,1]*5e-6, ...
+    'field', 'irradiance', 'size', sz);
+  es = e1 + e2;
 
-  cbeam = ott.beam.Incoherent(beam);
-  e = cbeam.visNearfield('range', [1, 1]*5e-6, 'field', 'irradiance');
+  cbeam = ott.beam.Array(beam, 'arrayType', 'incoherent');
+  e = cbeam.visNearfield('range', [1, 1]*5e-6, ...
+    'field', 'irradiance', 'size', sz);
 
   testCase.verifyEqual(e, es, 'irradiance');
 
@@ -60,11 +69,12 @@ function testPosition(testCase)
   beam(2) = ott.beam.Gaussian();
   beam(1).position = [-1;0;0]*1e-6;
   beam(2).position = [1;0;0]*1e-6;
-  cbeam1 = ott.beam.Incoherent(beam);
+  
+  cbeam1 = ott.beam.Array(beam, 'arrayType', 'incoherent');
   cbeam1.position = offset;
 
   beam = beam.translateXyz(offset);
-  cbeam2 = ott.beam.Incoherent(beam);
+  cbeam2 = ott.beam.Array(beam, 'arrayType', 'incoherent');
 
   e1 = cbeam1.visNearfield();
   e2 = cbeam2.visNearfield();

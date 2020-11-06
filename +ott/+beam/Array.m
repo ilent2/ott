@@ -15,6 +15,7 @@ classdef Array < ott.beam.ArrayType
 %
 % Properties
 %   - data        -- Array of coherent/incoherent beams
+%   - arrayType   -- Type of array (either coherent/incoherent/array)
 
 % Copyright 2020 Isaac Lenton (aka ilent2)
 % This file is part of OTT, see LICENSE.md for information about
@@ -29,7 +30,7 @@ classdef Array < ott.beam.ArrayType
   end
 
   methods
-    function beam = Array(varargin)
+    function bm = Array(varargin)
       % Construct a new beam array instance.
       %
       % Usage
@@ -47,11 +48,11 @@ classdef Array < ott.beam.ArrayType
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = ott.beam.ArrayType(unmatched{:});
-      beam.data = p.Results.data;
+      bm = bm@ott.beam.ArrayType(unmatched{:});
+      bm.data = p.Results.data;
     end
 
-    function [E, vswfData] = efield(beam, xyz, varargin)
+    function varargout = efield(beam, varargin)
       % Calculate the electric field (in SI units)
       %
       % Usage
@@ -66,26 +67,11 @@ classdef Array < ott.beam.ArrayType
       %
       % See :class:`Beam` for additional information.
 
-      p = inputParser;
-      p.addParameter('data', ott.utils.VswfData());
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      vswfData = p.Results.data;
-
-      E = zeros([size(xyz), numel(beam.data)]);
-      for ii = 1:numel(beam.data)
-        [E(:, :, ii), vswfData] = beam.data(ii).efield(xyz, ...
-            unmatched{:}, 'data', vswfData);
-      end
-
-      if strcmpi(beam.arrayType, 'coherent')
-        E = sum(E, 3);
-      end
+      [varargout{1:nargout}] = beam.singleOutputHelper(...
+          @(odata, varargin) odata.efield(varargin{:}), varargin{:});
     end
 
-    function [H, vswfData] = hfield(beam, xyz, varargin)
+    function varargout = hfield(beam, varargin)
       % Calculate the magnetic field (in SI units)
       %
       % Usage
@@ -100,26 +86,11 @@ classdef Array < ott.beam.ArrayType
       %
       % See :class:`Beam` for additional information.
 
-      p = inputParser;
-      p.addParameter('data', ott.utils.VswfData());
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
-
-      vswfData = p.Results.data;
-
-      H = zeros([size(xyz), numel(beam.data)]);
-      for ii = 1:numel(beam.data)
-        [H(:, :, ii), vswfData] = beam.data(ii).hfield(xyz, ...
-            unmatched{:}, 'data', vswfData);
-      end
-
-      if strcmpi(beam.arrayType, 'coherent')
-        H = sum(H, 3);
-      end
+      [varargout{1:nargout}] = beam.singleOutputHelper(...
+          @(odata, varargin) odata.hfield(varargin{:}), varargin{:});
     end
 
-    function [E, H, vswfData] = ehfield(beam, xyz, varargin)
+    function varargout = ehfield(beam, varargin)
       % Calculate the electric and magnetic field (in SI units)
       %
       % Usage
@@ -134,19 +105,231 @@ classdef Array < ott.beam.ArrayType
       %
       % See :class:`Beam` for additional information.
 
+      [varargout{1:nargout}] = beam.doubleOutputHelper(...
+          @(odata, varargin) odata.ehfield(varargin{:}), varargin{:});
+    end
+
+    function varargout = efieldRtp(beam, varargin)
+      % Calculate the electric field (in SI units)
+      %
+      % Usage
+      %   [E, vswfData] = beam.efieldRtp(rtp, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric array of values.  Where M is the number of beams.
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Cartesian coordinates for field calculation.
+      %     Units of meters.  Packaged [r;t;p].
+      %
+      % See :class:`Beam` for additional information.
+
+      [varargout{1:nargout}] = beam.singleOutputHelper(...
+          @(odata, varargin) odata.efieldRtp(varargin{:}), varargin{:});
+    end
+
+    function varargout = hfieldRtp(beam, varargin)
+      % Calculate the magnetic field (in SI units)
+      %
+      % Usage
+      %   [H, vswfData] = beam.hfieldRtp(rtp, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric array of values.  Where M is the number of beams.
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Cartesian coordinates for field calculation.
+      %     Units of meters.  Packaged [r;t;p].
+      %
+      % See :class:`Beam` for additional information.
+
+      [varargout{1:nargout}] = beam.singleOutputHelper(...
+          @(odata, varargin) odata.hfieldRtp(varargin{:}), varargin{:});
+    end
+
+    function varargout = ehfieldRtp(beam, varargin)
+      % Calculate the electric and magnetic field (in SI units)
+      %
+      % Usage
+      %   [E, H, vswfData] = beam.ehfieldRtp(rtp, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric array of values.  Where M is the number of beams.
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Cartesian coordinates for field calculation.
+      %     Units of meters.  Packaged [r;t;p].
+      %
+      % See :class:`Beam` for additional information.
+
+      [varargout{1:nargout}] = beam.doubleOutputHelper(...
+          @(odata, varargin) odata.ehfieldRtp(varargin{:}), varargin{:});
+    end
+
+    function varargout = efarfield(beam, varargin)
+      % Calculate the electric field (in SI units)
+      %
+      % Usage
+      %   [E, vswfData] = beam.efarfield(rtp, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric array of values.  Where M is the number of beams.
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Cartesian coordinates for field calculation.
+      %     Units of meters.  Packaged [r;t;p].
+      %
+      % See :class:`Beam` for additional information.
+
+      [varargout{1:nargout}] = beam.singleOutputHelper(...
+          @(odata, varargin) odata.efarfield(varargin{:}), varargin{:});
+    end
+
+    function varargout = hfarfield(beam, varargin)
+      % Calculate the magnetic field (in SI units)
+      %
+      % Usage
+      %   [H, vswfData] = beam.hfarfield(xyz, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric array of values.  Where M is the number of beams.
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Cartesian coordinates for field calculation.
+      %     Units of meters.  Packaged [r;t;p].
+      %
+      % See :class:`Beam` for additional information.
+
+      [varargout{1:nargout}] = beam.singleOutputHelper(...
+          @(odata, varargin) odata.hfarfield(varargin{:}), varargin{:});
+    end
+
+    function varargout = ehfarfield(beam, varargin)
+      % Calculate the electric and magnetic field (in SI units)
+      %
+      % Usage
+      %   [E, H, vswfData] = beam.ehfarfield(rtp, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric array of values.  Where M is the number of beams.
+      %
+      % Parameters
+      %   - rtp (3xN numeric) -- Cartesian coordinates for field calculation.
+      %     Units of meters.  Packaged [r;t;p].
+      %
+      % See :class:`Beam` for additional information.
+
+      [varargout{1:nargout}] = beam.doubleOutputHelper(...
+          @(odata, varargin) odata.ehfarfield(varargin{:}), varargin{:});
+    end
+
+    function varargout = eparaxial(beam, varargin)
+      % Calculate the electric field (in SI units)
+      %
+      % Usage
+      %   [E, vswfData] = beam.eparaxial(xy, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric array of values.  Where M is the number of beams.
+      %
+      % Parameters
+      %   - xy (2xN numeric) -- Cartesian coordinates for field calculation.
+      %     Units of meters.  Packaged [x;y].
+      %
+      % See :class:`Beam` for additional information.
+
+      [varargout{1:nargout}] = beam.singleOutputHelper(...
+          @(odata, varargin) odata.eparaxial(varargin{:}), varargin{:});
+    end
+
+    function varargout = hparaxial(beam, varargin)
+      % Calculate the magnetic field (in SI units)
+      %
+      % Usage
+      %   [H, vswfData] = beam.hparaxial(xy, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric array of values.  Where M is the number of beams.
+      %
+      % Parameters
+      %   - xy (2xN numeric) -- Cartesian coordinates for field calculation.
+      %     Units of meters.  Packaged [x;y].
+      %
+      % See :class:`Beam` for additional information.
+
+      [varargout{1:nargout}] = beam.singleOutputHelper(...
+          @(odata, varargin) odata.hparaxial(varargin{:}), varargin{:});
+    end
+
+    function varargout = ehparaxial(beam, varargin)
+      % Calculate the electric and magnetic field (in SI units)
+      %
+      % Usage
+      %   [E, H, vswfData] = beam.ehparaxial(xy, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric array of values.  Where M is the number of beams.
+      %
+      % Parameters
+      %   - xy (2xN numeric) -- Cartesian coordinates for field calculation.
+      %     Units of meters.  Packaged [x;y].
+      %
+      % See :class:`Beam` for additional information.
+
+      [varargout{1:nargout}] = beam.doubleOutputHelper(...
+          @(odata, varargin) odata.ehparaxial(varargin{:}), varargin{:});
+    end
+  end
+
+  methods (Hidden)
+    function [EH, vswfData] = singleOutputHelper(beam, ...
+          target, xyz, varargin)
+      % Helper for single output field calculation functions
+
       p = inputParser;
       p.addParameter('data', ott.utils.VswfData());
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
+      
+      target = @(b, varargin) target(...
+          b.rotate(beam.rotation).translateXyz(beam.position), ...
+          varargin{:});
 
-      vswfData = p.Results.data;
+      [EH, vswfData] = target(beam.data(1), xyz, unmatched{:});
+      EH = repmat(EH, [1, 1, numel(beam.data)]);
 
-      E = zeros([size(xyz), numel(beam.data)]);
-      H = E;
       for ii = 1:numel(beam.data)
-        [E(:, :, ii), H(:, :, ii), vswfData] = beam.data(ii).ehfield(xyz, ...
+        [EH(:, :, ii), vswfData] = target(beam.data(ii), xyz, ...
             unmatched{:}, 'data', vswfData);
+      end
+
+      if strcmpi(beam.arrayType, 'coherent')
+        EH = sum(EH, 3);
+      end
+    end
+
+    function [E, H, vswfData] = doubleOutputHelper(beam, ...
+          target, xyz, varargin)
+      % Helper for double output field calculation functions
+
+      p = inputParser;
+      p.addParameter('data', ott.utils.VswfData());
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      target = @(b, varargin) target(...
+          b.rotate(beam.rotation).translateXyz(beam.position), ...
+          varargin{:});
+
+      [E, H, vswfData] = target(beam.data(1), xyz, unmatched{:});
+      E = repmat(E, [1, 1, numel(beam.data)]);
+      H = repmat(H, [1, 1, numel(beam.data)]);
+
+      for ii = 2:numel(beam.data)
+        [E(:, :, ii), H(:, :, ii), vswfData] = target(beam.data(ii), ...
+            xyz, unmatched{:}, 'data', vswfData);
       end
 
       if strcmpi(beam.arrayType, 'coherent')
@@ -155,8 +338,9 @@ classdef Array < ott.beam.ArrayType
       end
     end
 
-    % TODO: Add force/torque/spin functions to Beam or elsewhere?
-    % TODO: Finish other field functions here
+    function val = defaultVisRangeInternal(beam)
+      val = beam.data.defaultVisRange();
+    end
   end
 
   methods % Getters/setters
@@ -184,6 +368,9 @@ classdef Array < ott.beam.ArrayType
 
       % Store data
       beam.dataInternal = val;
+    end
+    function val = get.data(beam)
+      val = beam.dataInternal;
     end
   end
 end

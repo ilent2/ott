@@ -14,6 +14,7 @@ subpackages{end+1} = 'drag';
 subpackages{end+1} = 'particle';
 subpackages{end+1} = 'shape';
 subpackages{end+1} = 'tmatrix';
+subpackages{end+1} = 'tmatrix/dda';
 subpackages{end+1} = 'tools';
 % subpackages{end+1} = 'ui';
 subpackages{end+1} = 'utils';

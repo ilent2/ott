@@ -1,166 +1,207 @@
 classdef FieldVector < double
-% A class encapsulating field vector data
-%
-% This class keeps track of the coordinate system used to represent
-% field vectors and provided convenient methods for converting between
-% Cartesian and Spherical coordinates.
-%
-% Properties
-%   - locations -- Location data for field vectors (can be empty)
-%   - basis     -- Coordinate system basis (cartesian or spherical)
+% Base class for classes encapsulating field vector data.
 %
 % Properties (possibly computed)
-%   - vxyz   -- Data in Cartesian coordinates
-%   - vrtp   -- Data in Spherical coordinates
 %
 % Methods
-%   - plus        -- Add field vectors
-%   - minus       -- Subtract field vectors
-%   - mtimes,times      -- Scalar multiplication
-%   - mrdivide,rdivide  -- Scalar division
+%   - plus, minus, uminus, times, mtimes, rdivide, mrdivide
+%   - sum     -- Add field vector components
+%   - vxyz    -- Data in Cartesian coordinates
+%   - vrtp    -- Data in Spherical coordinates
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-% TODO: Implement subsref etc (and remove double(field) in getters)
-%   This would be an optimisation.  But, we shouldn't allow direct
-%   access to the data.  So field.vxyz(1, 3) should be the same
-%   as field(1, 3) (without the cast), but field(1, 3) should be
-%   disallowed.
-
-  properties
-    locations  % Location data for field vectors (can be empty)
-    basis      % Coordinate system basis (cartesian or spherical)
-  end
-
-  properties (Dependent)
-    vxyz      % Data in Cartesian coordinates
-    vrtp      % Data in Spherical coordinates
-  end
-
-  methods
-    function field = FieldVector(loc, vec, basis)
+  methods (Access=protected)
+    function field = FieldVector(vec, pos)
       % Construct a new FieldVector instance
       %
       % Usage
-      %   field = FieldVector(xyz, vxyz, 'cartesian')
-      %   field = FieldVector(rtp, vrtp, 'spherical')
+      %   field = FieldVector(vec, pos)
+      %
+      %   field = FieldVector([vec; pos])
+      %
+      % Parameters
+      %   - vec (3xN numeric) -- Field vectors
+      %
+      %   - pos (3xN numeric) -- Coordinate locations (optional).
+      %     If omitted, these are not stored, defaults to [0;0;0] when used.
 
-      if nargin == 0
-        loc = zeros(3, 0);
-        vec = zeros(3, 0);
-        basis = 'cartesian';
+      if nargin == 2
+        data = [vec; pos];
+      else
+        data = vec;
       end
 
-      field = field@double(vec);
-      field.locations = loc;
-      field.basis = basis;
+      assert(any(size(data, 1) == [3, 6]), ...
+        'First dimension of data [vec; pos] must be 3 or 6');
+      field = field@double(data);
+    end
+  end
+
+  methods
+    function fv = vxyz(fv, varargin)
+      % Get Cartesian field vector instance
+
+      if ~isa(fv, 'ott.utils.FieldVectorCart')
+        fv = ott.utils.FieldVectorCart(fv);
+      end
+
+      % Get only vector component
+      sz = size(fv);
+      fv = reshape(double(fv(1:3, :)), [3, sz(2:end)]);
+
+      % Interpret additional arguments as subscripts
+      if nargin >= 2
+        fv = fv(varargin{:});
+      end
+    end
+
+    function fv = vrtp(fv, varargin)
+      % Get Spherical field vector instance
+
+      if ~isa(fv, 'ott.utils.FieldVectorSph')
+        fv = ott.utils.FieldVectorSph(fv);
+      end
+
+      % Get only vector component
+      sz = size(fv);
+      fv = reshape(double(fv(1:3, :)), [3, sz(2:end)]);
+
+      % Interpret additional arguments as subscripts
+      if nargin >= 2
+        fv = fv(varargin{:});
+      end
+    end
+
+    function out = sum(vec, dim)
+      % Sum field vectors along specified dimension
+      %
+      % Usage
+      %   fv = sum(fv, dim)
+      %
+      % If dimension is 1, returns a double.  Otherwise returns a
+      % field vector.
+
+      out = sum(vec.vxyz, dim);
+
+      if size(out, 1) == 3
+        out = ott.utils.FieldVectorCart(out);
+      end
     end
 
     function vec = plus(v1, v2)
-      % Add field vectors
+      % Addition of field vectors
+      %
+      % Usage
+      %   fv = fv1 + fv2 -- Adds field vectors in Cartesian basis.
+      %   Resulting field vector object has no location data.
+      %
+      %   s = fv1 + s2, and s = s1 + fv1 -- Add non-field vector types.
+      %   Results in a double or other non-field vector type.
 
       if isa(v1, 'ott.utils.FieldVector') && isa(v2, 'ott.utils.FieldVector')
-
-        assert(isequaln(v1.locations, v2.locations), ...
-            'Locations must match when adding field vectors');
-
-        if strcmpi(v1.basis, v2.basis)
-          % Just add data (like normal)
-          vec = ott.utils.FieldVector(v1.locations, ...
-              builtin('plus', v1, v2), v1.basis);
-        else
-          % Convert to a common basis and add
-          vec = ott.utils.FieldVector(v1.locations, ...
-              v1.vxyz + v2.vxyz, 'cartesian');
-        end
-
-      elseif isscalar(v1)
-        % Keep scalar addition
-      	vec = ott.utils.FieldVector(v2.locations, ...
-            builtin('plus', v1, v2), v2.basis);
-      elseif isscalar(v2)
-        % Keep scalar addition
-      	vec = ott.utils.FieldVector(v1.locations, ...
-            builtin('plus', v1, v2), v1.basis);
+        vec = ott.utils.FieldVectorCart(v1.vxyz + v2.vxyz);
+      elseif isa(v1, 'ott.utils.FieldVector')
+        vec = v1.vxyz + v2;
       else
-        error('Unsupported addition for FieldVector');
+        vec = v1 + v2.vxyz;
       end
+    end
 
+    function vec = minus(v1, v2)
+      % Subtraction of field vectors
+      %
+      % Usage
+      %   fv = fv1 - fv2 -- Adds field vectors in Cartesian basis.
+      %   Resulting field vector object has no location data.
+      %
+      %   s = fv1 - s2, and s = s1 - fv1 -- Add non-field vector types.
+      %   Results in a double or other non-field vector type.
+
+      if isa(v1, 'ott.utils.FieldVector') && isa(v2, 'ott.utils.FieldVector')
+        vec = ott.utils.FieldVectorCart(v1.vxyz - v2.vxyz);
+      elseif isa(v1, 'ott.utils.FieldVector')
+        vec = v1.vxyz - v2;
+      else
+        vec = v1 - v2.vxyz;
+      end
+    end
+
+    function vec = uminus(vec)
+      % Unitary minus of field vector
+      %
+      % Usage
+      %   vec = -vec -- Negates vector components.  Leaves location unchanged.
+
+      sz = size(vec);
+      vec(1:3, :) = -double(vec(1:3, :));
+      vec = reshape(vec, sz);
     end
 
     function vec = times(v1, v2)
-      % Scalar multiplication of vector data
+      % Multiplication of field vectors
+      %
+      % Usage
+      %   fv = fv1 .* fv2 -- Times field vectors in Cartesian basis.
+      %   Resulting field vector object has no location data.
+      %
+      %   fv = fv1 .* s2, and fv = s1 .* fv1 -- Scale field vector.
+      %   Resulting field vector has same location as original.
 
-      % Defer to mtimes method
-      vec = v1 * v2;
+      if isa(v1, 'ott.utils.FieldVector') && isa(v2, 'ott.utils.FieldVector')
+        vec = ott.utils.FieldVectorCart(v1.vxyz .* v2.vxyz);
+      elseif isa(v1, 'ott.utils.FieldVector')
+        sz = size(v1);
+        v1(1:3, :) = double(v1(1:3, :)) .* v2;
+        vec = reshape(v1, sz);
+      else
+        sz = size(v2);
+        v2(1:3, :) = v1 .* double(v2(1:3, :));
+        vec = reshape(v2, sz);
+      end
     end
 
     function vec = mtimes(v1, v2)
-      % Scalar multiplication
+      % Matrix and scalar multiplication
+      %
+      % Usage
+      %   s = M * fv -- Matrix multiplication.  M should be nx3.
+      %   First gets the Cartesian field vectors.
+      %
+      %   fv = fv1 * s2, and fv = s1 * fv1 -- Scale field vector.
+      %   Same behaviour as .* operation.
 
-      if isscalar(v1)
-        % Keep scalar mtimes
-      	vec = ott.utils.FieldVector(v2.locations, ...
-            builtin('mtimes', v1, v2), v2.basis);
-      elseif isscalar(v2)
-        % Keep scalar mtimes
-      	vec = ott.utils.FieldVector(v1.locations, ...
-            builtin('mtimes', v1, v2), v1.basis);
+      if ~isa(v1, 'ott.utils.FieldVector') && ~isscalar(v1) ...
+          && isa(v2, 'ott.utils.FieldVector')
+        vec = v1 * v2.vxyz;
       else
-        error('Only scalar multiplciation supported for FieldVector');
+        vec = v1 .* v2;
       end
-
     end
 
     function vec = rdivide(v1, s)
       % Scalar division
-      vec = v1 / s;
+      %
+      % Usage
+      %   fv = fv ./ s -- Divide field vector values by scalar.
+
+      assert(isa(v1, 'ott.utils.FieldVector'), ...
+          'First argument must be a field vector');
+
+      sz = size(v1);
+      v1(1:3, :) = double(v1(1:3, :)) ./ s;
+      vec = reshape(v1, sz);
     end
 
     function vec = mrdivide(v1, s)
       % Scalar division
+      %
+      % Usage
+      %   fv = fv / s -- uses same behaviour as ./ operator.
 
-      assert(isscalar(s) && isnumeric(s), ...
-          'second element to mrdivide must be numeric scalar');
-      vec = ott.utils.FieldVector(v1.locations, ...
-          builtin('mrdivide', v1, s), v1.basis);
+      vec = v1 ./ s;
     end
-  end
-
-  methods % Getters/setters
-    function field = set.locations(field, val)
-      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 3, ...
-        'locations must be 3xN numeric matrix');
-      field.locations = val;
-    end
-    
-    function val = get.vxyz(field)
-      if strcmpi(field.basis, 'cartesian')
-        val = double(field);
-      elseif strcmpi(field.basis, 'spherical')
-        if isempty(field.locations)
-          error('Need locations to apply coordinate transformation');
-        end
-        val = ott.utils.rtpv2xyzv(field.vrtp, field.locations);
-      else
-        error('Unable to convert between these bases');
-      end
-    end
-
-    function val = get.vrtp(field)
-      if strcmpi(field.basis, 'cartesian')
-        if isempty(field.locations)
-          error('Need locations to apply coordinate transformation');
-        end
-        val = ott.utils.xyzv2rtpv(field.vxyz, field.locations);
-      elseif strcmpi(field.basis, 'spherical')
-        val = double(field);
-      else
-        error('Unable to convert between these bases');
-      end
-    end
-
   end
 end

@@ -28,10 +28,6 @@ classdef Empty < ott.beam.Beam
     data = ott.beam.Beam.empty(0);
   end
 
-  properties (Dependent)
-    defaultVisRange
-  end
-
   methods
     function beam = Empty(varargin)
       % Construct a new empty beam instance.
@@ -217,10 +213,6 @@ classdef Empty < ott.beam.Beam
   methods % Getters/setters
     function beam = set.data(beam, ~)
       warning('Setting beam data has no effect for Empty beams');
-    end
-
-    function val = get.defaultVisRange(beam)
-      val = [1,1];
     end
   end
 end

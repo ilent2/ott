@@ -1,4 +1,4 @@
-function tests = testBscFinite
+function tests = testBscInfinite
   tests = functiontests(localfunctions);
 end
 

@@ -368,7 +368,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       Ertp = [zeros(size(Etheta)); Etheta; Ephi];
-      E = ott.utils.FieldVector(rtp, Ertp, 'spherical');
+      rtp = repmat(rtp, [1, 1, numel(beam)]);
+      E = ott.utils.FieldVectorSph(Ertp, rtp);
     end
 
     function [E, data] = efieldRtp(beam, rtp, varargin)
@@ -427,7 +428,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       Ertp = [Er; Etheta; Ephi];
-      E = ott.utils.FieldVector(rtp, Ertp, 'spherical');
+      rtp = repmat(rtp, [1, 1, numel(beam)]);
+      E = ott.utils.FieldVectorSph(Ertp, rtp);
     end
 
     function [H, data] = hfieldRtp(beam, rtp, varargin)
@@ -486,7 +488,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       Hrtp = -1i*[Hr; Htheta; Hphi];
-      H = ott.utils.FieldVector(rtp, Hrtp, 'spherical');
+      rtp = repmat(rtp, [1, 1, numel(beam)]);
+      H = ott.utils.FieldVectorSph(Hrtp, rtp);
     end
 
     %
@@ -1073,7 +1076,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Handle default value for dimension
       if nargin < 2
-        dim = find(size(beamin) > 1, 1);
+        dim = max([1, find(size(beamin) > 1, 1)]);
       end
 
       % Select the first row in our dimension

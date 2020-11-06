@@ -100,6 +100,9 @@ classdef ArrayType < ott.beam.Beam
       %     calculation.  Default is an empty VswfData structure.
       %
       % Unmatched parameters are passed to the field calculation function.
+      
+      assert(numel(beam) == 1, ...
+          'Expected only a single beam.  Use ott.beam.Array for arrays');
 
       [imout, XY, vswfData] = visNearfield@ott.beam.Beam(...
           beam, varargin{:});

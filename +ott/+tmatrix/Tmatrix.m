@@ -796,7 +796,7 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
         Nmax2 = b.Nmax;
         oNmax = max(Nmax1, Nmax2);
         a.Nmax(2) = oNmax;
-        b.Nmax = oNmax;
+        [b.Nmax] = deal(oNmax);
 
         S = a.data * b;
 

@@ -59,9 +59,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 %   - times,mtimes     -- Scalar multiplication of beam intensity/power
 %   - rdivide,mrdivide -- Scalar division of beam intensity/power
 %
-% Abstract properties
-%   - defaultVisRange -- Default range for near-field visualisations.
-%
 % Abstract methods
 %   - efield     -- Calculate electric field around the origin
 %   - hfield     -- Calculate magnetic field around the origin
@@ -99,10 +96,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
     hfarfield(~)   % Calculate magnetic fields in the far-field
   end
 
-  properties (Abstract)
-    defaultVisRange
-  end
-
   methods (Static)
     function data = VisualisationData(field_type, field)
       % Helper to generate the visualisation data output.
@@ -127,7 +120,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %     - Abs(Er), Abs(Et), Abs(Ep), Abs(Ex), Abs(Ey), Abs(Ez)
       %     - Arg(Er), Arg(Et), Arg(Ep), Arg(Ex), Arg(Ey), Arg(Ez)
 
-      assert(size(field, 1) == 3, 'fieldvector must be 3xN matrix');
       assert(isa(field, 'ott.utils.FieldVector'), ...
           'fieldvector must be a instance of FieldVector');
 
@@ -429,7 +421,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       f = fbeam - obeam;
     end
 
-    function t = torque(ibeam, varargin)
+    function t = torque(~, varargin)
       % Calculate the angular momentum difference between beams.
       %
       % There is no default implementation of this method.  This function
@@ -438,7 +430,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       t = nan(3, 1);
     end
 
-    function t = spin(ibeam, varargin)
+    function t = spin(~, varargin)
       % Calculate the spin angular momentum between beams.
       %
       % There is no default implementation of this method.  This function
@@ -529,15 +521,15 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       uxyz(3, :) = -uxyz(3, :);
 
       % Calculate field and E2
-      [E, varargout{4:nargout}] = beam.efarfield(rtp, unmatched{:});
+      [E, varargout{3:nargout}] = beam.efarfield(rtp, unmatched{:});
       Eirr = beam.VisualisationData('E2', E);
 
       % Calculate intensity
-      I = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
+      varargout{2} = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);
 
       % Calculate moment in Cartesian coordinates
       Eirr_xyz = uxyz .* Eirr;
-      S = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
+      varargout{1} = sum(Eirr_xyz .* sin(theta.') .* dtheta .* dphi, 2);
     end
 
     %
@@ -616,7 +608,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       [xx, yy, zz] = meshgrid(xrange, yrange, p.Results.offset);
 
       % Change the grid to the user requested orientation
-      [xyz, labels] = beam.visualiseGetXyz(xx, yy, zz, p.Results.axis);
+      [xyz, ~] = beam.visualiseGetXyz(xx, yy, zz, p.Results.axis);
 
       % Calculate mask
       if isempty(p.Results.mask)
@@ -635,7 +627,8 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       % Unpack masked image (use nans for other values)
       Ef = nan([size(xyz), size(E, 3)]);
       Ef(:, mask(:), :) = E.vxyz;
-      Ef = ott.utils.FieldVector(xyz, Ef, 'cartesian');
+      xyz = repmat(xyz, [1, 1, size(Ef, 3)]);
+      Ef = ott.utils.FieldVectorCart(Ef, xyz);
 
       % Generate visualisation data
       imout = beam.VisualisationData(p.Results.field, Ef);
@@ -887,6 +880,23 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       % Assign outputs
       if nargout == 0
         clear imout ptheta vswfData;
+      end
+    end
+  end
+  
+  methods (Hidden)
+    function rng = defaultVisRangeInternal(~)
+      rng = [1,1];
+    end
+  end
+  
+  methods (Sealed, Hidden)
+    function rng = defaultVisRange(beam)
+      % Get the default visualisation range
+      
+      rng = beam(1).defaultVisRangeInternal();
+      for ii = 2:numel(beam)
+        rng = max(rng, beam(ii).defaultVisRangeInternal());
       end
     end
   end

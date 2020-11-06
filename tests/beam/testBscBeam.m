@@ -91,8 +91,8 @@ function testFarfieldFunctions(testCase)
   rtp = randn(3, 5);
 
   targetE = bsc.efarfield(rtp)./k;
-  targetH = ott.utils.FieldVector(rtp, ...
-          -1i .* targetE.vrtp([1, 3, 2], :)./Z, 'spherical');
+  targetH = ott.utils.FieldVectorSph(...
+          -1i .* targetE.vrtp([1, 3, 2], :)./Z, rtp);
   
   trialE = beam.efarfield(rtp);
   testCase.verifyEqual(trialE.vrtp, targetE.vrtp, 'RelTol', 1e-15, 'e');

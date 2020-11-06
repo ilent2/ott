@@ -250,7 +250,9 @@ classdef Dipole
       E = F * beam;
 
       % Package output
-      E = ott.utils.FieldVector(xyz, reshape(E, 3, []), 'cartesian');
+      E = reshape(E, 3, size(xyz, 2), []);
+      xyz = repmat(xyz, [1, 1, size(E, 3)]);
+      E = ott.utils.FieldVectorCart(E, xyz);
     end
 
     function H = hfield(beam, xyz, varargin)
@@ -270,7 +272,9 @@ classdef Dipole
       H = F * beam;
 
       % Package output
-      H = ott.utils.FieldVector(xyz, reshape(H, 3, []), 'cartesian');
+      H = reshape(H, 3, size(xyz, 2), []);
+      xyz = repmat(xyz, [1, 1, size(H, 3)]);
+      H = ott.utils.FieldVectorCart(H, xyz);
     end
 
     function E = efarfield(beam, rtp, varargin)
@@ -295,7 +299,9 @@ classdef Dipole
 
       % Package output
       xyz = ott.utils.rtp2xyz(rtp);
-      E = ott.utils.FieldVector(xyz, reshape(E, 3, []), 'cartesian');
+      E = reshape(E, 3, size(xyz, 2), []);
+      xyz = repmat(xyz, [1, 1, size(E, 3)]);
+      E = ott.utils.FieldVectorCart(E, xyz);
     end
 
     function H = hfarfield(beam, rtp, varargin)
@@ -320,7 +326,9 @@ classdef Dipole
 
       % Package output
       xyz = ott.utils.rtp2xyz(rtp);
-      H = ott.utils.FieldVector(xyz, reshape(H, 3, []), 'cartesian');
+      H = reshape(H, 3, size(xyz, 2), []);
+      xyz = repmat(xyz, [1, 1, size(H, 3)]);
+      H = ott.utils.FieldVectorCart(H, xyz);
     end
   end
 

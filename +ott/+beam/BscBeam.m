@@ -10,7 +10,6 @@ classdef BscBeam < ott.beam.ArrayType
 %
 % Properties
 %   - data          -- Internal BSC instance describing beam
-%   - defaultVisRange -- Default range for near-field visualisations
 %
 % Methods
 %   - recalculate   -- Can be overloaded by sub-classes to update data
@@ -31,10 +30,6 @@ classdef BscBeam < ott.beam.ArrayType
     data      % Internal BSC instance describing beam
   end
 
-  properties (Dependent)
-    defaultVisRange     % Chosen based on beam NA
-  end
-
   methods
     function beam = BscBeam(varargin)
       % Construct a Bsc beam instance.
@@ -46,6 +41,9 @@ classdef BscBeam < ott.beam.ArrayType
       %   - data (ott.bsc.Bsc) -- Initial data for beam or empty.
       %     Default: ``ott.bsc.Bsc.empty()``.
       %
+      %   - arrayType (enum) -- The array type for Bsc beams containing
+      %     multiple bsc data.  Default: ``'coherent'``.
+      %
       %   - index_medium (numeric) -- Refractive index of the medium.
       %     Default: ``1.0``.
       %
@@ -55,11 +53,13 @@ classdef BscBeam < ott.beam.ArrayType
 
       p = inputParser;
       p.addOptional('data', ott.bsc.Bsc.empty(), @(x) isa(x, 'ott.bsc.Bsc'));
+      p.addParameter('arrayType', 'coherent');
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.ArrayType(unmatched{:});
+      beam = beam@ott.beam.ArrayType(...
+        'arrayType', p.Results.arrayType, unmatched{:});
       beam.data = p.Results.data;
     end
 
@@ -191,8 +191,8 @@ classdef BscBeam < ott.beam.ArrayType
       [E, data] = beam.efarfield(rtp, varargin{:});
 
       % Swap theta and phi components
-      H = ott.utils.FieldVector(rtp, ...
-          -1i .* E.vrtp([1, 3, 2], :), 'spherical');
+      H = ott.utils.FieldVectorSph(...
+          -1i .* E.vrtp([1, 3, 2], :), rtp);
       H = H ./ beam.impedance;
     end
 
@@ -385,6 +385,13 @@ classdef BscBeam < ott.beam.ArrayType
     end
   end
 
+  methods (Hidden)
+    function val = defaultVisRangeInternal(beam)
+      val = [1,1] .* ott.utils.nmax2ka(...
+          max([1, beam.data.Nmax]))./beam.wavenumber ./ sqrt(2);
+    end
+  end
+
   methods % Getters/setters
     function beam = set.data(beam, val)
       if isempty(val)
@@ -393,11 +400,6 @@ classdef BscBeam < ott.beam.ArrayType
       assert(isa(val, 'ott.bsc.Bsc'), ...
           'data must be a ott.bsc.Bsc instance or empty');
       beam.data = val;
-    end
-
-    function val = get.defaultVisRange(beam)
-      val = [1,1] .* ott.utils.nmax2ka(...
-          max([1, beam.data.Nmax]))./beam.wavenumber ./ sqrt(2);
     end
   end
 end
