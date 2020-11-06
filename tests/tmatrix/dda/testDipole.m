@@ -77,10 +77,22 @@ function testDipoleFarfield(testCase)
 
   farfield = beam.efarfield(target_rtp);
   nearfield = beam.efield(target_xyz);
-  testCase.verifyEqual(farfield.vxyz, nearfield./P, 'AbsTol', 1.0e-3, 'e');
+  testCase.verifyEqual(farfield.vxyz, nearfield.vxyz./P, 'AbsTol', 1.0e-3, 'e');
 
   farfield = beam.hfarfield(target_rtp);
   nearfield = beam.hfield(target_xyz);
-  testCase.verifyEqual(farfield.vxyz, nearfield./P, 'AbsTol', 1.0e-3, 'h');
+  testCase.verifyEqual(farfield.vxyz, nearfield.vxyz./P, 'AbsTol', 1.0e-3, 'h');
+
+end
+
+function testLowMemoryWarnings(testCase)
+
+  msgid = 'ott:tmatrix:dda:Dipole:memory_may_exceed_physical';
+  S = warning('error', msgid); %#ok<CTPCT>
+  testCase.addTeardown(@() warning(S));
+
+  N = 1000000;
+  beam = ott.tmatrix.dda.Dipole(zeros(3, N), sparse(3*N, 1));
+  testCase.verifyError(@() beam.enearfield_matrix(zeros(3, N)), msgid);
 
 end

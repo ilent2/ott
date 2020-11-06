@@ -496,6 +496,19 @@ classdef Dipole
     function F = build_field_matrix(vxyz, txyz, func, varargin)
       % Build field/interaction matrix
       %
+      % This function includes a check that the generated matrix will
+      % fit into available physical memory.  This check could raise
+      % two warnings:
+      %
+      %   - 'ott:utils:arrayMaxSize:cant_get_memory' is raised if the
+      %     memory command fails.
+      %   - 'ott:tmatrix:dda:Dipole:memory_may_exceed_physical' is raised
+      %     if the memory exceeds available physical memory.
+      %
+      % You may want to set the error flag for these warnings with::
+      %
+      %   warning('error', MSGID)
+      %
       % Usage
       %   F = ott.tmatrix.dda.Dipole.build_field_matrix(vxyz, txyz, func, ...)
       %
@@ -546,6 +559,13 @@ classdef Dipole
       end
       ncols = size(vxyz, 2);
       nrows3 = 3*size(txyz, 2);
+
+      % Do a memory check before trying the following
+      if prod([nrows3, 3, mirror_sz, rotsym_sz, ncols]) ...
+          > ott.utils.arrayMaxSize()
+        warning('ott:tmatrix:dda:Dipole:memory_may_exceed_physical', ...
+            'Required memory may exceed available physical memory');
+      end
 
       % Allocate memory for F
       F = zeros(nrows3, 3, mirror_sz, rotsym_sz, ncols);
