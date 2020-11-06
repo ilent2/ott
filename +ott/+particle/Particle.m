@@ -17,6 +17,7 @@ classdef Particle < matlab.mixin.Heterogeneous ...
 %   - tmatrix     -- Describes the scattering (particle-beam interaction)
 %   - drag        -- Describes the drag (particle-fluid interaction)
 %   - tinternal   -- T-matrix for internal scattered field (optional)
+%   - mass        -- Particle mass [kg] (optional)
 %
 % Properties
 %   - position    -- Particle position [m]
@@ -24,6 +25,7 @@ classdef Particle < matlab.mixin.Heterogeneous ...
 %
 % Methods
 %   - surf        -- Uses the shape surf method to visualise the particle
+%   - setMassFromDensity -- Calcualte mass from homogeneous density
 
 % Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
@@ -34,6 +36,10 @@ classdef Particle < matlab.mixin.Heterogeneous ...
     tmatrix      % Describes the scattering (particle-beam interaction)
     drag         % Describes the drag (particle-fluid interaction)
     tinternal    % T-matrix for internal scattered field (optional)
+  end
+
+  properties
+    mass         % Particle mass [kg] (optional)
   end
 
   methods
@@ -52,6 +58,37 @@ classdef Particle < matlab.mixin.Heterogeneous ...
       oshape = oshape.rotate(particle.rotation);
       oshape.position = oshape.position + particle.position;
       [varargout{1:nargout}] = oshape.surf(varargin{:});
+    end
+
+    function particle = setMassFromDensity(particle, density)
+      % Uses the particle shape and a homogeneous density to calculate mass
+      %
+      % Particle shape must have a valid volume method.
+      %
+      % Usage
+      %   particle = particle.setMassFromDensity(density)
+      %
+      % Parameters
+      %   - density (numeric) -- Homogeneous density [kg/m^3]
+
+      assert(~isempty(particle.shape), ...
+          'particle shape must be set');
+      assert(isnumeric(density) && isscalar(density) && density >= 0, ...
+          'density must be positive numeric scalar');
+
+      particle.mass = density * particle.shape.volume;
+    end
+  end
+
+  methods % Getters/setters
+    function particle = particle.mass(sim, val)
+      if isempty(val)
+        particle.mass = [];
+      else
+        assert(isnumeric(val) && isscalar(val) & val >= 0, ...
+            'mass must be positive numeric scalar or empty');
+        particle.mass = val;
+      end
     end
   end
 end
