@@ -17,7 +17,7 @@ classdef FindTraps1d
 %   - maxforce        -- Maximum force in trap (force units)
 %   - minposition     -- Position of minimum force (position units)
 %   - maxposition     -- Position of maximum force (position units)
-%   - globstiffness   -- Stiffness between min/max force locations
+%   - globalStiffness -- Stiffness between min/max force locations
 %
 % Methods
 %   - groupStable     -- Groups stable traps based on trap depth
@@ -44,7 +44,7 @@ classdef FindTraps1d
   end
 
   properties (Dependent)
-    globstiffness               % Stiffness between min/max force locations
+    globalStiffness             % Stiffness between min/max force locations
   end
 
   methods (Static)
@@ -62,6 +62,22 @@ classdef FindTraps1d
       % Optional named parameters
       %   - keep_unstable (logical) -- If true, keeps both stable and
       %     unstable equilibriums.  Default: ``false``.
+
+      p = inputParser;
+      p.addParameter('keep_unstable', false, @islogical);
+      p.parse(varargin{:});
+
+      % Check inputs
+      assert(isvector(position) && isnumeric(position), ...
+        'position must be a numeric vector');
+      assert(isvector(force) && isnumeric(force), ...
+        'force must be a numeric vector');
+      assert(numel(position) == numel(force), ...
+        'number of positions must match number of forces');
+
+      % Make sure shapes match
+      position = position(:);
+      force = force(:);
 
       % TODO
     end
@@ -135,25 +151,112 @@ classdef FindTraps1d
       %
       % Additional parameters/outputs passed to/from ``plot``.
 
-      % TODO
+      % Plot trap locations
+      plot([traps.position], zeros(size(traps)), 'x');
 
+      % Setup hold
+      oldHold = ishold();
+      hold on;
+
+      % Plot trap ranges
+      lineType = [traps.globalStiffness] < 0;
+      minForces = [traps.minforce];
+      maxForces = [traps.maxforce];
+      plot([minForces(lineType), maxForces(lineType)], ...
+          zeros(sum(lineType), 2), 'kx-');
+      plot([minForces(~lineType), maxForces(~lineType)], ...
+          zeros(sum(~lineType), 2), 'ro-');
+
+      % Return hold to initial state
+      if ~oldHold
+        hold off;
+      end
     end
 
-    function grouped = groupStable(traps, varargin)
+    function [grouped, stats] = groupStable(traps, varargin)
       % Groups stable traps separated by smaller unstable traps.
       %
       % This is useful for calculating the total trap depth of an
       % optical trap which contains local unstable equilibria.
       %
       % Usage
-      %   grouped = traps.groupStable(...)
+      %   [grouped, stats] = traps.groupStable(...)
+      %
+      % Returns
+      %   - grouped (cell) -- Cell array of grouped traps.
+      %   - stats (FindTraps1d) -- Meta traps (with no position or
+      %     stiffness) describing each group.
+
+      % Identify trap groups
+      %
+      % We do two passes to identify the maximum and minimum trapping
+      % forces, then we combine the indices to identify unique traps
+
+      idxer = 0;
+      group_idx_max = zeros(1, length(traps));
+      maxforce = 0;
+      for ii = 1:length(traps)
+        if traps(ii).minmax_force(1) > maxforce
+          maxforce = traps(ii).minmax_force(1);
+          idxer = idxer + 1;
+        end
+        group_idx_max(ii) = idxer;
+      end
+
+      idxer = 0;
+      minforce = 0;
+      group_idx_min = zeros(1, length(traps));
+      for ii = length(traps):-1:1
+        if traps(ii).minmax_force(2) < minforce
+          minforce = traps(ii).minmax_force(2);
+          idxer = idxer + 1;
+        end
+        group_idx_min(ii) = idxer;
+      end
+
+      group_idx = group_idx_max + (max(group_idx_min) - group_idx_min);
+
+      % Create list of trap groups
+      unique_group_idx = unique(group_idx);
+      grouped = cell(1, numel(unique_group_idx));
+      stats(numel(grouped)) = ott.tools.FieldTraps1d;
+      for ii = 1:numel(unique_group_idx)
+        grouped{ii} = traps(group_idx == unique_group_idx(ii));
+
+        stats(ii).position = nan;
+        stats(ii).stiffness = nan;
+        stats(ii).range(1) = min([grouped{ii}.range]);
+        stats(ii).range(2) = max([grouped{ii}.range]);
+        stats(ii).minposition = grouped{ii}(1).minposition;
+        stats(ii).maxposition = grouped{ii}(end).maxposition;
+        stats(ii).minforce = grouped{ii}(1).minforce;
+        stats(ii).maxforce = grouped{ii}(end).maxforce;
+        stats(ii).depth = min(abs(...
+            [stats(ii).minforce, stats(ii).maxforce]));
+      end
+    end
+
+    function traps = filterShallow(traps, varargin)
+      % Filter traps that are shallow
+      %
+      % Usage
+      %   traps = traps.filterShallow(...)
+
+      % TODO
+    end
+
+    function traps = filterUnstable(traps, varargin)
+      % Filter traps that are unstable
+      %
+      % Usage
+      %   traps = traps.fitlerUnstable(...)
 
       % TODO
     end
   end
 
   methods % Getters/setters
-    function val = get.globstiffness(traps)
+    function val = get.globalStiffness(traps)
       val = (traps.maxforce - traps.minforce) ...
           ./ (traps.maxposition - traps.minposition);
     end
