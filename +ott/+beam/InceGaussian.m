@@ -38,6 +38,10 @@ classdef InceGaussian < ott.beam.BscFinite ...
       % Usage
       %   beam = InceGaussian.FromNa(NA, ...)
       %
+      % Optional named parameters
+      %   - truncation_angle (numeric) -- Angle to truncate the beam.
+      %     Defaults to match the beam NA: ``asin(NA/index_medium)``.
+      %
       % For other parameters, see class constructor.
 
       p = inputParser;
@@ -45,13 +49,20 @@ classdef InceGaussian < ott.beam.BscFinite ...
       p.addOptional('porder', 0, @isnumeric);
       p.addParameter('mapping', 'sin');
       p.addParameter('index_medium', 1.0);
+      p.addParameter('truncation_angle', []);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
 
       waist = ott.bsc.LgParaxial.WaistFromNa(Na, p.Results.index_medium, ...
           p.Results.porder, p.Results.mapping);
 
-      beam = ott.beam.InceGaussian(waist, varargin{:});
+      truncation_angle = p.Results.truncation_angle;
+      if isempty(truncation_angle)
+        truncation_angle = ott.utils.na2angle(Na, p.Results.index_medium);
+      end
+
+      beam = ott.beam.InceGaussian(waist, ...
+          'truncation_angle', truncation_angle, varargin{:});
     end
   end
 
@@ -89,6 +100,11 @@ classdef InceGaussian < ott.beam.BscFinite ...
       %     Default: ``1.0``.
       %
       %   - power (numeric) -- Beam power [W].  Default: ``1.0``.
+      %
+      %   - truncation_angle (numeric) -- Adds a hard edge truncation
+      %     to the beam in the far-field.  Default: ``pi`` (i.e., no
+      %     truncation added).
+      %
       %   - calculate (logical) -- If the beam should be calculated after
       %     construction.  Set to false if you intend to change beam
       %     properties immediately after construction.
@@ -106,6 +122,7 @@ classdef InceGaussian < ott.beam.BscFinite ...
       p.addParameter('mapping', 'sin');
       p.addParameter('index_medium', 1.0);
       p.addParameter('power', 1.0);
+      p.addParameter('truncation_angle', pi);
       p.addParameter('calculate', true);
       p.parse(varargin{:});
 
@@ -118,6 +135,7 @@ classdef InceGaussian < ott.beam.BscFinite ...
       beam.polbasis = p.Results.polbasis;
       beam.mapping = p.Results.mapping;
       beam.index_medium = p.Results.index_medium;
+      beam.truncation_angle = p.Results.truncation_angle;
       beam.power = p.Results.power;
 
       if p.Results.calculate
@@ -139,9 +157,11 @@ classdef InceGaussian < ott.beam.BscFinite ...
       % Parameters
       %   - Nmax (numeric) -- Parameter is ignored.
 
-      beam.data = ott.bsc.LgParaxial.FromIgMode(beam.waist, ...
+      beam.data = ott.bsc.LgParaxial.FromIgMode(...
+          beam.waist ./ beam.wavelength, ...
           beam.lmode, beam.porder, beam.parity, beam.ellipticity, ...
-          beam.polbasis, beam.polfield);
+          beam.polbasis, beam.polfield, ...
+          'truncation_angle', beam.truncation_angle);
       beam.data = beam.data ./ beam.data.power .* beam.power;
     end
   end

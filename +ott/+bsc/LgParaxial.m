@@ -363,6 +363,12 @@ classdef LgParaxial < ott.bsc.Bsc
       lmode = p.Results.lmode;
       pmode = p.Results.pmode;
       polmode = p.Results.polmode;
+      
+      % Check waist range
+      if bsc.waist < 1e-2
+        warning('ott:bsc:LgParaxial:small_waist', ...
+          'Requested waist is less than 1%% of wavelength');
+      end
 
       Nmodes = max([numel(lmode), numel(pmode), numel(polmode)]);
 

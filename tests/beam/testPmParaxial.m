@@ -8,11 +8,15 @@ end
 
 function testConstructBeam(testCase)
 
-  profile = ott.beam.Gaussian();
+  truncA = pi/4;
+  profile = ott.beam.Gaussian('truncation_angle', truncA);
+  profile.data = profile.data.setNmax(10, 'RelTol', []);
   beam = ott.beam.PmParaxial.BeamProfile(profile, ...
-    'Nmax', profile.data.Nmax);
+    'Nmax', profile.data.Nmax, 'direction', 'neg', ...
+    'truncation_angle', truncA);
 
-  testCase.verifyEqual(beam.data, profile.data, 'data');
+  testCase.verifyEqual(beam.data.power, profile.data.power, ...
+      'RelTol', 0.15, 'power');
 
 end
 

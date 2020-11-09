@@ -117,7 +117,7 @@ classdef BscBeam < ott.beam.ArrayType
       end
     end
 
-    function recalculate(~, ~)
+    function beam = recalculate(beam, ~) %#ok<INUSD>
       % Re-calculate data for a specified Nmax
       %
       % This implementation simply raises an error when called.

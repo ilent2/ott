@@ -88,7 +88,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Construct a new Bsc instance from dense beam vectors.
       %
       % Usage
-      %   bsc = Bsc.FromDenseBeamVectors(a, b, n, m)
+      %   bsc = ott.bsc.Bsc.FromDenseBeamVectors(a, b, n, m)
+      %
+      %   bsc = ott.bsc.Bsc.FromDenseBeamVectors(a, b, ci)
       %
       % Parameters
       %   - a,b (numeric) -- Dense beam vectors.  Can be Nx1 or NxM for
@@ -96,18 +98,23 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %
       %   - n,m (numeric) -- Mode indices for beam shape coefficients.
       %     Must have same number of rows as a/b.
+      
+      % Get ci from inputs
+      if nargin == 4
+        % Generate combine indices
+        ci = ott.utils.combined_index(n, m);
+        Nmax = max(n);
+      else
+        ci = n;
+        Nmax = ott.utils.combined_index(max(ci));
+      end
 
       % Check inputs
       assert(all(size(a) == size(b)), 'size of a must match size of b');
-      assert(numel(n) == numel(m), 'length of m and n must match');
-      assert(numel(n) == size(a, 1), 'length of n must match rows of a');
-
-      % Generate combine indices
-      ci = ott.utils.combined_index(n, m);
+      assert(numel(ci) == size(a, 1), 'length of n/ci must match rows of a');
 
       % Calculate total_order and number of beams
       nbeams = size(a, 2);
-      Nmax = max(n);
       total_orders = ott.utils.combined_index(Nmax, Nmax);
 
       % Replicate ci for 2-D beam vectors (multiple beams)
@@ -193,7 +200,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       fab = reshape(ourE.vrtp, 3*size(rtp, 2), 2*numel(ci)) \ Ertp(:);
 
       % Package output
-      beam = ott.bsc.Bsc(fab(1:end/2), fab(end/2+1:end));
+      beam = ott.bsc.Bsc.FromDenseBeamVectors(...
+          fab(1:end/2, :), fab(end/2+1:end, :), ci);
     end
 
     function [beam, data] = PmFarfield(rtp, Ertp, ci, varargin)
@@ -245,7 +253,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
           \ reshape(Ertp, [], size(Ertp, 3));
 
       % Package output
-      beam = ott.bsc.Bsc(fab(1:end/2, :), fab(end/2+1:end, :));
+      beam = ott.bsc.Bsc.FromDenseBeamVectors(...
+          fab(1:end/2, :), fab(end/2+1:end, :), ci);
     end
   end
 
@@ -687,12 +696,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
           if apparent_error > p.Results.RelTol
             if strcmpi(p.Results.powerloss, 'warn')
               warning('ott:beam:vswf:Bsc:setNmax:truncation', ...
-                  ['Apparent errors of ' num2str(aapparent_error) ...
-                      ', ' num2str(bapparent_error) ]);
+                  ['Apparent errors of ' num2str(apparent_error)]);
             elseif strcmpi(p.Results.powerloss, 'error')
               error('ott:beam:vswf:Bsc:setNmax:truncation', ...
-                  ['Apparent errors of ' num2str(aapparent_error) ...
-                      ', ' num2str(bapparent_error) ]);
+                  ['Apparent errors of ' num2str(apparent_error)]);
             else
               error('ott:beam:vswf:Bsc:setNmax:truncation', ...
                 'powerloss should be one of ignore, warn or error');

@@ -159,7 +159,7 @@ classdef PmParaxial < ott.beam.BscBeam ...
       %
       % Parameters
       %   - Nmax (numeric) -- Truncation number for VSWF expansion.
-      
+
       nTheta = 2*(Nmax+1);
       nPhi = 2*(Nmax+1);
 
@@ -194,6 +194,10 @@ classdef PmParaxial < ott.beam.BscBeam ...
       end
       E(:, idx) = data;
       E = E .* beam.wavenumber;
+
+      % Flip theta direction (so beam comes from negative direction)
+      % This is to match the convention used by other beams.
+      theta = pi - theta;
 
       % Convert Cartesian fields to polar fields
       convertFields = @(E) deal(...

@@ -33,7 +33,7 @@ function testPmNearfield(testCase)
   rtp = randn(3, 100);
   E = target.efieldRtp(rtp);
 
-  pmbeam = ott.bsc.Bsc.PmNearfield(rtp, E.vrtp, 1:8);
+  pmbeam = full(ott.bsc.Bsc.PmNearfield(rtp, E.vrtp, 1:8));
 
   testCase.verifyEqual(pmbeam.a, target.a, 'AbsTol', 1e-15);
   testCase.verifyEqual(pmbeam.b, target.b, 'AbsTol', 1e-15);
@@ -46,7 +46,7 @@ function testPmFarfield(testCase)
   rtp = rand(2, 100)*pi;
   E = target.efarfield(rtp);
 
-  pmbeam = ott.bsc.Bsc.PmFarfield(rtp, E.vrtp, 1:8);
+  pmbeam = full(ott.bsc.Bsc.PmFarfield(rtp, E.vrtp, 1:8));
 
   testCase.verifyEqual(pmbeam.a, target.a, 'AbsTol', 1e-15);
   testCase.verifyEqual(pmbeam.b, target.b, 'AbsTol', 1e-15);

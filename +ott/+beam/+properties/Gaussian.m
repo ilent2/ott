@@ -8,6 +8,7 @@ classdef Gaussian < ott.beam.properties.Polarisation ...
 %   - mapping       -- Paraxial to far-field beam mapping
 %   - polbasis      -- (enum) Polarisation basis ('polar' or 'cartesian')
 %   - polfield      -- (2 numeric) Field in theta/phi or x/y directions
+%   - truncation_angle -- Truncation angle (hard edge for aperture)
 %
 % Methods
 %   - isGaussian    -- Returns true
@@ -19,11 +20,13 @@ classdef Gaussian < ott.beam.properties.Polarisation ...
   properties (Dependent)
     waist          % Beam waist radius [m]
     power          % Beam power [W]
+    truncation_angle % Truncation angle [radians]
   end
 
   properties (Hidden, SetAccess=protected)
     waistInternal
     powerInternal
+    truncation_angleInternal
   end
 
   properties (Abstract)
@@ -45,6 +48,16 @@ classdef Gaussian < ott.beam.properties.Polarisation ...
     end
     function val = get.waist(beam)
       val = beam.waistInternal;
+    end
+
+    function beam = set.truncation_angle(beam, val)
+      assert(isnumeric(val) && isscalar(val) && val > 0 && val <= pi, ...
+        'truncation_angle must be numeric scalar between [0, pi]');
+      beam.truncation_angleInternal = val;
+      beam.data = [];
+    end
+    function val = get.truncation_angle(beam)
+      val = beam.truncation_angleInternal;
     end
 
     function beam = set.power(beam, val)

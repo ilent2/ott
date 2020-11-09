@@ -11,17 +11,15 @@ function testConstruct(testCase)
   theta = [2*pi/8, 3*pi/8];
   polbasis = 'polar';
   polfield = [1, 0];
-  profile = 'uniform';
-  Nmax = 2;
-  beam = ott.beam.Annular(theta, profile, ...
+  Nmax = 20;
+  beam = ott.beam.Annular(theta, ...
       'polbasis', polbasis, 'polfield', polfield, ...
       'Nmax', Nmax);
 
   testCase.verifyEqual(beam.theta, theta, 'theta');
-  testCase.verifyEqual(beam.profile, profile, 'profile');
   testCase.verifyEqual(beam.polbasis, polbasis, 'polbasis');
   testCase.verifyEqual(beam.polfield, polfield, 'polfield');
-  testCase.verifyEqual(beam.data.Nmax, Nmax, 'initial_Nmax');
+  testCase.verifyEqual(beam.Nmax, Nmax, 'iNmax');
 
 end
 
@@ -33,9 +31,9 @@ function testConstructGaussian(testCase)
   beam = ott.beam.Annular.BeamProfile(theta, profile, ...
       'Nmax', profile.data.Nmax);
 
-  testCase.verifyEqual(beam.profile, profile, 'profile');
-  testCase.verifyEqual(beam.data.a, profile.a, 'beam a');
-  testCase.verifyEqual(beam.data.b, profile.b, 'beam b');
+  bsc = ott.bsc.Bsc(beam, profile.data.Nmax);
+  testCase.verifyEqual(bsc.power, profile.data.power, ...
+      'RelTol', 0.2, 'power');
 
 end
 

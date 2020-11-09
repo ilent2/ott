@@ -34,19 +34,30 @@ classdef Gaussian < ott.beam.BscFinite ...
       % Usage
       %   beam = Gaussian.FromNa(NA, ...)
       %
+      % Optional named parameters
+      %   - truncation_angle (numeric) -- Angle to truncate the beam.
+      %     Defaults to match the beam NA: ``asin(NA/index_medium)``.
+      %
       % For other parameters, see class constructor.
 
       p = inputParser;
       p.addParameter('mapping', 'sin');
       p.addParameter('index_medium', 1.0);
+      p.addParameter('truncation_angle', []);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
 
       paraxial_order = 0;
 
+      truncation_angle = p.Results.truncation_angle;
+      if isempty(truncation_angle)
+        truncation_angle = ott.utils.na2angle(Na, p.Results.index_medium);
+      end
+
       waist = ott.bsc.LgParaxial.WaistFromNa(Na, p.Results.index_medium, ...
           paraxial_order, p.Results.mapping);
-      beam = ott.beam.Gaussian(waist, varargin{:});
+      beam = ott.beam.Gaussian(waist, ...
+          'truncation_angle', truncation_angle, varargin{:});
     end
   end
 
@@ -76,6 +87,10 @@ classdef Gaussian < ott.beam.BscFinite ...
       %
       %   - power (numeric) -- Beam power [W].  Default: ``1.0``.
       %
+      %   - truncation_angle (numeric) -- Adds a hard edge truncation
+      %     to the beam in the far-field.  Default: ``pi`` (i.e., no
+      %     truncation added).
+      %
       %   - calculate (logical) -- If the beam should be calculated after
       %     construction.  Set to false if you intend to change beam
       %     properties immediately after construction.
@@ -88,6 +103,7 @@ classdef Gaussian < ott.beam.BscFinite ...
       p.addParameter('mapping', 'sin');
       p.addParameter('index_medium', 1.0);
       p.addParameter('power', 1.0);
+      p.addParameter('truncation_angle', pi);
       p.addParameter('calculate', true);
       p.parse(varargin{:});
 
@@ -96,6 +112,7 @@ classdef Gaussian < ott.beam.BscFinite ...
       beam.polfield = p.Results.polfield;
       beam.mapping = p.Results.mapping;
       beam.index_medium = p.Results.index_medium;
+      beam.truncation_angle = p.Results.truncation_angle;
       beam.power = p.Results.power;
 
       if p.Results.calculate
@@ -117,8 +134,10 @@ classdef Gaussian < ott.beam.BscFinite ...
       % Parameters
       %   - Nmax (numeric) -- Parameter is ignored.
 
-      beam.data = ott.bsc.LgParaxial.FromLgMode(beam.waist, ...
-          0, 0, beam.polbasis, beam.polfield);
+      beam.data = ott.bsc.LgParaxial.FromLgMode(...
+          beam.waist ./ beam.wavelength, ...
+          0, 0, beam.polbasis, beam.polfield, ...
+          'truncation_angle', beam.truncation_angle);
       beam.data = beam.data ./ beam.data.power .* beam.power;
     end
   end

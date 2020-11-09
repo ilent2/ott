@@ -48,8 +48,9 @@ classdef Annular < ott.beam.BscWBessel ...
       % All other parameters passed to constructor.
 
       F = griddedInterpolant(theta, A);
+      profile = @(t) F(t);
       beam = ott.beam.Annular([theta(1), theta(end)], ...
-          @(t) F(t), varargin{:});
+          'profile', profile, varargin{:});
     end
 
     function beam = BeamProfile(theta, beam, varargin)
@@ -66,8 +67,10 @@ classdef Annular < ott.beam.BscWBessel ...
       %
       % All other parameters passed to constructor.
 
-      beam = ott.beam.Annular(theta, ...
-          @(theta) beam.efarfield([theta(:), 0*theta(:)].'), varargin{:});
+      profile = @(theta) vecnorm(beam.efarfield(...
+          [theta(:), 0*theta(:)].').vxyz);
+
+      beam = ott.beam.Annular(theta, 'profile', profile, varargin{:});
     end
   end
 
@@ -76,7 +79,7 @@ classdef Annular < ott.beam.BscWBessel ...
       % Construct a new VSWF representation of a Annular beam.
       %
       % Usage
-      %   beam = Annular(theta, profile, ...)
+      %   beam = Annular(theta, ...)
       %
       % Optional named parameters
       %   - theta (2 numeric) -- Angles specifying range for annular (radians).
@@ -99,8 +102,8 @@ classdef Annular < ott.beam.BscWBessel ...
       %     See also :meth:`recalculate` and :meth:`getData`.
 
       p = inputParser;
-      p.addOptional('theta', [2*pi/8, 3*pi/8]);
-      p.addOptional('profile', 'uniform');
+      p.addOptional('theta', [2*pi/8, 3*pi/8], @isnumeric);
+      p.addParameter('profile', @(val) ones(size(val)));
       p.addParameter('lmode', 0);
       p.addParameter('polbasis', 'cartesian');
       p.addParameter('polfield', [1, 1i]);
@@ -116,9 +119,24 @@ classdef Annular < ott.beam.BscWBessel ...
       beam = beam.recalculate(p.Results.Nmax);
     end
 
-    % TODO: recalculate
+    function beam = recalculate(beam, Nmax)
+      % Re-calculate BSC data for specified Nmax
 
-    % TODO: besselApplyWeights function
+      % Get angles for Bessel beams
+      nTheta = 2*(Nmax+1);
+      otheta = linspace(beam.theta(1), beam.theta(2), nTheta+1);
+      otheta = otheta(1:end-1) + diff(otheta(1:2))./2;
+
+      % Get weights of each segment
+      beam.besselWeights = beam.profile(otheta) ...
+          .* beam.wavenumber .* sin(otheta) ./ nTheta;
+
+      % TODO: Different polarisation support
+
+      % Calculate Bsc data
+      beam.data = ott.bsc.Annular.FromBessel(Nmax, otheta, ...
+          beam.polfield(:), beam.lmode);
+    end
   end
 
   methods % Getters/setters
