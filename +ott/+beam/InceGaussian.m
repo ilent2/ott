@@ -23,6 +23,9 @@ classdef InceGaussian < ott.beam.BscFinite ...
 % Methods
 %   - getData       -- Get data for specific Nmax
 %   - recalculate   -- Recalculate the beam data
+%
+% Static methods
+%   - FromNa        -- Construct a beam specifying NA instead of waist
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
