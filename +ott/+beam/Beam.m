@@ -439,7 +439,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       t = nan(3, 1);
     end
 
-    function [force, torque, spin] = forcetorque(ibeam, sbeam, varargin)
+    function varargout = forcetorque(ibeam, sbeam, varargin)
       % Calculate force, torque and spin (in SI units)
       %
       % Usage
@@ -453,14 +453,16 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
-        [sbeam, ibeam] = ibeam.scatter(sbeam, varargin{:});
+        sbeam = ibeam.scatter(sbeam, varargin{:});
+        [varargout{1:nargout}] = sbeam.forcetorque();
+        return;
       end
 
-      force = ibeam.force(sbeam);
+      varargout{1} = ibeam.force(sbeam);
       if nargout > 1
-        torque = ibeam.torque(sbeam);
+        varargout{2} = ibeam.torque(sbeam);
         if nargout > 2
-          spin = ibeam.spin(sbeam);
+          varargout{3} = ibeam.spin(sbeam);
         end
       end
     end

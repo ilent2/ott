@@ -119,11 +119,17 @@ classdef Dynamics
       sim.timeStep = p.Results.timeStep;
     end
 
-    function [x, R] = simulate(sim, time, varargin)
+    function [t, x, R] = simulate(sim, varargin)
       % Run the dynamics simulation
       %
       % Usage
-      %   [t, x, R] = particle.simulate(time, ...)
+      %   particle.simulate(...) -- Runs the dynamics simulation, showing
+      %   the results in the current figure window (along with a stop
+      %   button).
+      %
+      %   [t, x, R] = particle.simulate(time, ...) -- Runs the simulation
+      %   for a fixed duration, returning the times, positions and
+      %   rotations of the particle.  No figure is displayed by default.
       %
       % Returns
       %   - t (N numeric) -- Simulation times
@@ -142,11 +148,56 @@ classdef Dynamics
       %   - rotation (3x3 | 3x6 numeric) -- Initial particle orientation.
       %     Default: ``particle.rotation``.  For simulations with inertia,
       %     specify the last two particle orientations.
+      %
+      %   - plot_axes (axes | []) -- Handle to the plot axes or empty
+      %     for no plot.  Default: ``gca()`` if no time specified,
+      %     otherwise ``[]``.
+      %
+      %   - outputRate (numeric) -- How many seconds to wait between
+      %     updating the figure.  Default: ``1``.
 
       p = inputParser;
+      p.addOptional('time', [], @isnumeric);
       p.addParameter('position', sim.particle.position);
       p.addParameter('rotation', sim.particle.rotation);
+      p.addParameter('plot_axes', []);
+      p.addParameter('outputRate', 1);
       p.parse(varargin{:});
+
+      time = p.Results.time;
+      assert(isempty(time) || (isnumeric(time) ...
+          && isscalar(time) && time > 0), ...
+          'time must be empty or positive numeric scalar');
+
+      % Setup the figure if required
+      our_axes = p.Results.plot_axes;
+      if isempty(time) || ~isempty(our_axes)
+
+        % setup axes if needed
+        if isempty(our_axes)
+          our_axes = gca();
+        end
+
+        % Add stop button
+        stopButton = uicontrol('Parent', our_axes.Parent, ...
+            'Style','pushbutton', 'String','Stop', ...
+            'Units','normalized', ...
+            'Position', [0.0046 0.0071 0.1329 0.0648], ...
+            'Visible','on', 'FontSize', 10, ...
+            'Callback', @(src, evnt) subsasgn(stopButton, ...
+              struct('type', '.', 'subs', 'UserData'), 'stop'));
+
+        % Get or generate default shape
+        shape = sim.particle.shape;
+        if isempty(shape)
+          shape = ott.shape.Sphere(sim.beam.wavelength);
+        end
+
+        % Generate patch data
+        spatch = shape.surf('axes', our_axes);
+        patchVertices = spatch.Vertices;
+
+      end
 
       % Calculate number of time steps
       numSteps = ceil(time ./ sim.timeStep);
@@ -168,13 +219,30 @@ classdef Dynamics
         R(:, 1:6) = repmat(p.Results.rotation, 1, 2);
       end
 
+      kb = 1.3806e-23;    % Boltzmann constant [m2.kg/s2/K]
+      dt = sim.timeStep;
+
+      % Optical force calculation function
+      if ~isempty(sim.particle.tmatrix)
+        optforce = @(x, R) forcetorque(sim.beam, sim.particle, ...
+            'position', x, 'rotation', R);
+      else
+        optforce = @(~, ~) deal(zeros(3, 1), zeros(3, 1));
+      end
+
       % Two different loops depending on if we need inertia
-      if isempty(sim.particle.mass)
+      if isempty(sim.particle.mass) || sim.particle.mass == 0
 
         % No mass, no inertia
 
-        forcetorque = @(xc, Rc) invGamma * forcetorque(sim.beam, sim.particle) ...
-            + sqrt( % TODO
+        if ~isempty(sim.particle.drag)
+          invGamma = inv(sim.particle.drag);
+        else
+          invGamma = eye(6);
+        end
+        bmterm = sqrt(2*kb*sim.temperature) * invGamma^(1/2);
+
+        tNow = now;
 
         for ii = 2:numel(t)
 
@@ -182,35 +250,79 @@ classdef Dynamics
           xc = x(:, ii-1);
           Rc = R(:, (1:3) + (ii-2)*3);
 
-          % Calculate force/torque components (sans dt)
-          [force, torque] = forcetorque(xc, Rc);
+          % Calculate force/torque
+          [fo, to] = optforce(xc, Rc);
+
+          % Convert to position units and add BM
+          ft = invGamma * [fo; to] + bmterm * randn(6, 1);
 
           % Update position/rotation
-          x(:, ii) = xc + force*dt;
-          R(:, (1:3) + (ii-1)*3) = sim.rotation_matrix(torque*dt)*Rc;
+          x(:, ii) = xc + ft(1:3)*dt;
+          R(:, (1:3) + (ii-1)*3) = sim.rotation_matrix(ft(4:6)*dt)*Rc;
 
+          if ~isempty(our_axes) && (now - tNow) > p.Results.outputRate/86400
+            spatch.Vertices = ...
+                (R(:, (1:3)+(ii-1)*3)*patchVertices.' + x(:, ii)).';
+            drawnow;
+
+            % Check if we have been asked to exit
+            if ~isempty(stopButton.UserData)
+              x(:, ii+1:end) = [];
+              R(:, ii*3+1:end) = [];
+              break;
+            end
+
+            tNow = now;
+          end
         end
 
       else
 
         % With mass, get a local copy
         mass = sim.particle.mass;
-
-        denom = % TODO
-
-        kb = 1.3806e-23;    % Boltzmann constant [m2.kg/s2/K]
-        bmterm = sqrt(2*kb*sim.temperature) ...
-            *sqrt(sim.particle.drag.gamma)./denom.*dt.^(3/2);
+        if ~isempty(sim.particle.drag)
+          drag = sim.particle.drag.gamma;
+        else
+          drag = eye(3);
+        end
+        denom = inv(mass./dt.^2 + 1/(2*dt)*drag);
+        bmterm = sqrt(2*kb*sim.temperature*drag./dt);
 
         for ii = 3:numel(t)
 
-          % TODO
+          % Calculate optical force/torque
+          [fo, to] = optforce(x(:, ii-1), R(:, (1:3) + (ii-2)*3));
 
-          x(:, ii) = (2*mass + gamma*dt)./denom*x(:, ii-1) ...
-              - mass./denom.*x(:, ii-2) + bmterm*randn(3, 1)
+          % Calculate other force components
+          ff = mass*(2*x(:, ii-1) - x(:, ii-2))./dt^2 + fo ...
+              + drag*x(:, ii-2)./(2*dt) + bmterm * rand(3, 1);
 
+          % TODO: Torque terms
+
+          % Update position/rotation
+          x(:, ii) = denom * ff;
+
+          if ~isempty(our_axes) && (now - tNow) > p.Results.outputRate/86400
+            spatch.Vertices = ...
+                (R(:, (1:3)+(ii-1)*3)*patchVertices.' + x(:, ii)).';
+            drawnow;
+
+            % Check if we have been asked to exit
+            if ~isempty(stopButton.UserData)
+              x(:, ii+1:end) = [];
+              R(:, ii*3+1:end) = [];
+              break;
+            end
+
+            tNow = now;
+          end
         end
 
+      end
+
+      % Only return results if requested
+      if nargout == 0
+        clear t x R
       end
     end
   end
@@ -218,7 +330,7 @@ classdef Dynamics
   methods % Getters/setters
     function sim = set.beam(sim, val)
       assert(isa(val, 'ott.beam.Beam') && isscalar(val), ...
-          ['beam must be a single ott.beam.Beam instance' newline
+          ['beam must be a single ott.beam.Beam instance', newline, ...
           'Use `ott.beam.Array` for arrays of beams']);
       sim.beam = val;
     end

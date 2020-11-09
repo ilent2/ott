@@ -117,7 +117,7 @@ classdef BscBeam < ott.beam.ArrayType
       end
     end
 
-    function beam = recalculate(beam, Nmax)
+    function recalculate(~, ~)
       % Re-calculate data for a specified Nmax
       %
       % This implementation simply raises an error when called.
@@ -132,6 +132,39 @@ classdef BscBeam < ott.beam.ArrayType
 
       error('ott:beam:BscBeam:recalculate_not_implemented', ...
           'recalculate is not implemented for these type of beam');
+    end
+
+    function sbeam = scatter(ibeam, particle, varargin)
+      % Calculate how a particle scatters the beam
+      %
+      % Usage
+      %   sbeam = scatter(ibeam, particle, ...)
+      %
+      % Optional named arguments
+      %   - position (3x1 numeric) -- Particle position.
+      %     Default: ``particle.position``.
+      %
+      %   - rotation (3x3 numeric) -- Particle rotation.
+      %     Default: ``particle.rotation``.
+
+      p = inputParser;
+      p.addParameter('position', particle.position);
+      p.addParameter('rotation', particle.rotation);
+      p.parse(varargin{:});
+
+      % Apply particle position
+      ibeam.position = ibeam.position + p.Results.position;
+
+      ibsc = ott.bsc.Bsc(ibeam, particle.tmatrix.Nmax(1));
+
+      % Apply particle rotation
+      ibsc = ibsc.rotate(p.Results.rotation);
+
+      sbsc = particle.tmatrix * ibsc;
+
+      sbeam = ott.beam.Scattered(...
+          ott.beam.BscBeam(sbsc), ...
+          ott.beam.BscBeam(ibsc), particle);
     end
 
     %
@@ -310,7 +343,9 @@ classdef BscBeam < ott.beam.ArrayType
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
-        [sbeam, ibeam] = ibeam.scatter(sbeam, varargin{:});
+        sbeam = ibeam.scatter(sbeam, varargin{:});
+        [varargout{1:nargout}] = sbeam.force();
+        return;
       end
 
       % Get data from beams
@@ -326,7 +361,7 @@ classdef BscBeam < ott.beam.ArrayType
       end
     end
 
-    function varargout = torque(ibeam, sbeam)
+    function varargout = torque(ibeam, sbeam, varargin)
       % Calculate torque (in Newton meters)
       %
       % Usage
@@ -339,7 +374,9 @@ classdef BscBeam < ott.beam.ArrayType
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
-        [sbeam, ibeam] = ibeam.scatter(sbeam, varargin{:});
+        sbeam = ibeam.scatter(sbeam, varargin{:});
+        [varargout{1:nargout}] = sbeam.torque();
+        return;
       end
 
       % Get data from beams
@@ -355,7 +392,7 @@ classdef BscBeam < ott.beam.ArrayType
       end
     end
 
-    function varargout = spin(ibeam, sbeam)
+    function varargout = spin(ibeam, sbeam, varargin)
       % Calculate spin (in Newton meters)
       %
       % Usage
@@ -368,7 +405,9 @@ classdef BscBeam < ott.beam.ArrayType
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
-        [sbeam, ibeam] = ibeam.scatter(sbeam, varargin{:});
+        sbeam = ibeam.scatter(sbeam, varargin{:});
+        [varargout{1:nargout}] = sbeam.spin();
+        return;
       end
 
       % Get data from beams

@@ -43,15 +43,15 @@ function testSimulateCoverage(testCase)
       'temperature', temperature, 'particle', particle);
 
   [t, x, R] = dynamics.simulate(2*timeStep);
-  testCase.verifySize(t, [1, 2], 't');
-  testCase.verifySize(x, [3, 2], 'x');
-  testCase.verifySize(R, [3, 6], 'R');
+  testCase.verifySize(t, [1, 3], 't');
+  testCase.verifySize(x, [3, 3], 'x');
+  testCase.verifySize(R, [3, 9], 'R');
 
   dynamics.particle.mass = 1;
   [t, x, R] = dynamics.simulate(3*timeStep);
-  testCase.verifySize(t, [1, 3], 'mt');
-  testCase.verifySize(x, [3, 3], 'mx');
-  testCase.verifySize(R, [3, 9], 'mR');
+  testCase.verifySize(t, [1, 4], 'mt');
+  testCase.verifySize(x, [3, 4], 'mx');
+  testCase.verifySize(R, [3, 12], 'mR');
 
 end
 
