@@ -12,9 +12,9 @@
 % building required columns of the T-matrix depending on the incident beam).
 %
 % Contents
-%   Particle      -- Base class
-%   Fixed         -- Fixed T-matrix, shape and drag properties
-%   Variable      -- Variable properties
+%   Particle   - Base class for particles in optical tweezers simulations.
+%   Fixed      - A particle with stored drag/tmatrix properties.
+%   Variable   - A particle whose drag/tmatrix are automatically recomputed.
 %
 % Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.

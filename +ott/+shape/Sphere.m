@@ -82,9 +82,12 @@ classdef Sphere < ott.shape.Shape ...
       % Usage
       %   r = shape.starRadii(theta, phi)
       
-      assert(size(theta) == size(phi), 'theta and phi must be same size');
+      assert(all(size(theta) == size(phi)) ...
+          || isscalar(theta) || isscalar(phi), ...
+          'theta and phi must be same size or one must be scalar');
+      sz = max(size(theta), size(phi));
 
-      r = ones(size(theta)) * shape.radius;
+      r = ones(sz) * shape.radius;
     end
   end
 

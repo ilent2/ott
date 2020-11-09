@@ -113,7 +113,7 @@ classdef Empty < ott.shape.Shape
       S.FaceAlpha = 0;
     end
 
-    function shape = scaleInternal(shape, sc)
+    function shape = scaleInternal(shape, ~)
       % Nothing to do
     end
   end

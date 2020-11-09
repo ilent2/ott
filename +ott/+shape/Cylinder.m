@@ -59,7 +59,8 @@ classdef Cylinder < ott.shape.Shape ...
       %     directions.  Default: ``[0, 20]`` uses cylinder corners for
       %     theta direction unless otherwise set.
       %
-      % Additional named parameters are passed to constructor.
+      % Additional named parameters are passed to
+      % :meth:`PatchMesh.FromSurfMatrix`.
 
       p = inputParser;
       p.addParameter('resolution', [0, 20]);
@@ -92,7 +93,8 @@ classdef Cylinder < ott.shape.Shape ...
       [X, Y, Z] = ott.utils.rtp2xyz(R, T, P);
 
       shape = ott.shape.PatchMesh.FromSurfMatrix(X, Y, Z, ...
-          'position', shape.position, 'rotation', shape.rotation);
+          'position', shape.position, 'rotation', shape.rotation, ...
+          unmatched{:});
     end
 
     function r = starRadii(shape, theta, phi)
@@ -100,6 +102,13 @@ classdef Cylinder < ott.shape.Shape ...
       %
       % Usage
       %   r = shape.starRadii(theta, phi)
+      
+      assert(all(size(theta) == size(phi)) ...
+          || isscalar(theta) || isscalar(phi), ...
+          'size of theta and phi must match or one must be scalar');
+      if isscalar(theta) && ~isscalar(phi)
+        theta = repmat(theta, size(phi));
+      end
 
       % Find angle of edges from xy plane
       edge_angle = atan(shape.height/(2*shape.radius));
@@ -241,7 +250,7 @@ classdef Cylinder < ott.shape.Shape ...
       p = 2.0 * (2.0*shape.radius + shape.height);
     end
 
-    function b = get.xySymmetry(shape)
+    function b = get.xySymmetry(~)
       b = true;
     end
 

@@ -18,7 +18,7 @@ classdef (Abstract) TranslateHelper
 % using/distributing this file.
 
   methods (Abstract)
-    translateXyzInternal   % Method called by translate*
+    translateXyzInternal(~)   % Method called by translate*
   end
 
   methods
@@ -51,7 +51,7 @@ classdef (Abstract) TranslateHelper
 
       % Only replicate objects, let internal method choose how to
       % handle single or multiple positions
-      if Nobj == 1, obj = repelem(obj, 1, Nwork); end;
+      if Nobj == 1, obj = repelem(obj, 1, Nwork); end
 
       [varargout{1:nargout}] = obj.translateXyzInternal(xyz, varargin{:});
     end

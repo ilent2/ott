@@ -109,7 +109,7 @@ classdef RectangularPrism < ott.shape.Shape ...
     function r = get.maxRadius(shape)
       r = vecnorm(shape.widths./2);
     end
-    function shape = set.maxRadius(shape, val)
+    function shape = set.maxRadius(shape, ~) %#ok<INUSD>
       error('ott:shape:RectangularPrism:set_maxradius', ...
           'Cannot set maxRadius, set widths instead');
     end
@@ -117,7 +117,7 @@ classdef RectangularPrism < ott.shape.Shape ...
     function v = get.volume(shape)
       v = prod(shape.widths);
     end
-    function shape = set.volume(shape, ~)
+    function shape = set.volume(shape, ~) %#ok<INUSD>
       error('ott:shape:RectangularPrism:set_volume', ...
           'Cannot set volume, set widths instead');
     end
@@ -126,10 +126,10 @@ classdef RectangularPrism < ott.shape.Shape ...
       bb = [-1, 1; -1, 1; -1, 1].*shape.widths./2;
     end
 
-    function b = get.starShaped(shape)
+    function b = get.starShaped(~)
       b = true;
     end
-    function b = get.xySymmetry(shape)
+    function b = get.xySymmetry(~)
       b = true;
     end
     function q = get.zRotSymmetry(shape)
@@ -145,10 +145,10 @@ classdef RectangularPrism < ott.shape.Shape ...
       Y = [-1, 1, 1, -1, -1, 1, 1, -1];
       Z = [-1, -1, -1, -1, 1, 1, 1, 1];
 
-      verts = [X(:), Y(:), Z(:)].' .* shape.widths;
+      verts = [X(:), Y(:), Z(:)].' .* shape.widths/2;
     end
 
-    function faces = get.faces(shape)
+    function faces = get.faces(~)
       faces = [1, 2, 6, 5; 2, 3, 7, 6; 3, 4, 8, 7; 4, 1, 5, 8; ...
           2, 1, 4, 3; 5, 6, 7, 8].';
     end

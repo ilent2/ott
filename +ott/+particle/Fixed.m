@@ -1,5 +1,5 @@
 classdef Fixed < ott.particle.Particle
-% Describes a particle with stored drag/tmatrix properties.
+% A particle with stored drag/tmatrix properties.
 % Inherits from :class:`ott.particle.Particle`.
 %
 % Properties
@@ -180,4 +180,5 @@ classdef Fixed < ott.particle.Particle
     end
   end
 end
+
 

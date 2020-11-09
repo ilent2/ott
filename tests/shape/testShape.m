@@ -155,7 +155,7 @@ end
 
 function testGetBoundingBoxShape(testCase)
 
-  shape = ott.shape.Cube();
+  shape = ott.shape.Cube(2);
   shape.position = randn(3, 1);
 
   bbshape = shape.getBoundingBoxShape();

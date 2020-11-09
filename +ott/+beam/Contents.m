@@ -7,30 +7,27 @@
 % features for smart Nmax selection).
 
 % Base classes
-%   Beam              -- Base class for beam representations
-%   Empty             -- A beam with no fields
-%   Scattered         -- Description of beams scattered by particles
-%   BscBeam           -- Base class for BSC beams
-%   BscFinite         -- Base class for finite BSC beams
-%   BscInfinite       -- Base class for infinite Bsc beams
-%   BscWBessel        -- Base class for Annular/Bessel like beams
+%   Beam              - Base class for beam representations
+%   Empty             - A beam with no fields
+%   Array             - Arrays of incoherent/coherent beams
+%   Scattered         - Description of beams scattered by particles
+%   ArrayType         - Base class for beam array types
+%   BscBeam           - Base class for BSC beams
+%   BscFinite         - Base class for finite BSC beams
+%   BscInfinite       - Base class for infinite Bsc beams
+%   BscWBessel        - Base class for Annular/Bessel like beams
 %
 % Beam types
-%   Gaussian          -- Gaussian beam
-%   HermiteGaussian   -- Hermite--Gaussian beam
-%   LaguerreGaissian  -- Laguerre-Gaussian beam
-%   InceGaussian      -- Ince-Gaussian beam
-%   PlaneWave         -- Plane wave
-%   Bessel            -- Bessel beam
-%   Webber            -- Webber beam
-%   Mathieu           -- Mathieu beam
-%   Annular           -- Annular beam
-%   PmParaxial        -- Paraxial point matched beam
-%
-% Array types
-%   Array             -- Base class for incoherent/coherent beam arrays
-%   Coherent          -- Coherent array of beams
-%   Incoherent        -- Incoherent array of beams
+%   Gaussian          - Gaussian beam
+%   HermiteGaussian   - Hermite--Gaussian beam
+%   LaguerreGaussian  - Laguerre-Gaussian beam
+%   InceGaussian      - Ince-Gaussian beam
+%   PlaneWave         - Plane wave
+%   Bessel            - Bessel beam
+%   Webber            - Webber beam
+%   Mathieu           - Mathieu beam
+%   Annular           - Annular beam
+%   PmParaxial        - Paraxial point matched beam
 %
 % Copyright 2020 Isaac Lenton (aka ilent2)
 % This file is part of OTT, see LICENSE.md for information about

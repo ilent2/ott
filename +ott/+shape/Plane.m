@@ -132,7 +132,7 @@ classdef Plane < ott.shape.Shape ...
       nxyz = repmat(shape.normal, 1, size(xyz, 2));
     end
 
-    function [locs, norms, dist] = intersectAllInternal(shape, x0, x1)
+    function [locs, norms, dist] = intersectAllInternal(~, x0, x1)
       % Calculate the intersection point on the plane surface.
       %
       % Rays will intersect the plane as long as they are traveling
@@ -147,10 +147,10 @@ classdef Plane < ott.shape.Shape ...
       %   - vec (utils.Vector) -- A vector or type that can be cast
       %     to a Vector.
 
-      normal = [0;0;1];
+      onormal = [0;0;1];
 
       % Duplicate the normals
-      norms = repmat(normal, [1, size(x0, 2)]);
+      norms = repmat(onormal, [1, size(x0, 2)]);
 
       % Calculate intersection location relative to ray origin
       dirs = (x1 - x0) ./ vecnorm(x1 - x0);
@@ -189,7 +189,7 @@ classdef Plane < ott.shape.Shape ...
       S = shape.surfInternal(unmatched{:});
     end
 
-    function shape = scaleInternal(shape, sc)
+    function shape = scaleInternal(shape, ~)
       % Nothing to do
     end
   end
@@ -224,17 +224,17 @@ classdef Plane < ott.shape.Shape ...
       o = dot(plane.position, plane.normal);
     end
 
-    function bb = get.boundingBox(shape)
+    function bb = get.boundingBox(~)
       bb = [-Inf, Inf; -Inf; Inf; -Inf; 0];
     end
 
-    function b = get.starShaped(shape)
+    function b = get.starShaped(~)
       b = false;
     end
-    function b = get.xySymmetry(shape)
+    function b = get.xySymmetry(~)
       b = false;
     end
-    function q = get.zRotSymmetry(shape)
+    function q = get.zRotSymmetry(~)
       q = 0;
     end
   end

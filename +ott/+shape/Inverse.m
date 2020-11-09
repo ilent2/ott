@@ -113,7 +113,8 @@ classdef Inverse < ott.shape.Shape
         v = Inf;
       else
         % TODO: numerical integration?
-        warning('volume may not be infinite');
+        warning('ott:shape:Inverse:volume', ...
+          'volume may not be infinite');
         v = Inf;
       end
     end
@@ -123,12 +124,13 @@ classdef Inverse < ott.shape.Shape
         r = Inf;
       else
         % TODO: numerical integration?
-        warning('radius may not be infinite');
+        warning('ott:shape:Inverse:max_radius', ...
+            'radius may not be infinite');
         r = Inf;
       end
     end
 
-    function bb = get.boundingBox(shape)
+    function bb = get.boundingBox(~)
       bb = [-Inf, Inf; -Inf, Inf; -Inf, Inf];
     end
 

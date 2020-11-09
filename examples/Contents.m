@@ -17,23 +17,22 @@
 % open the desired example using the file browser.
 %
 % Basic examples
-%   ottBeams.m          -- Shows how to create and visualise beams
-%   ottParticles.m      -- Shows how to create and visualise particles
-%   ottForce.m          -- Calculate and visualise force on a sphere
+%   ottBeams          - Shows how to create and visualise beams
+%   ottParticles      - Shows how to create and visualise particles
+%   ottForce          - Calculate and visualise force on a sphere
 %
 % Advanced examples
-%   ottLandscape.m      -- Calculate trap stiffness for a range of particles
-%   ottDynamics.m       -- Dynamics simulation of an optically trapped particle
-%   ottWallEffect.m     -- Dynamics simulation of a sphere near a wall
-%   ottNonSpherical.m   -- Calculate force/torque on a non-spherical particle
-%   ottDdaVaterite.m    -- Simulate a birefringent particle using DDA
-%   ottNeuralNetwork.m  -- Train and use a neural network for simulation
+%   ottLandscape      - Calculate trap stiffness for a range of particles
+%   ottDynamics       - Dynamics simulation of an optically trapped particle
+%   ottWallEffect     - Dynamics simulation of a sphere near a wall
+%   ottNonSpherical   - Calculate force/torque on a non-spherical particle
+%   ottDdaVaterite    - Simulate a birefringent particle using DDA
+%   ottNeuralNetwork  - Train and use a neural network for simulation
 %
 % Sub-directories
-%   liveScripts     -- Live-script versions of selected examples
-%   packageOverview -- Example scripts used to documentation figures
+%   liveScripts/       - Live-script versions of selected examples
+%   packageOverview/   - Example scripts used to documentation figures
 %
 % Copyright 2020 Isaac Lenton (aka ilent2)
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
-

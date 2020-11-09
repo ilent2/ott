@@ -1,5 +1,5 @@
 classdef Variable < ott.particle.Particle
-% Describes a particle whose drag/tmatrix are automatically recomputed.
+% A particle whose drag/tmatrix are automatically recomputed.
 % Inherits from :class:`ott.particle.Particle`.
 %
 % Changing the shape or refractive index of this particle causes the
@@ -355,4 +355,5 @@ classdef Variable < ott.particle.Particle
     end
   end
 end
+
 

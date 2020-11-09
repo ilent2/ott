@@ -1,4 +1,4 @@
-% otNeuralNetwork.m -- Train and use a neural network for simulation
+% ottNeuralNetwork.m -- Train and use a neural network for simulation
 %
 % This example shows how a neural network can be trained on simulated
 % force (or torque) data.  The trained neural network can then be used

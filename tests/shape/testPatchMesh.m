@@ -14,6 +14,14 @@ function testConstructor(testCase)
 
   testCase.verifyEqual(shape.verts, cube.verts, 'verts');
   testCase.verifyEqual(shape.faces, cube.faces, 'faces');
+  testCase.verifyEqual(shape.volume, cube.volume, 'volume');
+  testCase.verifyEqual(shape.maxRadius, cube.maxRadius, 'maxR');
+  testCase.verifyEqual(shape.boundingBox, cube.boundingBox, 'bb');
+
+  % Scale
+  shape = shape ./ 2;
+  cube = cube * 0.5;
+  testCase.verifyEqual(shape.verts, cube.verts, 'scale');
 
 end
 

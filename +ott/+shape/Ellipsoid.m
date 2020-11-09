@@ -142,7 +142,7 @@ classdef Ellipsoid < ott.shape.Shape ...
       bb = [-1, 1; -1, 1; -1, 1].*shape.radii;
     end
 
-    function b = get.xySymmetry(shape)
+    function b = get.xySymmetry(~)
       b = true;
     end
     function q = get.zRotSymmetry(shape)

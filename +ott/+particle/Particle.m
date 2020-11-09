@@ -1,6 +1,6 @@
 classdef Particle < matlab.mixin.Heterogeneous ...
     & ott.utils.RotationPositionProp
-% Base class describing particles in optical tweezers simulations.
+% Base class for particles in optical tweezers simulations.
 % Inherits from :class:`ott.utils.RotationPositionProp` and
 % `matlab.mixin.Hetrogeneous`.
 %
@@ -92,4 +92,5 @@ classdef Particle < matlab.mixin.Heterogeneous ...
     end
   end
 end
+
 

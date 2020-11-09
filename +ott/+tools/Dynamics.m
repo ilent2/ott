@@ -1,5 +1,5 @@
 classdef Dynamics
-% Functionality for basic dynamics simulations.
+% Simple dynamics simulations with a fixed time step.
 %
 % This class stores properties related to dynamics simulations and contains
 % methods for running simple dynamics simulations with fixed step sizes.
@@ -354,3 +354,4 @@ classdef Dynamics
     end
   end
 end
+

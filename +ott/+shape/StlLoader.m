@@ -81,7 +81,7 @@ classdef StlLoader < ott.shape.TriangularMesh
         N(fInd,:)        = n;
 
         numRead = numRead + 1;
-			end
+      end
 
     end
   end
