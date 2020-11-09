@@ -45,15 +45,24 @@ representing common beams, for example, to create a Gaussian beam, call::
 This create the default Gaussian beam (see the
 :class:`+ott.+beam.+Gaussian` documentation for the
 exact specification).  We can change the beam properties such as the
-wavelength and power using the beam's properties::
+medium speed and power using the beam's properties or methods,
+for example::
 
-   beam.power = 0.1;           % Set power [Watts]
-   beam.wavelength = 532e-9;   % Set wavelength [meters]
+  beam.power = 0.1;           % Set power [Watts]
+  beam.speed = 3e8/1.33;      % Set speed [meters/second]
+
+Some properties, such as wavelength, need to be set using beam methods.
+Beams are not handle classes, as such, it is important to store the
+resulting beam object.  The following sets the wavelength by keeping the
+speed fixed::
+
+  beam = beam.setWavelength(532e-9, 'fixedSpeed'); % Set wavelength [meters]
 
 Alternatively, we can create the beam with the desired properties at
 the start by passing a list of named arguments to the constructor::
 
-   beam = ott.beam.Gaussian('power', 0.1, 'wavelength', 532e-9);
+  beam = ott.beam.Gaussian('power', 0.1, ...
+      'index_medium', 1.33, 'omega', 2*pi*3e8/532e-9);
 
 Many of the :mod:`+ott.+beam` classes provide alternative construction
 methods for convenience, for example, the Gaussian and Laguerre--Gaussian

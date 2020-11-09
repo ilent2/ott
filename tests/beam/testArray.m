@@ -4,6 +4,9 @@ end
 
 function setupOnce(testCase)
   addpath('../../');
+  
+  % Generate beams for testing
+  testCase.TestData.beam1 = ott.beam.Gaussian();
 end
 
 function testConstruct(testCase)
@@ -20,8 +23,8 @@ end
 
 function testCoherent(testCase)
 
-  beam(1) = ott.beam.Gaussian();
-  beam(2) = ott.beam.Gaussian();
+  beam(1) = testCase.TestData.beam1;
+  beam(2) = testCase.TestData.beam1;
   beam(1).position = [-1;0;0]*1e-6;
   beam(2).position = [1;0;0]*1e-6;
   sz = [10,10];
@@ -41,8 +44,8 @@ end
 
 function testIncoherent(testCase)
 
-  beam(1) = ott.beam.Gaussian();
-  beam(2) = ott.beam.Gaussian();
+  beam(1) = testCase.TestData.beam1;
+  beam(2) = testCase.TestData.beam1;
   beam(1).position = [-1;0;0]*1e-6;
   beam(2).position = [1;0;0]*1e-6;
   sz = [10,10];
@@ -65,10 +68,11 @@ function testPosition(testCase)
 
   offset = [0;1;0]*1e-6;
 
-  beam(1) = ott.beam.Gaussian();
-  beam(2) = ott.beam.Gaussian();
+  beam(1) = testCase.TestData.beam1;
+  beam(2) = testCase.TestData.beam1;
   beam(1).position = [-1;0;0]*1e-6;
   beam(2).position = [1;0;0]*1e-6;
+  sz = [10,10];
   
   cbeam1 = ott.beam.Array(beam, 'arrayType', 'incoherent');
   cbeam1.position = offset;
@@ -76,10 +80,23 @@ function testPosition(testCase)
   beam = beam.translateXyz(offset);
   cbeam2 = ott.beam.Array(beam, 'arrayType', 'incoherent');
 
-  e1 = cbeam1.visNearfield();
-  e2 = cbeam2.visNearfield();
+  e1 = cbeam1.visNearfield('range', [1,1]*1e-6, 'size', sz);
+  e2 = cbeam2.visNearfield('range', [1,1]*1e-6, 'size', sz);
 
   testCase.verifyEqual(e1, e2, 'position incorrect');
 
 end
 
+function testFieldCoverage(testCase)
+
+  beam = testCase.TestData.beam1;
+  cbeam = ott.beam.Array(beam, 'arrayType', 'incoherent');
+  
+  cbeam.efarfield();
+  cbeam.hfarfield();
+  cbeam.ehfarfield();
+  cbeam.eparaxial();
+  cbeam.hparaxial();
+  cbeam.ehparaxial();
+
+end

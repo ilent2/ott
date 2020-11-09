@@ -15,5 +15,8 @@ function testConstructor(testCase)
 
   testCase.verifyEqual(shape.shapes, [a, b], 'shapes');
 
+  shape2 = a & b;
+  testCase.verifyEqual(shape2, shape, '& op');
+
 end
 

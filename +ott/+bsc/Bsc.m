@@ -719,10 +719,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %   beam = beam.shrinkNmax(...)
       %
       % Optional named arguments
-      %   - AbsTol (numeric) -- Absolute tolerance for removing elements.
+      %   - AbsTol ([] | numeric) -- Absolute tolerance for removing elements.
       %     Default: ``[]``.
       %
-      %   - RelTol (numeric) -- Relative tolerance for removing elements.
+      %   - RelTol ([] | numeric) -- Relative tolerance for removing elements.
       %     Power is relative to power in each beam.
       %     Default: ``1.0e-15``.
       %
@@ -734,6 +734,13 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       p.addParameter('AbsTol', [], @isnumeric);
       p.addParameter('RelTol', 1.0e-15, @isnumeric);
       p.parse(varargin{:});
+      
+      relTol = p.Results.RelTol;
+      if isempty(relTol)
+        relTol = Inf;
+      end
+      assert(isnumeric(relTol) && isscalar(relTol) && relTol >= 0, ...
+          'RelTol must be positive numeric scalar');
 
       [oa, ob] = beam.getCoefficients();
 
@@ -742,23 +749,27 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Find last element that satisfies AbsTol
       if ~isempty(p.Results.AbsTol)
         last_idx = find(pw > p.Results.AbsTol, 1, 'last');
-        minNmax = ott.utils.combined_index(last_idx) + 1;
+        minNmax = ott.utils.combined_index(last_idx);
+        if isempty(minNmax)
+          minNmax = 0;
+        end
       else
         minNmax = 0;
       end
 
       pw0 = [beam.power];
+      nbeam = beam;
 
       for ii = minNmax:beam.Nmax
 
-        total_orders = ott.utils.combined_index(ii, ii);
+        total_orders = min(ott.utils.combined_index(ii, ii), size(oa, 1));
         na = oa(1:total_orders, :);
         nb = ob(1:total_orders, :);
         nbeam = ott.bsc.Bsc(na, nb);
 
         pw1 = nbeam.power;
         apparent_error = abs( pw1 - pw0 )/pw0;
-        if apparent_error < p.Results.RelTol
+        if apparent_error < relTol
           break;
         end
       end

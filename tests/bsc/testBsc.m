@@ -117,8 +117,12 @@ function testShrinkNmax(testCase)
 
   beam = ott.bsc.Bsc([10;10;10;0.1]);
   testCase.assertEqual(beam.Nmax, 2);
-  beam = beam.shrinkNmax('RelTol', 1.0e-2);
-  testCase.verifyEqual(beam.Nmax, 1);
+  
+  sbeam = beam.shrinkNmax('RelTol', 1.0e-2);
+  testCase.verifyEqual(sbeam.Nmax, 1);
+  
+  sbeam = beam.shrinkNmax('AbsTol', 1, 'RelTol', []);
+  testCase.verifyEqual(sbeam.Nmax, 1);
 
 end
 

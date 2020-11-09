@@ -27,7 +27,7 @@ classdef (Abstract) RotateHelper
 % using/distributing this file.
 
   methods (Abstract)
-    rotateInternal     % The rotation method called by all other methods
+    rotateInternal(~)     % The rotation method called by all other methods
   end
 
   methods

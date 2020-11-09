@@ -21,7 +21,7 @@ function testField(testCase)
 
   beam = ott.beam.Empty();
   xyz = randn(3, 5);
-  target = zeros(size(xyz));
+  target = ott.utils.FieldVectorCart(zeros(size(xyz)));
   
   testCase.verifyEqual(beam.efield(xyz), target, 'efield');
   testCase.verifyEqual(beam.hfield(xyz), target, 'hfield');
@@ -38,4 +38,6 @@ function testField(testCase)
   testCase.verifyEqual(beam.eparaxial(xyz), target, 'ep');
   testCase.verifyEqual(beam.hparaxial(xyz), target, 'hp');
   testCase.verifyEqual(beam.ehparaxial(xyz), target, 'ehp');
+  
+  testCase.verifyEqual(beam.intensityMoment(), zeros(3, 1), 'im');
 end

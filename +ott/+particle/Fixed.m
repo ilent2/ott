@@ -52,6 +52,8 @@ classdef Fixed < ott.particle.Particle
       %
       %   - internal (logical) -- If the internal T-matrix should also
       %     be computed.  Default: ``false``.
+      %
+      %   - mass (numeric) -- Particle mass.  Default: ``[]``.
 
       p = inputParser;
       p.addParameter('index_relative', []);
@@ -60,6 +62,7 @@ classdef Fixed < ott.particle.Particle
       p.addParameter('viscosity', 8.9e-4);
       p.addParameter('wavelength0', 1064e-9);
       p.addParameter('internal', false);
+      p.addParameter('mass', []);
       p.parse(varargin{:});
 
       % Get index_relative
@@ -92,7 +95,7 @@ classdef Fixed < ott.particle.Particle
         tinternal = ott.tmatrix.Tmatrix.FromShape(...
             shape ./ wavelength_medium, ...
             'relative_index', index_relative, ...
-            'internal', true);
+            'internal', true, 'mass', mass);
       end
 
       % Construct particle
@@ -116,18 +119,22 @@ classdef Fixed < ott.particle.Particle
       %   - tmatrix (ott.tmatrix.Tmatrix) -- Scattering description.
       %
       %   - tinternal (ott.tmatrix.Tmatrix) -- Internal T-matrix.
+      %
+      %   - mass (numeric) -- Particle mass.  Default: ``[]``.
 
       p = inputParser;
       p.addOptional('shape', [], @(x) isa(x, 'ott.shape.Shape'));
       p.addOptional('drag', [], @(x) isa(x, 'ott.drag.Stokes'));
       p.addOptional('tmatrix', [], @(x) isa(x, 'ott.tmatrix.Tmatrix'));
       p.addParameter('tinternal', []);
+      p.addParameter('mass', []);
       p.parse(varargin{:});
 
       particle.drag = p.Results.drag;
       particle.shape = p.Results.shape;
       particle.tmatrix = p.Results.tmatrix;
       particle.tinternal = p.Results.tinternal;
+      particle.mass = p.Results.mass;
     end
   end
 

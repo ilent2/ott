@@ -110,14 +110,16 @@ classdef RectangularPrism < ott.shape.Shape ...
       r = vecnorm(shape.widths./2);
     end
     function shape = set.maxRadius(shape, val)
-      error('Cannot set maxRadius, set widths instead');
+      error('ott:shape:RectangularPrism:set_maxradius', ...
+          'Cannot set maxRadius, set widths instead');
     end
 
     function v = get.volume(shape)
       v = prod(shape.widths);
     end
-    function shape = set.volume(shape, val)
-      error('Cannot set volume, set widths instead');
+    function shape = set.volume(shape, ~)
+      error('ott:shape:RectangularPrism:set_volume', ...
+          'Cannot set volume, set widths instead');
     end
 
     function bb = get.boundingBox(shape)

@@ -163,13 +163,13 @@ classdef Cube < ott.shape.Shape ...
       bb = [-1, 1; -1, 1; -1, 1].*shape.width./2;
     end
 
-    function b = get.starShaped(shape)
+    function b = get.starShaped(~)
       b = true;
     end
-    function b = get.xySymmetry(shape)
+    function b = get.xySymmetry(~)
       b = true;
     end
-    function q = get.zRotSymmetry(shape)
+    function q = get.zRotSymmetry(~)
       q = 4;
     end
 
@@ -178,10 +178,10 @@ classdef Cube < ott.shape.Shape ...
       Y = [-1, 1, 1, -1, -1, 1, 1, -1];
       Z = [-1, -1, -1, -1, 1, 1, 1, 1];
 
-      verts = [X(:), Y(:), Z(:)].';
+      verts = [X(:), Y(:), Z(:)].' .* shape.width./2;
     end
 
-    function faces = get.faces(shape)
+    function faces = get.faces(~)
       faces = [1, 2, 6, 5; 2, 3, 7, 6; 3, 4, 8, 7; 4, 1, 5, 8; ...
           2, 1, 4, 3; 5, 6, 7, 8].';
     end

@@ -64,27 +64,41 @@ classdef Sphere < ott.shape.Shape ...
       end
     end
 
+    function shape = ott.shape.Ellipsoid(shape)
+      % Convert object to a ellipsoid
+
+      shape = ott.shape.Ellipsoid(shape.radius*[1,1,1]);
+    end
+
+    function shape = ott.shape.Superellipsoid(shape)
+      % Convert object to a superellipsoid
+
+      shape = ott.shape.Superellipsoid(shape.radius*[1,1,1], 1, 1);
+    end
+
     function r = starRadii(shape, theta, phi)
       % Return the sphere radii
       %
       % Usage
       %   r = shape.starRadii(theta, phi)
+      
+      assert(size(theta) == size(phi), 'theta and phi must be same size');
 
       r = ones(size(theta)) * shape.radius;
     end
   end
 
   methods (Hidden)
-    function nxyz = normalsRtpInternal(shape, rtp)
+    function nxyz = normalsRtpInternal(~, rtp)
       % Calculate normals at the specified surface locations
       nxyz = ott.utils.rtpv2xyzv(repmat([1;0;0], 1, size(rtp, 2)), rtp);
     end
 
-    function nxyz = normalsXyzInternal(shape, xyz)
+    function nxyz = normalsXyzInternal(~, xyz)
       nxyz = xyz ./ vecnorm(xyz);
     end
 
-    function nxz = normalsTInternal(shape, theta)
+    function nxz = normalsTInternal(~, theta)
       nxz = [sin(theta); cos(theta)];
     end
 
@@ -148,7 +162,7 @@ classdef Sphere < ott.shape.Shape ...
       bb = [-1, 1; -1, 1; -1, 1].*shape.radius;
     end
 
-    function b = get.xySymmetry(shape)
+    function b = get.xySymmetry(~)
       b = true;
     end
 
@@ -157,7 +171,7 @@ classdef Sphere < ott.shape.Shape ...
       p = 2.0 * pi * shape.radius;
     end
 
-    function b = get.isSphere(shape)
+    function b = get.isSphere(~)
       b = true;
     end
   end

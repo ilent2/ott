@@ -101,17 +101,18 @@ classdef Gaussian < ott.beam.BscFinite ...
       p.addParameter('polfield', [1, 1i]);
       p.addParameter('polbasis', 'cartesian');
       p.addParameter('mapping', 'sin');
-      p.addParameter('index_medium', 1.0);
       p.addParameter('power', 1.0);
       p.addParameter('truncation_angle', pi);
       p.addParameter('calculate', true);
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
-
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      beam = beam@ott.beam.BscFinite(unmatched{:});
       beam.waist = p.Results.waist;
       beam.polbasis = p.Results.polbasis;
       beam.polfield = p.Results.polfield;
       beam.mapping = p.Results.mapping;
-      beam.index_medium = p.Results.index_medium;
       beam.truncation_angle = p.Results.truncation_angle;
       beam.power = p.Results.power;
 
@@ -139,6 +140,15 @@ classdef Gaussian < ott.beam.BscFinite ...
           0, 0, beam.polbasis, beam.polfield, ...
           'truncation_angle', beam.truncation_angle);
       beam.data = beam.data ./ beam.data.power .* beam.power;
+
+      % Shrink Nmax to make things faster
+      beam.data = beam.data.shrinkNmax('RelTol', 1e-3);
+    end
+  end
+
+  methods (Hidden)
+    function val = defaultVisRangeInternal(beam)
+      val = [2,2] * beam.waist;
     end
   end
 end

@@ -7,6 +7,9 @@ classdef Ellipsoid < ott.shape.Shape ...
 %
 % Properties:
 %   - radii       -- Radii along Cartesian axes [X; Y; Z]
+%
+% Supported casts
+%   - ott.shape.Spehre -- Only works when ellipsoid is a sphere
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -42,6 +45,13 @@ classdef Ellipsoid < ott.shape.Shape ...
 
       shape = shape@ott.shape.Shape(unmatched{:});
       shape.radii = p.Results.radii;
+    end
+
+    function shape = ott.shape.Sphere(shape)
+      % Convert object to a sphere (only works when ellipsoid is a sphere)
+
+      assert(shape.isSphere, 'Shape must be a sphere for conversion');
+      shape = ott.shape.Sphere(shape.radii(1));
     end
 
     function r = starRadii(shape, theta, phi)

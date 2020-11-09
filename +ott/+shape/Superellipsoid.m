@@ -65,6 +65,20 @@ classdef Superellipsoid < ott.shape.Shape ...
       shape.ns = p.Results.ns;
     end
 
+    function shape = ott.shape.Sphere(shape)
+      % Convert object to a sphere (only works when is a sphere)
+
+      assert(shape.isSphere, 'Shape must be a sphere for conversion');
+      shape = ott.shape.Sphere(shape.radii(1));
+    end
+
+    function shape = ott.shape.Ellipsoid(shape)
+      % Convert object to a sphere (only works when is a ellipsoid)
+
+      assert(shape.isEllipsoid, 'Shape must be a ellipsoid for conversion');
+      shape = ott.shape.Ellipsoid(shape.radii);
+    end
+
     function r = starRadii(shape, theta, phi)
       % Return the ellipsoid radii at specified angles
       %
@@ -153,7 +167,7 @@ classdef Superellipsoid < ott.shape.Shape ...
       bb = [-1, 1; -1, 1; -1, 1].*shape.radii;
     end
 
-    function b = get.xySymmetry(shape)
+    function b = get.xySymmetry(~)
       b = true;
     end
     function q = get.zRotSymmetry(shape)

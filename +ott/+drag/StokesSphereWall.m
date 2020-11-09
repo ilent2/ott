@@ -70,7 +70,7 @@ classdef (Abstract) StokesSphereWall < ott.drag.Stokes ...
       rotation = plane.rotation;
       height = abs(dot(particle.position - plane.position, plane.normal));
 
-      if (height - particle.maxRadius)./particle.maxRadius < 1e-2
+      if (height - particle.maxRadius)/particle.maxRadius < 1e-2
         % Doesn't work well bellow 1e-2
         drag = ott.drag.ChaouiSphere(particle.maxRadius, ...
             height, p.Results.viscosity, 'rotation', rotation, unmatched{:});

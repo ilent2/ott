@@ -140,14 +140,14 @@ classdef Inverse < ott.shape.Shape
     end
 
     function b = get.xySymmetry(shape)
-      b = shape.internal.xySymmetry
+      b = shape.internal.xySymmetry;
     end
     function shape = set.xySymmetry(shape, val)
       shape.internal.xySymmetry = val;
     end
 
     function b = get.zRotSymmetry(shape)
-      b = shape.internal.zRotSymmetry
+      b = shape.internal.zRotSymmetry;
     end
     function shape = set.zRotSymmetry(shape, val)
       shape.internal.zRotSymmetry = val;

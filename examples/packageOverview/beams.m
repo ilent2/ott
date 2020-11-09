@@ -69,7 +69,7 @@ subplot(rows, cols, idx); idx = idx + 1;
 beam = [ott.beam.Gaussian(), ott.beam.LaguerreGaussian(1, 2)];
 beam(1).position = [1;1;0];
 beam(2).position = [-1;-1;0];
-beam = ott.beam.Coherent(beam);  % Can also use ott.beam.Incoherent
+beam = ott.beam.Array(beam, 'arrayType', 'coherent');
 beam.visNearfield();
 title(['Beams Arrays' newline '(Coherent, Incoherent)']);
 

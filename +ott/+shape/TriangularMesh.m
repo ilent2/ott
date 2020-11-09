@@ -279,14 +279,14 @@ classdef TriangularMesh < ott.shape.Shape ...
       cr = cross(d13,d12,1);%cross-product (vectorized)
 
       area = 0.5*sqrt(cr(1,:).^2+cr(2,:).^2+cr(3,:).^2);% Area of each triangle
-      totalArea = sum(area);
+      %totalArea = sum(area);
 
       crNorm = sqrt(cr(1,:).^2+cr(2,:).^2+cr(3,:).^2);
       zMean = (p(3,t(1,:))+p(3,t(2,:))+p(3,t(3,:)))/3;
       nz = -cr(3,:)./crNorm;% z component of normal for each triangle
 
-      volume = area.*zMean.*nz; % contribution of each triangle
-      totalVolume = sum(volume);%divergence theorem
+      ovolume = area.*zMean.*nz; % contribution of each triangle
+      totalVolume = sum(ovolume);%divergence theorem
     end
 
     function bb = get.boundingBox(shape)

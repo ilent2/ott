@@ -81,11 +81,11 @@ classdef Particle < matlab.mixin.Heterogeneous ...
   end
 
   methods % Getters/setters
-    function particle = particle.mass(sim, val)
+    function particle = particle.mass(particle, val)
       if isempty(val)
         particle.mass = [];
       else
-        assert(isnumeric(val) && isscalar(val) & val >= 0, ...
+        assert(isnumeric(val) && isscalar(val) && val >= 0, ...
             'mass must be positive numeric scalar or empty');
         particle.mass = val;
       end

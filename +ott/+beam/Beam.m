@@ -34,6 +34,10 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 % Abstract properties
 %   - data            -- Internal beam description (either beam array or BSC)
 %
+% Methods
+%   - setWavelength -- Set wavelength property
+%   - setWavenumber -- Set wavenumber property
+%
 % Field calculation methods
 %   - ehfield    -- Calculate electric and magnetic fields around the origin
 %   - ehfieldRtp -- Calculate electric and magnetic fields around the origin
@@ -221,6 +225,43 @@ classdef Beam < matlab.mixin.Heterogeneous ...
   end
 
   methods
+
+    function beam = setWavelength(beam, val, mode)
+      % Set the beam wavelength property
+      %
+      % Usage
+      %   beam = beam.setWavelength(value, mode)
+      %
+      % Parameters
+      %   - value (numeric) -- Wavelength values [meters]
+      %   - mode (enum) -- Either 'fixedFrequency' or 'fixedSpeed'
+      %     to set the wavelength by chaining ``speed`` or ``omega``.
+
+      ott.utils.nargoutCheck(beam, nargout);
+
+      if strcmpi(mode, 'fixedSpeed')
+        beam.omega = 2*pi*beam.speed0./val;
+      elseif strcmpi(mode, 'fixedFrequency')
+        beam.speed = beam.omega./(2*pi).*val;
+      else
+        error('Unknown mode value');
+      end
+    end
+
+    function beam = setWavenumber(beam, val, mode)
+      % Set the beam wavenumber property
+      %
+      % Usage
+      %   beam = beam.setWavenumber(value, mode)
+      %
+      % Parameters
+      %   - value (numeric) -- Wavenumber values [1/meters]
+      %   - mode (enum) -- Either 'fixedFrequency' or 'fixedSpeed'
+      %     to set the wavelength by chaining ``speed`` or ``omega``.
+
+      ott.utils.nargoutCheck(beam, nargout);
+      beam = beam.setWavelength(2*pi./val, mode);
+    end
 
     %
     % Field calculation functions
@@ -1139,14 +1180,14 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       wavenumber = beam.omega ./ beam.speed;
     end
     function beam = set.wavenumber(beam, ~) %#ok<INUSD>
-      error('Cannot set wavenumber, set speed or omega instead');
+      error('Cannot set wavenumber, set speed, omega or use setWavenumber');
     end
 
     function wavelength = get.wavelength(beam)
       wavelength = 2*pi ./ beam.wavenumber;
     end
     function beam = set.wavelength(beam, ~) %#ok<INUSD>
-      error('Cannot set wavelength, set speed or omega instead');
+      error('Cannot set wavelength, set speed, omega or use setWavelength');
     end
 
     function val = get.impedance(beam)

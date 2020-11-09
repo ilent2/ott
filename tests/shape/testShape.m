@@ -164,4 +164,22 @@ function testGetBoundingBoxShape(testCase)
 
 end
 
+function testMathOperators(testCase)
+
+  shape = ott.shape.Cube();
+
+  s = shape * 0.5;
+  testCase.verifyEqual(s.width, shape.width/2, 'times');
+
+  s = 0.5 .* shape;
+  testCase.verifyEqual(s.width, shape.width/2, '.*');
+
+  s = shape ./ 2;
+  testCase.verifyEqual(s.width, shape.width/2, './');
+
+  s = shape / 2;
+  testCase.verifyEqual(s.width, shape.width/2, './');
+
+end
+
 

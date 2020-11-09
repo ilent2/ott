@@ -14,7 +14,7 @@ function m = arrayMaxSize()
 % See LICENSE.md for information about using/distributing this file.
 
 try
-  [uV, sV] = memory;
+  [~, sV] = memory;
 catch
   m = Inf;
   warning('ott:utils:arrayMaxSize:cant_get_memory', ...
