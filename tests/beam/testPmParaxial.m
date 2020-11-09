@@ -9,17 +9,11 @@ end
 function testConstructBeam(testCase)
 
   profile = ott.beam.Gaussian();
-  beam = ott.beam.PmParaxial(profile);
+  beam = ott.beam.PmParaxial.BeamProfile(profile, ...
+    'Nmax', profile.data.Nmax);
 
-  testCase.verifyEqual(beam.getData(10), profile.getData(10), 'data');
+  testCase.verifyEqual(beam.data, profile.data, 'data');
 
-end
-
-function testConstructUniform(testCase)
-
-  theta = pi/2;
-  beam = ott.beam.PmParaxial('truncation_angle', theta);
-  testCase.verifyEqual(beam.truncation_angle, theta, 'theta');
 end
 
 function testConstructInterp(testCase)
@@ -28,14 +22,18 @@ function testConstructInterp(testCase)
   x = linspace(-1, 1, 20);
   y = linspace(-1, 1, 20);
   [X, Y] = ndgrid(x, y);
-  amp = X.^2 + Y.^2;
+  amp = 2 - (X.^2 + Y.^2);
 
-  polbasis = 'polar';
+  polbasis = 'cartesian';
   polfield = [1, 0];
   Nmax = 1;
   beam = ott.beam.PmParaxial.InterpProfile(X, Y, amp, ...
       'polbasis', polbasis, 'polfield', polfield, ...
       'Nmax', Nmax);
+    
+  testCase.verifyEqual(beam.data.Nmax, Nmax, 'Nmax');
+  testCase.verifyEqual(beam.polfield, polfield, 'polfield');
+  testCase.verifyEqual(beam.polbasis, polbasis, 'polbasis');
 
 end
 

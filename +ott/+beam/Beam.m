@@ -719,7 +719,8 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 
       % Calculate fields
       [E, data] = beam.eparaxial(nxy, 'data', p.Results.data, ...
-          unmatched{:}, 'mapping', p.Results.mapping);
+          unmatched{:}, 'mapping', p.Results.mapping, ...
+          'direction', p.Results.direction);
 
       % Generate visualisation data
       imout = beam.VisualisationData(p.Results.field, E);

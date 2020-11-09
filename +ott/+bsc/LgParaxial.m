@@ -24,7 +24,8 @@ classdef LgParaxial < ott.bsc.Bsc
 %   - FromIgMode     -- Construct beam from Ince-Gaussian mode
 %   - FromLgMode     -- Construct beam from Laguerre-Gaussian mode
 %   - FromHgMode     -- Construct beam from Hermite-Gaussian mode
-%   - na2waist       -- Convert numerical aperture to paraxial waist
+%   - WaistFromNa    -- Convert numerical aperture to paraxial waist
+%   - ParaxialWaist  -- Compute paraxial beam waist for high order mode
 
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
