@@ -16,6 +16,10 @@ function testConstructor(testCase)
   testCase.verifyEqual(shape.starShaped, true, 'star');
   testCase.verifyEqual(shape.maxRadius, 0, 'maxr');
   testCase.verifyEqual(shape.boundingBox, zeros(3, 2), 'bb');
+  
+  % Scale
+  Sshape = shape * 1000;
+  testCase.verifyEqual(Sshape, shape, 'scale');
 
 end
 
@@ -29,6 +33,11 @@ function testMethods(testCase)
   testCase.verifyEqual(shape.normalsRtp([0;0;0]), nan(3, 1), 'insidertp');
   testCase.verifyEqual(shape.intersect([0;0;0], [1;0;0]), ...
     nan(3,1), 'isect');
+  
+  % Coverage
+  shape.surf('visualise', false);
+  shape.surfPoints();
+  testCase.verifyEqual(shape.intersectAll([0;0;0], [1;0;0]), nan(3, 1), 'isectAll');
 
 end
 

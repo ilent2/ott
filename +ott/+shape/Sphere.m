@@ -160,6 +160,12 @@ classdef Sphere < ott.shape.Shape ...
       % Calculate the volume
       v = 4./3.*pi.*shape.radius.^3;
     end
+    function shape = set.volume(shape, val)
+      % Set the spheres radius using volume
+      assert(isnumeric(val) && isscalar(val) && val > 0, ...
+        'volume must be positive numeric scalar');
+      shape.radius = ((3/4)*val./pi)^(1/3);
+    end
 
     function bb = get.boundingBox(shape)
       bb = [-1, 1; -1, 1; -1, 1].*shape.radius;

@@ -14,6 +14,8 @@ function testConstructor(testCase)
   shape = ott.shape.Union([a, b]);
 
   testCase.verifyEqual(shape.shapes, [a, b], 'shapes');
+  testCase.verifyEqual(shape.maxRadius, ...
+      max(a.maxRadius, b.maxRadius), 'maxR');
 
   c = ott.shape.Sphere();
   shape = shape | c;
@@ -40,6 +42,20 @@ function testInsideXyz(testCase)
       'Union doesn''t match');
 end
 
+function testInsideRtp(testCase)
+
+  radius = 1.0;
+  offset1 = [0;0;-2];
+  offset2 = [0;0;2];
+  
+  shape1 = ott.shape.Sphere(radius, 'position', offset1);
+  shape2 = ott.shape.Sphere(radius, 'position', offset2);
+  union = shape1 | shape2;
+  
+  testCase.verifyEqual(union.insideRtp([2;0;0]), true, 'insideRtp');
+
+end
+
 function testSurf(testCase)
 
   radius = 1.0;
@@ -49,6 +65,7 @@ function testSurf(testCase)
   shape1 = ott.shape.Sphere(radius, 'position', offset1);
   shape2 = ott.shape.Sphere(radius, 'position', offset2);
   union = shape1 | shape2;
+  testCase.assertInstanceOf(union, 'ott.shape.Union');
 
   % Test functions from IsosurfSurf
   union.surfPoints();
@@ -107,3 +124,23 @@ function testScale(testCase)
 
 end
 
+function testIntersect(testCase)
+
+  a = ott.shape.Cube(1);
+  b = ott.shape.Cube(1);
+
+  a.position = [2;0;0];
+
+  u = a | b;
+  
+  x0 = [0;0;0];
+  x1 = [-10;0;0];
+  
+  testCase.verifyEqual(u.intersect(x0, x1, 'stepSize', 1e-2), [-0.5;0;0], ...
+      'RelTol', 1e-2, 'isect');
+  
+  testCase.verifyEqual(u.intersectAll(x0, x1, ...
+    'removeNan', true, 'stepSize', 1e-2), ...
+    [-0.5;0;0], 'RelTol', 1e-2, 'isectAll');
+
+end

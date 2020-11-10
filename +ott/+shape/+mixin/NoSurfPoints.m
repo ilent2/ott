@@ -11,7 +11,8 @@ classdef NoSurfPoints
 
   methods
     function surfPoints(varargin)
-      error('No surfPoints method for this shape');
+      error('ott:shape:mixin:NoSurfPoints:surf_points', ...
+        'No surfPoints method for this shape');
     end
   end
 end

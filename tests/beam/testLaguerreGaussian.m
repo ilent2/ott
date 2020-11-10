@@ -16,6 +16,7 @@ function testConstruct(testCase)
   testCase.verifyEqual(beam.waist, waist, 'w');
   testCase.verifyEqual(beam.lmode, lmode, 'l');
   testCase.verifyEqual(beam.pmode, pmode, 'p');
+  testCase.verifyEqual(beam.isGaussian, false, 'isGauss');
 
   testCase.verifyEqual(beam.power, 1.0, 'power');
   testCase.verifyEqual(beam.mapping, 'sin', 'mapping');

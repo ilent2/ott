@@ -18,7 +18,7 @@ subpackages{end+1} = 'tmatrix/dda';
 subpackages{end+1} = 'tools';
 % subpackages{end+1} = 'ui';
 subpackages{end+1} = 'utils';
-subpackages{end+1} = 'examples';
+% subpackages{end+1} = 'examples';
 
 % Array of sub-packages to generate coverage reports for
 coverage = {};
@@ -51,5 +51,11 @@ for ii = 1:numel(subpackages)
 end
 
 % Generate coverage report
-result = runner.run(horzcat(suites{:}))
+result = runner.run(horzcat(suites{:}));
 
+%% Display some stats
+
+rt = table(result);
+sortrows(rt,'Duration')
+
+disp(result)

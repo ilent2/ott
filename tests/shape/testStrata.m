@@ -8,9 +8,18 @@ end
 
 function testConstructor(testCase)
 
-  shape = ott.shape.Strata();
+  depths = [1;2];
+  normal = [0;0;1];
+  shape = ott.shape.Strata(depths, normal);
 
-  testCase.verifyEqual(shape.normal, [0; 0; 1], 'normal');
+  testCase.verifyEqual(shape.normal, normal, 'normal');
+  testCase.verifyEqual(shape.depths, depths, 'depths');
+  
+  % Scale
+  shape = shape * 2;
+  testCase.verifyEqual(shape.depths, 2*depths, 'S depths');
+  testCase.verifyEqual(shape.normal, normal, 'S normals');
+  
 
 end
 

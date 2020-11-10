@@ -119,7 +119,7 @@ classdef TriangularMesh < ott.shape.Shape ...
       % faces or use an angular grid depending on the application.
       %
       % Usage
-      %   [xyz, nxyz, dA] = shape.surfPoints(...)
+      %   [xyz, nxyz, dA] = shape.surfPoints()
 
       p = inputParser;
       p.parse(varargin{:});

@@ -127,3 +127,15 @@ function testForceFunctions(testCase)
   testCase.verifyEqual(target, trial, 'spin');
 
 end
+
+function testScatter(testCase)
+
+  beam = ott.beam.PlaneWave();
+  
+  sphere = ott.shape.Sphere(beam.wavelength);
+  particle = ott.particle.Fixed.FromShape(sphere, 'index_relative', 1.33);
+  
+  sbeam = beam.scatter(particle);
+  testCase.verifyInstanceOf(sbeam, 'ott.beam.Scattered');
+
+end

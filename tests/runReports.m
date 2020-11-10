@@ -7,6 +7,7 @@ reportlist{end+1} = '../+ott/+bsc';
 reportlist{end+1} = '../+ott/+particle';
 reportlist{end+1} = '../+ott/+tmatrix';
 reportlist{end+1} = '../+ott/+shape';
+reportlist{end+1} = '../+ott/+shape/+mixin';
 reportlist{end+1} = '../+ott/+drag';
 reportlist{end+1} = '../+ott/+tools';
 reportlist{end+1} = '../+ott/+utils';

@@ -17,6 +17,7 @@ classdef Intersection < ott.shape.Set
 
   properties (Dependent)
     boundingBox         % Surrounding intersection
+    maxRadius           % Radius surrounding all shapes
   end
 
   methods
@@ -40,17 +41,24 @@ classdef Intersection < ott.shape.Set
 
       if isa(a, 'ott.shape.Intersection') ...
           && isa(b, 'ott.shape.Intersection') ...
-          && a.hasMoved == false && b.hasMoved == false
+          && hasMoved(a) == false && hasMoved(b) == false
         sset = a;
         sset.shapes = [sset.shapes, b.shapes];
-      elseif isa(a, 'ott.shape.Intersection') && a.hasMoved == false
+      elseif isa(a, 'ott.shape.Intersection') && hasMoved(a) == false
         sset = a;
         sset.shapes = [sset.shapes, b];
-      elseif isa(b, 'ott.shape.Intersection') && b.hasMoved == false
+      elseif isa(b, 'ott.shape.Intersection') && hasMoved(b) == false
         sset = b;
         sset.shapes = [a, sset.shapes];
       else
         sset = ott.shape.Intersection([a, b]);
+      end
+      
+      % Duplicated with ott.shape.Union, might move in future
+      function b = hasMoved(shp)
+        b = false;
+        b = b & all(shp.position == [0;0;0]);
+        b = b & all(all(shp.rotation == eye(3)));
       end
     end
   end
@@ -85,6 +93,10 @@ classdef Intersection < ott.shape.Set
       end
 
       bb = [max(bbs(:, 1:2:end), [], 2), min(bbs(:, 2:2:end), [], 2)];
+    end
+
+    function r = get.maxRadius(shape)
+      r = max(vecnorm(shape.boundingBox));
     end
   end
 end

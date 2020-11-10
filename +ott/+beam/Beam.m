@@ -1180,14 +1180,16 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       wavenumber = beam.omega ./ beam.speed;
     end
     function beam = set.wavenumber(beam, ~) %#ok<INUSD>
-      error('Cannot set wavenumber, set speed, omega or use setWavenumber');
+      error('ott:beam:Beam:set_wavenumber', ...
+        'Cannot set wavenumber, set speed, omega or use setWavenumber');
     end
 
     function wavelength = get.wavelength(beam)
       wavelength = 2*pi ./ beam.wavenumber;
     end
     function beam = set.wavelength(beam, ~) %#ok<INUSD>
-      error('Cannot set wavelength, set speed, omega or use setWavelength');
+      error('ott:beam:Beam:set_wavelength', ...
+        'Cannot set wavelength, set speed, omega or use setWavelength');
     end
 
     function val = get.impedance(beam)

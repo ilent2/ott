@@ -25,3 +25,10 @@ function testConstructor(testCase)
 
 end
 
+function testInsideXyz(testCase)
+
+  cube = ott.shape.Cube();
+  shape = ott.shape.PatchMesh(cube);
+  
+  testCase.verifyEqual(shape.insideXyz([0;0;0]), true);
+end

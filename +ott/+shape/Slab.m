@@ -33,7 +33,7 @@ classdef Slab < ott.shape.Shape ...
       % Construct a new infinite slab
       %
       % Usage
-      %   shape = Slab(normal, depth, ...)
+      %   shape = Slab(depth, normal, ...)
       %
       % Optional named arguments
       %   - depth (N numeric) -- Depth of surface.  Default: 0.5.
@@ -49,8 +49,8 @@ classdef Slab < ott.shape.Shape ...
 
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addOptional('normal', []);
-      p.addOptional('depth', 0.5);
+      p.addOptional('depth', 0.5, @isnumeric);
+      p.addOptional('normal', [], @(x) isempty(x) || isnumeric(x));
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
@@ -172,7 +172,7 @@ classdef Slab < ott.shape.Shape ...
     end
 
     function bb = get.boundingBox(shape)
-      bb = [-Inf, Inf; -Inf; Inf; -shape.depth./2; shape.depth./2];
+      bb = [-Inf, Inf; -Inf, Inf; -shape.depth./2, shape.depth./2];
     end
 
     function b = get.starShaped(~)

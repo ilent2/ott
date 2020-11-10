@@ -15,11 +15,44 @@ function testConstructor(testCase)
 
   testCase.verifyEqual(shape.verts, verts, 'verts');
   testCase.verifyEqual(shape.faces, faces, 'faces');
+  testCase.verifyEqual(shape.boundingBox, ...
+    [min(verts, [], 2), max(verts, [], 2)], 'bb');
   
   % This should filter the bad face
   shape = ott.shape.TriangularMesh(verts, [faces, [1;1;3]]);
   testCase.verifyEqual(shape.verts, verts, 'bad face verts');
   testCase.verifyEqual(shape.faces, faces, 'bad face faces');
+  
+  % Scale
+  shape = shape * 2;
+  testCase.verifyEqual(shape.verts, verts.*2, 'scale');
+
+end
+
+function testSubdivide(testCase)
+
+  shape = ott.shape.Cube();
+  shape = ott.shape.TriangularMesh(shape);
+  
+  test = shape.subdivide();
+
+end
+
+function testIntersect(testCase)
+
+  cube = ott.shape.Cube();
+  shape = ott.shape.PatchMesh(cube);  % Uses TriangularMesh internally
+  
+  x0 = [0.1;0;-10];
+  x1 = [0.0;0;10];
+  
+  testCase.verifyEqual(shape.intersect(x0, x1), ...
+    cube.intersect(x0, x1), 'isect');
+  
+  shapeInts = shape.intersectAll(x0, x1, 'removeNan', true);
+  cubeInts = cube.intersectAll(x0, x1, 'removeNan', true);
+  testCase.verifyEqual(shapeInts, cubeInts, 'isectAll');
+  
 
 end
 
@@ -54,7 +87,7 @@ function testStarRadiiCube(testCase)
   phi = [0, pi/2, 0, pi/4];
   radii = cube.starRadii(theta, phi);
   
-  testCase.verifyEqual(radii, [1,1,1, sqrt(2)]*width, ...
+  testCase.verifyEqual(radii, [1,1,1, sqrt(2)]*width/2, ...
       'AbsTol', 1e-15, 'width');
 
 end

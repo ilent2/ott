@@ -144,17 +144,17 @@ classdef Cylinder < ott.shape.Shape ...
       nxz(2, ends) = - sin(theta(ends)) .* sign(cos(theta(ends)));
     end
 
-    function [locs, norms, dist] = intersectAllInternal(shape, x0, x1, varargin)
+    function [P, N, dist] = intersectAllInternal(shape, x0, x1, varargin)
       % Based on OTGO Cylindrical.m/intersectionpoint
 
-      Q1 = x0;
-      D = x1 - x0;
+      Q1 = reshape(x0, 3, 1, []);
+      D = reshape(x1 - x0, 3, 1, []);
 
       % Calculate intersection locations with cylindrical part
 
-      A = dot(D(1:2, :), D(1:2, :));
-      B = 2.*dot(Q1(1:2, :), D(1:2, :));
-      C = dot(Q1(1:2, :), Q1(1:2, :)) - shape.radius.^2;
+      A = dot(D(1:2, :, :), D(1:2, :, :));
+      B = 2.*dot(Q1(1:2, :, :), D(1:2, :, :));
+      C = dot(Q1(1:2, :, :), Q1(1:2, :, :)) - shape.radius.^2;
       delta = B.^2 - 4*A.*C;
 
       t1 = (-B - sqrt(delta))./(2*A);
@@ -166,6 +166,11 @@ classdef Cylinder < ott.shape.Shape ...
 
       P1 = x0 + t1.*(x1 - x0);
       P2 = x0 + t2.*(x1 - x0);
+      
+      % Build normal vectors
+      N1 = [1;1;0].*P1; N1 = N1 ./ vecnorm(N1);
+      N2 = [1;1;0].*P2; N2 = N2 ./ vecnorm(N2);
+      N = cat(2, N1, N2, repmat([[0;0;1], [0;0;-1]], 1, 1, size(D, 3)));
 
       % Remove rays that don't intersect
       P1(:, delta < 0) = nan;
@@ -186,21 +191,21 @@ classdef Cylinder < ott.shape.Shape ...
       P3(:, vecnorm(P3(1:2, :)) > shape.radius) = nan;
       P4(:, vecnorm(P4(1:2, :)) > shape.radius) = nan;
 
-      locs = cat(3, P1, P2, P3, P4);
-      dist = cat(1, t1, t2, t3, t4);
+      P = cat(2, P1, P2, P3, P4);
+      dist = cat(2, t1, t2, t3, t4);
 
-      % Find first intersection
-      [~, idx1] = min(dist, [], 1);
-
-      % Find second intersection
+      % Sort intersection and keep max 2
+      [~, idx1] = min(dist, [], 2);
       dist2 = dist;
-      dist2(idx1, :) = nan;
-      [~, idx2] = min(dist2, [], 1);
-
-      % Package outputs
-      dist = permute(dist(:, :, [idx1, idx2]), [1, 3, 2]);
-      locs = permute(locs(:, :, [idx1, idx2]), [1, 3, 2]);
-      norms = reshape(shape.normalsXyz(reshape(locs, 3, [])), 3, 2, []);
+      idx1 = sub2ind([size(dist, 2), size(dist, 3)], idx1(:).', 1:numel(idx1));
+      dist2(:, idx1) = nan;
+      [~, idx2] = min(dist2, [], 2);
+      idx2 = sub2ind([size(dist, 2), size(dist, 3)], idx2(:).', 1:numel(idx2));
+      idx = [idx1; idx2];
+      
+      dist = reshape(dist(:, idx), 1, 2, []);
+      P = reshape(P(:, idx), 3, 2, []);
+      N = reshape(N(:, idx), 3, 2, []);
     end
 
     function S = surfInternal(shape, varargin)

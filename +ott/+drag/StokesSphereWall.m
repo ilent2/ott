@@ -132,7 +132,7 @@ classdef (Abstract) StokesSphereWall < ott.drag.Stokes ...
           'radius must be numeric scalar');
       assert(val < drag.separation, ...
           'radius must be less than separation distance');
-      drag.radius = val;
+      drag.radiusInternal = val;
     end
     function val = get.radius(drag)
       val = drag.radiusInternal;
@@ -143,7 +143,7 @@ classdef (Abstract) StokesSphereWall < ott.drag.Stokes ...
           'separation must be numeric scalar');
       assert(val > drag.radius, ...
           'separation must be greater than radius');
-      drag.separation = val;
+      drag.separationInternal = val;
     end
     function val = get.separation(drag)
       val = drag.separationInternal;

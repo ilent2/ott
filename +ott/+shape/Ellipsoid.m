@@ -103,7 +103,7 @@ classdef Ellipsoid < ott.shape.Shape ...
     function [locs, norms, dist] = intersectAllInternal(shape, x0, x1)
 
       % Call sphere method with transformed coordinates
-      sph = ott.shape.sphere(1.0);
+      sph = ott.shape.Sphere(1.0);
       [locs, norms] = sph.intersectAllInternal(...
           x0 ./ shape.radii, x1 ./ shape.radii);
 
@@ -112,7 +112,7 @@ classdef Ellipsoid < ott.shape.Shape ...
       norms = norms .* shape.radii;
 
       % Compute distances
-      dist = dot(locs - x0, x1 - x0)./vecnorm(x1 - x0);
+      dist = vecnorm((locs - x0).*(x1 - x0))./vecnorm(x1 - x0);
 
     end
 

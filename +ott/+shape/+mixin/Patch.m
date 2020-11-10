@@ -21,10 +21,13 @@ classdef Patch < ott.shape.mixin.IntersectTriMesh
 % See LICENSE.md for information about using/distributing this file.
 
   properties (Abstract)
-    verts
-    faces
     position
     rotation
+  end
+  
+  properties (Abstract, SetAccess=protected)
+    verts
+    faces
   end
 
   methods

@@ -22,6 +22,10 @@ function testConstruct(testCase)
   newNmax = 13;
   bsc = ott.bsc.Bsc(beam,newNmax);
   testCase.verifyEqual(bsc.Nmax, newNmax);
+  
+  % Check set Nmax
+  beam.Nmax = 14;
+  testCase.verifyEqual(beam.Nmax, 14, 'set nmax');
 
 end
 

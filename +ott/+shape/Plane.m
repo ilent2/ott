@@ -37,8 +37,8 @@ classdef Plane < ott.shape.Shape ...
       %   shape = Plane(normal, ...)
       %
       % Optional named arguments
-      %   - normal (3xN numeric) -- Normals to planes.  Default: ``[]``.
-      %     Overwrites any values set with `rotation`.
+      %   - normal (3xN numeric) -- Normals to planes, pointing outside.
+      %     Default: ``[]``.  Overwrites any values set with `rotation`.
       %
       %   - offset (1xN numeric) -- Offset of the plane from the position.
       %     Default: ``[]``.  Overwrites any values set with `position`.
@@ -101,14 +101,16 @@ classdef Plane < ott.shape.Shape ...
 
       % Check normals
       normals = [planearray.normal];
-      assert(all(normals(1) == normals), 'all normals must match');
+      assert(all(all(normals(:, 1) == normals)), ...
+          'all normals must match for cast to Strata');
 
       % Calculate depth of each slab
       offsets = [planearray.offset];
       depth = diff(offsets);
 
       % Create shape
-      shape = ott.shape.Strata(normals, depth, ...
+      shape = ott.shape.Strata('normal', normals(:, 1), ...
+          'depths', depth, ...
           'offset', planearray(1).offset);
     end
 
@@ -132,7 +134,7 @@ classdef Plane < ott.shape.Shape ...
       nxyz = repmat(shape.normal, 1, size(xyz, 2));
     end
 
-    function [locs, norms, dist] = intersectAllInternal(~, x0, x1)
+    function [locs, norms, dist] = intersectAllInternal(shape, x0, x1)
       % Calculate the intersection point on the plane surface.
       %
       % Rays will intersect the plane as long as they are traveling
@@ -154,7 +156,7 @@ classdef Plane < ott.shape.Shape ...
 
       % Calculate intersection location relative to ray origin
       dirs = (x1 - x0) ./ vecnorm(x1 - x0);
-      dist = -x0(3, :) ./ dirs(3, :);
+      dist = shape.offset - x0(3, :) ./ dirs(3, :);
 
       % Remove rays traveling away from the plane
       dist(:, dist < 0) = nan;
@@ -225,7 +227,7 @@ classdef Plane < ott.shape.Shape ...
     end
 
     function bb = get.boundingBox(~)
-      bb = [-Inf, Inf; -Inf; Inf; -Inf; 0];
+      bb = [-Inf, Inf; -Inf, Inf; -Inf, 0];
     end
 
     function b = get.starShaped(~)

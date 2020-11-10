@@ -48,6 +48,24 @@ function testEmpty(testCase)
   sz = [0, 5];
   shape = ott.shape.Shape.empty(sz);
   testCase.verifyEqual(size(shape), sz);
+  
+  clear shape;
+  shape(10) = ott.shape.Sphere(1);
+  testCase.verifyInstanceOf(shape(1), 'ott.shape.Empty');
+end
+
+function testWriteObj(testCase)
+
+  shape = ott.shape.Cube();
+  
+  fname = tempname();
+  testCase.addTeardown(@() delete(fname));
+  
+  shape.writeWavefrontObj(fname);
+  
+  testShape = ott.shape.ObjLoader(fname);
+  testCase.verifyEqual(testShape.verts, shape.verts, 'verts');
+
 end
 
 function testInsideXyzHelper(testCase)
@@ -182,4 +200,11 @@ function testMathOperators(testCase)
 
 end
 
+function testVoxels(testCase)
+
+  shape = ott.shape.Sphere();
+  a = shape.voxels();
+  testCase.verifyTrue(isnumeric(a));
+
+end
 

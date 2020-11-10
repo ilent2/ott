@@ -85,8 +85,15 @@ classdef Superellipsoid < ott.shape.Shape ...
       % Usage
       %   r = shape.starRadii(theta, phi)
 
-      assert(all(size(theta) == size(phi)), ...
-          'theta and phi must have same size');
+      assert(isscalar(theta) || isscalar(phi) ...
+          || all(size(theta) == size(phi)), ...
+          'theta and phi must have same size or one must be scalar');
+      if isscalar(theta) && ~isscalar(phi)
+        theta = repmat(theta, size(phi));
+      end
+      if isscalar(phi) && ~isscalar(theta)
+        phi = repmat(phi, size(theta));
+      end
 
       acp = abs(cos(phi));
       asp = abs(sin(phi));
@@ -123,18 +130,21 @@ classdef Superellipsoid < ott.shape.Shape ...
       asp = abs(sin(phi));
       act = abs(cos(theta));
       ast = abs(sin(theta));
-      cpsp = (acp/shape.a).^(2/shape.ew) + (asp/shape.b).^(2/shape.ew);
+      a = shape.radii(1);
+      b = shape.radii(2);
+      c = shape.radii(3);
+      cpsp = (acp/a).^(2/shape.ew) + (asp/b).^(2/shape.ew);
 
-      r = shape.radii(theta, phi);
+      r = shape.starRadii(theta, phi);
 
       sigma_r = ones(size(r));
       sigma_theta = r.^(2/shape.ns) .* ast .* cos(theta) .* ...
           ( ast.^((1-shape.ns)/shape.ns) .* cpsp.^(shape.ew/shape.ns) ...
-          - act.^((1-shape.ns)/shape.ns)/shape.c^(2/shape.ns) );
+          - act.^((1-shape.ns)/shape.ns)/c^(2/shape.ns) );
       sigma_phi = r.^(2/shape.ns) .* ast.^((2-shape.ns)/shape.ns) ...
           .* sin(phi) .* cos(phi) .* cpsp.^((shape.ew-shape.ns)/shape.ns) ...
-          .* ( asp.^((1-shape.ew)/shape.ew)/shape.b^(2/shape.ew) ...
-          - acp.^((1-shape.ew)/shape.ew)/shape.a^(2/shape.ew) );
+          .* ( asp.^((1-shape.ew)/shape.ew)/b^(2/shape.ew) ...
+          - acp.^((1-shape.ew)/shape.ew)/a^(2/shape.ew) );
       sigma_mag = sqrt( sigma_r.^2 + sigma_theta.^2 + sigma_phi.^2 );
 
       n = [ sigma_r./sigma_mag, sigma_theta./sigma_mag, ...
@@ -154,13 +164,34 @@ classdef Superellipsoid < ott.shape.Shape ...
           'radii must be positive numeric 3-vector');
       shape.radii = val(:);
     end
+    
+    function shape = set.ew(shape, val)
+      assert(isnumeric(val) && isscalar(val) && val >= 0, ...
+        'ew must be positive numeric scalar');
+      shape.ew = val;
+    end
+    
+    function shape = set.ns(shape, val)
+      assert(isnumeric(val) && isscalar(val) && val >= 0, ...
+        'ns must be positive numeric scalar');
+      shape.ns = val;
+    end
 
     function r = get.maxRadius(shape)
       % Calculate the maximum particle radius
+      
+      if shape.isSphere
+        r = shape.radii(1);
+      elseif shape.isEllipsoid
+        r = max(shape.radii);
+      else
+        warning('ott:shape:superellipsoid:maxRadius:not_implemented', ...
+          'maxRadius not implemented for general case, using approx.');
 
-      % This is likely an over-estimate for most particles, the lower
-      % bounds of this would be max(shape.radii).
-      r = vecnorm(shape.radii);
+        % This is likely an over-estimate for most particles, the lower
+        % bounds of this would be max(shape.radii).
+        r = vecnorm(shape.radii);
+      end
     end
 
     function bb = get.boundingBox(shape)

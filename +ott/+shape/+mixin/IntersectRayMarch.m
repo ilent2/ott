@@ -17,16 +17,16 @@ classdef IntersectRayMarch
 % See LICENSE.md for information about using/distributing this file.
 
   methods (Abstract)
-    intersectBoundingBox
-    normalsXyz
-    insideXyz
+    intersectBoundingBox(~)
+    normalsXyz(~)
+    insideXyz(~)
   end
 
   methods (Hidden)
-    function [locs, norms, dist] = intersectAllInternal(shape, x0, x1, varargin)
+    function [allLocs, allNorms, dist] = intersectAllInternal(shape, x0, x1, varargin)
       % Calls intersectInternal repeatedly to find all intersections
 
-      [locs, norms] = shape.intersectInternal(x0, x1);
+      [locs, norms] = shape.intersectInternal(x0, x1, varargin{:});
 
       allLocs = reshape(locs, 3, 1, []);
       allNorms = reshape(norms, 3, 1, []);
@@ -35,11 +35,13 @@ classdef IntersectRayMarch
 
         % Get locs that aren't finished
         mask = ~any(isnan(squeeze(allLocs(:, end, :))), 1);
-        [locs, norms] = shape.intersectInternal(x0(:, mask), x1(:, mask));
+        maskX0 = reshape(allLocs(:, end, mask), size(x1(:, mask)));
+        [locs, norms] = shape.intersectInternal(maskX0, ...
+            x1(:, mask), varargin{:});
 
         % Extend array
-        allLocs(:, end+1, :) = nan;
-        allNorms(:, end+1, :) = nan;
+        allLocs(:, end+1, :) = nan; %#ok<AGROW>
+        allNorms(:, end+1, :) = nan; %#ok<AGROW>
 
         % Assign new results
         allLocs(:, end, mask) = locs;
@@ -48,15 +50,20 @@ classdef IntersectRayMarch
       end
 
       if nargout >= 3
-        dist = locs - reshape(x0, 3, 1, []);
+        dist = allLocs - reshape(x0, 3, 1, []);
       end
     end
 
     function [locs, norms] = intersectInternal(shape, x0, x1, varargin)
       % Calculate intersection by ray marching
+      
+      p = inputParser;
+      p.addParameter('minDistance', 1.0e-6);
+      p.addParameter('stepSize', []);
+      p.parse(varargin{:});
 
       % Minimum distance before intersection
-      min_distance = p.Results.min_distance;
+      min_distance = p.Results.minDistance;
 
       dx = p.Results.stepSize;
       if isempty(dx)
@@ -68,9 +75,11 @@ classdef IntersectRayMarch
 
       % Start by calculating intersects with bounding box
       ints = shape.intersectBoundingBox(x0, x1);
+      ints = reshape(ints, 6, []);
 
       % Handle point inside (or on the edge)
-      mask = isnan(ints(1, :));
+      mask = any(isnan(ints), 1);
+      ints(4:6, mask) = ints(1:3, mask);
       ints(1:3, mask) = x0(:, mask) ...
           + (x1(:, mask) - x0(:, mask)) .* min_distance ...
           ./ vecnorm(x1(:, mask) - x0(:, mask));

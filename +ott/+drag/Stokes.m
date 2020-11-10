@@ -173,7 +173,8 @@ classdef Stokes < ott.utils.RotateHelper ...
       else
         % Calculate distances between shapes
         xyz = [shape.position];
-        dist = vecnorm(xyz - reshape(xyz, 3, 1, []));
+        dist = squeeze(vecnorm(xyz - reshape(xyz, 3, 1, [])));
+        dist(diag(true(size(dist, 1), 1))) = Inf;
 
         limit = 5*[shape.maxRadius];
         if any(any(dist < limit))

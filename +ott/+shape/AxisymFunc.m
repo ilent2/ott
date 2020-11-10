@@ -507,9 +507,11 @@ classdef AxisymFunc < ott.shape.Shape ...
       if strcmpi(shape.type, 'angular')
         [~, r] = fminbnd(@(x) -shape.func(x), ...
             shape.range(1), shape.range(2));
+        r = -r;
       else
         [~, r] = fminbnd(@(x) -sqrt(shape.func(x).^2 + x.^2), ...
             shape.range(1), shape.range(2));
+        r = -r;
       end
     end
 

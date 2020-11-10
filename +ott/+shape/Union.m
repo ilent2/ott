@@ -17,6 +17,7 @@ classdef Union < ott.shape.Set
 
   properties (Dependent)
     boundingBox         % Surrounds all shapes
+    maxRadius           % Radius surrounding all shapes
   end
 
   methods
@@ -39,17 +40,24 @@ classdef Union < ott.shape.Set
       % All other properties are copied from the first union.
 
       if isa(a, 'ott.shape.Union') && isa(b, 'ott.shape.Union') ...
-          && a.hasMoved == false && b.hasMoved == false
+          && hasMoved(a) == false && hasMoved(b) == false
         sset = a;
         sset.shapes = [sset.shapes, b.shapes];
-      elseif isa(a, 'ott.shape.Union') && a.hasMoved == false
+      elseif isa(a, 'ott.shape.Union') && hasMoved(a) == false
         sset = a;
         sset.shapes = [sset.shapes, b];
-      elseif isa(b, 'ott.shape.Union') && b.hasMoved == false
+      elseif isa(b, 'ott.shape.Union') && hasMoved(b) == false
         sset = b;
         sset.shapes = [a, sset.shapes];
       else
         sset = ott.shape.Union([a, b]);
+      end
+      
+      % Duplicated with ott.shape.Intersection, might move in future
+      function b = hasMoved(shp)
+        b = false;
+        b = b & all(shp.position == [0;0;0]);
+        b = b & all(all(shp.rotation == eye(3)));
       end
     end
   end
@@ -93,6 +101,14 @@ classdef Union < ott.shape.Set
       end
 
       bb = [min(bbs, [], 2), max(bbs, [], 2)];
+    end
+    
+    function val = get.maxRadius(shape)
+      val = 0;
+      for ii = 1:numel(shape.shapes)
+        val = max(val, shape.shapes(ii).maxRadius ...
+            + vecnorm(shape.shapes(ii).position));
+      end
     end
   end
 end

@@ -22,17 +22,24 @@ function testConstructor(testCase)
   % Scale
   shape = shape ./ 2;
   testCase.verifyEqual(shape.radius, radius./2, 'scale');
+  
+  % Set volume
+  shape.volume = (4/3)*pi;
+  testCase.verifyEqual(shape.radius, 1, 'set volume');
 
 end
 
 function testNormals(testCase)
 
-  rtp = randn(3, 1);
-  target = [1;0;0];
+  rtp = [1;0.2;0.6];
+  xyz = ott.utils.rtp2xyz(rtp);
   shape = ott.shape.Sphere();
-  testCase.verifyEqual(shape.normalsRtp(rtp), target, 'rtp');
+  testCase.verifyEqual(shape.normalsRtp(rtp), xyz./vecnorm(xyz), 'rtp');
 
-  testCase.verifyEqual(shape.normalsXyz(rtp), rtp./vecnorm(rtp), 'xyz');
+  testCase.verifyEqual(shape.normalsXyz(xyz), xyz./vecnorm(xyz), 'xyz');
+  
+  % Hmm, how is this method accessible?
+  testCase.verifyEqual(shape.normalsTInternal(0), [0;1], 'T');
 
 end
 
@@ -48,3 +55,9 @@ function testCasts(testCase)
 
 end
 
+function testIsosurfSurfPoints(testCase)
+
+  shape = ott.shape.Sphere();
+  shape.surfPoints();  % Coverage
+
+end

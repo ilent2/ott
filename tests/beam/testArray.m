@@ -92,11 +92,11 @@ function testFieldCoverage(testCase)
   beam = testCase.TestData.beam1;
   cbeam = ott.beam.Array(beam, 'arrayType', 'incoherent');
   
-  cbeam.efarfield();
-  cbeam.hfarfield();
-  cbeam.ehfarfield();
-  cbeam.eparaxial();
-  cbeam.hparaxial();
-  cbeam.ehparaxial();
+  cbeam.efarfield([0;0;0]);
+  cbeam.hfarfield([0;0;0]);
+  cbeam.ehfarfield([0;0;0]);
+  cbeam.eparaxial([0;0]);
+  cbeam.hparaxial([0;0]);
+  cbeam.ehparaxial([0;0]);
 
 end

@@ -14,6 +14,22 @@ function testConstruct(testCase)
   testCase.verifyEqual(beam.index_medium, 1, 'index');
   testCase.verifyEqual(beam.omega, 2*pi*3e8/1064e-9, ...
       'RelTol', 1e-15, 'wavelength');
+    
+  % Set methods
+  beam.speed = 2;
+  testCase.verifyEqual(beam.index_medium, 3e8/2, 'change speed');
+  testCase.verifyError(@setWavenumber, 'ott:beam:Beam:set_wavenumber', 'k');
+  testCase.verifyError(@setWavelength, 'ott:beam:Beam:set_wavelength', 'w');
+  a = beam.setWavenumber(1, 'fixedSpeed');
+  a = beam.setWavelength(2, 'fixedFrequency');
+  
+  function setWavenumber()
+    beam.wavenumber = 1;
+  end
+
+  function setWavelength()
+    beam.wavelength = 1;
+  end
 
 end
 

@@ -20,6 +20,7 @@ function testConstruct(testCase)
   testCase.verifyEqual(beam.porder, porder, 'p');
   testCase.verifyEqual(beam.ellipticity, ellip, 'e');
   testCase.verifyEqual(beam.parity, parity, 'parity');
+  testCase.verifyEqual(beam.isGaussian, false, 'isGauss');
 
   testCase.verifyEqual(beam.power, 1.0, 'power');
   testCase.verifyEqual(beam.mapping, 'sin', 'mapping');

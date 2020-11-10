@@ -24,18 +24,27 @@ classdef Strata < ott.shape.Plane
       % Construct a new infinite slab
       %
       % Usage
-      %   shape = Slab(normal, depth)
+      %   shape = Slab(depths, normal, ...)
       %
-      %   shape = Slab(normal, offset, depth)
+      % Optional named parameters
+      %   - depths (numeric) -- Depth of each layer.
+      %     Default: ``[0.2, 0.5]``.
       %
-      % Parameters
-      %   - normal (3x1 numeric) -- Surface normal
-      %   - depth (numeric) -- Depth of each layer.
-      %   - offset (numeric) -- Offset of first surface to origin.
+      %   - normal (3x1 numeric) -- Surface normal.
+      %     Default: ``[]``.  Overwrite any value set with ``rotation``.
+      %
+      %   - offset (numeric) -- Offset of the plane from the position.
+      %     Default: ``[]``.  Overwrites any values set with ``position``.
+      %
+      %   - position (3x1 numeric) -- Position of the plane.
+      %     Default: ``[0;0;0]``.
+      %
+      %   - rotation (3x3 numeric) -- Plane orientation.
+      %     Default: ``eye(3)``.
 
       p = inputParser;
-      p.addOptional('normal', []);
       p.addOptional('depths', [0.2, 0.5]);
+      p.addOptional('normal', []);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -49,8 +58,9 @@ classdef Strata < ott.shape.Plane
 
       assert(numel(oldshape.depths) == 1, 'Depth must have 1 element');
 
-      shape = ott.shape.Slab(oldshape.normal, oldshape.depth, ...
-          'offset', p.Results.offset);
+      shape = ott.shape.Slab('normal', oldshape.normal, ...
+          'depth', oldshape.depths, ...
+          'position', oldshape.offset .* oldshape.normal);
     end
 
     function shape = ott.shape.PatchMesh(shape, varargin)
@@ -96,20 +106,28 @@ classdef Strata < ott.shape.Plane
     function [locs, norms, dist] = intersectAllInternal(shape, x0, x1)
       % Call plane method for each layer
 
-      locs = zeros(3, length(shape.depths), size(x0, 2));
-      norms = zeros(3, length(shape.depths), size(x0, 2));
-      dist = zeros(1, length(shape.depths), size(x0, 2));
+      locs = zeros(3, length(shape.depths)+1, size(x0, 2));
+      norms = zeros(3, length(shape.depths)+1, size(x0, 2));
+      dist = zeros(1, length(shape.depths)+1, size(x0, 2));
+      
+      % First surface
+      [locs(:, 1, :), norms(:, 1, :), dist(:, 1, :)] = ...
+            intersectAllInternal@ott.shape.Plane(shape, x0, x1);
 
       for ii = 1:length(shape.depths)
-        [locs(:, ii, :), norms(:, ii, :), dist(:, ii, :)] = ...
+        [locs(:, ii+1, :), norms(:, ii+1, :), dist(:, ii+1, :)] = ...
             intersectAllInternal@ott.shape.Plane(shape, ...
-            x0 - shape.depths(ii), x1 - shape.depths(ii));
+            x0 - shape.depths(ii)*shape.normal, ...
+            x1 - shape.depths(ii)*shape.normal);
+        locs(:, ii+1, :) = locs(:, ii+1, :) + shape.depths(ii)*shape.normal;
+        dist(:, ii+1, :) = dist(:, ii+1, :) ...
+          + vecnorm(shape.depths(ii)*shape.normal.*(x1 - x0))./vecnorm(x1 - x0);
       end
     end
 
     function shape = scaleInternal(shape, sc)
       shape.depths = shape.depths * sc;
-      shape = scaleInternal@ott.shape.Plane(sc);
+      shape = scaleInternal@ott.shape.Plane(shape, sc);
     end
   end
 

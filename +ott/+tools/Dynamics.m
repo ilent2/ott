@@ -172,7 +172,10 @@ classdef Dynamics
       % Setup the figure if required
       our_axes = p.Results.plot_axes;
       if isempty(time) || ~isempty(our_axes)
-        [our_axes, spatch, patchVertices, stopButton] = sim.setupAxes(our_axes);
+        plotData = sim.setupAxes(our_axes, ...
+            p.Results.outputRate, sim.particle.shape);
+      else
+        plotData = sim.setupAxes();   % Create empty plotData
       end
 
       % Calculate number of time steps
@@ -218,8 +221,6 @@ classdef Dynamics
         end
         bmterm = sqrt(2*kb*sim.temperature) * invGamma^(1/2);
 
-        tNow = now;
-
         for ii = 2:numel(t)
 
           % Get current position/rotation
@@ -236,19 +237,13 @@ classdef Dynamics
           x(:, ii) = xc + ft(1:3)*dt;
           R(:, (1:3) + (ii-1)*3) = sim.rotation_matrix(ft(4:6)*dt)*Rc;
 
-          if ~isempty(our_axes) && (now - tNow) > p.Results.outputRate/86400
-            spatch.Vertices = ...
-                (R(:, (1:3)+(ii-1)*3)*patchVertices.' + x(:, ii)).';
-            drawnow;
+          % Update plot
+          plotData = sim.updatePlot(plotData, ...
+              x(:, ii), R(:, (1:3) + (ii-1)*3));
 
-            % Check if we have been asked to exit
-            if ~isempty(stopButton.UserData)
-              x(:, ii+1:end) = [];
-              R(:, ii*3+1:end) = [];
-              break;
-            end
-
-            tNow = now;
+          % Check if we should stop
+          if ~plotData.running
+            break;
           end
         end
 
@@ -274,26 +269,26 @@ classdef Dynamics
               + drag*x(:, ii-2)./(2*dt) + bmterm * rand(3, 1);
 
           % TODO: Torque terms
-
           % Update position/rotation
           x(:, ii) = denom * ff;
 
-          if ~isempty(our_axes) && (now - tNow) > p.Results.outputRate/86400
-            spatch.Vertices = ...
-                (R(:, (1:3)+(ii-1)*3)*patchVertices.' + x(:, ii)).';
-            drawnow;
+          % Update plot
+          plotData = sim.updatePlot(plotData, ...
+              x(:, ii), R(:, (1:3) + (ii-1)*3));
 
-            % Check if we have been asked to exit
-            if ~isempty(stopButton.UserData)
-              x(:, ii+1:end) = [];
-              R(:, ii*3+1:end) = [];
-              break;
-            end
-
-            tNow = now;
+          % Check if we should stop
+          if ~plotData.running
+            break;
           end
         end
 
+      end
+
+      % Remove extra entries in t/x/R
+      if ~plotData.running
+        t(ii+1:end) = [];
+        x(:, ii+1:end) = [];
+        R(:, ii*3+1:end) = [];
       end
 
       % Only return results if requested
@@ -302,10 +297,15 @@ classdef Dynamics
       end
     end
   end
-  
-  methods (Hidden)
-    function [oaxes, opatch, patchVertices, stopButton] = setupAxes(sim, oaxes)
+
+  methods (Hidden, Static)
+    function plotData = setupAxes(oaxes, outputRate, shape)
       % Setup a axes for visualising the simulation
+
+      if nargin == 0
+        plotData = struct('running', true, 'axes', []);
+        return;
+      end
 
       % setup axes if needed
       if isempty(oaxes)
@@ -321,17 +321,57 @@ classdef Dynamics
           'Callback', @buttonCallback);
 
       % Get or generate default shape
-      shape = sim.particle.shape;
       if isempty(shape)
-        shape = ott.shape.Sphere(sim.beam.wavelength);
+        shape = ott.shape.Sphere(1.0e-6);
       end
 
       % Generate patch data
       opatch = shape.surf('axes', oaxes);
-      patchVertices = opatch.Vertices;
-      
+
+      % Setup plot data
+      plotData = struct();
+      plotData.axes = oaxes;
+      plotData.patch = opatch;
+      plotData.patchVertices = opatch.Vertices.';
+      plotData.running = true;
+      plotData.stopButton = stopButton;
+      plotData.time = now;
+      plotData.outputRate = outputRate;
+
       function buttonCallback(~, ~)
         stopButton.UserData = 'stop';
+      end
+    end
+
+    function plotData = updatePlot(plotData, x, R)
+      % Update the plot
+
+      % Check if we need to do anything
+      if isempty(plotData.axes)
+        return;
+      end
+
+      % Check if the user closed the figure
+      if ~ishandle(plotData.axes)
+        plotData.running = false;
+        return;
+      end
+
+      % Check if we should update the figure content
+      if (now - plotData.time) > plotData.outputRate/86400
+
+        % Update patch position
+        plotData.patch.Vertices = (R*plotData.patchVertices + x).';
+
+        % Update content and run callback functions
+        drawnow;
+
+        % Check if we have been asked to exit
+        if ~isempty(plotData.stopButton.UserData)
+          plotData.running = false;
+        end
+
+        plotData.time = now;
       end
     end
   end

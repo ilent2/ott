@@ -67,10 +67,11 @@ classdef StarShape < ott.shape.mixin.CoordsSph
       [X, Y, Z] = ott.utils.rtp2xyz(R, T, P);
 
       shape = ott.shape.PatchMesh.FromSurfMatrix(X, Y, Z, ...
-          'position', shape.position, 'rotation', shape.rotation);
+          'position', shape.position, 'rotation', shape.rotation, ...
+          unmatched{:});
     end
 
-    function R = starRadii(shape, theta, phi)
+    function R = starRadii(~, ~, ~) %#ok<STOUT>
       % Method implemented to cause conflict with method from Shape
       % This method should be implemented in the sub-class
       error('Method should be overloaded in sub-class');
@@ -109,7 +110,7 @@ classdef StarShape < ott.shape.mixin.CoordsSph
   end
 
   methods % Getters/setters
-    function s = get.starShaped(shape)
+    function s = get.starShaped(~)
       s = true;
     end
   end

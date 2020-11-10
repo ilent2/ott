@@ -21,6 +21,14 @@ function testConstruct(testCase)
 
 end
 
+function testArray(testCase)
+
+  % Test the getDefaultScalarElement method
+  data(5) = ott.drag.StokesData(randn(6, 6));
+  testCase.verifyEqual(data(1).gamma, eye(3), 'empty');
+
+end
+
 function testCastData(testCase)
 
   drag = ott.drag.StokesSphere(1.0);
@@ -33,11 +41,45 @@ end
 
 function testFromShape(testCase)
 
-  shape = ott.shape.Sphere();
-  drag = ott.drag.Stokes.FromShape(shape);
+  shape = ott.shape.Sphere(1);
   target = ott.drag.StokesSphere(shape.radius);
-
+  
+  % Single shape
+  drag = ott.drag.Stokes.FromShape(shape);
   testCase.verifyEqual(drag, target, 'sphere');
+  
+  % Two distant shapes
+  shapeArray = [shape, shape];
+  shapeArray(2).position = [100;0;0];
+  drag = ott.drag.Stokes.FromShape(shapeArray);
+  testCase.verifyWarningFree(@() ott.drag.Stokes.FromShape(shapeArray), ...
+    'far no warn');
+  testCase.verifyEqual(drag(1), target, 'distant 1');
+  testCase.verifyEqual(drag(2), target, 'distant 2');
+  
+  % Two nearby shapes
+  shapeArray(2).position = [3;0;0];
+  testCase.verifyWarning(@() ott.drag.Stokes.FromShape(shapeArray), ...
+    'ott:drag:Stokes:no_interaction_terms', 'near warn');
+  
+  % Concentric spheres
+  shapeArray(2).position = [0;0;0];
+  shapeArray(2).radius = 0.1;
+  drag = ott.drag.Stokes.FromShape(shapeArray);
+  testCase.verifySize(drag, [1, 1], 'concentric');
+  testCase.verifyInstanceOf(drag, 'ott.drag.EccentricSpheresNn', 'concen');
+  
+  % Cylinder
+  shape = ott.shape.Cylinder(1, 1);
+  drag = ott.drag.Stokes.FromShape(shape);
+  testCase.verifyInstanceOf(drag, 'ott.drag.StokesStarShaped', 'cylinder');
+  
+  % Sphere-wall
+  shapeArray(2) = ott.shape.Plane();
+  shapeArray(1).position = [0;0;10];
+  drag = ott.drag.Stokes.FromShape(shapeArray);
+  shapeArray2 = ott.shape.Shape(drag);
+  testCase.verifyEqual(shapeArray2(1).radius, shapeArray(1).radius, 'sphere-wall');
 
 end
 
@@ -74,8 +116,22 @@ function testRotation(testCase)
     'Rotation not set');
 
   % Change the rotation back
-  a.rotation = eye(3);;
+  a.rotation = eye(3);
   testCase.verifyEqual(double(a), diag([1, 2, 3, 4, 5, 6]), ...
     'AbsTol', 1.0e-6, 'Rotation not cleared with clear');
 
+end
+
+function testCoverage(testCase)
+
+  data = diag([1, 2, 3, 4, 5, 6]);
+  a = ott.drag.StokesData('forward', data);
+  
+  testCase.verifyEqual(diag(a), diag(data), 'diag');
+  testCase.verifyEqual(vecnorm(a), sum(data, 1).', 'vecnorm');
+  
+  testCase.verifyEqual(a.igamma, inv(diag([1,2,3])), 'igamma');
+  testCase.verifyEqual(a.idelta, inv(diag([4,5,6])), 'idelta');
+  testCase.verifyEqual(a.icrossterms, zeros(3, 3), 'icross');
+  
 end

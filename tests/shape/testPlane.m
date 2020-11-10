@@ -20,7 +20,27 @@ function testConstructor(testCase)
   testCase.verifyEqual(shape.starShaped, false, 'star');
   testCase.verifyEqual(shape.maxRadius, Inf, 'maxR');
   testCase.verifyEqual(shape.volume, Inf, 'volume');
+  testCase.verifyEqual(shape.boundingBox, [-Inf, Inf; -Inf, Inf; -Inf, 0], 'bb');
+  testCase.verifyEqual(shape.normalsXyz([0;0;0]), normal, 'normalXyz');
+  
+  % Scale
+  Sshape = shape * 2;
+  testCase.verifyEqual(Sshape, shape, 'scale');
 
+end
+
+function testCasts(testCase)
+
+  normal = [0;0;1];
+  shape = ott.shape.Plane(normal, 'offset', 0);
+  shape2 = ott.shape.Plane(normal, 'offset', 1);
+  
+  slab = ott.shape.Slab([shape, shape2]);
+  testCase.verifyInstanceOf(slab, 'ott.shape.Slab');
+  
+  strata = ott.shape.Strata([shape, shape2]);
+  testCase.verifyInstanceOf(strata, 'ott.shape.Strata');
+  
 end
 
 function testInsideXyz(testCase)
@@ -45,6 +65,9 @@ function testSurf(testCase)
 
   p = plane.surf('scale', 2.0);
   testCase.verifyClass(p, 'matlab.graphics.primitive.Patch');
+  
+  testCase.verifyError(@() plane.surfPoints(), ...
+    'ott:shape:mixin:NoSurfPoints:surf_points');
 
 end
 

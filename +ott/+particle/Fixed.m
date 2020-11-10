@@ -95,12 +95,12 @@ classdef Fixed < ott.particle.Particle
         tinternal = ott.tmatrix.Tmatrix.FromShape(...
             shape ./ wavelength_medium, ...
             'relative_index', index_relative, ...
-            'internal', true, 'mass', mass);
+            'internal', true);
       end
 
       % Construct particle
       particle = ott.particle.Fixed(shape, drag, tmatrix, ...
-          'tinternal', tinternal);
+          'tinternal', tinternal, 'mass', p.Results.mass);
     end
   end
 

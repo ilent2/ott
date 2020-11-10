@@ -275,6 +275,9 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       %
       % Usage
       %   shape.writeWavefrontObj(filename)
+      %
+      % Parameters
+      %   - filename (char | string) -- Filename for file to write to.
 
       shape = ott.shape.TriangularMesh(shape);
       shape.writeWavefrontObj(filename);
@@ -334,11 +337,11 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       % Any rays/faces that don't intersect result in nans being returned.
       %
       % Usage
-      %   [locs, norms, dist] = shape.intersectAll(shape, vecs, ...)
+      %   [locs, norms, dist] = shape.intersectAll(shape, x0, x1, ...)
       %
       % Parameters
-      %   - vecs (3xM Vector) -- vectors to intersect.  Must be castable
-      %     to a ott.utils.Vector object.
+      %   - x0,x1 (3xM numeric) -- Describes the intersection ray.
+      %     x0 is the starting point, x1 is in the forward direction.
       %
       % Returns
       %   - locs (3xNxM numeric) -- intersections with N locations
@@ -348,10 +351,15 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       % Optional named arguments
       %   - origin (enum) -- Coordinate origin.  'local' or 'global'.
       %
+      %   - removeNan (logical) -- If true, removes nan values (i.e.,
+      %     faces which are not intersected).  Default: ``false``.
+      %     Only works when size(x0) is 3x1.
+      %
       % Additional arguments passed to intersectAllInternal.
 
       p = inputParser;
       p.addParameter('origin', 'global');
+      p.addParameter('removeNan', false);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -380,6 +388,13 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
           % Nothing to do
         otherwise
           error('Unknown origin specified');
+      end
+      
+      if p.Results.removeNan && size(x0, 2) == 1 && size(x1, 2) == 1
+        rmVals = any(isnan(locs), 1);
+        locs(:, rmVals) = [];
+        dist(:, rmVals) = [];
+        norms(:, rmVals) = [];
       end
     end
 

@@ -30,6 +30,22 @@ function testConstructor(testCase)
 
 end
 
+function testCasts(testCase)
+
+  shape = ott.shape.Cylinder();
+  shape = ott.shape.AxisymInterp(shape);
+  testCase.verifyInstanceOf(shape, 'ott.shape.AxisymInterp');
+
+end
+
+function testAxisymStarShapeFunctions(testCase)
+
+  shape = ott.shape.Cylinder();
+  shape.normalsRtInternal([0;0]);  % Coverage;
+  shape.insideRtInternal([0;0]);  % Coverage
+
+end
+
 function testSurf(testCase)
 
   f = figure();
@@ -38,4 +54,17 @@ function testSurf(testCase)
   a = shape.surf('visualise', true, 'showNormals', true);
 
 end
+
+function testIntersect(testCase)
+
+  radius = 1;
+  height = 2;
+  shape = ott.shape.Cylinder(radius, height);
+  
+  testCase.verifyEqual(shape.intersect([0;0;0], [0;0;10]), [0;0;1], 'top');
+  testCase.verifyEqual(shape.intersect([0;0;-10], [0;0;0]), [0;0;-1], 'bot');
+  testCase.verifyEqual(shape.intersect([0;0;0], [2;0;0]), [1;0;0], 'rad');
+
+end
+
 

@@ -39,8 +39,12 @@ classdef InceGaussian < ott.beam.properties.Gaussian ...
 
   methods
     function b = isGaussian(beam)
-      % TODO: Implement this
-      error('not yet implemented');
+      if beam.lmode ~= 0
+        b = false;
+      else
+        % TODO: Implement this
+        error('not yet implemented');
+      end
     end
   end
 

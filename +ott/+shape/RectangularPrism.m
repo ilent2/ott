@@ -8,6 +8,9 @@ classdef RectangularPrism < ott.shape.Shape ...
 % Properties
 %   - widths        -- Widths of each side [x; y; z]
 %
+% Supported casts
+%   - ott.shape.Cube -- Only if widths all match
+%
 % Additional properties inherited from base.
 
 % Copyright 2018-2020 Isaac Lenton
@@ -25,6 +28,9 @@ classdef RectangularPrism < ott.shape.Shape ...
     starShaped         % True if the particle is star-shaped
     xySymmetry         % True if the particle is xy-plane mirror symmetric
     zRotSymmetry       % z-axis rotational symmetry of particle
+  end
+
+  properties (Dependent, SetAccess=protected)
     verts              % Vertices forming surface
     faces              % Faces forming surface
   end
@@ -48,6 +54,17 @@ classdef RectangularPrism < ott.shape.Shape ...
       shape = shape@ott.shape.Shape(unmatched{:});
       shape.widths = p.Results.widths;
     end
+
+    function shape = ott.shape.Cube(shape)
+      % Cast shape to cube (only supported if all widths match
+
+      assert(all(shape.widths(1) == shape.widths), ...
+          'All widths must match for cast to cube');
+
+      shape = ott.shape.Cube(shape.widths(1), ...
+          'position', shape.position, ...
+          'rotation', shape.rotation);
+    end
   end
 
   methods (Hidden)
@@ -57,19 +74,11 @@ classdef RectangularPrism < ott.shape.Shape ...
     end
 
     function n = normalsXyzInternal(shape, xyz)
+      % Defers to the cube normals method after scaling coordinates
 
       assert(size(xyz, 1) == 3, 'xyz must be 3xN matrix');
-
-      % Determine which dimensions are inside
-      tol = 1.0e-3.*shape.widths;
-      insideDims = abs(xyz) < (shape.widths./2 + tol);
-
-      % Calculate normals
-      n = sign(xyz) .* double(~insideDims);
-
-      % Normalise vectors (creates nans for interior points)
-      n = n ./ vecnorm(n);
-
+      xyz = xyz ./ shape.widths(:);
+      n = ott.shape.Cube(1.0).normalsXyzInternal(xyz);
     end
 
     function [locs, norms, dist] = intersectAllInternal(shape, x0, x1)

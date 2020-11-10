@@ -25,6 +25,9 @@ classdef Cube < ott.shape.Shape ...
     starShaped         % True if the particle is star-shaped
     xySymmetry         % True if the particle is xy-plane mirror symmetric
     zRotSymmetry       % z-axis rotational symmetry of particle
+  end
+
+  properties (Dependent, SetAccess=protected)
     verts              % Vertices describing cube
     faces              % Faces describing cube
   end
@@ -57,12 +60,15 @@ classdef Cube < ott.shape.Shape ...
     end
 
     function n = normalsXyzInternal(shape, xyz)
+      % Calculate normals by working out which dimensions are outside
+      % the shape.  Normalise the resulting vector.  Any points inside
+      % the shape return NaN (within a tolerance of shape width).
 
       assert(size(xyz, 1) == 3, 'xyz must be 3xN matrix');
 
       % Determine which dimensions are inside
       tol = 1.0e-3.*shape.width;
-      inside = abs(xyz) < (shape.width./2 + tol);
+      inside = abs(xyz) < (shape.width./2 - tol);
 
       % Calculate normals
       n = sign(xyz) .* double(~inside);
@@ -147,7 +153,7 @@ classdef Cube < ott.shape.Shape ...
     function shape = set.maxRadius(shape, val)
       assert(isnumeric(val) && isscalar(val) && val >= 0, ...
           'maxRadius must be positive numeric scalar');
-      shape.width = sqrt(r.^2./3).*2;
+      shape.width = sqrt(val.^2./3).*2;
     end
 
     function v = get.volume(shape)

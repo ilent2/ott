@@ -16,11 +16,11 @@ classdef InfVolume < ott.shape.mixin.NoSurfPoints
   end
 
   methods % Getters/setters
-    function r = get.maxRadius(shape)
+    function r = get.maxRadius(~)
       r = Inf;
     end
 
-    function v = get.volume(shape)
+    function v = get.volume(~)
       v = Inf;
     end
   end

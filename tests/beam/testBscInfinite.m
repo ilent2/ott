@@ -33,6 +33,11 @@ function testFieldValues(testCase)
   testCase.verifyWarning(@() beam.ehfarfield([0;0;0]), ...
     'ott:beam:BscInfinite:farfield_is_finite', 'ehfarfield');
   
+  % test coverage
+  beam.efieldRtp([0;0;0]);
+  beam.ehfieldRtp([0;0;0]);
+  beam.hfieldRtp([0;0;0]);
+  
   large = [1;1;1];
   testCase.verifyError(@() beam.efield(large), ...
     'ott:beam:BscBeam:recalculate_not_implemented', 'efield');

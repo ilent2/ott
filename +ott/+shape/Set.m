@@ -26,10 +26,6 @@ classdef (Abstract) Set < ott.shape.Shape ...
     shapes              % Shapes contained in the set
   end
 
-  properties (Dependent)
-    maxRadius           % Radius surrounding all shapes
-  end
-
   methods
     function shape = Set(shapes, varargin)
       % Construct a new shape set
@@ -59,10 +55,6 @@ classdef (Abstract) Set < ott.shape.Shape ...
       assert(isa(val, 'ott.shape.Shape'), ...
           'shapes must inherit from ott.shape.Shape');
       shape.shapes = val;
-    end
-
-    function r = get.maxRadius(shape)
-      r = max(vecnorm(shape.boundingBox));
     end
   end
 end

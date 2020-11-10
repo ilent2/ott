@@ -21,5 +21,7 @@ function testLocalTranslation(testCase)
   obj = obj.translateXyz([0;0;1], 'origin', 'local');
   
   testCase.verifyEqual(obj.position, [1;0;0], 'AbsTol', 1.0e-15);
+  testCase.verifyEqual(obj.local2global([0;0;0]), obj.position, 'loc2glob');
+  testCase.verifyEqual(obj.global2local(obj.position), [0;0;0], 'glob2loc');
 
 end

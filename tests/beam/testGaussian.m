@@ -13,6 +13,7 @@ function testConstruct(testCase)
   testCase.verifyEqual(beam.mapping, 'sin', 'mapping');
   testCase.verifyEqual(beam.polfield, [1, 1i], 'polfield');
   testCase.verifyEqual(beam.polbasis, 'cartesian', 'polbasis');
+  testCase.verifyEqual(beam.isGaussian, true, 'isGauss');
 
 end
 

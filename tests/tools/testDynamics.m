@@ -55,3 +55,48 @@ function testSimulateCoverage(testCase)
 
 end
 
+function testSetupAxes(testCase)
+
+  h = figure();
+  testCase.addTeardown(@() close(h));
+  
+  % Test no data
+  pd = ott.tools.Dynamics.setupAxes();
+  testCase.verifyEqual(pd, struct('running', true, 'axes', []));
+  
+  ax = [];
+  pd = ott.tools.Dynamics.setupAxes(ax, 1, ott.shape.Sphere());
+  
+  testCase.verifyInstanceOf(pd.axes, 'matlab.graphics.axis.Axes');
+  testCase.verifyInstanceOf(pd.patch, 'matlab.graphics.primitive.Patch');
+  testCase.verifyInstanceOf(pd.stopButton, 'matlab.ui.control.UIControl');
+  testCase.verifyTrue(isnumeric(pd.patchVertices));
+  
+  % Test stop button
+  testCase.verifyEqual(pd.stopButton.UserData, [], 'initial udata');
+  pd.stopButton.Callback();
+  testCase.verifyEqual(pd.stopButton.UserData, 'stop', 'after click');
+  
+  % Test existing axes
+  ax = axes();
+  pd = ott.tools.Dynamics.setupAxes(ax, 1, ott.shape.Sphere());
+  testCase.verifyEqual(pd.axes, ax);
+  
+end
+
+function testUpdatePlot(testCase)
+
+  h = figure();
+  testCase.addTeardown(@() close(h));
+  
+  pd = ott.tools.Dynamics.setupAxes();
+  pd2 = ott.tools.Dynamics.updatePlot(pd, [], []);
+  testCase.verifyEqual(pd, pd2);
+  
+  ax = [];
+  pd = ott.tools.Dynamics.setupAxes(ax, 1, ott.shape.Sphere());
+  pd.time = 0;
+  ott.tools.Dynamics.updatePlot(pd, [1;0;0], eye(3));
+  testCase.verifyEqual(pd.patch.Vertices, pd.patchVertices.' + [1,0,0]);
+
+end

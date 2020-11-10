@@ -81,7 +81,7 @@ classdef Particle < matlab.mixin.Heterogeneous ...
   end
 
   methods % Getters/setters
-    function particle = particle.mass(particle, val)
+    function particle = set.mass(particle, val)
       if isempty(val)
         particle.mass = [];
       else

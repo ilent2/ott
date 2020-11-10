@@ -31,7 +31,7 @@ function testInternalMie(testCase)
   radius = 1.0;
   shape = ott.shape.Sphere(radius);
   index = 1.2;
-  Nmax = 12;
+  Nmax = 11;
   [~, tmatrix] = ott.tmatrix.Ebcm.FromShape(shape, ...
       'relative_index', index, 'Nmax', Nmax);
 

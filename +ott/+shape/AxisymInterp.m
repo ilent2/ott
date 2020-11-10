@@ -157,7 +157,7 @@ classdef AxisymInterp < ott.shape.Shape ...
       %   - npts (numeric) -- Number of equally spaced points along surface.
 
       % Calculate the point spacing
-      ds = shape.perimeter / npts / 2.0;
+      ds = shape.perimeter / npts;
 
       % The following is based on axisym_boundarypoints from OTTv1
       
@@ -292,19 +292,26 @@ classdef AxisymInterp < ott.shape.Shape ...
   methods (Hidden)
     function b = insideRtInternal(shape, rt)
       % Use insideRzInternal instead
-      rz = rt(1, :).*[sin(rt(2, :)), cos(rt(2, :))];
+      
+      assert(isnumeric(rt) && ismatrix(rt) && size(rt, 1) == 2, ...
+          'rt must be 2xN numeric matrix');
+        
+      rz = rt(1, :).*[sin(rt(2, :)); cos(rt(2, :))];
       b = shape.insideRzInternal(rz);
     end
 
     function b = insideRzInternal(shape, rz)
       % Determine if inside by counting how many edges are above point
       % "up" is in the radial direction.
+      
+      assert(isnumeric(rz) && ismatrix(rz) && size(rz, 1) == 2, ...
+          'rz must be 2xN numeric matrix');
 
       % Find points greater or less than query points
       %   - ignore points with same z position
       %   - only care about points connected to edges
-      pts_lt = shape.points(2, 1:end-1) < rz(2, :).';
-      pts_gt = shape.points(2, 2:end) > rz(2, :).';
+      pts_lt = shape.points(2, 1:end-1) > rz(2, :).';
+      pts_gt = shape.points(2, 2:end) < rz(2, :).';
 
       % Find edges crossing points
       edges = pts_lt & pts_gt;
@@ -326,19 +333,26 @@ classdef AxisymInterp < ott.shape.Shape ...
 
     function nz = normalsRtInternal(shape, rt)
       % Defer to normalsRzInternal
-      rz = rt(1, :).*[sin(rt(2, :)), cos(rt(2, :))];
+      
+      assert(isnumeric(rt) && ismatrix(rt) && size(rt, 1) == 2, ...
+          'rt must be 2xN numeric matrix');
+
+      rz = rt(1, :).*[sin(rt(2, :)); cos(rt(2, :))];
       nz = shape.normalsRzInternal(rz);
     end
 
     function nz = normalsRzInternal(shape, rz)
       % Calculate normals by finding the closest edge to the point
       % This follows a similar procedure to the insideRzInternal function.
+      
+      assert(isnumeric(rz) && ismatrix(rz) && size(rz, 1) == 2, ...
+          'rz must be 2xN numeric matrix');
 
       % Find points greater or less than query points
       %   - ignore points with same z position
       %   - only care about points connected to edges
-      pts_lt = shape.points(2, 1:end-1) < rz(2, :).';
-      pts_gt = shape.points(2, 2:end) > rz(2, :).';
+      pts_lt = shape.points(2, 1:end-1) > rz(2, :).';
+      pts_gt = shape.points(2, 2:end) < rz(2, :).';
 
       % Find edges crossing points
       edges = pts_lt & pts_gt;
@@ -357,7 +371,7 @@ classdef AxisymInterp < ott.shape.Shape ...
       [~, idx] = min(abs(y4 - rz(1, :)), [], 2);
 
       % Compute formals and normalize
-      nz = [m(idx).'; ones(size(idx)).'];
+      nz = [ones(size(idx)).'; m(idx).'];
       nz = nz ./ vecnorm(nz);
     end
 

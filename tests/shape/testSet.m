@@ -8,7 +8,7 @@ end
 
 function testConstructor(testCase)
 
-  % Can't test directly, use Union
+  % Can't test directly, use Intersection
 
   a = ott.shape.Cube();
   b = ott.shape.Cylinder();

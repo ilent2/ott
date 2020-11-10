@@ -13,6 +13,8 @@ function testConstructDefault(testCase)
   testCase.verifyEqual(beam.incident, ott.beam.Empty(), 'incident');
   testCase.verifyEqual(beam.particle, [], 'particle');
   testCase.verifyEqual(beam.internal, [], 'internal');
+  
+  beam.defaultVisRangeInternal();
 
 end
 
@@ -41,3 +43,31 @@ function testFieldRtp(testCase)
   
 end
 
+function testFarfield(testCase)
+
+  beam = ott.beam.Scattered();
+  rtp = [10;0;0];
+  xy = [0;0];
+
+  % Test coverage
+  beam.efarfield(rtp);
+  beam.hfarfield(rtp);
+  beam.ehfarfield(rtp);
+  beam.hparaxial(xy);
+  beam.eparaxial(xy);
+  beam.ehparaxial(xy);
+
+end
+
+function testForceTorque(testCase)
+
+  beam = ott.beam.Scattered();
+  rtp = [10;0;0];
+  xy = [0;0];
+  
+  beam.force();
+  beam.torque();
+  beam.spin();
+  beam.forcetorque();
+  
+end
