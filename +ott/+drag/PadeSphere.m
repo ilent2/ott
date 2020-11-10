@@ -195,7 +195,7 @@ classdef PadeSphere < ott.drag.StokesSphereWall
 
       % Check epsilon range
       % This threshold is determines from the text in Chaoui
-      if (drag.separation ./ drag.radius - 1) < 0.1
+      if (drag.separation / drag.radius - 1) < 0.1
         warning('ott:drag:PadeSphere:small_epsilon', ...
           ['Apprxomation may be inaccurate for small separation', ...
           newline, 'Consider using Chaoui polynomial approximation']);

@@ -1,8 +1,12 @@
 function pnm=legendrerow(n,theta)
 % LEGENDREROW gives the spherical coordinate recursion in m
 %
-% pnm = LEGENDREROW(n, theta) gives the spherical recursion for a given
-% n, theta.
+% Usage
+%   pnm = LEGENDREROW(n, theta)
+%
+% Parameters
+%   - n (numeric)
+%   - theta (N numeric)
 %
 % This provides approximately no benefit over the MATLAB implimentation. It
 % *may* provide a benefit in Octave. Inspiration from
@@ -11,25 +15,30 @@ function pnm=legendrerow(n,theta)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-if n==0;
+assert(isnumeric(n) && isscalar(n), ...
+    'n must be a numeric scalar');
+assert(isnumeric(theta), ...
+    'theta must be a numeric array');
+
+if n==0
     pnm=1/sqrt(2*pi)/sqrt(2);
     return
 end
 
-theta=theta(:)';
+theta=theta(:).';
 
 ct=cos(theta);
 st=sin(theta);
 
-Wnn=sqrt((2*n+1)/(4*pi)*prod(1-1/2./[1:n]))*ones(size(theta)); %first entry!
+Wnn=sqrt((2*n+1)/(4*pi)*prod(1-1/2./(1:n)))*ones(size(theta)); %first entry!
 Wnnm1=sqrt(2*n)*ct.*Wnn; %second entry!
-lnm=length([0:n]);
+lnm=length(0:n);
 
 pnm=zeros(lnm,length(theta));
 pnm(end,:)=Wnn;
 pnm(end-1,:)=Wnnm1;
 
-if lnm==2;
+if lnm==2
     pnm=[Wnnm1;Wnn];
 else
     jj=lnm-2;
@@ -42,7 +51,7 @@ else
     end
 end
 
-[ST,M]=meshgrid(st,[0:n]);
+[ST,M] = meshgrid(st, 0:n);
 
 if ~isempty(pnm)
   pnm=pnm.*ST.^(M);

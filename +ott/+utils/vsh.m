@@ -17,23 +17,20 @@ function [B,C,P] = vsh(n,m,theta,phi)
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-import ott.utils.*
-
-if length(n)>1
-    error('n must be a scalar in this version')
-end
+assert(isnumeric(n) && isscalar(n), ...
+    'n must be a numeric scalar');
 
 if nargin<4
-    phi=theta;
-    theta=m;
-    m=[-n:n];
+    phi = theta;
+    theta = m;
+    m = -n:n;
 end
 
 % Convert a scalar theta or phi to a vector to match a vector
 % partner
-[theta,phi] = matchsize(theta,phi);
+[theta,phi] = ott.utils.matchsize(theta,phi);
 
-[Y,Ytheta,Yphi] = spharm(n,m,theta,phi);
+[Y,Ytheta,Yphi] = ott.utils.spharm(n,m,theta,phi);
 
 %this makes the vectors go down in m for n. has no effect if old version
 %code.

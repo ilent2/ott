@@ -167,7 +167,7 @@ switch p.Results.type
 
   case 'sbesselh1farfield'    % outgoing to regular
 
-    if 2*pi*abs(z) <= (N-1).^2
+    if 2*pi*abs(z) <= (N-1)^2
       ott.warning('Farfield limit may not be satisfied');
     end
 
@@ -181,7 +181,7 @@ switch p.Results.type
 
   case 'sbesselh2farfield'    % incoming to regular
 
-    if 2*pi*abs(z) <= (N-1).^2
+    if 2*pi*abs(z) <= (N-1)^2
       ott.warning('Farfield limit may not be satisfied');
     end
 
@@ -247,7 +247,7 @@ end
 
 end % translate_z_videen
 
-function [A,B] = calculate_AB(C, nmax1, nmax2, nmax, z, p)
+function [A,B] = calculate_AB(C, nmax1, nmax2, ~, z, ~)
 
 import ott.utils.*
 
@@ -259,8 +259,8 @@ kk = (1:nmax2).';
 
 matrixm=sqrt(kk.*(kk+1)) ./ sqrt(nn.*(nn+1));
 
-central_iterator1=[1:nmax1].*[2:nmax1+1];
-central_iterator2=[1:nmax2].*[2:nmax2+1];
+central_iterator1=(1:nmax1).*(2:nmax1+1);
+central_iterator2=(1:nmax2).*(2:nmax2+1);
 
 [ciy,cix]=meshgrid(central_iterator1,central_iterator2);
 
@@ -334,36 +334,36 @@ import ott.utils.*
 % r=0.1;
 
 %some "setup" values:
-mmax=min(nmax1,nmax2);
-m=0;
-fval=2*nmax+1;
-nd=[m:fval];
+mmax = min(nmax1, nmax2);
+m = 0;
+fval = 2*nmax+1;
+nd = m:fval;
 
-kr=2*pi*r;
+kr = 2*pi*r;
 
 %compute seed functions:
 switch p.Results.type
   case 'sbesselj'       % regular to regular
-    C_nd00=[sqrt(2*nd+1).*sbesselj(nd,kr)];
+    C_nd00 = (sqrt(2*nd+1).*sbesselj(nd,kr));
 
   case 'sbesselh1'      % outgoing to regular
-    C_nd00=[sqrt(2*nd+1).*sbesselh1(nd,kr)]./2;
+    C_nd00 = (sqrt(2*nd+1).*sbesselh1(nd,kr))./2;
 
   case 'sbesselh2'      % incoming to regular
-    C_nd00=[sqrt(2*nd+1).*sbesselh2(nd,kr)]./2;
+    C_nd00 = (sqrt(2*nd+1).*sbesselh2(nd,kr))./2;
 
   otherwise
     error('OTT:UTILS:translate_z:type_error', 'Unknown translation type');
 end
 
 C_ndn0=zeros(length(nd)+1,length(nd)+1);
-C_ndn0(1+[1:length(C_nd00)],2)=C_nd00;
-C_ndn0(2,1+[1:length(C_nd00)])=((-1).^(nd).*C_nd00).';
+C_ndn0(1+ (1:length(C_nd00)),2) = C_nd00;
+C_ndn0(2,1+ (1:length(C_nd00))) = ((-1).^(nd).*C_nd00).';
 
 %gumerov's zonal coefficients are m=0. Compute columns, limited by diagonal:
 %compute lower diagonal first:
 for jj=1:nmax
-    ii=[jj:fval-jj].';
+    ii= (jj:fval-jj).';
     C_ndn0(ii+2,ii(1)+2)=(anm_l(ii(1)-2,0).*C_ndn0(ii+2,ii(1))-anm_l(ii,0).*C_ndn0(ii+3,ii(1)+1)+anm_l(ii-1,0).*C_ndn0(ii+1,ii(1)+1))./anm_l(ii(1)-1,0);
     C_ndn0(ii(1)+2,ii+2)=((-1).^(jj+ii).*C_ndn0(ii+2,ii(1)+2)).';
 end
@@ -374,7 +374,7 @@ C(:,:,1)=C_ndn0(2:(nmax2+3),2:(nmax1+2));
 
 %Having computed anm for m=0; cases we now can compute anm for all
 %remaining cases:
-ANM=anm_l([0:2*nmax+1].',[1:nmax]);
+ANM = anm_l((0:2*nmax+1).', 1:nmax);
 IANM=1./ANM;
 for m=1:mmax
 
@@ -383,16 +383,16 @@ for m=1:mmax
     %i.e. ones which generate m on the first column we then reproduce the same
     %commputation for the n nd recursion:
 
-    nd=[m:fval-m].';
+    nd = (m:fval-m).';
     C_nd1m=(bnm_l(nd,-m).*C_ndn0(nd+1,m+1)-bnm_l(nd+1,m-1).*C_ndn0(nd+3,m+1))./bnm_l(m,(-m));
 
     %having computed the first seed column we now recur the elements:
     C_ndn1=zeros(size(C_ndn0)); %make zero as we re-use
-    C_ndn1([1:length(C_nd1m)]+m+1,m+2)=C_nd1m;
-    C_ndn1(m+2,[1:length(C_nd1m)]+m+1)=((-1).^(nd+m).*C_nd1m).';
+    C_ndn1((1:length(C_nd1m))+m+1,m+2)=C_nd1m;
+    C_ndn1(m+2,(1:length(C_nd1m))+m+1)=((-1).^(nd+m).*C_nd1m).';
 
     for jj=m+1:nmax
-        ii=[jj:fval-jj].';
+        ii = (jj:fval-jj).';
 %         C_ndn1(ii+2,ii(1)+2)=(anm(ii(1)-2,m).*C_ndn1(ii+2,ii(1))-anm(ii,m).*C_ndn1(ii+3,ii(1)+1)+anm(ii-1,m).*C_ndn1(ii+1,ii(1)+1))./anm(ii(1)-1,m);
         C_ndn1(ii+2,ii(1)+2)=(ANM(ii(1)-1,m).*C_ndn1(ii+2,ii(1))-ANM(ii+1,m).*C_ndn1(ii+3,ii(1)+1)+ANM(ii,m).*C_ndn1(ii+1,ii(1)+1)).*IANM(ii(1),m);
         C_ndn1(ii(1)+2,ii+2)=((-1).^(jj+ii).*C_ndn1(ii+2,ii(1)+2)).';
@@ -405,17 +405,17 @@ end
 
 end % translate_z_gumerov
 
-function a_nm = anm_l(n,m);
-% For translate_z_gumerov
-fn=1./(2*n+1)./(2*n+3);
-a_nm=sqrt((n+abs(m)+1).*(n-abs(m)+1).*fn);
-a_nm(n<0)=0;
-a_nm(abs(m)>n)=0;
+function a_nm = anm_l(n,m)
+  % For translate_z_gumerov
+  fn=1./(2*n+1)./(2*n+3);
+  a_nm=sqrt((n+abs(m)+1).*(n-abs(m)+1).*fn);
+  a_nm(n<0)=0;
+  a_nm(abs(m)>n)=0;
 end
 
-function b_nm = bnm_l(n,m);
-% For translate_z_gumerov
-b_nm=(2*(m<0)-1).*sqrt((n-m-1).*(n-m)./(2*n-1)./(2*n+1));
-b_nm(abs(m)>n)=0;
+function b_nm = bnm_l(n,m)
+  % For translate_z_gumerov
+  b_nm=(2*(m<0)-1).*sqrt((n-m-1).*(n-m)./(2*n-1)./(2*n+1));
+  b_nm(abs(m)>n)=0;
 end
 

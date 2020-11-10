@@ -16,6 +16,7 @@ function alpha = rotate_3x3tensor(ualpha, varargin)
 %   to the 3xN matrix of directions.  This is useful for uniaxial materials.
 %
 % Parameters
+%   - ualpha (3x3 numeric) -- Tensor to rotate.
 %   - R (3x3N numeric) -- Rotation matrices.
 %   - direction (3xN numeric) -- Cartesian vectors [x;y;z].
 %   - sphdirection (2xN numeric) -- Spherical vectors [phi; theta]
@@ -24,7 +25,9 @@ function alpha = rotate_3x3tensor(ualpha, varargin)
 %   - inverse (logical) -- When true, returns the inverse tensor.
 %     Default: false.
 
-% Copyright 2018 Isaac Lenton
+% Copyright 2018 Isaac Lenton (aka ilent2)
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
 
 import ott.utils.rotz;
 import ott.utils.roty;
@@ -36,7 +39,8 @@ p.addParameter('sphdirection', []);
 p.addParameter('inverse', false);
 p.parse(varargin{:});
 
-assert(all(size(ualpha) == [3, 3]), 'ualpha must be 3x3 matrix');
+assert(isnumeric(ualpha) && all(size(ualpha) == [3, 3]), ...
+    'ualpha must be 3x3 matrix');
 
 assert(~isempty(p.Results.rotation) + ~isempty(p.Results.direction) ...
    + ~isempty(p.Results.sphdirection) == 1, ...
@@ -80,7 +84,7 @@ end
 alpha = zeros(size(rotation));
 for ii = 1:size(alpha, 2)/3
   R = rotation(:, (1:3) + 3*(ii-1));
-  alpha(:, (1:3) + 3*(ii-1)) = R*ualpha*inv(R);
+  alpha(:, (1:3) + 3*(ii-1)) = R*ualpha*R.';
 end
 
 % Calculate inverse if requested

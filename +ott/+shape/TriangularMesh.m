@@ -25,7 +25,7 @@ classdef TriangularMesh < ott.shape.Shape ...
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties
+  properties (SetAccess=protected)
     verts           % Matrix of vertices in the object
     faces           % Matrix of faces in the object
   end
@@ -41,9 +41,12 @@ classdef TriangularMesh < ott.shape.Shape ...
     function shape = TriangularMesh(verts, faces, varargin)
       % Construct a new triangular mesh representation
       %
-      % TriangularMesh(verts, faces)
-      %   verts       3xN matrix of vertex locations
-      %   faces       3xN matrix of vertex indices describing faces
+      % Usage
+      %   shape = TriangularMesh(verts, faces)
+      %
+      % Parameters
+      %   - verts (3xN numeric) -- Vertex locations
+      %   - faces (3xN numeric) -- Indices describing faces
       %
       % Faces vertices should be ordered so normals face outwards for
       % volume and inside functions to work correctly.
@@ -51,11 +54,35 @@ classdef TriangularMesh < ott.shape.Shape ...
       % Any faces formed by duplicate vertices are removed.
 
       shape = shape@ott.shape.Shape(varargin{:});
-
+      shape = shape.setData(verts, faces);
+    end
+    
+    function shape = setData(shape, verts, faces)
+      % Set the verticies and face data
+      %
+      % Usage
+      %   shape = shape.setData(verts, faces)
+      %
+      % Parameters
+      %   - verts (3xN numeric) -- Vertex locations
+      %   - faces (3xN numeric) -- Indices describing faces
+      %
+      % Faces vertices should be ordered so normals face outwards for
+      % volume and inside functions to work correctly.
+      %
+      % Any faces formed by duplicate vertices are removed.
+      
+      assert(isnumeric(verts) && ismatrix(verts) && size(verts, 1) == 3, ...
+          'verts must be 3xN numeric matrix');
+      assert(isnumeric(faces) && ismatrix(faces) && size(faces, 1) == 3, ...
+          'faces must be 3xN numeric matrix');
+      assert(min(faces(:)) >= 1 && max(faces(:)) <= size(verts, 2), ...
+          'faces refers to non-existant vertex data');
+        
       % Filter faces with duplicate vertices
       badf = faces(1, :) == faces(2, :) | faces(1, :) == faces(3, :);
       faces(:, badf) = [];
-
+      
       shape.verts = verts;
       shape.faces = faces;
     end
@@ -238,22 +265,6 @@ classdef TriangularMesh < ott.shape.Shape ...
   end
 
   methods % Getters/setters
-    function shape = set.verts(shape, val)
-      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 3, ...
-          'verts must be 3xN numeric matrix');
-      shape.verts = val;
-    end
-
-    function shape = set.faces(shape, val)
-      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 3, ...
-          'faces must be 3xN numeric matrix');
-
-      if max(shape.faces(:)) > numel(shape.verts)
-        error('faces matrix refers to non-existent vertices');
-      end
-
-      shape.faces = val;
-    end
 
     function r = get.maxRadius(shape)
       r = max(vecnorm(shape.verts));

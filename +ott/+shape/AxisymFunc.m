@@ -27,10 +27,14 @@ classdef AxisymFunc < ott.shape.Shape ...
   properties
     func        % Function describing surface
     type        % Type of function (radial | angular | axial | axialSym)
-    range       % Range of function parameter values (default: [-Inf, Inf])
+  end
+  
+  properties (Hidden, SetAccess=protected)
+    rangeInternal     % Internal property set by range
   end
 
   properties (Dependent)
+    range       % Range of function parameter values (default: [-Inf, Inf])
     boundingBox       % Box surrounding shape
     perimeter         % Perimeter of shape
     maxRadius         % Maximum radius of the particle
@@ -464,7 +468,10 @@ classdef AxisymFunc < ott.shape.Shape ...
             'range must be in [-pi, pi] for angular type');
       end
 
-      shape.range = val(:).';
+      shape.rangeInternal = val(:).';
+    end
+    function val = get.range(shape)
+      val = shape.rangeInternal;
     end
 
     function bb = get.boundingBox(shape)

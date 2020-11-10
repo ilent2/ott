@@ -172,31 +172,7 @@ classdef Dynamics
       % Setup the figure if required
       our_axes = p.Results.plot_axes;
       if isempty(time) || ~isempty(our_axes)
-
-        % setup axes if needed
-        if isempty(our_axes)
-          our_axes = gca();
-        end
-
-        % Add stop button
-        stopButton = uicontrol('Parent', our_axes.Parent, ...
-            'Style','pushbutton', 'String','Stop', ...
-            'Units','normalized', ...
-            'Position', [0.0046 0.0071 0.1329 0.0648], ...
-            'Visible','on', 'FontSize', 10, ...
-            'Callback', @(src, evnt) subsasgn(stopButton, ...
-              struct('type', '.', 'subs', 'UserData'), 'stop'));
-
-        % Get or generate default shape
-        shape = sim.particle.shape;
-        if isempty(shape)
-          shape = ott.shape.Sphere(sim.beam.wavelength);
-        end
-
-        % Generate patch data
-        spatch = shape.surf('axes', our_axes);
-        patchVertices = spatch.Vertices;
-
+        [our_axes, spatch, patchVertices, stopButton] = sim.setupAxes(our_axes);
       end
 
       % Calculate number of time steps
@@ -323,6 +299,39 @@ classdef Dynamics
       % Only return results if requested
       if nargout == 0
         clear t x R
+      end
+    end
+  end
+  
+  methods (Hidden)
+    function [oaxes, opatch, patchVertices, stopButton] = setupAxes(sim, oaxes)
+      % Setup a axes for visualising the simulation
+
+      % setup axes if needed
+      if isempty(oaxes)
+        oaxes = gca();
+      end
+
+      % Add stop button
+      stopButton = uicontrol('Parent', oaxes.Parent, ...
+          'Style','pushbutton', 'String','Stop', ...
+          'Units','normalized', ...
+          'Position', [0.0046 0.0071 0.1329 0.0648], ...
+          'Visible','on', 'FontSize', 10, ...
+          'Callback', @buttonCallback);
+
+      % Get or generate default shape
+      shape = sim.particle.shape;
+      if isempty(shape)
+        shape = ott.shape.Sphere(sim.beam.wavelength);
+      end
+
+      % Generate patch data
+      opatch = shape.surf('axes', oaxes);
+      patchVertices = opatch.Vertices;
+      
+      function buttonCallback(~, ~)
+        stopButton.UserData = 'stop';
       end
     end
   end

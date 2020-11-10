@@ -1,27 +1,26 @@
-% The following was originally notes, but parts should probably become
-% the Contents.m file and be added to the documentation.
-
-bsc and tmatrix directories describe the operations themselves
-
-beam and particle directories are the "simple" interface.
-Each beam and particle has a position, rotation.  Particles also have
-shapes and drag,
-
-We should use the new VswfData class in the beam creation functions, for
-example, when we do point matching for Gaussian or BscPmParaxial.
-This might significantly speed up beam creation.
-
-We should implement specialisation of Bsc for PlaneWave and Annular.
-These beams have more specific translation and rotation implementations.
-Should we also have a ott.bsc.scattered specialisation or would this
-be better suited as a ott.beam.Scattered class?  Probably ott.beam?
-
-In the previous draft, we also had reduced basis specialisations.
-These might be useful too?
-
-We also probably want to implement a GrowOnUse helper or something similar.
-
-T-matrices have no geometry, but particles can (optionally).
-
-Where are we going to put DDA?
+% OTT Optical Tweezers Toolbox
+%
+% The optical tweezers toolbox is a collection of functions and classes
+% that can be used to simulate particles held in optical traps.
+% The toolbox is split into several sub-packages, listed bellow.
+%
+% To use a class from any of these packages, simply prefix the class
+% name with the package name(s), for example::
+%
+%   beam = ott.beam.Gaussian()
+%
+% Sub-packages
+%   +beam       - High level descriptions of optical tweezers beams
+%   +bsc        - Low level methods for working with beam shape coefficients
+%   +drag       - Methods for calculating drag tensors
+%   +particle   - High level particle descriptions (drag/tmatrix/mass/geometry)
+%   +shape      - Methods for describing particle geometry
+%   +tmatrix    - T-matrix description of optical scattering
+%   +tools      - Useful tools for simulating dynamics and finding traps
+%   +utils      - Utility functions (mostly used by other toolbox functions)
+%   +ui         - Graphical user interface
+%
+% Copyright 2018-2020 Isaac Lenton
+% This file is part of OTT, see LICENSE.md for information about
+% using/distributing this file.
 

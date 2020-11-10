@@ -76,14 +76,16 @@ classdef Strata < ott.shape.Plane
       v1 = v1 ./ vecnorm(v1) .* p.Results.scale ./ 2;
       v2 = v2 ./ vecnorm(v2) .* p.Results.scale ./ 2;
 
-      verts = [v1 + v2, v1 - v2, -v1 - v2, -v1 + v2];
-      faces = [1; 2; 3; 4];
-
-      % Duplicate for additional layers
+      % Create list of verts
+      verts = zeros(3, 4*(length(shape.depths)+1));
+      verts(:, 1:4) = [v1 + v2, v1 - v2, -v1 - v2, -v1 + v2];
       for ii = 1:length(shape.depths)
-        verts = [verts, verts(:, 1:4) + shape.depths(ii).*shape.normal];
-        faces = [faces, (1:4).'+ii*4];
+        verts(:, (1:4) + ii*4) = verts(:, 1:4) ...
+            + shape.depths(ii).*shape.normal;
       end
+      
+      % Create list of faces
+      faces = reshape(1:4*(length(shape.depths)+1), 4, []);
 
       shape = ott.shape.PatchMesh(verts, faces, ...
           'position', shape.position, 'rotation', eye(3), unmatched{:});

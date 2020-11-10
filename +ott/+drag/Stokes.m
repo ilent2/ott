@@ -104,7 +104,7 @@ classdef Stokes < ott.utils.RotateHelper ...
           drag = ott.drag.StokesSphere(shape.radius, varargin{:});
         elseif isa(shape, 'ott.shape.Cylinder')
 
-          p = shape.height ./ (2*shape.radius);
+          p = shape.height / (2*shape.radius);
           if p < 2
             drag = ott.drag.StokesStarShaped.FromShape(shape, varargin{:});
           else
@@ -121,7 +121,7 @@ classdef Stokes < ott.utils.RotateHelper ...
           bb = diff(shape.boundingBox);
           radius = vecnorm(bb(1:2))./2;
           height = bb(3);
-          as = height./radius;
+          as = height / radius;
 
           if as > 10
             warning('ott:drag:Stokes:approx_as_cylinder', ...

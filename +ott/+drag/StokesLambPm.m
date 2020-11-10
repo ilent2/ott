@@ -49,34 +49,6 @@ classdef StokesLambPm < ott.drag.StokesStarShaped
   end
 
   methods (Hidden)
-    function v = linearFlow(drag, xyz, direction)
-      % Construct a linear flow field
-
-      assert(numel(direction) == 3, 'direction must be 3 element vector');
-      assert(size(xyz, 1) == 3 && ismatrix(xyz), 'xyz must be 3xN matrix');
-
-      v = repmat(direction(:), 1, size(xyz, 2));
-    end
-
-    function v = rotationalFlow(drag, xyz, direction)
-      % Construct a rotational flow field
-
-      assert(numel(direction) == 3, 'direction must be 3 element vector');
-      assert(size(xyz, 1) == 3 && ismatrix(xyz), 'xyz must be 3xN matrix');
-
-      % 1x1xN
-      X = reshape(xyz(1, :), 1, 1, []);
-      Y = reshape(xyz(2, :), 1, 1, []);
-      Z = reshape(xyz(3, :), 1, 1, []);
-      Zero = zeros(size(X));
-
-      % 3x3xN
-      crossmat = [Zero, Z, -Y; -Z, Zero, X; Y, -X, Zero];
-
-      % 3xN
-      v = squeeze(sum(crossmat .* direction(:).', 2));
-    end
-
     function rtp = surfacePoints(drag)
       % Calculate surface points for shape
 
@@ -140,8 +112,8 @@ classdef StokesLambPm < ott.drag.StokesStarShaped
       end
 
       Nrtp = size(drag.rtp, 2);
-      rtp = drag.rtp;
-      NM = drag.NM;
+      ortp = drag.rtp;
+      oNM = drag.NM;
       rmax = max(drag.rtp(1, :));
 
       % Build coefficient matrix
@@ -149,13 +121,13 @@ classdef StokesLambPm < ott.drag.StokesStarShaped
       for comp = 1:3
 
         % Calculate coefficient values (order must match solveSystem)
-        Ac = StokesSphCoeffs(rtp(1, :).', rtp(2, :).', rtp(3, :).', ALF, ...
+        Ac = StokesSphCoeffs(ortp(1, :).', ortp(2, :).', ortp(3, :).', ALF, ...
               drag.viscosity, comp, rmax);
 
         % Assemble coefficients
-        for jj = 1:size(NM, 1)
+        for jj = 1:size(oNM, 1)
           A((1:Nrtp) + (comp-1)*Nrtp, jj) = ...
-            Ac{NM(jj, 3), NM(jj, 4), NM(jj, 5)}(NM(jj, 1),NM(jj, 2));
+            Ac{oNM(jj, 3), oNM(jj, 4), oNM(jj, 5)}(oNM(jj, 1),oNM(jj, 2));
         end
       end
     end
@@ -174,34 +146,34 @@ classdef StokesLambPm < ott.drag.StokesStarShaped
       sol = drag.A\B; % Solve system
 
       % Remove Legendre normalisation from solution
-      NM = drag.NM;
-      F = (-1).^NM(:, 2).*sqrt((NM(:, 1)+0.5) ...
-          .*factorial(NM(:, 1)-NM(:, 2))./factorial(NM(:, 1)+NM(:, 2)));
+      oNM = drag.NM;
+      F = (-1).^oNM(:, 2).*sqrt((oNM(:, 1)+0.5) ...
+          .*factorial(oNM(:, 1)-oNM(:, 2))./factorial(oNM(:, 1)+oNM(:, 2)));
       sol = sol .* F;
 
       % Remove radial normalisation
-      ind = NM(:, 5) == 1;
+      ind = oNM(:, 5) == 1;
       rmax = max(drag.rtp(1, :));
-      sol(ind) = sol(ind).*rmax.^-NM(ind, 1); % Remove radial normalisation
+      sol(ind) = sol(ind).*rmax.^-oNM(ind, 1); % Remove radial normalisation
     end
 
     function col = calculateColumn(drag, velocities)
       % Calculate column of drag tensor and package results
 
       sol = drag.solveSystem(velocities);
-      NM = drag.NM;
+      oNM = drag.NM;
 
       % Force
       force=-4*pi*...
-        [sol(NM(:,1)==1&NM(:,2)==1&NM(:,3)==1&NM(:,4)==1&NM(:,5)==2),...
-        sol(NM(:,1)==1&NM(:,2)==1&NM(:,3)==1&NM(:,4)==2&NM(:,5)==2),...
-        -sol(NM(:,1)==1&NM(:,2)==0&NM(:,3)==1&NM(:,4)==1&NM(:,5)==2)];
+        [sol(oNM(:,1)==1&oNM(:,2)==1&oNM(:,3)==1&oNM(:,4)==1&oNM(:,5)==2),...
+        sol(oNM(:,1)==1&oNM(:,2)==1&oNM(:,3)==1&oNM(:,4)==2&oNM(:,5)==2),...
+        -sol(oNM(:,1)==1&oNM(:,2)==0&oNM(:,3)==1&oNM(:,4)==1&oNM(:,5)==2)];
 
       % Torque
       torque=-8*pi*drag.viscosity*...
-        [sol(NM(:,1)==1&NM(:,2)==1&NM(:,3)==3&NM(:,4)==1&NM(:,5)==2),...
-        sol(NM(:,1)==1&NM(:,2)==1&NM(:,3)==3&NM(:,4)==2&NM(:,5)==2),...
-        -sol(NM(:,1)==1&NM(:,2)==0&NM(:,3)==3&NM(:,4)==1&NM(:,5)==2)];
+        [sol(oNM(:,1)==1&oNM(:,2)==1&oNM(:,3)==3&oNM(:,4)==1&oNM(:,5)==2),...
+        sol(oNM(:,1)==1&oNM(:,2)==1&oNM(:,3)==3&oNM(:,4)==2&oNM(:,5)==2),...
+        -sol(oNM(:,1)==1&oNM(:,2)==0&oNM(:,3)==3&oNM(:,4)==1&oNM(:,5)==2)];
 
       col = [force(:); torque(:)];
     end
@@ -219,6 +191,36 @@ classdef StokesLambPm < ott.drag.StokesStarShaped
       drag.rtp = drag.surfacePoints();
       drag.NM = drag.coeffList();
       drag.A = drag.coeffMatrix();  % Needs rtp and NM
+    end
+  end
+  
+  methods (Hidden, Static)
+    function v = linearFlow(xyz, direction)
+      % Construct a linear flow field
+
+      assert(numel(direction) == 3, 'direction must be 3 element vector');
+      assert(size(xyz, 1) == 3 && ismatrix(xyz), 'xyz must be 3xN matrix');
+
+      v = repmat(direction(:), 1, size(xyz, 2));
+    end
+
+    function v = rotationalFlow(xyz, direction)
+      % Construct a rotational flow field
+
+      assert(numel(direction) == 3, 'direction must be 3 element vector');
+      assert(size(xyz, 1) == 3 && ismatrix(xyz), 'xyz must be 3xN matrix');
+
+      % 1x1xN
+      X = reshape(xyz(1, :), 1, 1, []);
+      Y = reshape(xyz(2, :), 1, 1, []);
+      Z = reshape(xyz(3, :), 1, 1, []);
+      Zero = zeros(size(X));
+
+      % 3x3xN
+      crossmat = [Zero, Z, -Y; -Z, Zero, X; Y, -X, Zero];
+
+      % 3xN
+      v = squeeze(sum(crossmat .* direction(:).', 2));
     end
   end
 

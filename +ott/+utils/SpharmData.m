@@ -131,7 +131,7 @@ classdef SpharmData
       if ~isempty(ci_new)
         [nn, mm] = ott.utils.combined_index(ci_new);
         N = size(data.Y, 1);
-        [unn, ~, vv] = unique(nn);
+        unn = unique(nn);
 
         data.uci = [data.uci, ci_new(:).'];
         data.Y = [data.Y; zeros(numel(ci_new), size(data.Y, 2))];

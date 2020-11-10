@@ -186,7 +186,7 @@ classdef Cylinder < ott.shape.Shape ...
       P3(:, vecnorm(P3(1:2, :)) > shape.radius) = nan;
       P4(:, vecnorm(P4(1:2, :)) > shape.radius) = nan;
 
-      P = cat(3, P1, P2, P3, P4);
+      locs = cat(3, P1, P2, P3, P4);
       dist = cat(1, t1, t2, t3, t4);
 
       % Find first intersection

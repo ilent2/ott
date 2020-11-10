@@ -65,7 +65,7 @@ classdef RectangularPrism < ott.shape.Shape ...
       insideDims = abs(xyz) < (shape.widths./2 + tol);
 
       % Calculate normals
-      n = sign(xyz) .* double(~inside);
+      n = sign(xyz) .* double(~insideDims);
 
       % Normalise vectors (creates nans for interior points)
       n = n ./ vecnorm(n);

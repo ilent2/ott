@@ -1,4 +1,5 @@
-function [ modeweights col_modes row_modes ] = paraxial_transformation_matrix( paraxial_order, basis_in, basis_out, normal_mode )
+function [ modeweights, col_modes, row_modes ] = paraxial_transformation_matrix(...
+    paraxial_order, basis_in, basis_out, normal_mode )
 % PARAXIAL_TRANSFORMATION_MATRIX produces paraxial beam mode conversion
 % in a particular order.
 %
@@ -85,18 +86,18 @@ end
 
 switch basis_out(1)
     case 0
-        i3_out=[];
-        i2_out=[-paraxial_order:2:paraxial_order].';
-        i1_out=floor((paraxial_order-abs(i2_out))/2);
+        i3_out = [];
+        i2_out = (-paraxial_order:2:paraxial_order).';
+        i1_out = floor((paraxial_order-abs(i2_out))/2);
     case 1
-        i3_out=[];
-        i2_out=[0:paraxial_order].';
-        i1_out=paraxial_order-i2_out;   
+        i3_out = [];
+        i2_out = (0:paraxial_order).';
+        i1_out = paraxial_order-i2_out;   
     case 2
-        i3_out=[0:paraxial_order].';
-        i2_out=paraxial_order-2*(floor(i3_out/2));
-        i1_out=paraxial_order*ones(paraxial_order+1,1);  
-        i3_out=mod(i3_out, 2) == 0;
+        i3_out = (0:paraxial_order).';
+        i2_out = paraxial_order-2*(floor(i3_out/2));
+        i1_out = paraxial_order*ones(paraxial_order+1,1);  
+        i3_out = mod(i3_out, 2) == 0;
         
 end
 row_modes=[i1_out,i2_out,i3_out];
@@ -104,33 +105,33 @@ row_modes=[i1_out,i2_out,i3_out];
 
 switch basis_in(1)
     case 0
-        i3_in=[];
-        i2_in=[-paraxial_order:2:paraxial_order].';
-        i1_in=floor((paraxial_order-abs(i2_in))/2);
+        i3_in = [];
+        i2_in = (-paraxial_order:2:paraxial_order).';
+        i1_in = floor((paraxial_order-abs(i2_in))/2);
     case 1
-        i3_in=[];
-        i2_in=[0:paraxial_order].';
-        i1_in=paraxial_order-i2_in;   
+        i3_in = [];
+        i2_in = (0:paraxial_order).';
+        i1_in = paraxial_order-i2_in;   
     case 2
-        i3_in=[0:paraxial_order].';
-        i2_in=paraxial_order-2*(floor(i3_in/2));
-        i1_in=paraxial_order*ones(paraxial_order+1,1);  
-        i3_in=mod(i3_in, 2) == 0;
+        i3_in = (0:paraxial_order).';
+        i2_in = paraxial_order-2*(floor(i3_in/2));
+        i1_in = paraxial_order*ones(paraxial_order+1,1);  
+        i3_in = mod(i3_in, 2) == 0;
 
 end
 col_modes=[i1_in,i2_in,i3_in];
 
 end
 
-function [output,LGlookups,HGlookups]=genLG2HG(order_paraxial);
+function [output,LGlookups,HGlookups]=genLG2HG(order_paraxial)
 % genLG2HG.m --- LG->HG conversion matrix.
 %
 % Usage:
 %
 % [modewieghts,LGlookups,HGlookups] = genLG2HG(paraxial_order)
 
-n=[0:floor(order_paraxial/2)];
-k=n;
+n = 0:floor(order_paraxial/2);
+k = n;
 [N,K]=meshgrid(n,k);
 M=order_paraxial-N;
 P=min(N,M);
@@ -176,28 +177,29 @@ output=zeros(order_paraxial+1);
 
 %we're going to produce the spinor inverse of what was in beijersbergen
 %1993.
-output(1:floor(order_paraxial/2)+1,:) = [block_to_mirror(:,1:ceil(order_paraxial/2)),fliplr(block_to_mirror.*(-1).^(P.'))]; %
+output(1:floor(order_paraxial/2)+1,:) = ...
+  [block_to_mirror(:,1:ceil(order_paraxial/2)),fliplr(block_to_mirror.*(-1).^(P.'))];
 output(end-ceil(order_paraxial/2)+1:end,:)=flipud(output(1:ceil(order_paraxial/2),:));
 
 output(ceil(order_paraxial/2)+1:end,2:2:end)=-output(ceil(order_paraxial/2)+1:end,2:2:end);
 output(2:2:end,:)=-output(2:2:end,:);
-output=output.*(1i).^repmat([0:order_paraxial].',[1,order_paraxial+1]);
+output=output.*(1i).^repmat((0:order_paraxial).',[1,order_paraxial+1]);
 
 if nargout>1
-    [LGlookups,HGlookups]=meshgrid([0:order_paraxial],[0:order_paraxial]);
+    [LGlookups,HGlookups]=meshgrid(0:order_paraxial, 0:order_paraxial);
 end
 end
 
 
-function [output,LGlookups,HGlookups]=genLG2vHG(order_paraxial);
+function [output,LGlookups,HGlookups]=genLG2vHG(order_paraxial)
 % genLG2vHG.m --- LG->vortex HG conversion matrix.
 %
 % Usage:
 %
 % [modewieghts,LGlookups,HGlookups] = genLG2vHG(paraxial_order)
 
-n=[0:floor(order_paraxial/2)];
-k=n;
+n = 0:floor(order_paraxial/2);
+k = n;
 [N,K]=meshgrid(n,k);
 M=order_paraxial-N;
 P=min(N,M);
@@ -255,10 +257,11 @@ if ~rem(order_paraxial,2)
     output(floor((order_paraxial+1)/2)+1,:)=outputt(end,:);
 end
 
-output(end-floor((order_paraxial+1)/2)+1:end,:)=fliplr(flipud(output(1:floor((order_paraxial+1)/2),:)));
+output(end-floor((order_paraxial+1)/2)+1:end,:) = ...
+  rot90(output(1:floor((order_paraxial+1)/2),:),2);
 output=flipud(output);
 if nargout>1
-    [LGlookups,HGlookups]=meshgrid([0:order_paraxial],[0:order_paraxial]);
+    [LGlookups,HGlookups] = meshgrid(0:order_paraxial, 0:order_paraxial);
 end
 end
 
@@ -275,7 +278,7 @@ function [modeweights,LGlookups,IGlookups]=genLG2IG(order_paraxial,xi)
 [A_n,B_n]=ott.utils.incecoefficients(order_paraxial,xi);
 
 %prepare the index matrices for this upper block.
-p=[floor(order_paraxial/2):-1:0];
+p = floor(order_paraxial/2):-1:0;
 l=order_paraxial-2*p;
 
 P=repmat(p,[length(p),1]);
@@ -307,12 +310,12 @@ for ii=1:size(modeweights,1)
 end
 
 %create imaginary matrix:
-imat=repmat((-1i).^[0:order_paraxial].',[1,order_paraxial+1]);
+imat=repmat((-1i).^(0:order_paraxial).', [1,order_paraxial+1]);
 
 modeweights=modeweights.*imat;
 
 if nargout>1
-    [LGlookups,IGlookups]=meshgrid([0:order_paraxial],[0:order_paraxial]);
+    [LGlookups,IGlookups]=meshgrid(0:order_paraxial, 0:order_paraxial);
 end
 end
 
@@ -329,8 +332,8 @@ function [modeweights,LGlookups,IGlookups]=genLG2vIG(order_paraxial,xi)
 [A_n,B_n]=ott.utils.incecoefficients(order_paraxial,xi);
 
 %prepare the index matrices for this upper block.
-p=[floor(order_paraxial/2):-1:0];
-l=order_paraxial-2*p;
+p = floor(order_paraxial/2):-1:0;
+l = order_paraxial-2*p;
 
 P=repmat(p,[length(p),1]);
 L=repmat(l,[length(l),1]);
@@ -363,15 +366,18 @@ end
 
 modeweights=zeros(size(modeweightst));
 
-modeweights(1:floor((order_paraxial+1)/2),:)=1/sqrt(2)*(modeweightst(1:2:floor((order_paraxial+1)/2)*2,:)+modeweightst(2:2:floor((order_paraxial+1)/2)*2,:));
+modeweights(1:floor((order_paraxial+1)/2),:) = ...
+  1/sqrt(2)*(modeweightst(1:2:floor((order_paraxial+1)/2)*2,:) + ...
+  modeweightst(2:2:floor((order_paraxial+1)/2)*2,:));
 
 if ~rem(order_paraxial,2)
     modeweights(floor((order_paraxial+1)/2)+1,:)=modeweightst(end,:);
 end
 
-modeweights(end-floor((order_paraxial+1)/2)+1:end,:)=fliplr(flipud(modeweights(1:floor((order_paraxial+1)/2),:)));
+modeweights(end-floor((order_paraxial+1)/2)+1:end,:) = ...
+  rot90(modeweights(1:floor((order_paraxial+1)/2),:), 2);
 
 if nargout>1
-    [LGlookups,IGlookups]=meshgrid([0:order_paraxial],[0:order_paraxial]);
+    [LGlookups,IGlookups]=meshgrid(0:order_paraxial, 0:order_paraxial);
 end
 end

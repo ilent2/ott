@@ -43,9 +43,10 @@ classdef ObjLoader < ott.shape.TriangularMesh
             v = sscanf(fline(3:end), '%f');
 
             if length(v) < 3
-              warning('Ignoring vertex line with insufficient coords');
+              warning('ott:shape:ObjLoader:vertex_with_two_points', ...
+                  'Ignoring vertex with insufficient coords');
             else
-              verts(:, end+1) = v(1:3);
+              verts(:, end+1) = v(1:3); %#ok<AGROW>
             end
 
           case 'f '
@@ -65,10 +66,11 @@ classdef ObjLoader < ott.shape.TriangularMesh
             end
 
             if length(f) < 3
-              warning('Ignoring face with fewer than 3 verts');
+              warning('ott:shape:ObjLoader:face_with_too_few_verts', ...
+                  'Ignoring face with fewer than 3 verts');
             else
               for ii = 3:length(f)
-                faces(:, end+1) = [f(1); f(ii-1); f(ii)];
+                faces(:, end+1) = [f(1); f(ii-1); f(ii)]; %#ok<AGROW>
               end
             end
 

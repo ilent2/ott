@@ -104,11 +104,11 @@ classdef Plane < ott.shape.Shape ...
       assert(all(normals(1) == normals), 'all normals must match');
 
       % Calculate depth of each slab
-      offsets = [shape.offset];
+      offsets = [planearray.offset];
       depth = diff(offsets);
 
       % Create shape
-      shape = ott.shape.Strata(normal, depth, ...
+      shape = ott.shape.Strata(normals, depth, ...
           'offset', planearray(1).offset);
     end
 

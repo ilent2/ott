@@ -30,6 +30,7 @@ for ii = 1:length(varargin)
 end
 
 % Loop over inputs to check size/generate output
+[varargout{1:nargout}] = deal([]);
 for ii = 1:length(varargin)
   nrows = size(varargin{ii}, 1);
   if nrows == 1

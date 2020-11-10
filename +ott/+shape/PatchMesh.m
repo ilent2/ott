@@ -16,9 +16,9 @@ classdef PatchMesh < ott.shape.Shape ...
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties
-    verts
-    faces
+  properties (SetAccess=protected)
+    verts         % (3xN numeric) Array of vertices for forming faces
+    faces         % (mxN numeric) Vertex indices for polygons
   end
 
   properties (Dependent)
@@ -58,11 +58,35 @@ classdef PatchMesh < ott.shape.Shape ...
       %
       % Usage
       %   shape = PatchMesh(verts, faces, ...)
+      %
+      % Parameters
+      %   - verts (3xN numeric) -- Array of vertices for forming faces
+      %   - faces (mxN numeric) -- Vertex indices for polygons
 
       shape = shape@ott.shape.Shape(varargin{:});
-
-      shape.verts = verts;
+      shape = shape.setData(verts, faces);
+    end
+    
+    function shape = setData(shape, verts, faces)
+      % Set the vertex and face data for the shape
+      %
+      % Usage
+      %   shape = shape.setData(verts, faces)
+      %
+      % Parameters
+      %   - verts (3xN numeric) -- Array of vertices for forming faces
+      %   - faces (mxO numeric) -- Vertex indices for polygons
+      
+      assert(isnumeric(faces) && ismatrix(faces), ...
+          'faces must be mxO numeric matrix');
+      assert(isnumeric(verts) && ismatrix(verts) && size(verts, 1) == 3, ...
+          'verts must be a 3xN numeric matrix');
+      assert(min(faces(:)) >= 1 && max(faces(:)) <= size(verts, 2), ...
+        	'faces matrix refers to non-existent vertices');
+        
       shape.faces = faces;
+      shape.verts = verts;
+      
     end
 
     function shape = ott.shape.TriangularMesh(shape)
@@ -70,13 +94,17 @@ classdef PatchMesh < ott.shape.Shape ...
       %
       % Converts faces to triangles and creates a new Triangular mesh.
 
+      numFaces = size(shape.faces, 2);
+      trisPerFace = size(shape.faces, 1)-2;
+      
       % Convert to triangles
-      faces = shape.faces(1:3, :);
-      for ii = 4:size(shape.faces, 1)
-        faces = [faces, [shape.faces([1, ii-1, ii], :)]];
+      ofaces = zeros(3, numFaces*trisPerFace);
+      for ii = 1:trisPerFace
+        ofaces(:, (1:numFaces) + (ii-1)*numFaces) = ...
+            shape.faces([1, ii+1, ii+2], :);
       end
 
-      shape = ott.shape.TriangularMesh(shape.verts, faces, ...
+      shape = ott.shape.TriangularMesh(shape.verts, ofaces, ...
           'position', shape.position, 'rotation', shape.rotation);
     end
   end
@@ -102,23 +130,6 @@ classdef PatchMesh < ott.shape.Shape ...
   end
 
   methods % Getters/setters
-
-    function shape = set.verts(shape, val)
-      assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 3, ...
-          'verts must be 3xN numeric matrix');
-      shape.verts = val;
-    end
-
-    function shape = set.faces(shape, val)
-      assert(isnumeric(val) && ismatrix(val), ...
-          'faces must be mxN numeric matrix');
-
-      if max(shape.faces(:)) > numel(shape.verts)
-        error('faces matrix refers to non-existent vertices');
-      end
-
-      shape.faces = val;
-    end
 
     function bb = get.boundingBox(shape)
       bb = [min(shape.verts(1, :)), max(shape.verts(1, :));

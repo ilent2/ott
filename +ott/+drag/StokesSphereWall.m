@@ -23,10 +23,15 @@ classdef (Abstract) StokesSphereWall < ott.drag.Stokes ...
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
-  properties
+  properties (Dependent)
+    radius
+    separation
+  end
+  
+  properties (Hidden, SetAccess=protected)
     % Initial values only for validation (overwritten on construct)
-    radius = 0
-    separation = Inf
+    radiusInternal = 0
+    separationInternal = Inf
   end
 
   methods (Static)
@@ -129,6 +134,9 @@ classdef (Abstract) StokesSphereWall < ott.drag.Stokes ...
           'radius must be less than separation distance');
       drag.radius = val;
     end
+    function val = get.radius(drag)
+      val = drag.radiusInternal;
+    end
 
     function drag = set.separation(drag, val)
       assert(isnumeric(val) && isscalar(val), ...
@@ -136,6 +144,9 @@ classdef (Abstract) StokesSphereWall < ott.drag.Stokes ...
       assert(val > drag.radius, ...
           'separation must be greater than radius');
       drag.separation = val;
+    end
+    function val = get.separation(drag)
+      val = drag.separationInternal;
     end
   end
 end

@@ -21,16 +21,19 @@ classdef EccentricSpheresNn < ott.drag.Stokes ...
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
-
-  properties
+  
+  properties (Hidden, SetAccess=protected)
     % Initial values are for construction/loading only (replaced on construct)
-    innerRadius = 0     % Radius of inner sphere
-    outerRadius = Inf   % Radius of outer sphere
-    separation = 0      % Minimum separation between spheres
+    innerRadiusInternal = 0     % Radius of inner sphere
+    outerRadiusInternal = Inf   % Radius of outer sphere
+    separationInternal = 0      % Minimum separation between spheres
   end
 
   properties (Dependent)
     forwardInternal     % Drag on the inner sphere
+    innerRadius         % Radius of inner sphere
+    outerRadius         % Radius of outer sphere
+    separation          % Minimum separation between spheres
   end
 
   methods
@@ -92,7 +95,9 @@ classdef EccentricSpheresNn < ott.drag.Stokes ...
       D(5, 1) = 8*pi*drag.viscosity*drag.innerRadius^2*fxc;
       D(4, 2) = -8*pi*drag.viscosity*drag.innerRadius^2*fxc;
     end
+  end
 
+  methods % Getters/setters
     function drag = set.innerRadius(drag, val)
       assert(isnumeric(val) && isscalar(val) && val > 0, ...
           'innerRadius must be positive numeric scalar');
@@ -100,7 +105,10 @@ classdef EccentricSpheresNn < ott.drag.Stokes ...
           'innerRadius must be less than outerRadius');
       assert(drag.separation <= drag.outerRadius - val, ...
           'separation must be less that outerRadius-innerRadius');
-      drag.innerRadius = val;
+      drag.innerRadiusInternal = val;
+    end
+    function val = get.innerRadius(drag)
+      val = drag.innerRadiusInternal;
     end
 
     function drag = set.outerRadius(drag, val)
@@ -110,7 +118,10 @@ classdef EccentricSpheresNn < ott.drag.Stokes ...
           'innerRadius must be less than outerRadius');
       assert(drag.separation <= val - drag.innerRadius, ...
           'separation must be less that outerRadius-innerRadius');
-      drag.outerRadius = val;
+      drag.outerRadiusInternal = val;
+    end
+    function val = get.outerRadius(drag)
+      val = drag.outerRadiusInternal;
     end
 
     function drag = set.separation(drag, val)
@@ -118,7 +129,10 @@ classdef EccentricSpheresNn < ott.drag.Stokes ...
           'separation must be positive numeric scalar');
       assert(val <= drag.outerRadius - drag.innerRadius, ...
           'separation must be less that outerRadius-innerRadius');
-      drag.separation = val;
+      drag.separationInternal = val;
+    end
+    function val = get.separation(drag)
+      val = drag.separationInternal;
     end
   end
 end

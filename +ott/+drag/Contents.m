@@ -6,21 +6,24 @@
 % Generic classes
 %   Stokes         - Base class for Stokes drag tensors
 %   StokesData     - Storage class for stokes drag tensors
+%   StokesSphereWall - Abstract base class for sphere-wall drag calculations
+%   StokesStarShaped - Abstract base class for star shaped drag calculations
 %
 % Free particle:
 %   StokesSphere   - Drag tensor for a sphere with Stokes Drag
-%   StokesCylinder - Drag tensor for a slender cylinder.
-%   StokesLambNn   - Star shaped particles using pre-trained NN.
-%   StokesLambPm   - Star shaped particles using Lamb series/point matching.
+%   StokesCylinder - Drag tensor for a slender cylinder
+%   StokesLambNn   - Star shaped particles using pre-trained NN
+%   StokesLambPm   - Star shaped particles using Lamb series/point matching
 %
 % Wall effects:
-%   FaxenSphere    - Faxen's sphere corrections for movement near a plane.
-%   PadeSphere     - Pade's sphere corrections for movement near a plane.
-%   ChaouiSphere   - Choui's sphere corrections for movement near a plane.
-%   EccentricSpheresNn - Eccentric sphere using Gibson's NN approach.
+%   FaxenSphere    - Faxen's sphere corrections for movement near a plane
+%   PadeSphere     - Pade's sphere corrections for movement near a plane
+%   ChaouiSphere   - Choui's sphere corrections for movement near a plane
+%   EccentricSpheresNn - Eccentric sphere using Gibson's NN approach
 %
 % Folders
-%   private        - Functions used by drag calculation classes
+%   private/       - Functions used by drag calculation classes
+%   +mixin         - Support classes for drag definitions
 %
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

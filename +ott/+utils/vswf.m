@@ -29,16 +29,15 @@ import ott.utils.*
 % and for good measure, we expand any scalar ones
 % to match the others in length
 
-if length(n)>1
-    error('n must be scalar in this version')
-end
+assert(isnumeric(n) && isscalar(n), ...
+    'n must be a numeric scalar');
 
 if nargin<5
-    htype=0;
-    phi=theta;
-    theta=kr;
-    kr=m;
-    m=[-n:n];
+    htype = 0;
+    phi = theta;
+    theta = kr;
+    kr = m;
+    m = -n:n;
 end
 
 if nargin==5

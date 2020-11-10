@@ -22,24 +22,21 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 
 import ott.utils.*
 
-if length(n)>1
-    error('n must be a scalar at present')
-end
+assert(isnumeric(n) && isscalar(n), ...
+    'n must be a numeric scalar');
 
 if nargin<4
-  if nargin < 3
-    error('Not enough input arguments');
-  end
+  assert(nargin >= 3, 'At least 3 input arguments are required');
   
-    phi=theta;
-    theta=m;
-    m=[-n:n];
+  phi = theta;
+  theta = m;
+  m = -n:n;
 end
 
 %this is a cop out meant for future versions.
 if nargout>1
-    mi=m;
-    m=[-n:n];
+  mi = m;
+  m = -n:n;
 end
 
   
@@ -47,10 +44,9 @@ end
 m=m(abs(m)<=n);
 
 [theta,phi] = matchsize(theta,phi);
-input_length = length(theta);
 
 % Check if we have any work to do
-if input_length == 0
+if isempty(theta)
   Y = theta;
   Yphi = theta;
   Ytheta = theta;

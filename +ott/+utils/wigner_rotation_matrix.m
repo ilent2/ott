@@ -64,7 +64,7 @@ D = invC * R * C;
 D1 = D.';
 DD = D1;
 
-X = {};
+X{nmax} = {};
 X{1} = sparse(D1);
 
 for n = 2:nmax
@@ -84,7 +84,7 @@ for n = 2:nmax
 
     % Top row
 
-    m0 = (-n:n);
+    m0 = -n:n;
     c = sqrt( (n+m0).*(n-m0)/(n*(2*n-1)) );
     d = sqrt( (n+m0).*(n+m0-1)/(2*n*(2*n-1)) );
 
@@ -98,7 +98,7 @@ for n = 2:nmax
     DDD(end,3:end) = DDD(end,3:end) + D1(3,3) * d(3:end) .* DD(end,:);
     DDD(end,1:end-2) = DDD(end,1:end-2) + D1(3,1) * fliplr(d(3:end)) .* DD(end,:);
 
-    X{end+1} = DDD;
+    X{n} = DDD;
 
     DD = DDD;
 
