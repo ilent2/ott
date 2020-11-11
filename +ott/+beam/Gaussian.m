@@ -88,7 +88,7 @@ classdef Gaussian < ott.beam.BscFinite ...
       %   - power (numeric) -- Beam power [W].  Default: ``1.0``.
       %
       %   - truncation_angle (numeric) -- Adds a hard edge truncation
-      %     to the beam in the far-field.  Default: ``pi`` (i.e., no
+      %     to the beam in the far-field.  Default: ``pi/2`` (i.e., no
       %     truncation added).
       %
       %   - calculate (logical) -- If the beam should be calculated after
@@ -101,27 +101,25 @@ classdef Gaussian < ott.beam.BscFinite ...
       p.addParameter('polfield', [1, 1i]);
       p.addParameter('polbasis', 'cartesian');
       p.addParameter('mapping', 'sin');
-      p.addParameter('power', 1.0);
-      p.addParameter('truncation_angle', pi);
+      p.addParameter('truncation_angle', pi/2);
       p.addParameter('calculate', true);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
-      
+
       beam = beam@ott.beam.BscFinite(unmatched{:});
       beam.waist = p.Results.waist;
       beam.polbasis = p.Results.polbasis;
       beam.polfield = p.Results.polfield;
       beam.mapping = p.Results.mapping;
       beam.truncation_angle = p.Results.truncation_angle;
-      beam.power = p.Results.power;
 
       if p.Results.calculate
         beam = beam.recalculate([]);
       end
     end
 
-    function beam = recalculate(beam, ~)
+    function varargout = recalculate(beam, ~, varargin)
       % Re-calculate data for beam.
       %
       % This function can be called to pre-compute the beam data for
@@ -130,19 +128,32 @@ classdef Gaussian < ott.beam.BscFinite ...
       % speed up run-time.
       %
       % Usage
-      %   beam = beam.recalcualte(Nmax)
+      %   [beam, ...] = beam.recalcualte(Nmax, ...)
       %
       % Parameters
       %   - Nmax (numeric) -- Parameter is ignored.
+      %
+      % Unmatched arguments passed to, and additional results returned
+      % from :meth:`LgParaxial.FromLgMode`.
 
-      beam.data = ott.bsc.LgParaxial.FromLgMode(...
+      ott.utils.nargoutCheck(beam, nargout);
+
+      [beam.data, weights, varargout{2:nargout}] = ...
+          ott.bsc.LgParaxial.FromLgMode(...
           beam.waist ./ beam.wavelength, ...
           0, 0, beam.polbasis, beam.polfield, ...
-          'truncation_angle', beam.truncation_angle);
-      beam.data = beam.data ./ beam.data.power .* beam.power;
+          'mapping', beam.mapping, ...
+          'truncation_angle', beam.truncation_angle, ...
+          varargin{:});
+      beam.data = beam.data * weights;
 
       % Shrink Nmax to make things faster
-      beam.data = beam.data.shrinkNmax('RelTol', 1e-3);
+      beam.data = beam.data.shrinkNmax('RelTol', beam.getSetShrinkNmaxRelTol);
+
+      % Set beam power
+      beam.data.power = 1;
+
+      varargout{1} = beam;
     end
   end
 

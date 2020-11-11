@@ -120,13 +120,12 @@ classdef InceGaussian < ott.beam.BscFinite ...
       p.addParameter('polfield', [1, 1i], @isnumeric);
       p.addParameter('polbasis', 'cartesian');
       p.addParameter('mapping', 'sin');
-      p.addParameter('power', 1.0);
       p.addParameter('truncation_angle', pi);
       p.addParameter('calculate', true);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
-      
+
       beam = beam@ott.beam.BscFinite(unmatched{:});
       beam.waist = p.Results.waist;
       beam.lmode = p.Results.lmode;
@@ -137,14 +136,13 @@ classdef InceGaussian < ott.beam.BscFinite ...
       beam.polbasis = p.Results.polbasis;
       beam.mapping = p.Results.mapping;
       beam.truncation_angle = p.Results.truncation_angle;
-      beam.power = p.Results.power;
 
       if p.Results.calculate
         beam = beam.recalculate([]);
       end
     end
 
-    function beam = recalculate(beam, ~)
+    function varargout = recalculate(beam, ~, varargin)
       % Re-calculate data for beam.
       %
       % This function can be called to pre-compute the beam data for
@@ -153,20 +151,31 @@ classdef InceGaussian < ott.beam.BscFinite ...
       % speed up run-time.
       %
       % Usage
-      %   beam = beam.recalcualte(Nmax)
+      %   [beam, ...] = beam.recalcualte(Nmax, ...)
       %
       % Parameters
       %   - Nmax (numeric) -- Parameter is ignored.
+      %
+      %  Unmatched arguments passed to, and additional results returned
+      % from :meth:`LgParaxial.FromIgMode`.
 
-      beam.data = ott.bsc.LgParaxial.FromIgMode(...
+      ott.utils.nargoutCheck(beam, nargout);
+
+      [beam.data, weights, varargout{2:nargout}] = ...
+          ott.bsc.LgParaxial.FromIgMode(...
           beam.waist ./ beam.wavelength, ...
           beam.lmode, beam.porder, beam.parity, beam.ellipticity, ...
           beam.polbasis, beam.polfield, ...
-          'truncation_angle', beam.truncation_angle);
-      beam.data = beam.data ./ beam.data.power .* beam.power;
+          'truncation_angle', beam.truncation_angle, varargin{:});
+      beam.data = beam.data * weights;
 
       % Shrink Nmax to make things faster
-      beam.data = beam.data.shrinkNmax('RelTol', 1e-3);
+      beam.data = beam.data.shrinkNmax('RelTol', beam.getSetShrinkNmaxRelTol);
+
+      % Normalise beam power
+      beam.data.power = 1;
+
+      varargout{1} = beam;
     end
   end
 

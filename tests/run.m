@@ -36,7 +36,7 @@ coverage{end+1} = 'ott.utils';
 runner = TestRunner.withTextOutput;
 if ~isempty(coverage)
   runner.addPlugin(CodeCoveragePlugin.forPackage(...
-      coverage, 'IncludingSubpackages', true))
+      coverage, 'IncludingSubpackages', true));
 end
 
 % Add coverage report for examples directory

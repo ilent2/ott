@@ -9,7 +9,7 @@ classdef (Abstract) RotateHelper
 % order X, Y, Z.  Most functions only use Y, Z.  This class only
 % implements methods in this order.
 %
-% Methods
+% Sealed Methods
 %   - rotate      -- Rotate by 3x3 rotation matrix
 %   - rotateX     -- Rotate about x
 %   - rotateY     -- Rotate about y
@@ -30,7 +30,7 @@ classdef (Abstract) RotateHelper
     rotateInternal(~)     % The rotation method called by all other methods
   end
 
-  methods
+  methods (Sealed)
     function varargout = rotate(obj, mat, varargin)
       % Rotate by a 3x3 rotation matrix
       %

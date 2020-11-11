@@ -100,7 +100,7 @@ classdef BesselData
 
       % Update values
       N = size(data.hn, 1);
-      data.un = [data.un, new_n];
+      data.un = [data.un; new_n(:)];
       data.hn = [data.hn; zeros(length(new_n), size(data.hn, 2))];
       data.dhn = [data.dhn; zeros(length(new_n), size(data.hn, 2))];
       for ii = 1:length(new_n)
@@ -125,7 +125,7 @@ classdef BesselData
       % Update values
       N = size(data.hn, 2);
       idx = N + (1:numel(new_kr));
-      data.ur = [data.ur, new_kr];
+      data.ur = [data.ur; new_kr(:)];
       data.hn = [data.hn, zeros(size(data.hn, 1), numel(new_kr))];
       data.dhn = [data.dhn, zeros(size(data.hn, 1), numel(new_kr))];
       for ii = 1:numel(data.un)

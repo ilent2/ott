@@ -6,7 +6,7 @@ classdef (Abstract) TranslateHelper
 %
 % Supports array objects which implement `repelem`.
 %
-% Methods
+% Sealed methods
 %   - translateXyz      -- Apply translation in Cartesian coordinates
 %   - translateRtp      -- Apply translation in Spherical coordinates
 %
@@ -21,7 +21,7 @@ classdef (Abstract) TranslateHelper
     translateXyzInternal(~)   % Method called by translate*
   end
 
-  methods
+  methods (Sealed)
     function varargout = translateXyz(obj, xyz, varargin)
       % Translate the object by a distance specified in Cartesian coordinates
       %

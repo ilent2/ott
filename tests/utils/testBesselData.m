@@ -30,8 +30,14 @@ function testEvaluate(testCase)
   testCase.verifySize(dhn, [4, 5], 'hn size');
   testCase.verifyEqual(data2.hn, hn, 'data2.hn');
   testCase.verifyEqual(data2.dhn, dhn, 'data2.dhn');
-  testCase.verifyEqual(data2.un, n, 'data2.un');
-  testCase.verifyEqual(data2.ur, kr, 'data2.ur');
+  testCase.verifyEqual(data2.un, n(:), 'data2.un');
+  testCase.verifyEqual(data2.ur, kr(:), 'data2.ur');
+  
+  % Second evaluate (column vectors instead of rows)
+  n2 = [5, 6, 7].';
+  k2 = [5, 6, 7].';
+  [hn, dhn, data3] = data2.evaluate(n2, k2);
+  testCase.verifyEqual(data3.un, [n(:); n2(:)], 'data3.un');
 
 end
 

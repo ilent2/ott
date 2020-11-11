@@ -10,6 +10,7 @@ classdef BscBeam < ott.beam.ArrayType
 %
 % Properties
 %   - data          -- Internal BSC instance describing beam
+%   - apparentPower -- Apparent power of the BSC data
 %
 % Methods
 %   - recalculate   -- Can be overloaded by sub-classes to update data
@@ -28,6 +29,10 @@ classdef BscBeam < ott.beam.ArrayType
 
   properties
     data      % Internal BSC instance describing beam
+  end
+
+  properties (Dependent)
+    apparentPower   % Apparent power of the BSC data
   end
 
   methods
@@ -98,8 +103,12 @@ classdef BscBeam < ott.beam.ArrayType
       assert(isnumeric(Nmax) && isscalar(Nmax), ...
         'Nmax must be numeric scalar');
 
-      if isempty(beam.data) || max([beam.data.Nmax]) < (Nmax + tNmax)
-        beam = beam.recalculate(Nmax + tNmax);
+      if isempty(beam.data) || max([0, beam.data.Nmax]) < (Nmax + tNmax)
+        if Nmax + tNmax == 0
+          beam.data = ott.bsc.Bsc();
+        else
+          beam = beam.recalculate(Nmax + tNmax);
+        end
       end
 
       bsc = beam.data;
@@ -187,7 +196,7 @@ classdef BscBeam < ott.beam.ArrayType
       [varargout{1:nargout}] = bsc.efarfield(varargin{:});
 
       if nargout >= 1
-        varargout{1} = varargout{1} ./ beam.wavenumber;
+        varargout{1} = varargout{1} .* sqrt(beam.impedance);
       end
     end
 
@@ -300,12 +309,18 @@ classdef BscBeam < ott.beam.ArrayType
       %
       % See :class:`+ott.+bsc.Bsc` for further details.
 
+      % Translate coordinates instead of beam
+      rtp = beam.global2localRtp(rtp);
+      beam.position = [0;0;0];
+      beam.rotation = eye(3);
+
       bsc = ott.bsc.Bsc(beam);
       [varargout{1:nargout}] = bsc.efieldRtp(...
           rtp./[beam.wavelength;1;1], varargin{:});
 
       if nargout >= 1
-        varargout{1} = varargout{1} ./ beam.wavenumber;
+        varargout{1} = varargout{1} ...
+          .* 2 .* beam.wavenumber .* sqrt(beam.impedance);
       end
     end
 
@@ -321,12 +336,18 @@ classdef BscBeam < ott.beam.ArrayType
       %
       % See :class:`+ott.+bsc.Bsc` for further details.
 
+      % Translate coordinates instead of beam
+      rtp = beam.global2localRtp(rtp);
+      beam.position = [0;0;0];
+      beam.rotation = eye(3);
+
       bsc = ott.bsc.Bsc(beam);
       [varargout{1:nargout}] = bsc.hfieldRtp(...
           rtp./[beam.wavelength;1;1], varargin{:});
 
       if nargout >= 1
-        varargout{1} = varargout{1} ./ beam.wavenumber ./ beam.impedance;
+        varargout{1} = varargout{1} ...
+          .* 2 .* beam.wavenumber ./ sqrt(beam.impedance);
       end
     end
 
@@ -439,6 +460,14 @@ classdef BscBeam < ott.beam.ArrayType
       assert(isa(val, 'ott.bsc.Bsc'), ...
           'data must be a ott.bsc.Bsc instance or empty');
       beam.data = val;
+    end
+
+    function p = get.apparentPower(beam)
+      if isempty(beam.data)
+        p = nan;
+      else
+        p = beam.data.power;
+      end
     end
   end
 end

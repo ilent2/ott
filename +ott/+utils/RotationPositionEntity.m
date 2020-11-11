@@ -74,6 +74,20 @@ classdef (Abstract) RotationPositionEntity < ...
       xyz = obj.rotation * xyz + obj.position;
     end
 
+    function rtp = global2localRtp(obj, rtp)
+      % Apply position/rotation transformations to the coordinates.
+      %
+      % Usage
+      %   rtp= obj.global2local(rtp)
+
+      assert(isnumeric(rtp) && ismatrix(rtp) && size(rtp, 1) == 3, ...
+          'xyz must be 3xN numeric matrix');
+
+      xyz = ott.utils.rtp2xyz(rtp);
+      xyz = obj.rotation.' * (xyz - obj.position);
+      rtp = ott.utils.xyz2rtp(xyz);
+    end
+
     function xyz = global2local(obj, xyz)
       % Apply position/rotation transformations to the coordinates.
       %
@@ -87,29 +101,37 @@ classdef (Abstract) RotationPositionEntity < ...
     end
   end
 
-  methods (Hidden)
-    function varargout = rotateInternal(obj, mat, varargin)
+  methods (Hidden, Sealed)
+    function obj = rotateInternal(obj, mat, varargin)
       % Implement global and local rotations
 
       p = inputParser;
       p.addParameter('origin', 'global');
       p.parse(varargin{:});
+      
+      if ismatrix(mat) && numel(obj) > 1
+        mat = repmat(mat, 1, 1, numel(obj));
+      end
 
       switch p.Results.origin
         case 'global'
-          obj.rotation = mat * obj.rotation;
+          for ii = 1:numel(obj)
+            obj(ii).rotation = mat(:, :, ii) * obj(ii).rotation;
+          end
         case 'local'
-          obj.rotation = obj.rotation * mat;
+          for ii = 1:numel(obj)
+            obj(ii).rotation = obj(ii).rotation * mat(:, :, ii);
+          end
         otherwise
           error('Unknown origin for rotation');
       end
 
-      if nargout > 0
-        varargout{1} = obj;
+      if nargout == 0
+        clear obj
       end
     end
 
-    function varargout = translateXyzInternal(obj, xyz, varargin)
+    function obj = translateXyzInternal(obj, xyz, varargin)
       % Implement global and local translations
 
       p = inputParser;
@@ -133,8 +155,8 @@ classdef (Abstract) RotationPositionEntity < ...
           error('Unknown origin for translation');
       end
 
-      if nargout > 0
-        varargout{1} = obj;
+      if nargout == 0
+        clear obj
       end
     end
   end

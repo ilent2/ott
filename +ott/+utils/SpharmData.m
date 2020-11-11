@@ -7,6 +7,8 @@ classdef SpharmData
 %   - uci             -- Combined index for stored values
 %
 %   - expimphi        -- Pre-computed exp(1i*m.*phi)
+%
+%   - calculated      -- Tracks which spherical harmonics have been computed
 %   - Y               -- Pre-computed scalar spherical harmonic
 %   - Ytheta          -- Pre-computed theta angular derivative
 %   - Yphi            -- Pre-computed phi angular derivative
@@ -29,6 +31,7 @@ classdef SpharmData
     uci              % Combined index for stored values (Y values)
 
     expimphi         % Pre-computed exp(1i*m.*phi)
+    calculated       % Tracks which spherical harmonics have been computed
     Y                % Pre-computed scalar spherical harmonic
     Ytheta           % Pre-computed theta angular derivative
     Yphi             % Pre-computed phi angular derivative
@@ -43,6 +46,7 @@ classdef SpharmData
       data.uci = [];
 
       data.expimphi = [];
+      data.calculated = [];
       data.Y = [];
       data.Ytheta = [];
       data.Yphi = [];
@@ -82,6 +86,9 @@ classdef SpharmData
       [~, dphi] = ismember(phi, data.uphi);
       [~, m] = ott.utils.combined_index(ci);
       [~, dm] = ismember(m, data.um);
+
+      % Update elements we actually need
+      data = data.updateSpharm(dci, dtheta(keep));
       
       % Allocate memory for output
       Y = zeros(numel(ci), numel(phi));
@@ -99,6 +106,49 @@ classdef SpharmData
         Y(:, keep) = data.Y(dci, dtheta(keep)) .* oexpimphi;
         Ytheta(:, keep) = data.Ytheta(dci, dtheta(keep)) .* oexpimphi;
         Yphi(:, keep) = data.Yphi(dci, dtheta(keep)) .* oexpimphi;
+      end
+    end
+
+    function data = updateSpharm(data, dci, dtheta)
+      % Update elements of spharm that are not already computed
+      %
+      % Usage
+      %   data = data.updateSpharm(rowidx, colidx)
+
+      ci = data.uci(dci);
+      [nn, mm] = ott.utils.combined_index(ci);
+      theta = data.utheta(dtheta);
+
+      % Calculate block with similar N values.
+      % This is a little redundant, some values might be recalculated
+      % if we are using lots of scattered coordinates.
+      for ii = unique(nn(:)).'
+
+        idx = nn == ii;
+        odci = dci(idx);
+        omm = mm(idx);
+
+        % Find values that have been computed
+        isCalculated = data.calculated(odci, dtheta);
+
+        % Calculate
+        if ~all(all(isCalculated))
+          
+          % Find uncalculated values
+          midx = ~all(isCalculated, 2);
+          tidx = ~all(isCalculated, 1);
+
+          % Calculate
+          [oY, oYtheta, oYphi] = ott.utils.spharm(ii, omm(midx), ...
+              theta(tidx), zeros(size(theta(tidx))));
+
+          % Store new values
+          data.Y(odci(midx), dtheta(tidx)) = oY.';
+          data.Ytheta(odci(midx), dtheta(tidx)) = oYtheta.';
+          data.Yphi(odci(midx), dtheta(tidx)) = oYphi.';
+          data.calculated(odci(midx), dtheta(tidx)) = true;
+        end
+
       end
     end
 
@@ -129,24 +179,14 @@ classdef SpharmData
 
       % Update Y/dtY/dpY
       if ~isempty(ci_new)
-        [nn, mm] = ott.utils.combined_index(ci_new);
-        N = size(data.Y, 1);
-        unn = unique(nn);
 
+        % Allocate space, do actual calculation later
         data.uci = [data.uci, ci_new(:).'];
         data.Y = [data.Y; zeros(numel(ci_new), size(data.Y, 2))];
         data.Ytheta = [data.Ytheta; zeros(numel(ci_new), size(data.Y, 2))];
         data.Yphi = [data.Yphi; zeros(numel(ci_new), size(data.Y, 2))];
-        for ii = unn(:).'
-          ov = find(ii == nn);
-
-          [oY, oYtheta, oYphi] = ott.utils.spharm(ii, mm(ov), ...
-              data.utheta, zeros(size(data.utheta)));
-
-          data.Y(N+ov, :) = oY.';
-          data.Ytheta(N+ov, :) = oYtheta.';
-          data.Yphi(N+ov, :) = oYphi.';
-        end
+        data.calculated = [data.calculated; ...
+            false(numel(ci_new), size(data.Y, 2))];
       end
     end
 
@@ -188,24 +228,14 @@ classdef SpharmData
 
       % Update spharm
       if ~isempty(new_theta)
+
+        % Allocate space, do actual calculation later
         data.utheta = [data.utheta, new_theta(:).'];
-        N = size(data.Y, 2);
         data.Y = [data.Y, zeros(size(data.Y, 1), numel(new_theta))];
         data.Ytheta = [data.Ytheta, zeros(size(data.Y, 1), numel(new_theta))];
         data.Yphi = [data.Yphi, zeros(size(data.Y, 1), numel(new_theta))];
-
-        [n, m] = ott.utils.combined_index(data.uci);
-
-        for nn = unique(n(:).')
-          vv = find(nn == n);
-
-          [oY, oYtheta, oYphi] = ott.utils.spharm(nn, m(vv), ...
-              new_theta, zeros(size(new_theta)));
-
-          data.Y(vv, N+1:end) = oY.';
-          data.Ytheta(vv, N+1:end) = oYtheta.';
-          data.Yphi(vv, N+1:end) = oYphi.';
-        end
+        data.calculated = [data.calculated, ...
+            false(size(data.Y, 1), numel(new_theta))];
       end
     end
   end

@@ -522,8 +522,8 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %   [S, I, ...] = beam.intensityMoment(...)
       %
       % Returns
-      %   - S (3x1 numeric) -- Moment of energy density
-      %   - I (1 numeric) -- Total energy flux
+      %   - S (3x1 numeric) -- Moment of energy density.
+      %   - I (1 numeric) -- Total outgoing energy flux [W].
       %
       % Optional named arguments
       %   - theta_range (2 numeric) -- Range of angles to integrate over.
@@ -548,7 +548,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       % Setup grid
       [theta, phi] = ott.utils.angulargrid(p.Results.ntheta, p.Results.nphi);
       dtheta = diff(theta(1:2));
-      dphi = diff(phi(1:2));
+      dphi = diff(phi([1, p.Results.ntheta+1]));
 
       % Truncate the theta range
       keep = theta > p.Results.theta_range(1) ...
@@ -561,11 +561,14 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       % Calculate Cartesian coordinates
       % negate z, So integrals match sign convention used in :meth:`force`.
       uxyz = ott.utils.rtp2xyz(rtp);
-      uxyz(3, :) = -uxyz(3, :);
 
       % Calculate field and E2
-      [E, varargout{3:nargout}] = beam.efarfield(rtp, unmatched{:});
+      [E, varargout{3:nargout}] = beam.efarfield(rtp, ...
+          'basis', 'outgoing', unmatched{:});
       Eirr = beam.VisualisationData('E2', E);
+
+      % Make sure units are correct (S = E x H = 1/Z*E^2)
+      Eirr = Eirr ./ beam.impedance;
 
       % Calculate intensity
       varargout{2} = sum(Eirr .* sin(theta.') .* dtheta .* dphi, 2);

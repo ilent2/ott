@@ -40,7 +40,7 @@ classdef LgParaxial < ott.bsc.Bsc
   end
 
   methods (Static)
-    function [bsc, weights] = FromIgMode(waist, lmode, porder, parity, ...
+    function [bsc, weights, data] = FromIgMode(waist, lmode, porder, parity, ...
           ellipticity, polbasis, polfield, varargin)
       % Construct a Ince-Gaussian paraxial mode
       %
@@ -117,7 +117,7 @@ classdef LgParaxial < ott.bsc.Bsc
       weights = repmat(modeweights(row, keepz).', 2, 1) .* weights;
 
       % Generate beam
-      bsc = ott.bsc.LgParaxial(waist, lmode, pmode, polmode, ...
+      [bsc, data] = ott.bsc.LgParaxial(waist, lmode, pmode, polmode, ...
           varargin{:});
 
       if nargout == 1
@@ -125,7 +125,7 @@ classdef LgParaxial < ott.bsc.Bsc
       end
     end
 
-    function [bsc, weights] = FromLgMode(waist, lmode, ...
+    function [bsc, weights, vswfData] = FromLgMode(waist, lmode, ...
         pmode, polbasis, polfield, varargin)
       % Construct a Laguerre-Gaussian paraxial mode
       %
@@ -169,7 +169,7 @@ classdef LgParaxial < ott.bsc.Bsc
       weights = [1, -1i; 1, 1i] * polfield(:);
 
       % Generate beam
-      bsc = ott.bsc.LgParaxial(waist, lmode, pmode, polmode, ...
+      [bsc, vswfData] = ott.bsc.LgParaxial(waist, lmode, pmode, polmode, ...
           varargin{:});
 
       if nargout == 1
@@ -177,7 +177,7 @@ classdef LgParaxial < ott.bsc.Bsc
       end
     end
 
-    function [bsc, weights] = FromHgMode(waist, mmode, nmode, ...
+    function [bsc, weights, vswfData] = FromHgMode(waist, mmode, nmode, ...
         polbasis, polfield, varargin)
       % Construct a Hermite-Gaussian paraxial mode
       %
@@ -185,8 +185,8 @@ classdef LgParaxial < ott.bsc.Bsc
       %   bsc = LgParaxialBasis.FromHgMode(waist, mmode, nmode,
       %       polbasis, polfield, ...)
       %
-      %   [bsc, weights] = FromHgMode(...) -- As above, but returns the
-      %   LgParaxial beam and a vector of weights.
+      %   [bsc, weights, data] = FromHgMode(...) -- As above, but returns the
+      %   LgParaxial beam, a vector of weights, and VSWF data for re-use.
       %
       % Parameters
       %   - waist (numeric) -- Beam waist [m].
@@ -235,7 +235,7 @@ classdef LgParaxial < ott.bsc.Bsc
       weights = repmat(modeweights(row, keepz).', 2, 1) .* weights;
 
       % Generate beam
-      bsc = ott.bsc.LgParaxial(waist, lmode, pmode, polmode, ...
+      [bsc, vswfData] = ott.bsc.LgParaxial(waist, lmode, pmode, polmode, ...
           varargin{:});
 
       if nargout == 1
@@ -318,11 +318,11 @@ classdef LgParaxial < ott.bsc.Bsc
 	end
 
   methods
-    function bsc = LgParaxial(varargin)
+    function [bsc, vswfData] = LgParaxial(varargin)
       % Generate a LG paraxial mode
       %
       % Usage
-      %   bsc = LgParaxial(waist, lmode, pmode, polmod, ...)
+      %   [bsc, vswfData] = LgParaxial(waist, lmode, pmode, polmod, ...)
       %
       % Parameters
       %   - waist (numeric) -- Paraxial beam waist
@@ -342,6 +342,9 @@ classdef LgParaxial < ott.bsc.Bsc
       %
       %   - Nmax (numeric) -- Nmax for calculation.  Default: ``100``
       %     (provides good approximation for most tightly focussed beams).
+      %
+      %   - data (ott.utils.VswfData) -- Data for repeated beam calculation.
+      %     Default: ``ott.utils.VswfData()``.
 
       p = inputParser;
       p.addOptional('waist', [], @isnumeric);
@@ -350,6 +353,7 @@ classdef LgParaxial < ott.bsc.Bsc
       p.addOptional('polmode', [], @isnumeric);
       p.addParameter('mapping', 'sin');
       p.addParameter('truncation_angle', pi/2);
+      p.addParameter('data', ott.utils.VswfData());
       p.addParameter('Nmax', 100);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
@@ -414,6 +418,8 @@ classdef LgParaxial < ott.bsc.Bsc
 
       newmodes = ott.bsc.Bsc.empty();
       sorder = [];
+      
+      vswfData = p.Results.data;
 
       % Do point matching of each umodes together
       for m = um.'
@@ -435,8 +441,9 @@ classdef LgParaxial < ott.bsc.Bsc
             radial_modes, polarisation_modes);
 
         % Construct a beam with far-field point matching
-        newmodes = [newmodes, ott.bsc.Bsc.PmFarfield(...
-            rtp, Ertp, ci(midx))];
+        [modes, vswfData] = ott.bsc.Bsc.PmFarfield(rtp, Ertp, ci(midx), ...
+            'data', vswfData);
+        newmodes = [newmodes, modes];
       end
 
       % Sort new rows (to match order of inputs)

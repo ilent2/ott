@@ -129,7 +129,7 @@ classdef Annular < ott.beam.BscWBessel ...
 
       % Get weights of each segment
       beam.besselWeights = beam.profile(otheta) ...
-          .* beam.wavenumber .* sin(otheta) ./ nTheta;
+          ./ sqrt(beam.impedance) .* sin(otheta) ./ nTheta;
 
       % TODO: Different polarisation support
 

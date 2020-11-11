@@ -57,16 +57,17 @@ beam.visNearfield();
 
 % The position property is a 3x1 numeric vector.  To shift the beam by
 % 1 wavelength in the x direction, we can directly set the position property:
-beam.position = [1;0;0]*beam.wavelength;
 figure();
+subplot(1, 3, 1);
+beam.position = [2;0;0]*beam.wavelength;
 beam.visNearfield();
 
 % Alternatively, we can use the `translateXyz` method.  The translation
 % method applies the translation on top of any existing displacement and
 % returns a new copy of the beam, for example, to translate our previous beam
 % along the Y-direction, we could use:
-tbeam = beam.translateXyz([0;1;0]*beam.wavelength);
-figure();
+subplot(1, 3, 2);
+tbeam = beam.translateXyz([0;2;0]*beam.wavelength);
 tbeam.visNearfield();
 
 % Rotations are stored as 3x3 rotation matrices.  As with the ``position``
@@ -75,8 +76,8 @@ tbeam.visNearfield();
 %
 % The following rotates the beam pi/2 radians about the Y axis.
 % When the beam is used, the rotation is applied before the translation.
+subplot(1, 3, 3);
 rbeam = beam.rotateY(pi/2);
-figure();
 rbeam.visNearfield();
 
 %% Creating arrays of beams
@@ -92,16 +93,18 @@ beams = [ott.beam.Gaussian(), ...
 % Most operations can be applied to generic arrays.  The result is the
 % same as applying the operation to each element of the array.  For example,
 % to translate the array of beams
-tbeams = beams.translateXyz([1;0;0]*beam.wavelength);
+tbeams = beams.translateXyz([2;0;0]*beam.wavelength);
 
-% Or to set the position of each beam
-[tbeams.position] = deal([1;0;0]*beam.wavelength);
+% Or to set the properties of each beam, either of the following work
+[tbeams.position] = deal([5;0;0]*beam.wavelength);
+tbeams(2).position = [-5;5;0]*beam.wavelength;
+tbeams(2).power = 2;
 
 % Coherent and Incoherent arrays can be created using the Coherent
 % and Incoherent classes, for example
-cbeams = ott.beam.Coherent(beams);
+cbeams = ott.beam.Array(tbeams, 'arrayType', 'coherent');
 figure();
-cbeams.visNearfield();
+cbeams.visNearfield('range', [1,1]*1e-5);
 
 %% Calculating the change in momentum between two beams
 % The ``ott.beam.Beam`` class provides methods for calculating the change
@@ -109,7 +112,7 @@ cbeams.visNearfield();
 % the force acting on a particle (see the ottForce.m example), the follow
 % shows how to calculate the change in momentum between two beams.
 
-beam1 = ott.beam.Gaussian();
+beam1 = ott.beam.Gaussian('power', 0.1);
 beam2 = beam1.rotateY(pi/2);
 force = beam1.force(beam2)
 
@@ -139,7 +142,62 @@ phi = 2*pi*kx*x;
 E = E0 .* exp(1i*phi);
 
 % Calculate beam
-beam = ott.beam.PmParaxial.InterpProfile(X, Y, E);
+beam = ott.beam.PmParaxial.InterpProfile(X, Y, E, 'Nmax', 20);
 figure();
-beam.visNearfield();
+beam.visNearfield('range', [1,1]*6e-6);
 
+%% Improving runtime
+% Toolbox beams are represented using a vector spherical wave function
+% expansion.  Depending on how many terms are included in the expansion,
+% visualisation and translation functions can take quite a while.
+% One method to improve the runtime is to reduce the number of terms in
+% the expansion.  By defaut, finite beams (such as Gaussians) are
+% calcualted with ~10,000 terms and then truncated such that the resulting
+% beam power doesnt drop bellow 2% of the original beam power.  This
+% threshold can be changed using, for example, to change it to 10% use::
+
+ott.beam.BscFinite.getSetShrinkNmaxRelTol(0.01);
+
+% Next time we create a beam, it will use this new tolerance::
+
+beam = ott.beam.Gaussian();
+disp(beam.data.Nmax);
+tic
+beam.visNearfield();
+toc
+
+% Change back to 2%
+ott.beam.BscFinite.getSetShrinkNmaxRelTol(0.02);
+
+% For repeated field calculation at the same locations, there is a lot of
+% data that can be re-used in the field calculation functions.  Both the
+% visNearfield and Gaussian beam generation functions require calculating
+% fields.  To speed up these methods, we can store the field data from
+% a previous run.  The following creates a plot with 2 different beams.
+
+figure();
+range = [1,1]*2e-6;
+
+% Generage first beam with no prior data.  We use the recalculate
+% method explicitly so we can get the returned data for repeated
+% calculations.  For visualisation, we also get the returned data,
+% but we also need to specify the plot axes explicitly to show the plot.
+subplot(1, 2, 1);
+tic
+beam = ott.beam.LaguerreGaussian('lmode', 9, 'calculate', false);
+[beam, dataBm] = beam.recalculate([]);
+[~, ~, dataVs] = beam.visNearfield('range', range, 'plot_axes', gca());
+toc
+
+% Generate second beam with prior data for both beam and visNearfield.
+subplot(1, 2, 2);
+tic
+beam = ott.beam.LaguerreGaussian('lmode', 7, 'calculate', false);
+beam = beam.recalculate([], 'data', dataBm);
+beam.visNearfield('range', range, 'data', dataVs);
+toc
+
+% Different beams/methods support different optional parameters.
+% It is not always faster to pass the data structure as an input.
+% See the documentation for notes on improving speed and the supported
+% arguments these methods support.

@@ -169,6 +169,11 @@ function testGetCoefficients(testCase)
 
   ab = beam.getCoefficients();
   testCase.verifySize(ab, [16, 2], 'size');
+  
+  % imhomogeneous array
+  beam(2) = ott.bsc.PlaneWave();
+  ab = beam.getCoefficients();
+  testCase.verifySize(ab, [6, 2], 'size');
 
 end
 

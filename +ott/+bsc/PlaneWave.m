@@ -97,14 +97,17 @@ classdef PlaneWave < ott.bsc.Bsc
       %   Does not verify that a/b coefficients match direction.
       %   See :meth:`FromDirection` for a constructor with only direction.
       %
-      % Parameters
+      % Optional named parameters
       %   - a,b (numeric) -- Vectors of VSWF coefficients
+      %     Default: ``[]``.
+      %
       %   - direction (3xN numeric) -- Direction vectors for each beam
+      %     Default: ``[0;0;1]``.
 
       p = inputParser;
       p.addOptional('a', [], @isnumeric);
       p.addOptional('b', [], @isnumeric);
-      p.addOptional('direction', [], @isnumeric);
+      p.addOptional('direction', [0;0;1], @isnumeric);
       p.parse(varargin{:});
 
       beam = beam@ott.bsc.Bsc(p.Results.a, p.Results.b);

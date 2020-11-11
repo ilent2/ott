@@ -79,7 +79,26 @@ end
 
 function testIntensityMoment(testCase)
 
-  abeam = ott.beam.BscBeam(ott.bsc.Bsc([1; 2; 3]));
-  [moment, ints] = abeam.intensityMoment();
+  beam1 = ott.beam.Gaussian('power', 2);
+  [moment, ints] = beam1.intensityMoment();
+  emptyBeam = ott.beam.BscBeam();
+  
+  testCase.verifyEqual(ints, beam1.power, 'RelTol', 1e-2, 'power');
+  testCase.verifyEqual(moment./beam1.speed, ...
+    beam1.force(emptyBeam), 'RelTol', 1e-2, 'AbsTol', 1e-23, 'moment');
+
+end
+
+function testForce(testCase)
+
+  beam1 = ott.beam.Gaussian();
+  beam2 = ott.beam.BscBeam();
+  Fb = beam1.force(beam2);
+  
+  bsc1 = beam1.data;
+  bsc2 = ott.bsc.Bsc(beam2);
+  Fq = bsc1.force(bsc2) * beam1.power ./ beam1.speed;
+  
+  testCase.verifyEqual(Fb, Fq, 'force');
 
 end

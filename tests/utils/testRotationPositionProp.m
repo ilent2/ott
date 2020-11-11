@@ -25,3 +25,17 @@ function testLocalTranslation(testCase)
   testCase.verifyEqual(obj.global2local(obj.position), [0;0;0], 'glob2loc');
 
 end
+
+function testHetrogeneousArray(testCase)
+
+  beam(1) = ott.beam.Empty();
+  beam(2) = ott.beam.BscBeam();
+  
+  tbeam = beam.translateXyz([1;0;0]);
+  testCase.verifyEqual([tbeam.position], [1,1;0,0;0,0], 'tx');
+  
+  tbeam = beam.rotateY(pi/2);
+  Ry = ott.utils.roty(pi/2 * 180/pi);
+  testCase.verifyEqual([tbeam.rotation], [Ry, Ry], 'Ry');
+
+end

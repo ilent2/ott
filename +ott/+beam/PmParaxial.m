@@ -193,7 +193,7 @@ classdef PmParaxial < ott.beam.BscBeam ...
         data = repmat(data, 2, 1, 1);
       end
       E(:, idx) = data;
-      E = E .* beam.wavenumber;
+      E = E ./ sqrt(beam.impedance);
 
       % Flip theta direction (so beam comes from negative direction)
       % This is to match the convention used by other beams.

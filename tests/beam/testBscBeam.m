@@ -45,37 +45,58 @@ function testGetData(testCase)
 
 end
 
-function testNearfieldFunctions(testCase)
+function testPlaneWaveFields(testCase)
 
-  index = 1.33;
-  omega = 2*pi*3e8 ./ 532e-9;
-  bsc = ott.bsc.Bsc([1;2;3], [4;5;6]);
-  beam = ott.beam.BscBeam(bsc, 'index_medium', index, 'omega', omega);
-  k = beam.wavenumber;
-  kZ = beam.wavenumber * beam.impedance;
+  beam = ott.beam.PlaneWave('Nmax', 20);
   
-  xyz = randn(3, 5);
+  % Check E at two points
+  E0 = beam.efield([0;0;0]).vxyz;
+  E1 = beam.efield([0;0;1]*beam.wavelength).vxyz;
+  testCase.verifyEqual(E0, E1, 'AbsTol', 1e-6, 'RelTol', 1e-6, ...
+    'fields should be the same when separated by wavelength');
+  
+  % Check derivative of E
+  dz = 1.0e-3*beam.wavelength;
+  E1 = beam.efield([0;0;dz]).vxyz;
+  E2 = beam.efield([0;0;-dz]).vxyz;
+  Edd = (E1 - 2*E0 + E2)./dz^2;
+  testCase.verifyEqual(abs(Edd), abs(beam.omega^2/beam.speed^2.*E0), ...
+    'AbsTol', 2e-5, 'RelTol', 1e-5, 'wave equation for E not satisfied');
+  
+  % Check H relative to E
+  H0 = beam.hfield([0;0;0]).vxyz;
+  testCase.verifyEqual(abs(H0([2,1,3])), abs(E0./beam.impedance), ...
+    'AbsTol', 1e-6, 'H should be scaled by beam impedance');
+  
+  % Check H relative to E (in the far-field)
+  S = warning('off', 'ott:beam:BscInfinite:farfield_is_finite');
+  testCase.addTeardown(@() warning(S));
+  E0 = beam.efarfield([0;0;0]).vxyz;
+  H0 = beam.hfarfield([0;0;0]).vxyz;
+  testCase.verifyEqual(abs(H0([2,1,3])), abs(E0./beam.impedance), ...
+    'AbsTol', 1e-6, 'FF: H should be scaled by beam impedance');
+
+end
+
+function testNearfieldFunctionsCoverage(testCase)
+
+  beam = ott.beam.PlaneWave('Nmax', 20);
+  
+  xyz = randn(3, 5)*beam.wavelength;
   rtp = ott.utils.xyz2rtp(xyz);
   
-  targetE = bsc.efieldRtp(rtp./[beam.wavelength;1;1])./k;
-  targetH = bsc.hfieldRtp(rtp./[beam.wavelength;1;1])./kZ;
+  trialX = beam.efieldRtp(rtp);
+  trialR = beam.efield(xyz);
+  testCase.verifyEqual(trialX.vrtp, trialR.vrtp, 'RelTol', 1e-15, 'efield');
   
-  trialE = beam.efieldRtp(rtp);
-  testCase.verifyEqual(trialE.vrtp, targetE.vrtp, 'RelTol', 1e-15, 'efieldRtp');
-  trialE = beam.efield(xyz);
-  testCase.verifyEqual(trialE.vrtp, targetE.vrtp, 'RelTol', 1e-15, 'efield');
+  trialX = beam.hfieldRtp(rtp);
+  trialR = beam.hfield(xyz);
+  testCase.verifyEqual(trialX.vrtp, trialR.vrtp, 'RelTol', 1e-15, 'hfield');
   
-  trialH = beam.hfieldRtp(rtp);
-  testCase.verifyEqual(trialH.vrtp, targetH.vrtp, 'RelTol', 1e-15, 'hfieldRtp');
-  trialH = beam.hfield(xyz);
-  testCase.verifyEqual(trialH.vrtp, targetH.vrtp, 'RelTol', 1e-15, 'hfield');
-  
-  [trialE, trialH] = beam.ehfieldRtp(rtp);
-  testCase.verifyEqual(trialE.vrtp, targetE.vrtp, 'RelTol', 1e-15, 'ehfieldRtp e');
-  testCase.verifyEqual(trialH.vrtp, targetH.vrtp, 'RelTol', 1e-15, 'ehfieldRtp h');
-  [trialE, trialH] = beam.ehfield(xyz);
-  testCase.verifyEqual(trialE.vrtp, targetE.vrtp, 'RelTol', 1e-15, 'ehfield e');
-  testCase.verifyEqual(trialH.vrtp, targetH.vrtp, 'RelTol', 1e-15, 'ehfield h');
+  [trialEX, trialHX] = beam.ehfieldRtp(rtp);
+  [trialER, trialHR] = beam.ehfield(xyz);
+  testCase.verifyEqual(trialEX.vrtp, trialER.vrtp, 'RelTol', 1e-15, 'ehfield e');
+  testCase.verifyEqual(trialHX.vrtp, trialHR.vrtp, 'RelTol', 1e-15, 'ehfield h');
   
 end
 
@@ -85,28 +106,20 @@ function testFarfieldFunctions(testCase)
   omega = 2*pi*3e8 ./ 532e-9;
   bsc = ott.bsc.Bsc([1;2;3], [4;5;6]);
   beam = ott.beam.BscBeam(bsc, 'index_medium', index, 'omega', omega);
-  k = beam.wavenumber;
-  Z = beam.impedance;
   
   rtp = randn(3, 5);
-
-  targetE = bsc.efarfield(rtp)./k;
-  targetH = ott.utils.FieldVectorSph(...
-          -1i .* targetE.vrtp([1, 3, 2], :)./Z, rtp);
   
   trialE = beam.efarfield(rtp);
-  testCase.verifyEqual(trialE.vrtp, targetE.vrtp, 'RelTol', 1e-15, 'e');
-  
   trialH = beam.hfarfield(rtp);
-  testCase.verifyEqual(trialH.vrtp, targetH.vrtp, 'RelTol', 1e-15, 'h');
   
-  [trialE, trialH] = beam.ehfarfield(rtp);
-  testCase.verifyEqual(trialE.vrtp, targetE.vrtp, 'RelTol', 1e-15, 'eh e');
-  testCase.verifyEqual(trialH.vrtp, targetH.vrtp, 'RelTol', 1e-15, 'eh h');
+  [trialEX, trialHX] = beam.ehfarfield(rtp);
+  testCase.verifyEqual(trialEX.vrtp, trialE.vrtp, 'RelTol', 1e-15, 'eh e');
+  testCase.verifyEqual(trialHX.vrtp, trialH.vrtp, 'RelTol', 1e-15, 'eh h');
   
 end
 
 function testForceFunctions(testCase)
+  % These are effectively definitions from OTTv1
 
   bsc1 = ott.bsc.Bsc([1;2;3], 0);
   bsc2 = ott.bsc.Bsc([3;2;1], 0);
@@ -139,3 +152,24 @@ function testScatter(testCase)
   testCase.verifyInstanceOf(sbeam, 'ott.beam.Scattered');
 
 end
+
+function testPowerIntegralGaussianNearfield(testCase)
+
+  waist = 1e-6;
+  beam = ott.beam.Gaussian(waist, ...
+    'truncation_angle', 0.8*pi/2);
+  
+  W = beam.wavelength*200;
+  power = integral(@calcS, 0, W, 'RelTol', 1e-3);
+  
+  testCase.verifyEqual(power, beam.power, 'AbsTol', 1e-2);
+
+  function s = calcS(x)
+    [E, H] = beam.ehfield([x(:),0*x(:),0*x(:)].');
+    S = real(cross(E, conj(H)));
+    s = reshape(sum([0;0;1].*S, 1), size(x));
+    s = s .* 2*pi.*x;
+  end
+end
+
+

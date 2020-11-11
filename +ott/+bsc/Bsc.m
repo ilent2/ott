@@ -98,7 +98,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %
       %   - n,m (numeric) -- Mode indices for beam shape coefficients.
       %     Must have same number of rows as a/b.
-      
+
       % Get ci from inputs
       if nargin == 4
         % Generate combine indices
@@ -184,7 +184,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       p.addParameter('data', ott.utils.VswfData(), ...
           @(x) isa(x, 'ott.utils.VswfData'));
       p.parse(varargin{:});
-      
+
       assert(size(Ertp, 1) == 3, ...
         'Ertp must be a 3xNxM array');
 
@@ -231,7 +231,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       p.addParameter('data', ott.utils.VswfData(), ...
           @(x) isa(x, 'ott.utils.VswfData'));
       p.parse(varargin{:});
-      
+
       assert(any(size(Ertp, 1) == [2, 3]), ...
         'Ertp must be a 2xNxM or 3xNxM array');
 
@@ -277,10 +277,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
           @(x) isnumeric(x) || isa(x, 'ott.bsc.Bsc'));
       p.addOptional('b', zeros(0, 1), @isnumeric);
       p.parse(varargin{:});
-      
+
       oa = p.Results.a;
       ob = p.Results.b;
-      
+
       if nargin == 1 && isa(oa, 'ott.bsc.Bsc')
         [oa, ob] = oa.getCoefficients();
       end
@@ -316,6 +316,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       data = beam.getCoefficients();
       tmatrix = ott.tmatrix.Tmatrix(data);
     end
+  end
+
+  methods (Sealed)
 
     %
     % Field calculation functions
@@ -657,14 +660,17 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       p.addParameter('powerloss', 'warn');
       p.parse(varargin{:});
 
+      % Get a working copy of a/b
+      [oa, ob] = beam.getCoefficients();
+
       total_orders = ott.utils.combined_index(nmax, nmax);
-      if size(beam.a, 1) > total_orders
+      if size(oa, 1) > total_orders
 
         % Check AbsTol
         if ~isempty(p.Results.AbsTol) ...
             && ~strcmpi(p.Results.powerloss, 'ignore')
 
-          pw = abs(beam.a).^2 + abs(beam.b).^2;
+          pw = abs(oa).^2 + abs(ob).^2;
           last_idx = find(pw > p.Results.AbsTol, 1, 'last');
           if last_idx < total_orders
             if strcmpi(p.Results.powerloss, 'warn')
@@ -684,8 +690,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
         mag0 = beam.power;
 
-        beam.a = beam.a(1:total_orders, :);
-        beam.b = beam.b(1:total_orders, :);
+        oa = oa(1:total_orders, :);
+        ob = ob(1:total_orders, :);
+        beam = beam.setCoefficients(oa, ob);
 
         % Check RelTol
         if ~strcmpi(p.Results.powerloss, 'ignore')
@@ -706,9 +713,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
             end
           end
         end
-      elseif size(beam.a, 1) < total_orders
-        beam.a(total_orders, :) = 0;
-        beam.b(total_orders, :) = 0;
+      elseif size(oa, 1) < total_orders
+        oa(total_orders, :) = 0;
+        ob(total_orders, :) = 0;
+        beam = beam.setCoefficients(oa, ob);
       end
     end
 
@@ -734,7 +742,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       p.addParameter('AbsTol', [], @isnumeric);
       p.addParameter('RelTol', 1.0e-15, @isnumeric);
       p.parse(varargin{:});
-      
+
       relTol = p.Results.RelTol;
       if isempty(relTol)
         relTol = Inf;
@@ -765,7 +773,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         total_orders = min(ott.utils.combined_index(ii, ii), size(oa, 1));
         na = oa(1:total_orders, :);
         nb = ob(1:total_orders, :);
-        nbeam = ott.bsc.Bsc(na, nb);
+        nbeam = beam.setCoefficients(na, nb);
 
         pw1 = nbeam.power;
         apparent_error = abs( pw1 - pw0 )/pw0;
@@ -835,26 +843,30 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %   [...] = beam.getCoefficients(ci) behaves as above but only returns
       %   the requested beam cofficients a(ci) and b(ci) in a dense format.
 
-      % Get size of each beam vector
-      na = zeros(1, numel(beam));
-      nb = zeros(1, numel(beam));
-      for ii = 1:numel(beam)
-        na(ii) = numel(beam(ii).a);
-        nb(ii) = numel(beam(ii).b);
+      rowmax = size(beam(1).a, 1);
+      if ~all(cellfun(@(a) size(a, 1) == rowmax, {beam.a, beam.b}))
+
+        % Build arrays for beam data (can't use setNmax)
+        rowmax = max(cellfun(@(a) size(a, 1), {beam.a, beam.b}));
+        oa = zeros(rowmax, numel(beam));
+        ob = oa;
+        for ii = 1:numel(beam)
+          oa(1:size(beam(ii).a, 1), ii) = beam(ii).a;
+          ob(1:size(beam(ii).b, 1), ii) = beam(ii).b;
+        end
+
+      else
+        oa = [beam.a];
+        ob = [beam.b];
       end
 
       % If ci omitted, return all a and b
       if nargin == 1
-        ci = 1:max([na(:); nb(:)]);
+        ci = 1:size(oa, 1);
       end
 
-      % Get data from all beams
-      oa = zeros(numel(ci), numel(beam), 'like', beam(1).a);
-      ob = zeros(numel(ci), numel(beam), 'like', beam(1).b);
-      for ii = 1:numel(beam)
-        oa(ci <= na(ii), ii) = beam(ii).a(ci(ci <= na(ii)));
-        ob(ci <= nb(ii), ii) = beam(ii).b(ci(ci <= nb(ii)));
-      end
+      oa = oa(ci, :);
+      ob = ob(ci, :);
 
       % Package output
       if nargout == 1
@@ -1044,7 +1056,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         end
       end
     end
-    
+
     function beam = safeTimes(D, beam)
       % Apply matrix multiplication, shrinking matrix colums as needed.
       %
@@ -1062,7 +1074,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %   - D (matrix | cell) -- The matrix or cell array of matrices
       %     to apply.  If cell, must be the same number of elements
       %     as number of beams (or number of beams must be 1).
-      
+
       if iscell(D)
         if numel(D) == 1
           beam = safeTimes(D{1}, beam);
@@ -1304,6 +1316,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         varargout{1} = [sx(:) sy(:) sz(:)].';
       end
     end
+  end
+
+  methods
 
     %
     % Translation functions
@@ -1392,7 +1407,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       D = cell(1, Nrots);
       for ii = 1:Nrots
         D = ott.utils.wigner_rotation_matrix(...
-            max([beam.Nmax, p.Results.Nmax]), R(:, (1:3) + (ii-1)*3));
+            max([0, beam.Nmax, p.Results.Nmax]), R(:, (1:3) + (ii-1)*3));
       end
 
       % Apply rotation matrices to beam coefficients
@@ -1581,7 +1596,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
   methods % Getters/setters
     function nmax = get.Nmax(beam)
       % Calculates Nmax from the current size of the beam coefficients
-      nmax = ott.utils.combined_index(size(beam.a, 1));
+      nmax = ott.utils.combined_index(max(size(beam.a, 1), size(beam.b, 1)));
     end
     function beam = set.Nmax(beam, nmax)
       % Resizes the beam vectors (a,b)

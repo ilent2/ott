@@ -118,7 +118,7 @@ classdef LaguerreGaussian < ott.beam.BscFinite ...
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
-      
+
       beam = beam@ott.beam.BscFinite(unmatched{:});
       beam.waist = p.Results.waist;
       beam.lmode = p.Results.lmode;
@@ -134,7 +134,7 @@ classdef LaguerreGaussian < ott.beam.BscFinite ...
       end
     end
 
-    function beam = recalculate(beam, ~)
+    function varargout = recalculate(beam, ~, varargin)
       % Re-calculate data for beam.
       %
       % This function can be called to pre-compute the beam data for
@@ -143,19 +143,30 @@ classdef LaguerreGaussian < ott.beam.BscFinite ...
       % speed up run-time.
       %
       % Usage
-      %   beam = beam.recalcualte(Nmax)
+      %   [beam, ...] = beam.recalcualte(Nmax, ...)
       %
       % Parameters
       %   - Nmax (numeric) -- Parameter is ignored.
+      %
+      % Unmatched arguments passed to, and additional results returned
+      % from :meth:`LgParaxial.FromLgMode`.
 
-      beam.data = ott.bsc.LgParaxial.FromLgMode(...
+      ott.utils.nargoutCheck(beam, nargout);
+
+      [beam.data, weights, varargout{2:nargout}] = ...
+          ott.bsc.LgParaxial.FromLgMode(...
           beam.waist ./ beam.wavelength, ...
           beam.lmode, beam.pmode, beam.polbasis, beam.polfield, ...
-          'truncation_angle', beam.truncation_angle);
-      beam.data = beam.data ./ beam.data.power .* beam.power;
+          'truncation_angle', beam.truncation_angle, varargin{:});
+      beam.data = beam.data * weights;
 
       % Shrink Nmax to make things faster
-      beam.data = beam.data.shrinkNmax('RelTol', 1e-3);
+      beam.data = beam.data.shrinkNmax('RelTol', beam.getSetShrinkNmaxRelTol);
+
+      % Set beam power
+      beam.data.power = 1;
+
+      varargout{1} = beam;
     end
   end
 

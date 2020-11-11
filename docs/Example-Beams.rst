@@ -135,15 +135,18 @@ to translate the array of beams::
 
    tbeams = beams.translateXyz([1;0;0]*beam.wavelength);
 
-Or to set the position of each beam::
+Or to set the position of each beam with deal::
 
    [tbeams.position] = deal([1;0;0]*beam.wavelength);
 
-Coherent and Incoherent arrays can be created using the
-:class:`+ott.+beam.Coherent` and :class:`+ott.+beam.Incoherent`,
-for example::
+Or directly with element access::
 
-   cbeams = ott.beam.Coherent(beams);
+   tbeams(1).position = [1;2;3]*beam.wavelength;
+
+Coherent and Incoherent arrays can be created using
+:class:`+ott.+beam.Array`, for example::
+
+   cbeams = ott.beam.Array(beams, 'arrayType', 'coherent');
 
 
 Calculating the change in momentum between two beams
@@ -187,6 +190,64 @@ how we could model a phase-only SLM illuminated by a Gaussian-like beam::
 
    % Calculate beam
    beam = ott.beam.PmParaxial.InterpProfile(X, Y, E);
+
+Improving runtime
+=================
+
+Toolbox beams are represented using a vector spherical wave function
+expansion.  Depending on how many terms are included in the expansion,
+visualisation and translation functions can take quite a while.
+One method to improve the runtime is to reduce the number of terms in
+the expansion.  By defaut, finite beams (such as Gaussians) are
+calcualted with ~10,000 terms and then truncated such that the resulting
+beam power doesnt drop bellow 2% of the original beam power.  This
+threshold can be changed using, for example, to change it to 10% use::
+
+   ott.beam.BscFinite.getSetShrinkNmaxRelTol(0.01);
+
+Next time we create a beam, it will use this new tolerance::
+
+   beam = ott.beam.Gaussian();
+   disp(beam.data.Nmax);
+   tic
+   beam.visNearfield();
+   toc
+
+   % Change back to 2%
+   ott.beam.BscFinite.getSetShrinkNmaxRelTol(0.02);
+
+For repeated field calculation at the same locations, there is a lot of
+data that can be re-used in the field calculation functions.  Both the
+visNearfield and Gaussian beam generation functions require calculating
+fields.  To speed up these methods, we can store the field data from
+a previous run.  The following creates a plot with 2 different beams::
+
+   figure();
+   range = [1,1]*2e-6;
+
+   % Generage first beam with no prior data.  We use the recalculate
+   % method explicitly so we can get the returned data for repeated
+   % calculations.  For visualisation, we also get the returned data,
+   % but we also need to specify the plot axes explicitly to show the plot.
+   subplot(1, 2, 1);
+   tic
+   beam = ott.beam.LaguerreGaussian('lmode', 9, 'calculate', false);
+   [beam, dataBm] = beam.recalculate([]);
+   [~, ~, dataVs] = beam.visNearfield('range', range, 'plot_axes', gca());
+   toc
+
+   % Generate second beam with prior data for both beam and visNearfield.
+   subplot(1, 2, 2);
+   tic
+   beam = ott.beam.LaguerreGaussian('lmode', 7, 'calculate', false);
+   beam = beam.recalculate([], 'data', dataBm);
+   beam.visNearfield('range', range, 'data', dataVs);
+   toc
+
+Different beams/methods support different optional parameters.
+It is not always faster to pass the data structure as an input.
+See the documentation for notes on improving speed and the supported
+arguments these methods support.
 
 Further reading
 ===============

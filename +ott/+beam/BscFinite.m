@@ -9,6 +9,9 @@ classdef BscFinite < ott.beam.BscBeam
 %
 % As with the :class:`BscBeam` class, this class assumes a regular beam.
 %
+% Properties
+%   - power         -- Power applied to the beam in ``ott.bsc.bsc``.
+%
 % Supported casts
 %   - ott.bsc.Bsc   -- Get the BSC data after applying transformations
 %
@@ -17,6 +20,33 @@ classdef BscFinite < ott.beam.BscBeam
 % Copyright 2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
+
+  properties
+    power       % Beam power [W]
+  end
+
+  methods (Static)
+    function val = getSetShrinkNmaxRelTol(val)
+      % Get or set the shringNmax RelTol value for BscFinite beams.
+      %
+      % This parameter is used by the re-calculate methods to shrink
+      % the generated beam and speed up simulations.  The default
+      % parameter is ``2e-2`` but it can be changed with
+      %
+      %   ott.beam.BscFinite.getSetShrinkNmaxRelTol(val)
+
+      persistent RelTol
+      if isempty(RelTol)
+        RelTol = 2e-2;
+      end
+
+      if nargin == 1
+        RelTol = val;
+      else
+        val = RelTol;
+      end
+    end
+  end
 
   methods
     function beam = BscFinite(varargin)
@@ -35,8 +65,20 @@ classdef BscFinite < ott.beam.BscBeam
       %   - omega (numeric) -- Optical angular frequency [Hz].
       %     Default: ``3e8/1064e-9*2*pi`` (i.e., default vacuum
       %     wavelength is 1064 nm).
+      %
+      %   - power (numeric) -- Beam power [W].  Applied to the beam
+      %     whenever ``ott.bsc.Bsc`` is called (i.e., when the beam is used).
+      %     Default: ``1``.
 
-      beam = beam@ott.beam.BscBeam(varargin{:});
+      p = inputParser;
+      p.addOptional('data', ott.bsc.Bsc.empty(), @(x) isa(x, 'ott.bsc.Bsc'));
+      p.addParameter('power', 1, @isnumeric);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+
+      beam = beam@ott.beam.BscBeam(p.Results.data, unmatched{:});
+      beam.power = p.Results.power;
     end
 
     function bsc = ott.bsc.Bsc(beam, Nmax)
@@ -63,7 +105,7 @@ classdef BscFinite < ott.beam.BscBeam
       end
 
       if isempty(beam.data)
-        beam = beam.recalcualte(Nmax);
+        beam = beam.recalculate(Nmax);
       end
 
       bsc = beam.data;
@@ -74,6 +116,17 @@ classdef BscFinite < ott.beam.BscBeam
       % Translate the beam
       % Assumes beam is a regular beam
       bsc = bsc.translateXyz(beam.position ./ beam.wavelength, 'Nmax', Nmax);
+
+      % Apply power to beam
+      bsc.power = bsc.power * beam.power;
+    end
+  end
+
+  methods % Getters/setters
+    function beam = set.power(beam, val)
+      assert(isnumeric(val) && isscalar(val) && val >= 0, ...
+          'power must be positive numeric scalar');
+      beam.power = val;
     end
   end
 end

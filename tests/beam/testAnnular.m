@@ -33,7 +33,7 @@ function testConstructGaussian(testCase)
 
   bsc = ott.bsc.Bsc(beam, profile.data.Nmax);
   testCase.verifyEqual(bsc.power, profile.data.power, ...
-      'RelTol', 0.2, 'power');
+      'RelTol', 0.22, 'power');
 
 end
 

@@ -52,10 +52,10 @@ function testValues(testCase)
   testCase.verifyEqual(Ydt, Ydte.', 'AbsTol', 1e-15, 'Yde');
   testCase.verifyEqual(Ydp, Ydpe.', 'AbsTol', 1e-15, 'Ydp');
 
-  % Test second retrieval
-  theta = [theta, 0.4];
-  phi = [phi, 0.6];
-  ci = [1, 2, 3, 4]+3;
+  % Test second retrieval (column vectors)
+  theta = [theta 0.4].';
+  phi = [phi, 0.6].';
+  ci = [1, 2, 3, 4].'+3;
   [n, m] = ott.utils.combined_index(ci);
   [Y, Ydt, Ydp, ~] = data.evaluate(ci, theta, phi);
   [Ye, Ydte, Ydpe] = ott.utils.spharm(unique(n), m, theta, phi);

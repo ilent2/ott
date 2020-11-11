@@ -6,12 +6,17 @@ classdef FieldVector < double
 % Methods
 %   - plus, minus, uminus, times, mtimes, rdivide, mrdivide
 %   - sum     -- Add field vector components
+%   - cross, dot -- Implementations of cross and dot products
+%   - vecnorm -- Calculate vector magnitude
 %   - vxyz    -- Data in Cartesian coordinates
 %   - vrtp    -- Data in Spherical coordinates
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+% TODO: This class is still a little dodgy, we really need to implement
+% a subsasgn/subsref method to deal with this properly.
 
   methods (Access=protected)
     function field = FieldVector(vec, pos)
@@ -89,6 +94,51 @@ classdef FieldVector < double
       if size(out, 1) == 3
         out = ott.utils.FieldVectorCart(out);
       end
+    end
+    
+    function vec = cross(v1, v2)
+      % Vector cross product
+      %
+      % Usage
+      %   fv = cross(fv, fv)
+      
+      assert(isa(v1, 'ott.utils.FieldVector') ...
+        && isa(v2, 'ott.utils.FieldVector'), ...
+        'Both inputs must be field vectors');
+      
+      vec = cross(v1.vxyz, v2.vxyz);
+      vec = ott.utils.FieldVectorCart(vec);
+    end
+    
+    function vec = dot(v1, v2)
+      % Vector dot product
+      %
+      % Usage
+      %   s = dot(fv, fv)
+      
+      assert(isa(v1, 'ott.utils.FieldVector') ...
+        && isa(v2, 'ott.utils.FieldVector'), ...
+        'Both inputs must be field vectors');
+      
+      vec = dot(v1.vxyz, v2.vxyz);
+    end
+    
+    function vec = vecnorm(vec)
+      % Calculate vector magnitude
+      %
+      % Usage
+      %   s = vecnorm(fv)
+      
+      vec = vecnorm(vec.vxyz);
+    end
+    
+    function vec = conj(vec)
+      % Complex conjugate
+      %
+      % Usage
+      %   fv = conj(fv)
+      
+      vec(1:3, :) = conj(double(vec(1:3, :)));
     end
 
     function vec = plus(v1, v2)
