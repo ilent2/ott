@@ -10,7 +10,7 @@ function setupOnce(testCase)
   mass = 1.7;
   testCase.TestData.fixed = ott.particle.Fixed.FromShape(shape, ...
       'index_relative', index_relative, 'internal', true, ...
-      'mass', mass);
+      'mass', mass, 'wavelength0', 1064e-9);
     
 end
 

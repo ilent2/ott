@@ -24,15 +24,15 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 % Properties
 %   - position        -- (3x1 numeric) Location of the beam
 %   - rotation        -- (3x3 numeric) Orientation of the beam
-%   - index_medium    -- Refractive index of the medium
 %   - wavelength      -- Wavelength in medium [m]
 %   - wavenumber      -- Wavenumber in medium [1/m]
-%   - omega           -- Optical angular frequency of light [1/s]
 %   - speed           -- Speed of light in the medium [m/s]
 %   - speed0          -- Speed of light in vacuum [m/s]
+%   - scale           -- Scaling parameter for beam fields (default: 1)
 %
 % Abstract properties
-%   - data            -- Internal beam description (either beam array or BSC)
+%   - omega           -- Optical angular frequency of light [1/s]
+%   - index_medium    -- Refractive index of the medium
 %
 % Methods
 %   - setWavelength -- Set wavelength property
@@ -60,8 +60,11 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 %   - visFarfieldSphere -- Visualise the filed on a sphere
 %
 % Mathematical operations
-%   - times,mtimes     -- Scalar multiplication of beam intensity/power
-%   - rdivide,mrdivide -- Scalar division of beam intensity/power
+%   - times,mtimes     -- Scalar multiplication of beam fields
+%   - rdivide,mrdivide -- Scalar division of beam fields
+%   - uminus           -- Flip beam field intensity
+%   - plus, minus      -- Combine beams coherently
+%   - or               -- Combine beams incoherently
 %
 % Abstract methods
 %   - efield     -- Calculate electric field around the origin
@@ -76,6 +79,10 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 % See LICENSE.md for information about using/distributing this file.
 
   properties
+    scale          % Scaling parameter for beam fields
+  end
+
+  properties (Abstract)
     index_medium   % Refractive index of the medium
     omega          % Optical angular frequency of light [1/s]
   end
@@ -83,6 +90,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
   properties (Dependent)
     speed          % Speed of light in the medium [m/s]
     wavelength     % Wavelength in medium [m]
+    wavelength0    % Wavelength in vacuum [m]
     wavenumber     % Wavenumber in medium [1/m]
     impedance      % Impedance of the medium
   end
@@ -207,20 +215,23 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %   beam = Beam(...)
       %
       % Optional named arguments
-      %   - index_medium (numeric) -- Refractive index of the medium.
-      %     Default: ``1.0``.
+      %   - scale (numeric) -- Initial scale.  Default: ``1``.
       %
-      %   - omega (numeric) -- Optical angular frequency [Hz].
-      %     Default: ``3e8/1064e-9*2*pi`` (i.e., default vacuum
-      %     wavelength is 1064 nm).
+      %   - position (3x1 numeric) -- Initial position [m].
+      %     Default: ``[0;0;0]``.
+      %
+      %   - rotation (3x3 numeric) -- Initial rotation matrix.
+      %     Default: ``eye(3)``.
 
       p = inputParser;
-      p.addParameter('index_medium', 1.0);
-      p.addParameter('omega', 3e8/1064e-9*2*pi);
+      p.addParameter('scale', 1.0);
+      p.addParameter('position', [0;0;0]);
+      p.addParameter('rotation', eye(3));
       p.parse(varargin{:});
 
-      beam.index_medium = p.Results.index_medium;
-      beam.omega = p.Results.omega;
+      beam.position = p.Results.position;
+      beam.rotation = p.Results.rotation;
+      beam.scale = p.Results.scale;
     end
   end
 
@@ -455,6 +466,11 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %
       % Returns
       %   - 3x1 numeric vector.
+      
+      assert(isa(beam, 'ott.beam.Beam'), ...
+        'first argument must be Beam instance');
+      assert(isa(other, 'ott.beam.Beam'), ...
+        'second argument must be a Beam instance');
 
       fbeam = beam.intensityMoment();
       obeam = other.intensityMoment();
@@ -930,7 +946,110 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       end
     end
   end
-  
+
+  methods (Sealed)
+
+    %
+    % Mathematical operators
+    %
+
+    function beam = times(beam, other)
+      % Scale the beam fields (only supports scalar multiplication)
+      %
+      % Usage
+      %   beam = beam .* scale
+
+      % Defer for now, may change in future
+      beam = beam * other;
+    end
+
+    function beam = mtimes(beam, other)
+      % Scale the beam fields (only supports scalar multiplication)
+      %
+      % Usage
+      %   beam = beam * scalar
+
+      % Swap inputs if required
+      if isnumeric(beam)
+        [beam, other] = deal(other, beam);
+      end
+
+      assert(~isa(other, 'ott.beam.Beam'), ...
+          'At least one input must be numeric');
+
+      for ii = 1:numel(beam)
+        beam(ii).scale = beam(ii).scale * other;
+      end
+    end
+
+    function beam = rdivide(beam, other)
+      % Scalar division of beam fields
+      %
+      % Usage
+      %   beam = beam ./ value
+
+      assert(isnumeric(other), 'second argument must be numeric');
+
+      for ii = 1:numel(beam)
+        beam(ii).scale = beam(ii).scale ./ other;
+      end
+    end
+
+    function beam = mrdivide(beam, other)
+      % Scalar division of beam fields
+      %
+      % Usage
+      %   beam = beam / value
+
+      % Defer
+      beam = beam ./ other;
+    end
+
+    function beam = uminus(beam)
+      % Unitary minus: flips beam field intensity
+      %
+      % Usage
+      %   beam = -beam;
+
+      for ii = 1:numel(beam)
+        beam(ii).scale = -beam(ii).scale;
+      end
+    end
+
+    function beam = plus(a, b)
+      % Combine beams coherently
+      %
+      % Usage
+      %   beam = beam1 + beam2
+
+      assert(isscalar(a) && isscalar(b), 'only works for scalar inputs');
+
+      beam = ott.beam.Array([a, b], 'arrayType', 'coherent');
+    end
+
+    function beam = minus(a, b)
+      % Combine beams coherently
+      %
+      % Usage
+      %   beam = beam1 - beam2
+
+      assert(isscalar(a) && isscalar(b), 'only works for scalar inputs');
+
+      beam = ott.beam.Array([a, -b], 'arrayType', 'coherent');
+    end
+
+    function beam = or(a, b)
+      % Combine beams incoherently
+      %
+      % Usage
+      %   beam = beam1 | beam2
+
+      assert(isscalar(a) && isscalar(b), 'only works for scalar inputs');
+
+      beam = ott.beam.Array([a, -b], 'arrayType', 'incoherent');
+    end
+  end
+
   methods (Hidden)
     function rng = defaultVisRangeInternal(~)
       rng = [1,1];
@@ -1173,12 +1292,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       beam.index_medium = beam.speed0 ./ val;
     end
 
-    function beam = set.index_medium(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-          'index_medium must be numeric scalar');
-      beam.index_medium = val;
-    end
-
     function wavenumber = get.wavenumber(beam)
       wavenumber = beam.omega ./ beam.speed;
     end
@@ -1194,16 +1307,19 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       error('ott:beam:Beam:set_wavelength', ...
         'Cannot set wavelength, set speed, omega or use setWavelength');
     end
+    
+    function wavelength = get.wavelength0(beam)
+      wavelength = beam.speed0 ./ beam.omega .* 2*pi;
+    end
+    function beam = set.wavelength0(beam, val)
+      assert(isnumeric(val) && isscalar(val) && val > 0, ...
+          'wavelength0 must be positive numeric scalar');
+      beam.omega = 3e8/val*2*pi;
+    end
 
     function val = get.impedance(beam)
       % Assuming mu_r = 1 and non-conductive medium
       val = 376.73 ./ beam.index_medium;
-    end
-
-    function beam = set.omega(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-          'omega must be numeric scalar');
-      beam.omega = val;
     end
   end
 end

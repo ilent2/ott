@@ -35,12 +35,17 @@ classdef PlaneWave < ott.beam.BscInfinite
       %   - Nmax (numeric) -- Initial beam Nmax.  Default: ``0``.
       %     This parameter automatically grows when the beam is used but
       %     can be explicitly set for repeated use.
+      %
+      % Additional parameters/inputs passed to base class.
 
       p = inputParser;
       p.addOptional('polarisation', [1, 1i]);
       p.addParameter('Nmax', 0);
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
+      beam = beam@ott.beam.BscInfinite(unmatched{:});
       beam.polarisation = p.Results.polarisation;
       beam = beam.recalculate(p.Results.Nmax);
     end
@@ -76,8 +81,8 @@ classdef PlaneWave < ott.beam.BscInfinite
       bsc = bsc.rotate(beam.rotation);
       bsc = bsc.translateXyz(beam.position ./ beam.wavelength);
 
-      % Apply polarisation
-      bsc = bsc * beam.polarisation(:);
+      % Apply polarisation and field scale factor
+      bsc = bsc * beam.polarisation(:) * beam.scale;
     end
 
     function beam = recalculate(beam, Nmax)

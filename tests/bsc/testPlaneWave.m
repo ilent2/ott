@@ -23,6 +23,18 @@ function testFromDirection(testCase)
 
 end
 
+function testSetPower(testCase)
+
+  Nmax = 40;
+  dir = [0;0;1];
+  pol = [1;0;0];
+  beam = ott.bsc.PlaneWave.FromDirection(Nmax, dir, pol);
+  
+  beam.power = 2;
+  testCase.verifyEqual(beam.power, 2, 'RelTol', 1e-15, 'set power');
+
+end
+
 function testTranslateZ(testCase)
   % Test translation in comparision to normal bsc translation
 

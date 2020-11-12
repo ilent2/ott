@@ -1,4 +1,4 @@
-classdef Empty < ott.beam.Beam
+classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
 % A beam with no fields.
 % Inherits from :class:`Beam`.
 %
@@ -24,7 +24,7 @@ classdef Empty < ott.beam.Beam
 % using/distributing this file.
 
   methods
-    function beam = Empty(varargin)
+    function bm = Empty(varargin)
       % Construct a new empty beam instance.
       %
       % Usage
@@ -32,7 +32,11 @@ classdef Empty < ott.beam.Beam
       %
       % All parameters passed to :class:`Beam` constructor.
 
-      beam = beam@ott.beam.Beam(varargin{:});
+      [omega, index, unmatched] = ott.beam.properties. ...
+          IndexOmegaProps.parseArgs(varargin{:});
+
+      bm = bm@ott.beam.properties.IndexOmegaProps(omega, index);
+      bm = bm@ott.beam.Beam(unmatched{:});
     end
 
     %

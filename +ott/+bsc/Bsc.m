@@ -490,8 +490,8 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Get beam coefficients
       [ai, bi] = beam.getCoefficients(ci);
-      ai = permute(ai, [1, 3, 2]);
-      bi = permute(bi, [1, 3, 2]);
+      ai = permute(full(ai), [1, 3, 2]);
+      bi = permute(full(bi), [1, 3, 2]);
 
       % Calculate field components
       Hr = sum(Nn.*n.*(n+1)./rtp(1, :).*hn.*Y.*ai, 1);
@@ -1035,23 +1035,40 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Usage
       %   beam = scalar * beam   or   beam = beam * scalar
       %   Scalar multiplication of beam shape coefficients.
+      %   Returned type matches original beam type.
       %
       %   beam = matrix * beam
       %   Matrix multiplication.  Matrix can either have the same
       %   number of columns as the `a` and `b` beam shape coefficients
       %   or half as many rows.  In other words, the resulting beam
-      %   is either `[M*a; M*b]` or `M*[a;b]`.
+      %   is either `[M*a; M*b]` or `M*[a;b]`.  Returned type is a
+      %   new :class:`Bsc` instance.
+      %
+      %   beam = beam * matrix
+      %   Matrix multiplication.  Applies ``a = a*M`` and ``b = b*M``.
+      %   Returned type is a new :class:`Bsc` instance.
 
       if isa(a, 'ott.bsc.Bsc')
         [oa, ob] = a.getCoefficients();
-        beam = ott.bsc.Bsc(oa * b, ob * b);
+        if ismatrix(a)
+          beam = ott.bsc.Bsc(oa * b, ob * b);
+        else
+          beam = a.setCoefficients(oa * b, ob * b);
+        end
       else
         [oa, ob] = b.getCoefficients();
-        if size(a, 2) == 2*size(oa, 1)
+        assert(ismatrix(a) && isnumeric(a), ...
+          'first argumet must be a numeric scalar, matrix or Bsc instance');
+        
+        if isscalar(a)
+          % Set and preserve type
+          beam = b.setCoefficients(a * oa, a * ob);
+        elseif size(a, 2) == 2*size(oa, 1)
           ab = a * [oa; ob];
           beam = ott.bsc.Bsc(ab(1:end/2, :), ...
               ab(1+end/2:end, :));
         else
+          % Set, creating new Bsc instance
           beam = ott.bsc.Bsc(a * oa, a * ob);
         end
       end
@@ -1609,8 +1626,11 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       p = gather(full(sum(abs(oa).^2 + abs(ob).^2, 1)));
     end
     function beam = set.power(beam, val)
-      % Set the beam power
-      beam = sqrt(val ./ beam.power) * beam;
+      if val == 0 && isfinite(beam.power)
+        beam = 0 * beam;
+      else
+        beam = sqrt(val ./ beam.power) * beam;
+      end
     end
 
     function beam = set.a(beam, val)

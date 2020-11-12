@@ -277,7 +277,23 @@ function testPower(testCase)
 
   abeam = ott.bsc.Bsc([1; 2; 3]);
   abeam.power = 1;
-  testCase.verifyEqual(abeam.power, 1);
+  testCase.verifyEqual(abeam.power, 1, 'set power to 1');
+
+  abeam.power = 0;
+  testCase.verifyEqual(abeam.power, 0, 'set power to 0');
+
+  nanBeam = abeam;
+  nanBeam.power = 1;
+  testCase.verifyEqual(nanBeam.power, nan, ...
+      'Setting finite power of a 0 power beam should give nan');
+
+  nanBeam.power = 0;
+  testCase.verifyEqual(nanBeam.power, nan, ...
+      'setting power to zero should preserve nan elements');
+
+  abeam.power = 0;
+  testCase.verifyEqual(abeam.power, 0, ...
+      'setting power to 0 for 0 power beam should give 0');
 
 end
 
@@ -318,7 +334,9 @@ function testHfieldRtp(testCase)
   beam = ott.bsc.Bsc([1i; 2; 3i]);
   rtp = randn(3, 5);
   E = beam.hfieldRtp(rtp);
-  
+  testCase.verifyInstanceOf(E, 'ott.utils.FieldVector');
+  testCase.verifyFalse(issparse(E), 'returned values should be full');
+
 end
 
 function testDipoleFieldValues(testCase)
@@ -333,3 +351,37 @@ function testDipoleFieldValues(testCase)
       'AbsTol', 1e-4, 'dipole field values');
 
 end
+
+function testFieldWithEmpty(testCase)
+
+  a = sparse(8, 1);
+  b = a;
+  beam = ott.bsc.Bsc(a, b);
+
+  rtp = [10;0;0];
+  target = [0;0;0];
+
+  % Regular basis
+  testCase.verifyEqual(beam.efieldRtp(rtp).vxyz, target, 'e sp');
+  testCase.verifyEqual(beam.hfieldRtp(rtp).vxyz, target, 'h sp');
+
+  % Outgoing basis
+  testCase.verifyEqual(beam.efieldRtp(rtp, 'basis', 'outgoing').vxyz, ...
+      target, 'e sp out');
+  testCase.verifyEqual(beam.hfieldRtp(rtp, 'basis', 'outgoing').vxyz, ...
+      target, 'h sp out');
+
+  beam = ott.bsc.Bsc([], []);
+
+  % Regular basis
+  testCase.verifyEqual(beam.efieldRtp(rtp).vxyz, target, 'e em');
+  testCase.verifyEqual(beam.hfieldRtp(rtp).vxyz, target, 'h em');
+
+  % Outgoing basis
+  testCase.verifyEqual(beam.efieldRtp(rtp, 'basis', 'outgoing').vxyz, ...
+      target, 'e em out');
+  testCase.verifyEqual(beam.hfieldRtp(rtp, 'basis', 'outgoing').vxyz, ...
+      target, 'h em out');
+
+end
+

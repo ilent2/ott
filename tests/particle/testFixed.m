@@ -13,7 +13,7 @@ function testFromShape(testCase)
   mass = 1.7;
   particle = ott.particle.Fixed.FromShape(shape, ...
       'index_relative', index_relative, 'internal', true, ...
-      'mass', mass);
+      'mass', mass, 'wavelength0', 1064e-9);
 
   testCase.verifyEqual(particle.drag.viscosity, 8.9e-4, 'viscosity');
   testCase.verifyEqual(particle.mass, mass, 'mass');

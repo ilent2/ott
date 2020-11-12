@@ -95,7 +95,8 @@ classdef BscInfinite < ott.beam.BscBeam
       oNmax = ott.utils.ka2nmax(max(rtp(1, :)).*beam.wavenumber);
 
       % Create new beam with updated data and calculate fields
-      beam = ott.beam.BscBeam(ott.bsc.Bsc(beam, oNmax));
+      beam = ott.beam.BscBeam(ott.bsc.Bsc(beam, oNmax), ...
+          'omega', beam.omega, 'index_medium', beam.index_medium);
       [varargout{1:nargout}] = beam.ehfieldRtp(rtp, varargin{:});
     end
 
@@ -117,7 +118,8 @@ classdef BscInfinite < ott.beam.BscBeam
       oNmax = ott.utils.ka2nmax(max(rtp(1, :)).*beam.wavenumber);
 
       % Create new beam with updated data and calculate fields
-      beam = ott.beam.BscBeam(ott.bsc.Bsc(beam, oNmax));
+      beam = ott.beam.BscBeam(ott.bsc.Bsc(beam, oNmax), ...
+          'omega', beam.omega, 'index_medium', beam.index_medium);
       [varargout{1:nargout}] = beam.efieldRtp(rtp, varargin{:});
     end
 
@@ -139,7 +141,8 @@ classdef BscInfinite < ott.beam.BscBeam
       oNmax = ott.utils.ka2nmax(max(rtp(1, :)).*beam.wavenumber);
 
       % Create new beam with updated data and calculate fields
-      beam = ott.beam.BscBeam(ott.bsc.Bsc(beam, oNmax));
+      beam = ott.beam.BscBeam(ott.bsc.Bsc(beam, oNmax), ...
+          'omega', beam.omega, 'index_medium', beam.index_medium);
       [varargout{1:nargout}] = beam.hfieldRtp(rtp, varargin{:});
     end
   end

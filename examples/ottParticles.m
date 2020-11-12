@@ -26,8 +26,10 @@
 % Generate a geometric shape (units of meters)
 shape = ott.shape.Sphere(1e-6);
 
-% Create a particle
-particle = ott.particle.Particle.FromShape(shape);
+% Create a particle with fixed properties
+% For the T-matrix method, we need to specify relative index and wavelength
+particle = ott.particle.Fixed.FromShape(shape, ...
+  'index_relative', 1.2, 'wavelength0', 1064e-9);
 
 % Show the shape geometry (via the particle)
 figure();
@@ -65,26 +67,29 @@ tmatrix = ott.tmatrix.Smarties(...
     shape.radius ./ wavelength, shape.height ./ wavelength, index_relative);
 
 % Create particle instance
-particle = ott.particle.Fixed(shape, 'drag', drag, 'tmatrix', tmatrix);
+particle = ott.particle.Fixed(shape, 'drag', drag, 'tmatrix', tmatrix)
 
 %% Translations and rotations
 % Similar to beams, particles have `rotation` and `position` properties
 % which can be used to control the position/rotation of the particle.
 
-% Both rotation and position can be directly set, for example
-particle.position = [1;0;0]*wavelength;
 figure();
+
+% Both rotation and position can be directly set, for example
+subplot(1, 2, 1);
+particle.position = [1;0;0]*wavelength;
 particle.surf();
 
 % And properties can be adjusted using the translate/rotate methods.
 % As with beams, the rotate/translate methods return a copy of the object.
+subplot(1, 2, 2);
 rparticle = particle.rotateY(pi/2);
-figure();
 rparticle.surf();
 
 %% Calculating optical scattering
-% To calculate how a beam is scattered by a particle, we can either use
-% the matrix multiplication operator or the beam scatter method.
+% Particles can scatter beams (when the is an appropriate T-matrix
+% definition).  For this example we setup a Gaussian beam and calculate
+% the fields inside and outside a spherical particle.
 
 % Setup an incident beam
 beam = ott.beam.Gaussian();
@@ -93,19 +98,24 @@ beam = ott.beam.Gaussian();
 % Particle instance also support calculating internal fields for certain
 % geometries (such as spherical particles).
 shape = ott.shape.Sphere(1e-6);
-particle = ott.particle.Particle.FromShape(shape, ...
-    'internal', true, 'index_relative', 1.2);
-
-% Calculate scattering (using mtimes)
-sbeam = particle * beam;
-
-% Calculate scattering (using scatter)
-sbeam = beam.scatter(particle);
-
-% The scattered beam stores an instance of the particle and the incident
-% beam, allowing us to easily visualise the internal and external fields.
+particle = ott.particle.Fixed.FromShape(shape, ...
+    'internal', true, 'index_relative', 1.2, ...
+    'wavelength0', beam.wavelength0);
+  
 figure();
-sbeam.visNearfield('axis', 'y');
+
+for x = linspace(-1, 1, 20)
+  
+  % Calcualate scattering
+%   beam.position = [x;0;0]*beam.wavelength;
+  sbeam = beam.scatter(particle, 'position', [x;0;0]*beam.wavelength);
+  
+  % The scattered beam stores an instance of the particle and the incident
+  % beam, allowing us to easily visualise the internal and external fields.
+  sbeam.visNearfield('axis', 'y', 'range', [1,1]*2e-6);
+  drawnow;
+  
+end
 
 %% Calculating force
 % Force can be calculated either directly using the `force` method of the
@@ -113,10 +123,10 @@ sbeam.visNearfield('axis', 'y');
 
 % With the scattered beam
 % The resulting force has units of newtons.
-force = sbeam.force();
+force = sbeam.force()
 
 % With the incident beam we can specify a range of positions.
-% These positions are applied on top of any existing particle positions.
+% These positions override existing particle positions.
 positions = randn(3, 5)*1e-6;
-forces = beam.force(particle, 'position', positions);
+forces = beam.force(particle, 'position', positions)
 

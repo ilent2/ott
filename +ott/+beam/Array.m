@@ -23,6 +23,8 @@ classdef Array < ott.beam.ArrayType
 
   properties (Dependent)
     data      % Array of coherent/incoherent beams
+    index_medium    % Medium refractive index
+    omega           % Optical frequency
   end
 
   properties (Hidden, SetAccess=protected)
@@ -358,19 +360,24 @@ classdef Array < ott.beam.ArrayType
         end
       end
 
-      % Update index_medium and omega
-      try
-        beam.index_medium = unique([val.index_medium]);
-        beam.omega = unique([val.omega]);
-      catch
-        error('All sub-beam index-medium/omega must match');
-      end
+      assert(numel(unique([val.index_medium])) == 1, ...
+          'all beams must have the same refractive index');
+      assert(numel(unique([val.omega])) == 1, ...
+          'all beams must have the same optical frequency');
 
       % Store data
       beam.dataInternal = val;
     end
     function val = get.data(beam)
       val = beam.dataInternal;
+    end
+
+    function val = get.omega(beam)
+      val = beam.data(1).omega;
+    end
+
+    function val = get.index_medium(beam)
+      val = beam.data(1).index_medium;
     end
   end
 end

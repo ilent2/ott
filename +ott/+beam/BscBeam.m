@@ -1,4 +1,4 @@
-classdef BscBeam < ott.beam.ArrayType
+classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 % Beam class encapsulating a BSC instance.
 % Inherits from :class:`+ott.+beam.ArrayType`.
 %
@@ -36,7 +36,7 @@ classdef BscBeam < ott.beam.ArrayType
   end
 
   methods
-    function beam = BscBeam(varargin)
+    function bm = BscBeam(varargin)
       % Construct a Bsc beam instance.
       %
       % Usage
@@ -63,9 +63,13 @@ classdef BscBeam < ott.beam.ArrayType
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
 
-      beam = beam@ott.beam.ArrayType(...
+      [omega, index, unmatched] = ott.beam.properties. ...
+          IndexOmegaProps.parseArgs(unmatched{:});
+
+      bm = bm@ott.beam.properties.IndexOmegaProps(omega, index);
+      bm = bm@ott.beam.ArrayType(...
         'arrayType', p.Results.arrayType, unmatched{:});
-      beam.data = p.Results.data;
+      bm.data = p.Results.data;
     end
 
     function bsc = ott.bsc.Bsc(beam, Nmax)
@@ -124,6 +128,9 @@ classdef BscBeam < ott.beam.ArrayType
       if strcmpi(beam.arrayType, 'coherent')
         bsc = sum(bsc);
       end
+
+      % Apply scale to data
+      bsc = bsc * beam.scale;
     end
 
     function beam = recalculate(beam, ~) %#ok<INUSD>
@@ -161,19 +168,52 @@ classdef BscBeam < ott.beam.ArrayType
       p.addParameter('rotation', particle.rotation);
       p.parse(varargin{:});
 
-      % Apply particle position
-      ibeam.position = ibeam.position + p.Results.position;
-
-      ibsc = ott.bsc.Bsc(ibeam, particle.tmatrix.Nmax(1));
+      % Apply particle position to beam and particle
+      % Make a copy of the beam data (new beam uses original incidnet beam)
+      particle.position = p.Results.position;
+      tbeam = ibeam.translateXyz(-p.Results.position);
+      
+      % Get required Nmax for beam data
+      Nmax = 0;
+      if ~isempty(particle.tmatrix)
+        Nmax = max(Nmax, particle.tmatrix.Nmax(2));
+      end
+      if ~isempty(particle.tinternal)
+        Nmax = max(Nmax, particle.tinternal.Nmax(2));
+      end
+      
+      % Get bsc data
+      ibsc = ott.bsc.Bsc(tbeam, Nmax);
 
       % Apply particle rotation
       ibsc = ibsc.rotate(p.Results.rotation);
 
-      sbsc = particle.tmatrix * ibsc;
+      % Calculate external component
+      if ~isempty(particle.tmatrix)
+        sbsc = particle.tmatrix * ibsc;
+        sbeam = ott.beam.BscOutgoing(sbsc, ...
+          'index_medium', ibeam.index_medium, 'omega', ibeam.omega, ...
+          'position', particle.position);
+      else
+        sbeam = [];
+      end
+      
+      % Calculate internal component
+      if ~isempty(particle.tinternal)
+        sint = particle.tinternal * ibsc;
+        index_particle = ibeam.index_medium * particle.tinternal.index_relative;
+        nbeam = ott.beam.BscBeam(sint, ...
+          'index_medium', index_particle, ...
+          'omega', ibeam.omega, ...
+          'position', particle.position);
+      else
+        nbeam = [];
+      end
 
+      % Package output
       sbeam = ott.beam.Scattered(...
-          ott.beam.BscBeam(sbsc), ...
-          ott.beam.BscBeam(ibsc), particle);
+          'scattered', sbeam, 'incident', ibeam, ...
+          'particle', particle, 'internal', nbeam);
     end
 
     %
@@ -319,7 +359,7 @@ classdef BscBeam < ott.beam.ArrayType
           rtp./[beam.wavelength;1;1], varargin{:});
 
       if nargout >= 1
-        varargout{1} = varargout{1} ...
+        varargout{1} = varargout{1} ./ sqrt(beam.index_medium) ...
           .* 2 .* beam.wavenumber .* sqrt(beam.impedance);
       end
     end
@@ -346,7 +386,7 @@ classdef BscBeam < ott.beam.ArrayType
           rtp./[beam.wavelength;1;1], varargin{:});
 
       if nargout >= 1
-        varargout{1} = varargout{1} ...
+        varargout{1} = varargout{1} ./ sqrt(beam.index_medium) ...
           .* 2 .* beam.wavenumber ./ sqrt(beam.impedance);
       end
     end

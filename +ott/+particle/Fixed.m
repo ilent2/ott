@@ -45,7 +45,7 @@ classdef Fixed < ott.particle.Particle
       %     are supplied.  In which case `index_medium` is ignored.
       %
       %   - wavelength0 (numeric) -- Vacuum wavelength.  [m]
-      %     Default: ``1064e-9`` (a common IR trapping wavelength).
+      %     This parameter is required to calculate the T-matrix.
       %
       %   - viscosity (numeric) -- Viscosity of medium. [Ns/m2]
       %     Default: ``8.9e-4`` (approximate viscosity of water).
@@ -60,10 +60,14 @@ classdef Fixed < ott.particle.Particle
       p.addParameter('index_particle', []);
       p.addParameter('index_medium', 1.0);
       p.addParameter('viscosity', 8.9e-4);
-      p.addParameter('wavelength0', 1064e-9);
+      p.addParameter('wavelength0', []);
       p.addParameter('internal', false);
       p.addParameter('mass', []);
       p.parse(varargin{:});
+      
+      wavelength0 = p.Results.wavelength0;
+      assert(isnumeric(wavelength0) && isscalar(wavelength0), ...
+        'wavelength0 must be a numeric scalar');
 
       % Get index_relative
       index_relative = p.Results.index_relative;
@@ -80,7 +84,7 @@ classdef Fixed < ott.particle.Particle
       else
         index_medium = index_particle ./ index_relative;
       end
-      wavelength_medium = p.Results.wavelength0 ./ index_medium;
+      wavelength_medium = wavelength0 ./ index_medium;
 
       % Calculate internal T-matrix
       tmatrix = ott.tmatrix.Tmatrix.FromShape(...

@@ -66,6 +66,9 @@ classdef BscWBessel < ott.beam.BscInfinite
       if ~isempty(beam.besselWeights)
         bsc = bsc * beam.besselWeights(:);
       end
+
+      % Apply scale
+      bsc = bsc * beam.scale;
     end
   end
 end

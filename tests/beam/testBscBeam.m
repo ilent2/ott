@@ -143,13 +143,21 @@ end
 
 function testScatter(testCase)
 
-  beam = ott.beam.PlaneWave();
+  n_medium = 1.35;
+  n_rel = 1.2;
+  beam = ott.beam.PlaneWave('index_medium', n_medium);
   
   sphere = ott.shape.Sphere(beam.wavelength);
-  particle = ott.particle.Fixed.FromShape(sphere, 'index_relative', 1.33);
+  particle = ott.particle.Fixed.FromShape(sphere, ...
+    'index_relative', n_rel, 'internal', true, ...
+    'wavelength0', beam.wavelength0);
   
   sbeam = beam.scatter(particle);
-  testCase.verifyInstanceOf(sbeam, 'ott.beam.Scattered');
+  testCase.assertInstanceOf(sbeam, 'ott.beam.Scattered');
+  testCase.verifyEqual(sbeam.index_medium, n_medium, 'sbeam_index');
+  testCase.verifyEqual(sbeam.scattered.index_medium, n_medium, 'scat index');
+  testCase.verifyEqual(sbeam.incident.index_medium, n_medium, 'inc index');
+  testCase.verifyEqual(sbeam.internal.index_medium, n_medium * n_rel, 'int index');
 
 end
 

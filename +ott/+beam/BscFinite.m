@@ -114,11 +114,23 @@ classdef BscFinite < ott.beam.BscBeam
       bsc = bsc.rotate(beam.rotation);
 
       % Translate the beam
-      % Assumes beam is a regular beam
-      bsc = bsc.translateXyz(beam.position ./ beam.wavelength, 'Nmax', Nmax);
+      bsc = beam.translateBscInternal(bsc, Nmax);
 
       % Apply power to beam
       bsc.power = bsc.power * beam.power;
+
+      % Apply scale
+      bsc = bsc * beam.scale;
+    end
+  end
+
+  methods (Hidden)
+    function bsc = translateBscInternal(beam, bsc, Nmax)
+      % Applies the translation to the beam shape coefficients
+      % Can be overloaded by sub-classes to change default behaviour
+
+      bsc = bsc.translateXyz(beam.position ./ beam.wavelength, ...
+          'Nmax', Nmax, 'basis', 'regular');
     end
   end
 

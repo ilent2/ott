@@ -45,17 +45,19 @@ classdef Scattered < ott.beam.Beam
 
   properties
     incident    % Incident beam
-    scattered   % Scattered beam
+    scattered   % Scattered beam (optional)
     internal    % Internal beam (optional)
     particle    % Particle instance (optional)
   end
 
   properties (Dependent)
     shape       % Either particle or the shape property of particle
+    index_medium % Refractive index of incident/scattered medium
+    omega       % Optical frequency
   end
 
   methods
-    function beam = Scattered(varargin)
+    function bm = Scattered(varargin)
       % Construct a new scattered beam representation
       %
       % Usage
@@ -64,7 +66,7 @@ classdef Scattered < ott.beam.Beam
       % Optional named arguments
       %   - scattered (ott.beam.Beam) -- The scattered beam data.  This will
       %     typically be an outgoing scattered beam (such as that generated
-      %     using most T-matrix classes).  Default: ``ott.beam.Empty()``.
+      %     using most T-matrix classes).  Default: ``[]``.
       %
       %   - incident (ott.beam.Beam) -- The incident beam data.  This is
       %     required for total fields to look correct.
@@ -80,8 +82,8 @@ classdef Scattered < ott.beam.Beam
       %     points.  Default: ``[]``.
 
       p = inputParser;
-      p.addOptional('scattered', ott.beam.Empty(), ...
-          @(x) isa(x, 'ott.beam.Beam'));
+      p.addOptional('scattered', [], ...
+          @(x) isempty(x) || isa(x, 'ott.beam.Beam'));
       p.addOptional('incident', ott.beam.Empty(), ...
           @(x) isa(x, 'ott.beam.Beam'));
       p.addOptional('particle', [], ...
@@ -89,12 +91,15 @@ classdef Scattered < ott.beam.Beam
           || isa(x, 'ott.shape.Shape'));
       p.addOptional('internal', [], ...
           @(x) isempty(x) || isa(x, 'ott.beam.Beam'));
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
-      beam.scattered = p.Results.scattered;
-      beam.incident = p.Results.incident;
-      beam.particle = p.Results.particle;
-      beam.internal = p.Results.internal;
+      bm = bm@ott.beam.Beam(unmatched{:});
+      bm.scattered = p.Results.scattered;
+      bm.incident = p.Results.incident;
+      bm.particle = p.Results.particle;
+      bm.internal = p.Results.internal;
     end
 
     %
@@ -128,23 +133,27 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate external fields
       E = zeros(size(xyz));
-      [E(:, ~binside), vswfData] = odata.efield(...
-          xyz(:, ~binside), unmatched{:});
+      [Ef, vswfData] = odata.efield(xyz(:, ~binside), unmatched{:});
+      E(:, ~binside) = Ef.vxyz;
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        [E(:, binside), vswfData] = beam.internal.efield(...
+        [Ef, vswfData] = beam.internal.efield(...
             xyz(:, binside), unmatched{:}, 'data', vswfData);
+        E(:, binside) = Ef.vxyz;
       else
         E(:, binside) = nan;
       end
+      
+      % Package output
+      E = ott.utils.FieldVectorCart(E, xyz);
 
       if nargout == 1
         clear vswfData;
       end
     end
 
-    function [E, vswfData] = hfield(beam, xyz, varargin)
+    function [H, vswfData] = hfield(beam, xyz, varargin)
       % Calculate the magnetic field (in SI units)
       %
       % Usage
@@ -170,17 +179,21 @@ classdef Scattered < ott.beam.Beam
       binside = beam.insideXyz(xyz);
 
       % Calculate external fields
-      E = zeros(size(xyz));
-      [E(:, ~binside), vswfData] = odata.hfield(...
-          xyz(:, ~binside), unmatched{:});
+      H = zeros(size(xyz));
+      [Hf, vswfData] = odata.hfield(xyz(:, ~binside), unmatched{:});
+      H(:, ~binside) = Hf.vxyz;
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        [E(:, binside), vswfData] = beam.internal.hfield(...
+        [Hf, vswfData] = beam.internal.hfield(...
             xyz(:, binside), unmatched{:}, 'data', vswfData);
+        H(:, binside) = Hf.vxyz;
       else
-        E(:, binside) = nan;
+        H(:, binside) = nan;
       end
+      
+      % Package output
+      H = ott.utils.FieldVectorCart(H, xyz);
 
       if nargout == 1
         clear vswfData;
@@ -215,17 +228,24 @@ classdef Scattered < ott.beam.Beam
       % Calculate external fields
       E = zeros(size(xyz));
       H = E;
-      [E(:, ~binside), H(:, ~binside), vswfData] = odata.ehfield(...
-          xyz(:, ~binside), unmatched{:});
+      [Ef, Hf, vswfData] = odata.ehfield(xyz(:, ~binside), unmatched{:});
+      E(:, ~binside) = Ef.vxyz;
+      H(:, ~binside) = Hf.vxyz;
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        [E(:, binside), H(:, binside), vswfData] = beam.internal.ehfield(...
+        [Ef, Hf, vswfData] = beam.internal.ehfield(...
             xyz(:, binside), unmatched{:}, 'data', vswfData);
+        E(:, binside) = Ef.vxyz;
+        H(:, binside) = Hf.vxyz;
       else
         E(:, binside) = nan;
         H(:, binside) = nan;
       end
+      
+      % Package output
+      E = ott.utils.FieldVectorCart(E, xyz);
+      H = ott.utils.FieldVectorCart(H, xyz);
 
       if nargout < 3
         clear vswfData;
@@ -259,16 +279,20 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate external fields
       E = zeros(size(rtp));
-      [E(:, ~binside), vswfData] = odata.efieldRtp(...
-          rtp(:, ~binside), unmatched{:});
+      [Ef, vswfData] = odata.efieldRtp(rtp(:, ~binside), unmatched{:});
+      E(:, ~binside) = Ef.vrtp;
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        [E(:, binside), vswfData] = beam.internal.efieldRtp(...
+        [Ef, vswfData] = beam.internal.efieldRtp(...
             rtp(:, binside), unmatched{:}, 'data', vswfData);
+        E(:, binside) = Ef.vrtp;
       else
         E(:, binside) = nan;
       end
+      
+      % Package output
+      E = ott.utils.FieldVectorSph(E, rtp);
 
       if nargout == 1
         clear vswfData;
@@ -302,17 +326,21 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate external fields
       H = zeros(size(rtp));
-      [H(:, ~binside), vswfData] = odata.hfieldRtp(...
-          rtp(:, ~binside), unmatched{:});
+      [Hf, vswfData] = odata.hfieldRtp(rtp(:, ~binside), unmatched{:});
+      H(:, ~binside) = Hf.vrtp;
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        [H(:, binside), vswfData] = beam.internal.hfieldRtp(...
+        [Hf, vswfData] = beam.internal.hfieldRtp(...
             rtp(:, binside), unmatched{:}, 'data', vswfData);
+        H(:, binside) = Hf.vrtp;
       else
         H(:, binside) = nan;
       end
-
+      
+      % Package output
+      H = ott.utils.FieldVectorSph(H, rtp);
+      
       if nargout == 1
         clear vswfData;
       end
@@ -346,18 +374,25 @@ classdef Scattered < ott.beam.Beam
       % Calculate external fields
       E = zeros(size(rtp));
       H = E;
-      [E(:, ~binside), H(:, ~binside), vswfData] = odata.ehfieldRtp(...
-          rtp(:, ~binside), unmatched{:});
+      [Ef, Hf, vswfData] = odata.ehfieldRtp(rtp(:, ~binside), unmatched{:});
+      E(:, ~binside) = Ef.vrtp;
+      H(:, ~binside) = Hf.vrtp;
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        [E(:, binside), H(:, binside), vswfData] = ...
+        [Ef, Hf, vswfData] = ...
             beam.internal.ehfieldRtp(...
             rtp(:, binside), unmatched{:}, 'data', vswfData);
+        E(:, binside) = Ef.vrtp;
+        H(:, binside) = Hf.vrtp;
       else
         E(:, binside) = nan;
         H(:, binside) = nan;
       end
+      
+      % Package output
+      E = ott.utils.FieldVectorSph(E, rtp);
+      H = ott.utils.FieldVectorSph(H, rtp);
 
       if nargout < 3
         clear vswfData;
@@ -541,6 +576,8 @@ classdef Scattered < ott.beam.Beam
       %   the outputs for X/Y/Z.
 
       if nargin == 1
+        assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
+          'scattered and incident must be set for force without arguments');
         [varargout{1:nargout}] = beam.incident.force(beam.scattered);
       else
         % Get total field (or scattered if incident not set)
@@ -567,6 +604,8 @@ classdef Scattered < ott.beam.Beam
       %   the outputs for X/Y/Z.
 
       if nargin == 1
+        assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
+          'scattered and incident must be set for torque without arguments');
         [varargout{1:nargout}] = beam.incident.torque(beam.scattered);
       else
         % Get total field (or scattered if incident not set)
@@ -593,6 +632,8 @@ classdef Scattered < ott.beam.Beam
       %   the outputs for X/Y/Z.
 
       if nargin == 1
+        assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
+          'scattered and incident must be set for spin without arguments');
         [varargout{1:nargout}] = beam.incident.spin(beam.scattered);
       else
         % Get total field (or scattered if incident not set)
@@ -617,6 +658,8 @@ classdef Scattered < ott.beam.Beam
       %   Outputs 3x[N...] matrix depending on the number and shape of beams.
 
       if nargin == 1
+        assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
+          'scattered and incident must be set for forcetorque without arguments');
         [varargout{1:nargout}] = beam.incident.forcetorque(beam.scattered);
       else
         % Get total field (or scattered if incident not set)
@@ -637,9 +680,14 @@ classdef Scattered < ott.beam.Beam
       % If no particle is provided, returns a vector of false.
 
       if ~isempty(beam.shape)
+        rtp = beam.particle.global2localRtp(rtp);
         binside = beam.shape.insideRtp(rtp);
       else
-        binside = false(1, size(rtp, 2));
+        if isempty(beam.scattered) && ~isempty(beam.internal)
+          binside = true(1, size(rtp, 2));
+        else % Only have incident and/or scattered
+          binside = false(1, size(rtp, 2));
+        end
       end
     end
 
@@ -648,11 +696,16 @@ classdef Scattered < ott.beam.Beam
       %
       % Uses the :meth:`+ott.+shape.Shape.insideXyz` method of particle.
       % If no particle is provided, returns a vector of false.
-
+      
       if ~isempty(beam.shape)
+        xyz = beam.particle.global2local(xyz);
         binside = beam.shape.insideXyz(xyz);
       else
-        binside = false(1, size(xyz, 2));
+        if isempty(beam.scattered) && ~isempty(beam.internal)
+          binside = true(1, size(xyz, 2));
+        else % Only have incident and/or scattered
+          binside = false(1, size(xyz, 2));
+        end
       end
     end
   end
@@ -670,7 +723,7 @@ classdef Scattered < ott.beam.Beam
       % Get beam data for exterior
       switch p.Results.type
         case 'total'
-          odata = ott.beam.Array([beam.incident, beam.scattered], ...
+          odata = ott.beam.Array([beam.incident, 2*beam.scattered], ...
               'arrayType', 'coherent');
         case 'incident'
           odata = beam.incident;
@@ -689,6 +742,29 @@ classdef Scattered < ott.beam.Beam
   end
 
   methods % Getters/setters
+    function val = get.omega(beam)
+      if ~isempty(beam.scattered)
+        val = beam.scattered.omega;
+      elseif ~isempty(beam.internal)
+        val = beam.internal.omega;
+      elseif ~isempty(beam.incident)
+        val = beam.incident.omega;
+      else
+        error('Unable to get beam optical frequency');
+      end
+    end
+    
+    function val = get.index_medium(beam)
+      if ~isempty(beam.scattered)
+        val = beam.scattered.index_medium;
+      elseif ~isempty(beam.incident)
+        val = beam.incident.index_medium;
+      else
+        % TODO: We could also use the particle relative index and internal?
+        error('unable to get beam refractive index');
+      end
+    end
+    
     function beam = set.incident(beam, val)
       assert(isa(val, 'ott.beam.Beam') && isscalar(val), ...
           'incident must be a single ott.beam.Beam instance');
@@ -696,9 +772,14 @@ classdef Scattered < ott.beam.Beam
     end
 
     function beam = set.scattered(beam, val)
-      assert(isa(val, 'ott.beam.Beam') && isscalar(val), ...
-          'scattered must be a single ott.beam.Beam instance');
-      beam.scattered = val;
+      if isempty(val)
+        beam.scattered = [];
+      else
+        assert(isa(val, 'ott.beam.Beam'), ...
+            'scattered must be [] | ott.beam.Beam');
+        assert(isscalar(val), 'scattered must be a scalar');
+        beam.scattered = val;
+      end
     end
 
     function beam = set.particle(beam, val)

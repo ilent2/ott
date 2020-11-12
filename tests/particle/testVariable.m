@@ -15,7 +15,7 @@ function testFromShape(testCase)
 
   % Compare to Fixed
   particleF = ott.particle.Fixed.FromShape(shape, ...
-      'index_relative', ri);
+      'index_relative', ri, 'wavelength0', 1064e-9);
 
   testCase.verifyEqual(particle.drag, particleF.drag, 'drag');
   testCase.verifyEqual(particle.tmatrix, particleF.tmatrix, 'tmatrix');
@@ -33,7 +33,7 @@ function testSphere(testCase)
 
   % Compare to Fixed
   particleF = ott.particle.Fixed.FromShape(shape, ...
-      'index_relative', ri);
+      'index_relative', ri, 'wavelength0', 1064e-9);
 
   testCase.verifyEqual(particle.drag, particleF.drag, 'drag');
   testCase.verifyEqual(particle.tmatrix, particleF.tmatrix, 'tmatrix');
