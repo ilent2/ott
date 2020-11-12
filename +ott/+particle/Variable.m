@@ -8,7 +8,7 @@ classdef Variable < ott.particle.Particle
 %
 % Properties
 %   - shape             -- Shape describing the object (changes tmatrix/drag)
-%   - relative_index    -- Particle refractive index (changes tmatrix)
+%   - index_relative    -- Particle refractive index (changes tmatrix)
 %   - tmatrix_method    -- Method for T-matrix calculation
 %   - tinternal_method  -- Internal T-matrix calculation methdo
 %   - drag_method       -- Method for drag calculation
@@ -19,7 +19,7 @@ classdef Variable < ott.particle.Particle
 %   - tinternal         -- Internal T-matrix (optional)
 %
 % Methods
-%   - setProperties     -- Set shape and relative_index simultaneously
+%   - setProperties     -- Set shape and index_relative simultaneously
 %
 % Static methods
 %   - FromShape         -- Create instance using FromShape of Tmatirx/Stokes
@@ -46,7 +46,7 @@ classdef Variable < ott.particle.Particle
 
   properties (Dependent)
     shape              % Shape describing the object (changes tmatrix/drag)
-    relative_index     % Particle refractive index (changes tmatrix)
+    index_relative     % Particle refractive index (changes tmatrix)
     drag               % Description of drag properties
     tmatrix            % Description of optical scattering properties
     tinternal          % Internal T-matrix (optional)
@@ -87,11 +87,11 @@ classdef Variable < ott.particle.Particle
       wavelength = p.Results.wavelength_medium;
 
       tmatrix_method = @(shape, ri, ~) ott.tmatrix.Tmatrix.FromShape(...
-          shape ./ wavelength, 'relative_index', ri);
+          shape ./ wavelength, 'index_relative', ri);
 
       if p.Results.internal
         tinternal_method = @(shape, ri, ~) ott.tmatrix.Tmatrix.FromShape(...
-            shape ./ wavelength, 'relative_index', ri, 'internal', true);
+            shape ./ wavelength, 'index_relative', ri, 'internal', true);
       else
         tinternal_method = [];
       end
@@ -138,11 +138,11 @@ classdef Variable < ott.particle.Particle
       wavelength = p.Results.wavelength_medium;
 
       tmatrix_method = @(shape, ri, ~) ott.tmatrix.Mie.FromShape(...
-          shape ./ wavelength, 'relative_index', ri);
+          shape ./ wavelength, 'index_relative', ri);
 
       if p.Results.internal
         tinternal_method = @(shape, ri, ~) ott.tmatrix.Mie.FromShape(...
-            shape ./ wavelength, 'relative_index', ri, 'internal', true);
+            shape ./ wavelength, 'index_relative', ri, 'internal', true);
       else
         tinternal_method = [];
       end
@@ -189,11 +189,11 @@ classdef Variable < ott.particle.Particle
       wavelength = p.Results.wavelength_medium;
 
       tmatrix_method = @(shape, ri, ~) ott.tmatrix.Tmatrix.FromShape(...
-          shape ./ wavelength, 'relative_index', ri);
+          shape ./ wavelength, 'index_relative', ri);
 
       if p.Results.internal
         tinternal_method = @(shape, ri, ~) ott.tmatrix.Tmatrix.FromShape(...
-            shape ./ wavelength, 'relative_index', ri, 'internal', true);
+            shape ./ wavelength, 'index_relative', ri, 'internal', true);
       else
         tinternal_method = [];
       end
@@ -231,7 +231,7 @@ classdef Variable < ott.particle.Particle
       %   - initial_shape ([] | ott.shape.Shape) -- Initial particle
       %     geometry.  Default: ``[]``.
       %
-      %   - initial_relative_index (numeric) -- Initial particle relative
+      %   - initial_index_relative (numeric) -- Initial particle relative
       %     refractive index.  Default: ``[]``.
 
       p = inputParser;
@@ -239,7 +239,7 @@ classdef Variable < ott.particle.Particle
       p.addParameter('tinternal_method', []);
       p.addParameter('tmatrix_method', []);
       p.addParameter('initial_shape', []);
-      p.addParameter('initial_relative_index', []);
+      p.addParameter('initial_index_relative', []);
       p.parse(varargin{:});
 
       particle.drag_method = p.Results.drag_method;
@@ -247,10 +247,10 @@ classdef Variable < ott.particle.Particle
       particle.tinternal_method = p.Results.tinternal_method;
       particle = particle.setProperties(...
           p.Results.initial_shape, ...
-          p.Results.initial_relative_index);
+          p.Results.initial_index_relative);
     end
 
-    function particle = setProperties(particle, shape, relative_index)
+    function particle = setProperties(particle, shape, index_relative)
       % Set particle shape and relative index simultaneously.
       %
       % The shape and relative index properties can be changed directly
@@ -259,27 +259,27 @@ classdef Variable < ott.particle.Particle
       % option for adjusting both properties simultaniously.
       %
       % Usage
-      %   particle = particle.setProperties(shape, relative_index)
+      %   particle = particle.setProperties(shape, index_relative)
       %
       % Parameters
       %   - shape ([] | ott.shape.Shape) -- Particle geometry.
       %
-      %   - relative_index ([] | numeric) -- Relative refractive index.
+      %   - index_relative ([] | numeric) -- Relative refractive index.
 
-      assert(isnumeric(relative_index) || isempty(relative_index), ...
-          'relative_index must be numeric or empty');
+      assert(isnumeric(index_relative) || isempty(index_relative), ...
+          'index_relative must be numeric or empty');
       assert(isa(shape, 'ott.shape.Shape') || isempty(shape), ...
           'shape must be empty or ot.shape.Stape');
 
-      particle.riInternal = relative_index;
+      particle.riInternal = index_relative;
       particle.shapeInternal = shape;
 
-      if ~isempty(particle.relative_index) && ~isempty(particle.shape)
+      if ~isempty(particle.index_relative) && ~isempty(particle.shape)
         % Calculate new T-matrix and drag data
 
         if ~isempty(particle.tmatrix_method)
           particle.tmatrixInternal = particle.tmatrix_method(...
-              particle.shape, particle.relative_index, ...
+              particle.shape, particle.index_relative, ...
               particle.tmatrixInternal);
         end
 
@@ -290,7 +290,7 @@ classdef Variable < ott.particle.Particle
 
         if ~isempty(particle.tinternal_method)
           particle.tinernalInternal = particle.tinternal_method(...
-              particle.shape, particle.relative_index, ...
+              particle.shape, particle.index_relative, ...
               particle.tinternalInternal);
         end
       end
@@ -323,16 +323,16 @@ classdef Variable < ott.particle.Particle
     end
 
     function particle = set.shape(particle, val)
-      particle = particle.setProperties(val, particle.relative_index);
+      particle = particle.setProperties(val, particle.index_relative);
     end
     function shape = get.shape(particle)
       shape = particle.shapeInternal;
     end
 
-    function particle = set.relative_index(particle, val)
+    function particle = set.index_relative(particle, val)
       particle = particle.setProperties(particle.shape, val);
     end
-    function ri = get.relative_index(particle)
+    function ri = get.index_relative(particle)
       ri = particle.riInternal;
     end
 

@@ -33,7 +33,7 @@ classdef DdaHighMem < ott.tmatrix.dda.Dda
       %     calculate polarizability or 3x3 tensor for homogeneous material.
       %     Default: ``@(xyz, spacing, ri) polarizability.LDR(spacing, ri)``
       %
-      %   - relative_index -- (function_handle | numeric) Method to calculate
+      %   - index_relative -- (function_handle | numeric) Method to calculate
       %     relative refractive index or homogeneous value.  Ignored if
       %     polarizability is a 3x3 tensor.
       %

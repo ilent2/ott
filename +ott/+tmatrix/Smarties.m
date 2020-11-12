@@ -5,7 +5,8 @@ classdef Smarties < ott.tmatrix.Tmatrix
 % SMARTIES is a method for calculating T-matrices for spheroids, full
 % details can be found in
 %
-%   Somerville, AuguiÃ©, Le Ru.  JQSRT, Volume 174, May 2016, Pages 39-55.
+%   W.R.C. Somerville, B. Auguié, E.C. Le Ru,
+%   JQSRT, Volume 174, May 2016, Pages 39-55.
 %   https://doi.org/10.1016/j.jqsrt.2016.01.005
 %
 % SMARTIES is distributed with a Creative Commons Attribution-NonCommercial
@@ -17,7 +18,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
 % Properties
 %   - ordinary         -- Ordinary radius
 %   - extraordinary    -- Extra-ordinary radius
-%   - relative_index   -- Relative refractive index of particle
+%   - index_relative   -- Relative refractive index of particle
 %
 % Static methods
 %   - FromShape       -- Construct a T-matrix from a shape description
@@ -30,7 +31,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
   properties (SetAccess=protected)
     ordinary          % Ordinary radius
     extraordinary     % Extra-ordinary radius
-    relative_index    % Relative refractive index of particle
+    index_relative    % Relative refractive index of particle
   end
 
   methods (Static)
@@ -38,7 +39,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
       % Construct a T-matrix using SMARTIES/EBCM for spheroids.
       %
       % Usage
-      %   tmatrix = Smarties.FromShape(shape, relative_index, ...)
+      %   tmatrix = Smarties.FromShape(shape, index_relative, ...)
       %
       %   [texternal, tinternal] = Smarties.FromShape(...)
       %
@@ -46,7 +47,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
       %   - shape (ott.shape.Shape) -- A spheroid with the extraordinary
       %     axis aligned to the z-axis.
       %
-      %   - relative_index (numeric) -- The relative refractive index
+      %   - index_relative (numeric) -- The relative refractive index
       %     of the particle compared to the surrounding medium.
       %
       % All other parameters passed to class constructor.
@@ -77,7 +78,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
       % Construct a T-matrix using SMARTIES/EBCM for spheroids.
       %
       % Usage
-      %   tmatrix = Smarties(ordinary, extraordinary, relative_index...)
+      %   tmatrix = Smarties(ordinary, extraordinary, index_relative...)
       %
       %   [texternal, tinternal] = Smarties(...)
       %
@@ -86,7 +87,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
       %
       %   - extraordinary (numeric) -- Extraordinary radius.
       %
-      %   - relative_index (numeric) -- The relative refractive index
+      %   - index_relative (numeric) -- The relative refractive index
       %     of the particle compared to the surrounding medium.
       %
       % Optional named parameters
@@ -97,7 +98,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
       %   - Nmax (numeric) -- Size of the VSWF expansion used for the
       %     T-matrix calculation.
       %     Default: ``ott.utis.ka2nmax(2*pi*max(radius))`` (external) or
-      %     ``ott.utis.ka2nmax(2*pi*max(radius)*relative_index)`` (internal).
+      %     ``ott.utis.ka2nmax(2*pi*max(radius)*index_relative)`` (internal).
       %
       %   - npts (numeric) -- Number of points for surface integral.
       %     Default: ``Nmax*Nmax``.
@@ -108,7 +109,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
       p = inputParser;
       p.addOptional('ordinary', @isnumeric);
       p.addOptional('extraordinary', @isnumeric);
-      p.addOptional('relative_index', 1.0, @isnumeric);
+      p.addOptional('index_relative', 1.0, @isnumeric);
       p.addParameter('internal', false);
       p.addParameter('Nmax', []);
       p.addParameter('npts', []);
@@ -118,12 +119,12 @@ classdef Smarties < ott.tmatrix.Tmatrix
       % Store parameters
       tmatrix.ordinary = p.Results.ordinary;
       tmatrix.extraordinary = p.Results.extraordinary;
-      tmatrix.relative_index = p.Results.relative_index;
+      tmatrix.index_relative = p.Results.index_relative;
 
       % Get/Check Nmax
       Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
           p.Results.Nmax, max(tmatrix.ordinary, tmatrix.extraordinary), ...
-          tmatrix.relative_index, p.Results.internal || nargout ~= 1);
+          tmatrix.index_relative, p.Results.internal || nargout ~= 1);
 
       % Get or estimate npts from inputs
       npts = p.Results.npts;
@@ -139,7 +140,7 @@ classdef Smarties < ott.tmatrix.Tmatrix
       stParams.a = tmatrix.ordinary * 2*pi;
       stParams.c = tmatrix.extraordinary * 2*pi;
       stParams.k1 = 1.0;
-      stParams.s = tmatrix.relative_index;
+      stParams.s = tmatrix.index_relative;
       stParams.N = Nmax;
       stParams.nNbTheta = npts;
 
@@ -260,10 +261,10 @@ classdef Smarties < ott.tmatrix.Tmatrix
       tmatrix.extraordinary = val;
     end
 
-    function tmatrix = set.relative_index(tmatrix, val)
+    function tmatrix = set.index_relative(tmatrix, val)
       assert(isnumeric(val) && isscalar(val), ...
           'relative refractive index must be numeric scalar');
-      tmatrix.relative_index = val;
+      tmatrix.index_relative = val;
     end
   end
 end

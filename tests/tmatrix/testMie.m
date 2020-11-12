@@ -12,9 +12,9 @@ function testFromShape(testCase)
   r = 1.0;
 
   shape = ott.shape.Sphere(r);
-  tmatrix = ott.tmatrix.Mie.FromShape(shape, 'relative_index', n);
+  tmatrix = ott.tmatrix.Mie.FromShape(shape, 'index_relative', n);
 
-  testCase.verifyEqual(tmatrix.relative_index, n, 'n');
+  testCase.verifyEqual(tmatrix.index_relative, n, 'n');
   testCase.verifyEqual(tmatrix.radius, r, 'r');
 
 end
@@ -25,17 +25,17 @@ function testShapeVolume(testCase)
   r = 1.0;
 
   shape = ott.shape.Sphere(r);
-  tmatrix = ott.tmatrix.Mie.ShapeVolume(shape, 'relative_index', n);
+  tmatrix = ott.tmatrix.Mie.ShapeVolume(shape, 'index_relative', n);
 
-  testCase.verifyEqual(tmatrix.relative_index, n, 'n');
+  testCase.verifyEqual(tmatrix.index_relative, n, 'n');
   testCase.verifyEqual(tmatrix.radius, r, 'r');
 
 end
 
 function testNmax1(testCase)
 
-  tmatrix1 = ott.tmatrix.Mie(1, 'relative_index', 2, 'Nmax', 1);
-  tmatrix2 = ott.tmatrix.Mie(1, 'relative_index', 2, 'Nmax', 2);
+  tmatrix1 = ott.tmatrix.Mie(1, 'index_relative', 2, 'Nmax', 1);
+  tmatrix2 = ott.tmatrix.Mie(1, 'index_relative', 2, 'Nmax', 2);
   
   D2 = diag(tmatrix2);
   
@@ -51,7 +51,7 @@ function testValuesFromOtt15(testCase)
   v15data = diag([[1, 1, 1].*v15data(1), [1, 1, 1, 1, 1].*v15data(2), ...
                   [1, 1, 1].*v15data(3), [1, 1, 1, 1, 1].*v15data(4)]);
   
-  tmatrix = ott.tmatrix.Mie(1.0, 'relative_index', 1.2, 'Nmax', 2);
+  tmatrix = ott.tmatrix.Mie(1.0, 'index_relative', 1.2, 'Nmax', 2);
   
   testCase.verifyEqual(full(tmatrix.data), v15data, ...
       'AbsTol', 1e-4, 'v15data');

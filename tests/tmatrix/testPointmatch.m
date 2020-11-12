@@ -8,7 +8,7 @@ function setupOnce(testCase)
   addpath('../../');
 
   % Target T-matrix
-  testCase.TestData.Tmie = ott.tmatrix.Mie(0.1, 'relative_index', 1.2);
+  testCase.TestData.Tmie = ott.tmatrix.Mie(0.1, 'index_relative', 1.2);
 
 end
 
@@ -18,7 +18,7 @@ function testFromStarShape(testCase)
   index = 1.2;
   tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, index);
 
-  testCase.verifyEqual(tmatrix.relative_index, index, 'index');
+  testCase.verifyEqual(tmatrix.index_relative, index, 'index');
   testCase.verifyEqual(tmatrix.xySymmetry, true, 'xy');
   testCase.verifyEqual(tmatrix.zRotSymmetry, 0, 'z');
 
@@ -88,7 +88,7 @@ function testInternalMie(testCase)
   index = 1.2;
   
   [~, Tmie] = ott.tmatrix.Mie(shape.radius, ...
-      'relative_index', index);
+      'index_relative', index);
 
   [~, tmatrix] = ott.tmatrix.Pointmatch.FromShape(shape, index);
   

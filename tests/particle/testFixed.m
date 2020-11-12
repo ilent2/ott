@@ -17,8 +17,8 @@ function testFromShape(testCase)
 
   testCase.verifyEqual(particle.drag.viscosity, 8.9e-4, 'viscosity');
   testCase.verifyEqual(particle.mass, mass, 'mass');
-  testCase.verifyEqual(particle.tmatrix.relative_index, index_relative, 'ri');
-  testCase.verifyEqual(particle.tinternal.relative_index, index_relative, 'tinternal');
+  testCase.verifyEqual(particle.tmatrix.index_relative, index_relative, 'ri');
+  testCase.verifyEqual(particle.tinternal.index_relative, index_relative, 'tinternal');
   testCase.verifyEqual(particle.shape, shape, 'shape');
 
 end

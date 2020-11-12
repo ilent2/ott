@@ -11,9 +11,9 @@ function testFromShape(testCase)
   radius = 1.0;
   shape = ott.shape.Sphere(radius);
   index = 1.2;
-  tmatrix = ott.tmatrix.Ebcm.FromShape(shape, 'relative_index', index);
+  tmatrix = ott.tmatrix.Ebcm.FromShape(shape, 'index_relative', index);
 
-  testCase.verifyEqual(tmatrix.relative_index, index, 'index');
+  testCase.verifyEqual(tmatrix.index_relative, index, 'index');
   testCase.verifyEqual(tmatrix.points(1, :), ...
       repmat(shape.radius, [1, size(tmatrix.points, 2)]), ...
       'AbsTol', 1.0e-2, 'radius');
@@ -21,7 +21,7 @@ function testFromShape(testCase)
   testCase.verifyEqual(tmatrix.xySymmetry, true, 'xySymmetry');
 
   % Compare to Mie result
-  Tmie = ott.tmatrix.Mie(radius, 'relative_index', index);
+  Tmie = ott.tmatrix.Mie(radius, 'index_relative', index);
   testCase.verifyEqual(tmatrix.data, Tmie.data, 'AbsTol', 1.0e-2, 'data');
 
 end
@@ -33,14 +33,14 @@ function testInternalMie(testCase)
   index = 1.2;
   Nmax = 11;
   [~, tmatrix] = ott.tmatrix.Ebcm.FromShape(shape, ...
-      'relative_index', index, 'Nmax', Nmax);
+      'index_relative', index, 'Nmax', Nmax);
 
-  testCase.verifyEqual(tmatrix.relative_index, index, 'index');
+  testCase.verifyEqual(tmatrix.index_relative, index, 'index');
   testCase.verifyEqual(tmatrix.invMethod, 'inv', 'invMethod');
   testCase.verifyEqual(tmatrix.xySymmetry, true, 'xySymmetry');
 
   % Compare to Mie result
-  [~, Tmie] = ott.tmatrix.Mie(radius, 'relative_index', index, ...
+  [~, Tmie] = ott.tmatrix.Mie(radius, 'index_relative', index, ...
       'Nmax', Nmax);
   testCase.verifyEqual(tmatrix.data, Tmie.data, 'AbsTol', 2.0e-2, 'data');
 

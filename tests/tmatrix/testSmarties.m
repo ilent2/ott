@@ -10,8 +10,8 @@ function testFromShape(testCase)
 
   shape = ott.shape.Sphere(1.0);
   index = 1.2;
-  tmatrix = ott.tmatrix.Smarties.FromShape(shape, 'relative_index', index);
-  Tmie = ott.tmatrix.Mie.FromShape(shape, 'relative_index', index);
+  tmatrix = ott.tmatrix.Smarties.FromShape(shape, 'index_relative', index);
+  Tmie = ott.tmatrix.Mie.FromShape(shape, 'index_relative', index);
 
   testCase.assertEqual(tmatrix.Nmax, Tmie.Nmax, 'Nmax');
   testCase.verifyEqual(tmatrix.data, Tmie.data, ...
@@ -26,9 +26,9 @@ function testEllipsoid(testCase)
   index = 1.2;
   Nmax = 5;
   tmatrix = ott.tmatrix.Smarties.FromShape(shape, ...
-    'relative_index', index, 'Nmax', Nmax);
+    'index_relative', index, 'Nmax', Nmax);
   Tpm = ott.tmatrix.Pointmatch.FromShape(shape, ...
-    'relative_index', index, 'Nmax', Nmax);
+    'index_relative', index, 'Nmax', Nmax);
 
   testCase.assertEqual(tmatrix.Nmax, Tpm.Nmax, 'Nmax');
   testCase.verifyEqual(tmatrix.data, Tpm.data, ...

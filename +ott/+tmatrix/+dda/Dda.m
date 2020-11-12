@@ -54,7 +54,7 @@ classdef Dda
       %     homogeneous materials.
       %     Default: ``@(xyz, spacing, ri) polarizability.LDR(spacing, ri)``
       %
-      %   - relative_index -- (function_handle | numeric) Method to calculate
+      %   - index_relative -- (function_handle | numeric) Method to calculate
       %     relative refractive index or homogeneous value.  Ignored if
       %     polarizability is not a function handle.
       %
@@ -64,7 +64,7 @@ classdef Dda
       p.addParameter('spacing', 1/20, @isnumeric);
       p.addParameter('polarizability', ...
           @(~, s, r) ott.tmatrix.dda.polarizability.LDR(s, r));
-      p.addParameter('relative_index', 1.0);
+      p.addParameter('index_relative', 1.0);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -87,7 +87,7 @@ classdef Dda
             'polarizability must be function handle or 3x3 numeric matrix');
       else
 
-        ri = p.Results.relative_index;
+        ri = p.Results.index_relative;
         if isnumeric(ri)
           assert(isnumeric(ri) && isscalar(ri), ...
               'relative index must be function handle or numeric scalar');

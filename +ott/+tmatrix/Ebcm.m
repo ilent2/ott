@@ -9,7 +9,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
 %   - points         -- (2xN numeric) Surface points [r; theta]
 %   - normals        -- (2xN numeric) Normals at points [nr; ntheta]
 %   - areas          -- (1xN numeric) Conic section surface areas
-%   - relative_index -- (numeric) Relative refractive index of particle.
+%   - index_relative -- (numeric) Relative refractive index of particle.
 %   - xySymmetry     -- (logical) True if using xy-mirror optimisations
 %   - invMethod      -- Inversion method used for T-matrix calculation
 %
@@ -27,7 +27,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
     points         % (2xN numeric) Surface points [r; theta]
     normals        % (2xN numeric) Normals at points [nr; ntheta]
     areas          % (1xN numeric) Conic section surface areas
-    relative_index % (numeric) Relative refractive index of particle
+    index_relative % (numeric) Relative refractive index of particle
     xySymmetry     % (logical) True if using xy-mirror optimisations
     invMethod      % Inversion method used for T-matrix calculation
   end
@@ -41,7 +41,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       % supported, otherwise raises an error).
       %
       % Usage
-      %   tmatrix = Ebcm.FromAxisymInterpShape(shape, relative_index, ...)
+      %   tmatrix = Ebcm.FromAxisymInterpShape(shape, index_relative, ...)
       %   Calculate external T-matrix (unless `internal` is true)
       %
       %   [external, internal] = Ebcm.FromAxisymInterpShape(...)
@@ -51,13 +51,13 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       %   - shape (ott.shape.Shape) -- Description of shape geometry.
       %     Object must be a AxisymInterp or be castable to AxisymInterp.
       %
-      %   - relative_index (numeric) -- Particle relative refractive index.
+      %   - index_relative (numeric) -- Particle relative refractive index.
       %
       % See :meth:`Ebcm` for additional named parameters.
 
       p = inputParser;
       p.addRequired('shape', @(x) isa(x, 'ott.shape.Shape'));
-      p.addOptional('relative_index', 1.0);
+      p.addOptional('index_relative', 1.0);
       p.addParameter('internal', false);
       p.addParameter('Nmax', []);
       p.KeepUnmatched = true;
@@ -74,7 +74,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       % Get Nmax for npts calculation
       Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
           p.Results.Nmax, shape.maxRadius, ...
-          p.Results.relative_index, p.Results.internal || nargout ~= 1);
+          p.Results.index_relative, p.Results.internal || nargout ~= 1);
 
       % Calculate desired number of boundary points
       npts = ceil(ott.utils.combined_index(Nmax, Nmax).^2/20+5);
@@ -84,7 +84,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
 
       % Construct T-matrices
       [varargout{1:nargout}] = ott.tmatrix.Ebcm(points, normals, ds, ...
-          'relative_index', p.Results.relative_index, 'Nmax', Nmax, ...
+          'index_relative', p.Results.index_relative, 'Nmax', Nmax, ...
           'xySymmetry', xySymmetry, 'internal', p.Results.internal, ...
           unmatched{:});
     end
@@ -95,7 +95,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       % Calculates T-matrix using extended boundary condition method
       %
       % Usage
-      %   tmatrix = Ebcm(points, normals, area, relative_index, ...)
+      %   tmatrix = Ebcm(points, normals, area, index_relative, ...)
       %   Calculate external T-matrix (unless `internal` is true)
       %
       %   [external, internal, data] = Ebcm(...)
@@ -110,7 +110,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       %
       %   - areas (N numeric) -- Area elements at surface points.
       %
-      %   - relative_index (numeric) -- Particle relative refractive index.
+      %   - index_relative (numeric) -- Particle relative refractive index.
       %
       % Optional named parameters
       %   - xySymmetry (logical) -- If calculation should use xy-mirror
@@ -145,7 +145,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       p.addRequired('points', @isnumeric);
       p.addRequired('normals', @isnumeric);
       p.addRequired('areas', @isnumeric);
-      p.addOptional('relative_index', 1.0, @isnumeric);
+      p.addOptional('index_relative', 1.0, @isnumeric);
       p.addParameter('xySymmetry', false);
       p.addParameter('invMethod', 'forwardslash');
       p.addParameter('internal', false);
@@ -159,7 +159,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       Texternal.points = p.Results.points;
       Texternal.normals = p.Results.normals;
       Texternal.areas = p.Results.areas;
-      Texternal.relative_index = p.Results.relative_index;
+      Texternal.index_relative = p.Results.index_relative;
       Texternal.xySymmetry = p.Results.xySymmetry;
       Texternal.invMethod = p.Results.invMethod;
 
@@ -168,10 +168,10 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       % Get or estimate Nmax from the inputs
       Nmax = ott.tmatrix.Tmatrix.getValidateNmax(p.Results.Nmax, ...
           max(Texternal.points(1, :)), ...
-          Texternal.relative_index, p.Results.internal || nargout ~= 1);
+          Texternal.index_relative, p.Results.internal || nargout ~= 1);
 
       % Get kr inside/outside particle
-      kr=2*pi*Texternal.relative_index*Texternal.points(1, :);
+      kr=2*pi*Texternal.index_relative*Texternal.points(1, :);
       ikr=1./kr;
       kr_=2*pi*Texternal.points(1, :);
       ikr_=1./kr_;
@@ -220,7 +220,7 @@ classdef Ebcm < ott.tmatrix.Tmatrix
       pi2=2*pi;
 
       k_medium = 2*pi;
-      k_particle = 2*pi*Texternal.relative_index;
+      k_particle = 2*pi*Texternal.index_relative;
 
       for jj=1:Nmax
         %remember that when phi = 0, conj(Yphi)=-Yphi, conj(Ytheta)=Ytheta.
@@ -403,10 +403,10 @@ classdef Ebcm < ott.tmatrix.Tmatrix
   end
 
   methods % Getters/setter
-    function tmatrix = set.relative_index(tmatrix, val)
+    function tmatrix = set.index_relative(tmatrix, val)
       assert(isnumeric(val) && isscalar(val), ...
           'relative index must be numeric scalar');
-      tmatrix.relative_index = val;
+      tmatrix.index_relative = val;
     end
 
     function tmatrix = set.points(tmatrix, val)

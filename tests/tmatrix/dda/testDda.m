@@ -9,7 +9,7 @@ end
 function testFromShape(testCase)
 
   shape = ott.shape.Sphere(0.1);
-  dda = ott.tmatrix.dda.Dda.FromShape(shape, 'relative_index', 1.2);
+  dda = ott.tmatrix.dda.Dda.FromShape(shape, 'index_relative', 1.2);
 
   testCase.verifyEqual(dda.zRotSymmetry, 0, 'zrot');
   testCase.verifyEqual(dda.xySymmetry, true, 'xysym');

@@ -11,7 +11,7 @@ function testFromShape(testCase)
   shape = ott.shape.Sphere(1e-6);
   ri = 1.2;
   particle = ott.particle.Variable.FromShape(...
-      'initial_relative_index', ri, 'initial_shape', shape);
+      'initial_index_relative', ri, 'initial_shape', shape);
 
   % Compare to Fixed
   particleF = ott.particle.Fixed.FromShape(shape, ...
@@ -29,7 +29,7 @@ function testSphere(testCase)
   shape = ott.shape.Sphere(1e-6);
   ri = 1.2;
   particle = ott.particle.Variable.Sphere(...
-      'initial_relative_index', ri, 'initial_shape', shape);
+      'initial_index_relative', ri, 'initial_shape', shape);
 
   % Compare to Fixed
   particleF = ott.particle.Fixed.FromShape(shape, ...
@@ -47,7 +47,7 @@ function testStarShaped(testCase)
   shape = ott.shape.Sphere(1e-6);
   ri = 1.2;
   particle = ott.particle.Variable.StarShaped(...
-      'initial_relative_index', ri, 'initial_shape', shape);
+      'initial_index_relative', ri, 'initial_shape', shape);
 
 end
 
@@ -56,7 +56,7 @@ function testSetErrors(testCase)
   shape = ott.shape.Sphere(1e-6);
   ri = 1.2;
   particle = ott.particle.Variable.FromShape(...
-      'initial_relative_index', ri, 'initial_shape', shape);
+      'initial_index_relative', ri, 'initial_shape', shape);
 
   testCase.verifyError(@testSetDrag, 'ott:particle:variable:set_drag');
   testCase.verifyError(@testSetTmatrix, 'ott:particle:variable:set_tmatrix');
@@ -80,6 +80,6 @@ function testSetShapeRi(testCase)
   particle = ott.particle.Variable.FromShape();
   
   particle.shape = shape;
-  particle.relative_index = ri;
+  particle.index_relative = ri;
 
 end

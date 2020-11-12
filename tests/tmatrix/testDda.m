@@ -12,8 +12,8 @@ function testSphereFromShape(testCase)
   nrel = 1.1;
   shape = ott.shape.Sphere(radius);
   Tdda = ott.tmatrix.Dda.FromShape(shape, ...
-      'relative_index', nrel, 'spacing', 1/20);
-  Tmie = ott.tmatrix.Mie.FromShape(shape, 'relative_index', nrel);
+      'index_relative', nrel, 'spacing', 1/20);
+  Tmie = ott.tmatrix.Mie.FromShape(shape, 'index_relative', nrel);
 
   testCase.assertEqual(Tdda.Nmax, Tmie.Nmax, 'Nmax');
   testCase.verifyEqual(Tdda.data, Tmie.data, 'AbsTol', 5e-3, 'data');
@@ -34,7 +34,7 @@ function testDipoleSphere(testCase)
   
   shape = ott.shape.Sphere(radius);
   Tmie = ott.tmatrix.Mie.FromShape(shape, ...
-      'relative_index', nrel, 'Nmax', 2);
+      'index_relative', nrel, 'Nmax', 2);
 
   testCase.verifyEqual(Tdda.data, Tmie.data, 'AbsTol', 1e-8, 'diag');
 
@@ -51,11 +51,11 @@ function testSphereNearfield(testCase)
     'xySymmetry', true, 'zRotSymmetry', 0);
   
   TddaNear = ott.tmatrix.Dda.FromShape(shape, ...
-      'relative_index', nrel, 'spacing', 1/35, ...
+      'index_relative', nrel, 'spacing', 1/35, ...
       'pmrtp', pmrtp, 'ci', 1);
     
   TddaFar = ott.tmatrix.Dda.FromShape(shape, ...
-      'relative_index', nrel, 'spacing', 1/35, 'ci', 1);
+      'index_relative', nrel, 'spacing', 1/35, 'ci', 1);
   
   testCase.verifyTrue(all(all(TddaNear.data(:, [2,3,5,6]) == 0)), 'zero columns');
   testCase.verifyEqual(TddaNear.data, TddaFar.data, 'AbsTol', 1e-6, 'data');

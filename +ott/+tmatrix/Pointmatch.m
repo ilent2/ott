@@ -13,7 +13,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
 % symmetric and mirror symmetric particles.
 %
 % Properties
-%   - relative_index  -- Relative refractive index of particle
+%   - index_relative  -- Relative refractive index of particle
 %   - rtp             -- Locations used for point matching
 %   - nrtp            -- Surface normals at rtp-locations (spherical coords.)
 %   - zRotSymmetry    -- Z-axis rotational symmetry (1 = no symmetry)
@@ -29,7 +29,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
 % See LICENSE.md for information about using/distributing this file.
 
   properties (SetAccess=protected)
-    relative_index    % Relative refractive index of particle
+    index_relative    % Relative refractive index of particle
     rtp           % Location for point matching (3xN numeric)
     nrtp          % Surface normals at rtp-locations (3xN numeric)
     zRotSymmetry  % Z-axis rotational symmetry (1 = no symmetry)
@@ -66,7 +66,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       % Construct T-matrix using point matching from a star shaped object
       %
       % Usage
-      %   tmatrix = Pointmatch.FromShape(shape, relative_index, ...)
+      %   tmatrix = Pointmatch.FromShape(shape, index_relative, ...)
       %   Calculate external T-matrix.
       %
       %   [external, internal] = Pointmatch.FromShape(...)
@@ -76,7 +76,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       %   - shape (ott.shape.Shape) -- A star-shaped object describing
       %     the geometry (must have a valid ``starRadii`` method).
       %
-      %   - relative_index (numeric) -- Relative refractive index.
+      %   - index_relative (numeric) -- Relative refractive index.
       %
       % Optional named parameters
       %   - Nmax (numeric) -- Size of the VSWF expansion used for the
@@ -95,7 +95,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
           'shape must be a single ott.shape.Shape');
 
       p = inputParser;
-      p.addOptional('relative_index', 1.0, @isnumeric);
+      p.addOptional('index_relative', 1.0, @isnumeric);
       p.addParameter('angulargrid', []);
       p.addParameter('Nmax', []);
       p.addParameter('internal', false);
@@ -106,7 +106,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       % Get or calculate Nmax
       Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
           p.Results.Nmax, shape.maxRadius, ...
-          p.Results.relative_index, p.Results.internal || nargout ~= 1);
+          p.Results.index_relative, p.Results.internal || nargout ~= 1);
 
       % Get or calculate angular grid
       angulargrid = p.Results.angulargrid;
@@ -147,7 +147,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
 
       % Construct T-matrices
       [varargout{1:nargout}] = ott.tmatrix.Pointmatch(...
-          rtp, nrtp, p.Results.relative_index, 'Nmax', Nmax, ...
+          rtp, nrtp, p.Results.index_relative, 'Nmax', Nmax, ...
           'zRotSymmetry', shape.zRotSymmetry, ...
           'xySymmetry', shape.xySymmetry, unmatched{:});
     end
@@ -158,10 +158,10 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       % Calculates T-matrix using the point matching method.
       %
       % Usage
-      %   tmatrix = Pointmatch(rtp, nrtp, relative_index, ...)
+      %   tmatrix = Pointmatch(rtp, nrtp, index_relative, ...)
       %   Calculate external T-matrix.
       %
-      %   [external, internal] = Pointmatch(rtp, nrtp, relative_index, ...)
+      %   [external, internal] = Pointmatch(rtp, nrtp, index_relative, ...)
       %   Calculate external and internal T-matrices.
       %
       % Parameters
@@ -170,7 +170,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       %   - nrtp (3xN numeric) -- Normals at surface locations.
       %     Spherical coordinates.
       %
-      %   - relative_index (numeric) -- Relative refractive index.
+      %   - index_relative (numeric) -- Relative refractive index.
       %
       % Optional named parameters
       %   - Nmax (numeric) -- Size of the VSWF expansion used for the
@@ -198,7 +198,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       p = inputParser;
       p.addRequired('rtp', @isnumeric);
       p.addRequired('nrtp', @isnumeric);
-      p.addOptional('relative_index', 1.0, @isnumeric);
+      p.addOptional('index_relative', 1.0, @isnumeric);
       p.addParameter('Nmax', []);
       p.addParameter('progress', []);
       p.addParameter('zRotSymmetry', 1);
@@ -209,14 +209,14 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       Texternal.zRotSymmetry = p.Results.zRotSymmetry;
       Texternal.xySymmetry = p.Results.xySymmetry;
       Texternal.nrtp = p.Results.nrtp;
-      Texternal.relative_index = p.Results.relative_index;
+      Texternal.index_relative = p.Results.index_relative;
       Texternal.rtp = p.Results.rtp;
       Texternal.rtp(1, :) = Texternal.rtp(1, :);
 
       % Get or calculate Nmax
       Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
           p.Results.Nmax, max(Texternal.rtp(1, :)), ...
-          Texternal.relative_index, p.Results.internal || nargout ~= 1);
+          Texternal.index_relative, p.Results.internal || nargout ~= 1);
 
       % Handle default argument for progress callback
       progress_cb = p.Results.progress;
@@ -450,7 +450,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       incident_wave_matrix = zeros(6*npoints,2*total_orders);
 
       k_medium = 2*pi;
-      k_particle = 2*pi*tmatrix.relative_index;
+      k_particle = 2*pi*tmatrix.index_relative;
 
       import ott.utils.vswf;
 
@@ -499,10 +499,10 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
   end
 
   methods % Getters/setter
-    function tmatrix = set.relative_index(tmatrix, val)
+    function tmatrix = set.index_relative(tmatrix, val)
       assert(isnumeric(val) && isscalar(val), ...
           'relative refractive index must be numeric scalar');
-      tmatrix.relative_index = val;
+      tmatrix.index_relative = val;
     end
 
     function tmatrix = set.rtp(tmatrix, val)

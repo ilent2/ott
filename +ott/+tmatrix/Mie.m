@@ -12,7 +12,7 @@ classdef Mie < ott.tmatrix.Tmatrix
 %
 % Properties
 %   - radius          -- Radius of sphere
-%   - relative_index  -- Relative refractive index
+%   - index_relative  -- Relative refractive index
 %   - relative_permeability -- Relative permeability
 %
 % Static methods
@@ -29,7 +29,7 @@ classdef Mie < ott.tmatrix.Tmatrix
 
   properties (SetAccess=protected)
     radius            % Radius of sphere [units of wavelength]
-    relative_index    % Relative refractive index
+    index_relative    % Relative refractive index
     relative_permeability % Relative permeability
   end
 
@@ -102,16 +102,16 @@ classdef Mie < ott.tmatrix.Tmatrix
       % Construct a new Mie T-matrix for a sphere.
       %
       % Usage
-      %   tmatirx = Mie(radius, relative_index, ...)
+      %   tmatirx = Mie(radius, index_relative, ...)
       %   Calculate the external T-matrix (unless `internal = true`).
       %
-      %   [external, internal] = Mie(radius, relative_index, ...)
+      %   [external, internal] = Mie(radius, index_relative, ...)
       %   Calculate both the internal and external T-matrices.
       %
       % Parameters
       %   - radius (numeric) -- Radius of the sphere (in wavelength units).
       %
-      %   - relative_index (numeric) -- The relative refractive index
+      %   - index_relative (numeric) -- The relative refractive index
       %     of the particle compared to the surrounding medium.
       %
       % Optional named parameters
@@ -121,7 +121,7 @@ classdef Mie < ott.tmatrix.Tmatrix
       %   - Nmax (numeric) -- Size of the VSWF expansion used for the
       %     T-matrix calculation.
       %     Default: ``ott.utis.ka2nmax(2*pi*radius)`` (external)
-      %     or ``ott.utis.ka2nmax(2*pi*radius*relative_index)`` (internal).
+      %     or ``ott.utis.ka2nmax(2*pi*radius*index_relative)`` (internal).
       %
       %   - internal (logical) -- If true, the returned T-matrix is
       %     an internal T-matrix.  Ignored for two outputs.
@@ -129,24 +129,24 @@ classdef Mie < ott.tmatrix.Tmatrix
 
       p = inputParser;
       p.addOptional('radius', @isnumeric);
-      p.addOptional('relative_index', 1.0, @isnumeric);
+      p.addOptional('index_relative', 1.0, @isnumeric);
       p.addParameter('relative_permeability', 1.0, @isnumeric);
       p.addParameter('internal', false);
       p.addParameter('Nmax', []);
       p.parse(varargin{:});
 
-      tmatrix.relative_index = p.Results.relative_index;
+      tmatrix.index_relative = p.Results.index_relative;
       tmatrix.relative_permeability = p.Results.relative_permeability;
       tmatrix.radius = p.Results.radius;
 
-      m = tmatrix.relative_index;
+      m = tmatrix.index_relative;
       mu = tmatrix.relative_permeability;
 
       r0 = 2*pi * tmatrix.radius;
       r1 = 2*pi * m * tmatrix.radius;
 
       Nmax = tmatrix.getValidateNmax(p.Results.Nmax, tmatrix.radius, ...
-          tmatrix.relative_index, p.Results.internal || nargout ~= 1);
+          tmatrix.index_relative, p.Results.internal || nargout ~= 1);
 
       n = 1:Nmax;
       clength = ott.utils.combined_index(Nmax, Nmax);
@@ -203,10 +203,10 @@ classdef Mie < ott.tmatrix.Tmatrix
       tmatrix.radius = val;
     end
 
-    function tmatrix = set.relative_index(tmatrix, val)
+    function tmatrix = set.index_relative(tmatrix, val)
       assert(isnumeric(val) && isscalar(val), ...
           'relative refractive index must be numeric scalar');
-      tmatrix.relative_index = val;
+      tmatrix.index_relative = val;
     end
 
     function tmatrix = set.relative_permeability(tmatrix, val)

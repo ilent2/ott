@@ -93,61 +93,61 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       % are added or when limits of existing methods are further explored.
       %
       % Usage
-      %   tmatrix = ott.tmatrix.Tmatrix.FromShape(shape, relative_index)
+      %   tmatrix = ott.tmatrix.Tmatrix.FromShape(shape, index_relative)
       %
       % Parameters
       %   - shape (ott.shape.Shape) -- Shape to generate T-matrix for.
       %     Shape dimensions should be in units of wavelength.
       %
-      %   - relative_index (numeric) -- Relative refractive index.
+      %   - index_relative (numeric) -- Relative refractive index.
       %
       %   - internal (logical) -- If the T-matrix should be an internal
       %     T-matrix.  Default: ``false``.
 
       p = inputParser;
-      p.addOptional('relative_index', 1.0);
+      p.addOptional('index_relative', 1.0);
       p.addParameter('internal', false);
       p.parse(varargin{:});
-      relative_index = p.Results.relative_index;
+      index_relative = p.Results.index_relative;
 
       if isa(shape, 'ott.shape.Sphere')
-        tmatrix = ott.tmatrix.Mie.FromShape(shape, relative_index, ...
+        tmatrix = ott.tmatrix.Mie.FromShape(shape, index_relative, ...
             'internal', p.Results.internal);
         return;
       end
 
       if shape.zRotSymmetry == 0 && isa(shape, 'ott.shape.Ellipsoid')
-        tmatrix = ott.tmatrix.Smarties.FromShape(shape, relative_index, ...
+        tmatrix = ott.tmatrix.Smarties.FromShape(shape, index_relative, ...
             'internal', p.Results.internal);
         return;
       end
 
       if isa(shape, 'ott.shape.Superellipsoid') ...
           && shape.isEllipsoid && shape.zRotSymmetry == 0
-        tmatrix = ott.tmatrix.Smarties.FromShape(shape, relative_index, ...
+        tmatrix = ott.tmatrix.Smarties.FromShape(shape, index_relative, ...
             'internal', p.Results.internal);
         return;
       end
 
       if isa(shape, 'ott.shape.Cylinder')
-        tmatrix = ott.tmatrix.Tmatrix.SmartCylinder(shape, relative_index, ...
+        tmatrix = ott.tmatrix.Tmatrix.SmartCylinder(shape, index_relative, ...
             'internal', p.Results.internal);
         return;
       end
 
       if shape.zRotSymmetry == 0
-        tmatrix = ott.tmatrix.Ebcm.FromShape(shape, relative_index, ...
+        tmatrix = ott.tmatrix.Ebcm.FromShape(shape, index_relative, ...
             'internal', p.Results.internal);
         return;
       end
 
       if shape.starShaped
-        tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, relative_index, ...
+        tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, index_relative, ...
             'internal', p.Results.internal);
         return;
       end
 
-      tmatrix = ott.tmatrix.Dda.FromShape(shape, relative_index, ...
+      tmatrix = ott.tmatrix.Dda.FromShape(shape, index_relative, ...
             'internal', p.Results.internal);
     end
 
@@ -165,14 +165,14 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       %   https://doi.org/10.1364/OL.39.004827
       %
       % Usage
-      %   tmatrix = SmartCylinder(shape, relative_index, ...)
+      %   tmatrix = SmartCylinder(shape, index_relative, ...)
       %
       % Parameters
       %   - shape (ott.shape.Shape) -- Shape to generate T-matrix for.
       %     Shape dimensions should be in units of wavelength.
       %     If the shape is not a cylinder, attempts to cast to Cylinder.
       %
-      %   - relative_index (numeric) -- Relative refractive index.
+      %   - index_relative (numeric) -- Relative refractive index.
       %
       % Optional named arguments
       %   - tolerance (enum) -- Error tolerance, can either be
@@ -180,7 +180,7 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       %     from the paper. Default: ``'ten'``.
 
       p = inputParser;
-      p.addOptional('relative_index', 1.0);
+      p.addOptional('index_relative', 1.0);
       p.addParameter('internal', false);
       p.addParameter('tolerance', 'ten');
       p.parse(varargin{:});
@@ -190,7 +190,7 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
           'internal method not fully supported for SmartCylinder');
       end
       
-      relative_index = p.Results.relative_index;
+      index_relative = p.Results.index_relative;
 
       assert(isscalar(shape), 'shape must be a single shape');
       if ~isa(shape, 'ott.shape.Cylinder')
@@ -257,13 +257,13 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 
       switch method
         case 'dda'
-          tmatrix = ott.tmatrix.Dda.FromShape(shape, relative_index, ...
+          tmatrix = ott.tmatrix.Dda.FromShape(shape, index_relative, ...
               'internal', p.Results.internal);
         case 'ebcm'
-          tmatrix = ott.tmatrix.Ebcm.FromShape(shape, relative_index, ...
+          tmatrix = ott.tmatrix.Ebcm.FromShape(shape, index_relative, ...
               'internal', p.Results.internal);
         case 'pm'
-          tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, relative_index, ...
+          tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, index_relative, ...
               'internal', p.Results.internal);
         otherwise
           error('Internal error');

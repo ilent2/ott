@@ -63,7 +63,7 @@ classdef Dda < ott.tmatrix.Tmatrix
       %     calculate polarizability or 3x3 tensor for homogeneous material.
       %     Default: ``@(xyz, spacing, ri) polarizability.LDR(spacing, ri)``
       %
-      %   - relative_index -- (function_handle | numeric) Method to calculate
+      %   - index_relative -- (function_handle | numeric) Method to calculate
       %     relative refractive index or homogeneous value.  Ignored if
       %     polarizability is a 3x3 tensor.
       %
@@ -76,7 +76,7 @@ classdef Dda < ott.tmatrix.Tmatrix
       p.addParameter('spacing', 1/20, @isnumeric);
       p.addParameter('polarizability', ...
           @(~, s, r) ott.tmatrix.dda.polarizability.LDR(s, r));
-      p.addParameter('relative_index', 1.0);
+      p.addParameter('index_relative', 1.0);
       p.addParameter('low_memory', false);
       p.addParameter('xySymmetry', shape.xySymmetry);
       p.addParameter('zRotSymmetry', shape.zRotSymmetry);
@@ -88,7 +88,7 @@ classdef Dda < ott.tmatrix.Tmatrix
       dda = ott.tmatrix.dda.Dda.FromShape(shape, ...
           'spacing', p.Results.spacing, ...
           'polarizability', p.Results.polarizability, ...
-          'relative_index', p.Results.relative_index, ...
+          'index_relative', p.Results.index_relative, ...
           'xySymmetry', p.Results.xySymmetry, ...
           'zRotSymmetry', p.Results.zRotSymmetry);
 
