@@ -842,6 +842,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %
       %   [...] = beam.getCoefficients(ci) behaves as above but only returns
       %   the requested beam cofficients a(ci) and b(ci) in a dense format.
+      %   Returns zeros for any ci not in the beam.
 
       rowmax = size(beam(1).a, 1);
       if ~all(cellfun(@(a) size(a, 1) == rowmax, {beam.a, beam.b}))
@@ -864,7 +865,12 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       if nargin == 1
         ci = 1:size(oa, 1);
       end
+      
+      % Insert zeros for any omitted cis
+      oa(ci(ci > size(oa, 1)), :) = 0;
+      ob(ci(ci > size(ob, 1)), :) = 0;
 
+      % Get only requested elements
       oa = oa(ci, :);
       ob = ob(ci, :);
 
@@ -965,9 +971,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %   beam = -beam
 
       ott.utils.nargoutCheck(beam, nargout);
-
-      beam.a = -beam.a;
-      beam.b = -beam.b;
+      
+      [oa, ob] = beam.getCoefficients();
+      beam = beam.setCoefficients(-oa, -ob);
     end
 
     function beam = minus(beam1, beam2)

@@ -256,9 +256,10 @@ end
 
 function testSum(testCase)
 
-  Nmax = 5;
-  ab1 = randn(ott.utils.combined_index(Nmax, Nmax), 1);
-  ab2 = randn(ott.utils.combined_index(Nmax, Nmax), 1);
+  Nmax1 = 5;
+  Nmax2 = 6;
+  ab1 = randn(ott.utils.combined_index(Nmax1, Nmax1), 1);
+  ab2 = randn(ott.utils.combined_index(Nmax2, Nmax2), 1);
   beam1 = ott.bsc.Bsc(ab1, ab1);
   beam2 = ott.bsc.Bsc(ab2, ab2);
 
