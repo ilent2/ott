@@ -87,7 +87,7 @@ rparticle = particle.rotateY(pi/2);
 rparticle.surf();
 
 %% Calculating optical scattering
-% Particles can scatter beams (when the is an appropriate T-matrix
+% Particles can scatter beams (when there is an appropriate T-matrix
 % definition).  For this example we setup a Gaussian beam and calculate
 % the fields inside and outside a spherical particle.
 
@@ -107,7 +107,6 @@ figure();
 for x = linspace(-1, 1, 20)
   
   % Calcualate scattering
-%   beam.position = [x;0;0]*beam.wavelength;
   sbeam = beam.scatter(particle, 'position', [x;0;0]*beam.wavelength);
   
   % The scattered beam stores an instance of the particle and the incident

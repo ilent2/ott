@@ -161,6 +161,33 @@ function testScatter(testCase)
 
 end
 
+function testScatterForce(testCase)
+
+  beam = ott.beam.Gaussian();
+  particle = ott.particle.Fixed.FromShape(...
+    ott.shape.Sphere(beam.wavelength0), 'index_relative', 1.2, ...
+    'wavelength0', beam.wavelength0);
+  
+  pos = [0.5;0;0]*beam.wavelength;
+  
+  sbeam = beam.scatter(particle, 'position', pos);
+  F1 = sbeam.force();
+  
+  F2 = beam.force(particle, 'position', pos);
+  
+  % Need to swap position (get force in particle reference fraome)
+  beam.position = -sbeam.position;
+  sbeam.position = [0;0;0];
+  F3 = (sbeam.intensityMoment('type', 'scattered') ...
+    - beam.intensityMoment())./beam.speed;
+  
+  testCase.verifyEqual(F1, F2, 'RelTol', 6e-2, ...
+    'direct force and scatter force dont match');
+  testCase.verifyEqual(F3, F2, 'RelTol', 6e-2, ...
+    'farfield integral doesn''t match');
+
+end
+
 function testPowerIntegralGaussianNearfield(testCase)
 
   waist = 1e-6;

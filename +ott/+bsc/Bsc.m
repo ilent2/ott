@@ -1540,19 +1540,21 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %
       % From forcetorque function in OTTv1
 
-      % Ensure beams are the same size
-      if ibeam.Nmax > sbeam.Nmax
-        sbeam.Nmax = ibeam.Nmax;
-      elseif ibeam.Nmax < sbeam.Nmax
-        ibeam.Nmax = sbeam.Nmax;
-      end
-
       % Get the relevant beam coefficients
       [a, b] = ibeam.getCoefficients();
       [p, q] = sbeam.getCoefficients();
+      
+      % Ensure beams have same size
+      if size(a, 1) > size(p, 1)
+        p(size(a, 1), :) = 0;
+        q(size(a, 1), :) = 0;
+      elseif size(a, 1) < size(p, 1)
+        a(size(p, 1), :) = 0;
+        b(size(p, 1), :) = 0;
+      end
+      
       [n, m] = ott.utils.combined_index((1:size(a, 1)).');
-
-      nmax=ibeam.Nmax;
+      nmax = max(n);
 
       b=1i*b;
       q=1i*q;

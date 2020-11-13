@@ -156,6 +156,16 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       % Usage
       %   sbeam = scatter(ibeam, particle, ...)
       %
+      % Returns
+      %   - sbeam (ott.beam.Scattered) -- Scattered beam encapsulating
+      %     the particle, incident beam, scattered beams(s).  For a
+      %     method which doesn't create a scattered beam, see
+      %     :meth:`scatterBsc`.
+      %
+      % Parameters
+      %   - particle (ott.particle.Particle) -- Particle with
+      %     T-matrix properties (possibly internal and external).
+      %
       % Optional named arguments
       %   - position (3x1 numeric) -- Particle position.
       %     Default: ``particle.position``.
@@ -167,33 +177,19 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       p.addParameter('position', particle.position);
       p.addParameter('rotation', particle.rotation);
       p.parse(varargin{:});
-
-      % Apply particle position to beam and particle
-      % Make a copy of the beam data (new beam uses original incidnet beam)
-      particle.position = p.Results.position;
-      tbeam = ibeam.translateXyz(-p.Results.position);
       
-      % Get required Nmax for beam data
-      Nmax = 0;
-      if ~isempty(particle.tmatrix)
-        Nmax = max(Nmax, particle.tmatrix.Nmax(2));
-      end
-      if ~isempty(particle.tinternal)
-        Nmax = max(Nmax, particle.tinternal.Nmax(2));
-      end
+      % Update particle position/rotation
+      scat_position = p.Results.position;
+      scat_rotation = p.Results.rotation;
       
-      % Get bsc data
-      ibsc = ott.bsc.Bsc(tbeam, Nmax);
-
-      % Apply particle rotation
-      ibsc = ibsc.rotate(p.Results.rotation);
+      % Calculate scattered Bscs
+      [ibsc, sbsc] = ibeam.scatterBsc(particle, ...
+        'position', scat_position, 'rotation', scat_rotation);
 
       % Calculate external component
-      if ~isempty(particle.tmatrix)
-        sbsc = particle.tmatrix * ibsc;
+      if ~isempty(sbsc)
         sbeam = ott.beam.BscOutgoing(sbsc, ...
-          'index_medium', ibeam.index_medium, 'omega', ibeam.omega, ...
-          'position', particle.position);
+          'index_medium', ibeam.index_medium, 'omega', ibeam.omega);
       else
         sbeam = [];
       end
@@ -203,17 +199,105 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
         sint = particle.tinternal * ibsc;
         index_particle = ibeam.index_medium * particle.tinternal.index_relative;
         nbeam = ott.beam.BscBeam(sint, ...
-          'index_medium', index_particle, ...
-          'omega', ibeam.omega, ...
-          'position', particle.position);
+          'index_medium', index_particle, 'omega', ibeam.omega);
       else
         nbeam = [];
       end
 
       % Package output
+      % Set outgoing field to have 0 position and offset the scattered beam
+      particle.position = [0;0;0];
+      particle.rotation = eye(3);
+      ibeam.position = -scat_position;
+      ibeam.rotation = scat_rotation.';
       sbeam = ott.beam.Scattered(...
           'scattered', sbeam, 'incident', ibeam, ...
-          'particle', particle, 'internal', nbeam);
+          'particle', particle, 'internal', nbeam, ...
+          'position', scat_position, 'rotation', scat_rotation);
+    end
+    
+    function [ibsc, sbsc] = scatterBsc(beam, particle, varargin)
+      % Calculate the beam shape coefficients from scattering
+      %
+      % Usage
+      %   [ibsc, sbsc] = beam.scatterBsc(particle, ...)
+      %
+      % Returns
+      %   - ibsc (ott.bsc.Bsc) -- Incident beam shape coefficients
+      %     after applying rotations and translations.
+      %
+      %   - sbsc (ott.bsc.Bsc) -- Scattered beam shape coefficients
+      %     in particle reference frame.
+      %
+      % Parameters
+      %   - particle (ott.particle.Particle) -- Scattering particle.
+      %     Uses the position, rotation and T-matrix properties.
+      %
+      % Optional named arguments
+      %   - position (3xN numeric) -- Particle position.
+      %     Default: ``particle.position``.
+      %
+      %   - rotation (3x3N numeric) -- Particle rotation.
+      %     Default: ``particle.rotation``.
+      
+      p = inputParser;
+      p.addParameter('position', particle.position);
+      p.addParameter('rotation', particle.rotation);
+      p.parse(varargin{:});
+      
+      % Get position and rotation, check size/types
+      position = p.Results.position;
+      rotation = p.Results.rotation;
+      assert(isnumeric(position) && ismatrix(position) && size(position, 1) == 3, ...
+        'position must be 3xN numeric matrix');
+      assert(isnumeric(rotation) && ismatrix(rotation) ...
+        && size(rotation, 1) == 3 && mod(size(rotation, 2), 3) == 0, ...
+        'rotation must be 3x3N numeric matrix');
+      
+      % Count amount of work, repmat position/rotation if required
+      Npos = size(position, 2);
+      Nrot = size(rotation, 2)/3;
+      Nwork = max(Npos, Nrot);
+      assert(Npos == 1 || Nrot == 1 || Npos == Nrot, ...
+        'Number of position and rotations must be equal or 1');
+      if Npos == 1, position = repmat(position, [1, Nrot]); end
+      if Nrot == 1, rotation = repmat(rotation, [1, Npos]); end
+
+      % Get required Nmax for beam data
+      Nmax = 0;
+      if ~isempty(particle.tmatrix)
+        Nmax = max(Nmax, particle.tmatrix.Nmax(2));
+      end
+      
+      % Pre-allocate space for results
+      ab = sparse(ott.utils.combined_index(Nmax, Nmax), Nwork);
+      ibsc = ott.bsc.Bsc(ab, ab);
+      if ~isempty(particle.tmatrix)
+        sNmax = particle.tmatrix.Nmax(1);
+        ab = sparse(ott.utils.combined_index(sNmax, sNmax), Nwork);
+        sbsc = ott.bsc.Bsc(ab, ab);
+      else
+        sbsc = [];
+      end
+      
+      for ii = 1:Nwork
+
+        % Apply particle position to beam and particle
+        % Make a copy of the beam data (new beam uses original incidnet beam)
+        tbeam = beam.translateXyz(-position(:, ii));
+
+        % Get bsc data
+        ibsc(ii) = ott.bsc.Bsc(tbeam, Nmax);
+
+        % Apply particle rotation
+        ibsc(ii) = ibsc(ii).rotate(rotation(:, (1:3) + (ii-1)*3));
+
+        % Calculate external component
+        if ~isempty(particle.tmatrix)
+          sbsc(ii) = particle.tmatrix * ibsc(ii);
+        end
+      end
+      
     end
 
     %
@@ -404,14 +488,18 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
-        sbeam = ibeam.scatter(sbeam, varargin{:});
-        [varargout{1:nargout}] = sbeam.force();
-        return;
+        [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
+      else
+        % Apply the scattered beams translation to ourselves
+        % Perhaps this isn't the best thing to do, but I'm not sure
+        % where else we should do this.
+        % TODO: Rotation too!!!
+        ibeam = ibeam.translateXyz(sbeam.position);
+        sbeam.position = [0;0;0];
+        
+        ibsc = ott.bsc.Bsc(ibeam);
+        sbsc = ott.bsc.Bsc(sbeam);
       end
-
-      % Get data from beams
-      ibsc = ott.bsc.Bsc(ibeam);
-      sbsc = ott.bsc.Bsc(sbeam);
 
       % Calculate force using internal methods
       [varargout{1:nargout}] = ibsc.force(sbsc);
@@ -435,14 +523,18 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
-        sbeam = ibeam.scatter(sbeam, varargin{:});
-        [varargout{1:nargout}] = sbeam.torque();
-        return;
+        [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
+      else
+        % Apply the scattered beams translation to ourselves
+        % Perhaps this isn't the best thing to do, but I'm not sure
+        % where else we should do this.
+        % TODO: Rotation too!!!
+        ibeam = ibeam.translateXyz(sbeam.position);
+        sbeam.position = [0;0;0];
+        
+        ibsc = ott.bsc.Bsc(ibeam);
+        sbsc = ott.bsc.Bsc(sbeam);
       end
-
-      % Get data from beams
-      ibsc = ott.bsc.Bsc(ibeam);
-      sbsc = ott.bsc.Bsc(sbeam);
 
       % Calculate torque using internal methods
       [varargout{1:nargout}] = ibsc.torque(sbsc);
@@ -466,14 +558,18 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
-        sbeam = ibeam.scatter(sbeam, varargin{:});
-        [varargout{1:nargout}] = sbeam.spin();
-        return;
+        [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
+      else
+        % Apply the scattered beams translation to ourselves
+        % Perhaps this isn't the best thing to do, but I'm not sure
+        % where else we should do this.
+        % TODO: Rotation too!!!
+        ibeam = ibeam.translateXyz(sbeam.position);
+        sbeam.position = [0;0;0];
+        
+        ibsc = ott.bsc.Bsc(ibeam);
+        sbsc = ott.bsc.Bsc(sbeam);
       end
-
-      % Get data from beams
-      ibsc = ott.bsc.Bsc(ibeam);
-      sbsc = ott.bsc.Bsc(sbeam);
 
       % Calculate spin using internal methods
       [varargout{1:nargout}] = ibsc.spin(sbsc);

@@ -40,7 +40,9 @@ The following create a shape and encapsulates it in a particle::
    shape = ott.shape.Sphere(1e-6);
 
    % Create a particle
-   particle = ott.particle.Particle.FromShape(shape);
+   % For the T-matrix method, we need to specify relative index and wavelength
+   particle = ott.particle.Fixed.FromShape(shape, ...
+        'index_relative', 1.2, 'wavelength0', 1064e-9);
 
 We can visualise the particle using the ``surf`` method, this simply calls
 the shape's corresponding ``surf`` method::
@@ -108,8 +110,8 @@ For additional example, see the rotation/position part of the
 Calculate optical scattering
 ============================
 
-To calculate how a beam is scattered by a particle, we can either use
-the matrix multiplication operator or the beam scatter method.
+Particles can scatter beams (when there is an appropriate T-matrix
+definition).
 
 For this example, lets use a Gaussian beam::
 
@@ -127,13 +129,7 @@ Not all T-matrix calculation methods support calculating internal fields.
 The T-matrix method that is used depends on the geometry (for this case,
 a sphere, the internal method should give fairly accurate results).
 
-To calculate the force, we multiply the particle by the beam (note that
-the order of operations is important)::
-
-   sbeam = particle * beam;
-
-Alternatively, we can use the ``scatter`` method (this also supports
-applying position/rotations to the beam)::
+To calculate the scattering, we can use the ``scatter`` method::
 
    sbeam = beam.scatter(particle);
 
@@ -141,7 +137,7 @@ The scattered beam stores an instance of the particle and the incident
 beam, allowing us to easily visualise the internal and external fields,
 for example, the following outputs the fields shown in [TODO]::
 
-   sbeam.visNearfield('axis', 'y');
+   sbeam.visNearfield('axis', 'y', [1,1]*2e-6);
 
 
 Calculate forces
@@ -160,7 +156,7 @@ And, with the incident beam::
 With both methods, the resulting force has units of Newtons.
 The incident beam method has the advantage that we can also specify
 a 3xN array of positions or rotations to apply to the particle, these
-are applied on top of any existing particle translations/rotations::
+replace any existing particle translations/rotations::
 
    positions = randn(3, 5)*1e-6;
    forces = beam.force(particle, 'position', positions);

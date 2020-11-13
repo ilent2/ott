@@ -138,8 +138,9 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate internal fields
       if ~isempty(beam.internal)
+        xyzI = beam.global2local(xyz);
         [Ef, vswfData] = beam.internal.efield(...
-            xyz(:, binside), unmatched{:}, 'data', vswfData);
+            xyzI(:, binside), unmatched{:}, 'data', vswfData);
         E(:, binside) = Ef.vxyz;
       else
         E(:, binside) = nan;
@@ -185,8 +186,9 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate internal fields
       if ~isempty(beam.internal)
+        xyzI = beam.global2local(xyz);
         [Hf, vswfData] = beam.internal.hfield(...
-            xyz(:, binside), unmatched{:}, 'data', vswfData);
+            xyzI(:, binside), unmatched{:}, 'data', vswfData);
         H(:, binside) = Hf.vxyz;
       else
         H(:, binside) = nan;
@@ -234,8 +236,9 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate internal fields
       if ~isempty(beam.internal)
+        xyzI = beam.global2local(xyz);
         [Ef, Hf, vswfData] = beam.internal.ehfield(...
-            xyz(:, binside), unmatched{:}, 'data', vswfData);
+            xyzI(:, binside), unmatched{:}, 'data', vswfData);
         E(:, binside) = Ef.vxyz;
         H(:, binside) = Hf.vxyz;
       else
@@ -284,8 +287,9 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate internal fields
       if ~isempty(beam.internal)
+        rtpI = beam.global2local(rtp);
         [Ef, vswfData] = beam.internal.efieldRtp(...
-            rtp(:, binside), unmatched{:}, 'data', vswfData);
+            rtpI(:, binside), unmatched{:}, 'data', vswfData);
         E(:, binside) = Ef.vrtp;
       else
         E(:, binside) = nan;
@@ -331,8 +335,9 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate internal fields
       if ~isempty(beam.internal)
+        rtpI = beam.global2local(rtp);
         [Hf, vswfData] = beam.internal.hfieldRtp(...
-            rtp(:, binside), unmatched{:}, 'data', vswfData);
+            rtpI(:, binside), unmatched{:}, 'data', vswfData);
         H(:, binside) = Hf.vrtp;
       else
         H(:, binside) = nan;
@@ -380,9 +385,9 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        [Ef, Hf, vswfData] = ...
-            beam.internal.ehfieldRtp(...
-            rtp(:, binside), unmatched{:}, 'data', vswfData);
+        rtpI = beam.global2local(rtp);
+        [Ef, Hf, vswfData] = beam.internal.ehfieldRtp(...
+            rtpI(:, binside), unmatched{:}, 'data', vswfData);
         E(:, binside) = Ef.vrtp;
         H(:, binside) = Hf.vrtp;
       else
@@ -554,6 +559,83 @@ classdef Scattered < ott.beam.Beam
       % Calculate fields
       [varargout{1:nargout}] = odata.ehparaxial(xy, unmatched{:});
     end
+    
+    %
+    % Field visualisation methods
+    %
+    
+    function [im, XY, data] = visNearfield(beam, varargin)
+      % Create a visualisation of the beam.
+      %
+      % If the shape property of the beam is set, also draws a contour
+      % around the edge of the shape.
+      %
+      % Usage
+      %   beam.visNearfield(...) -- display an image of the beam in
+      %   the current figure window.
+      %
+      %   [im, XY, data] = beam.visualise(...) -- returns a image of the
+      %   beam and a cell array of the coordinates used in the calculation.
+      %   If the beam object is an array, returns an image for each beam.
+      %
+      % Optional named parameters
+      %   - drawContour (logical) -- If the contour should be drawn.
+      %     Default: ``true``.  Only has effect if plot shown.
+      %
+      %   - contourSmooth (numeric) -- Smothing factor (pixels) for
+      %     Gaussian blur of contour.  Good for smooth shapes, not good
+      %     for cubes.  Default: ``2``.
+      %
+      % For additional parameters/usage information, see :class:`Beam`.
+      
+      p = inputParser;
+      p.addParameter('plot_axes', []);
+      p.addParameter('drawContour', true);
+      p.addParameter('contourSmooth', 2);
+      p.KeepUnmatched = true;
+      p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      % Get/setup the axes before calling parent
+      our_axes = p.Results.plot_axes;
+      if (nargout == 0 || ~isempty(our_axes))
+
+        % Get the default axes
+        if isempty(our_axes)
+          our_axes = gca();
+        end
+      end
+      
+      % Call base for most of the work
+      [im, XY, data] = visNearfield@ott.beam.Beam(beam, ...
+          'plot_axes', our_axes, unmatched{:});
+
+      % Do we need to draw a contour
+      if ~isempty(our_axes) && p.Results.drawContour
+
+        % Get the default axes
+        if isempty(our_axes)
+          our_axes = gca();
+        end
+      
+        % Get data for inside/outside
+        inside = beam.insideXyz(XY{3});
+        inside = reshape(inside, numel(XY{2}), numel(XY{1}));
+
+        % Smooth contour data (makes things look nicer)
+        inside = ott.utils.gaussfilt(double(inside), p.Results.contourSmooth);
+
+        % Draw contour on plot
+        hold on;
+        [~, ch] = contour(our_axes, XY{1}, XY{2}, inside, [0.5, 0.5], 'w--');
+        ch.LineWidth = 2;
+        hold off;
+      end
+      
+      if nargout == 0
+        clear im XY data
+      end
+    end
 
     %
     % Force/torque related methods
@@ -679,6 +761,8 @@ classdef Scattered < ott.beam.Beam
       % Uses the :meth:`+ott.+shape.Shape.insideRtp` method of particle.
       % If no particle is provided, returns a vector of false.
 
+      rtp = beam.global2local(rtp);
+      
       if ~isempty(beam.shape)
         rtp = beam.particle.global2localRtp(rtp);
         binside = beam.shape.insideRtp(rtp);
@@ -696,6 +780,8 @@ classdef Scattered < ott.beam.Beam
       %
       % Uses the :meth:`+ott.+shape.Shape.insideXyz` method of particle.
       % If no particle is provided, returns a vector of false.
+      
+      xyz = beam.global2local(xyz);
       
       if ~isempty(beam.shape)
         xyz = beam.particle.global2local(xyz);
@@ -724,11 +810,16 @@ classdef Scattered < ott.beam.Beam
       switch p.Results.type
         case 'total'
           odata = ott.beam.Array([beam.incident, 2*beam.scattered], ...
-              'arrayType', 'coherent');
+              'arrayType', 'coherent', ...
+              'position', beam.position, 'rotation', beam.rotation);
         case 'incident'
           odata = beam.incident;
+          odata = odata.translateXyz(beam.position);
+          odata = odata.rotate(beam.rotation);
         case 'scattered'
           odata = beam.scattered;
+          odata = odata.translateXyz(beam.position);
+          odata = odata.rotate(beam.rotation);
         otherwise
           error('ott:beam:Scattered:unknown_type', ...
               'Unknown type specified, must be incident, scattered or total');

@@ -577,6 +577,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       % Calculate Cartesian coordinates
       % negate z, So integrals match sign convention used in :meth:`force`.
       uxyz = ott.utils.rtp2xyz(rtp);
+      uxyz(3, :) = -uxyz(3, :);
 
       % Calculate field and E2
       [E, varargout{3:nargout}] = beam.efarfield(rtp, ...
@@ -605,7 +606,8 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %   beam.visNearfield(...) -- display an image of the beam in
       %   the current figure window.
       %
-      %   [im, data] = beam.visualise(...) -- returns a image of the beam.
+      %   [im, XY, data] = beam.visualise(...) -- returns a image of the
+      %   beam and a cell array of the coordinates used in the calculation.
       %   If the beam object is an array, returns an image for each beam.
       %   Also returns a :class:`ott.utils.VswfData` structure for fast
       %   repeated calculations.
@@ -652,7 +654,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       p.addParameter('offset', 0.0);
       p.addParameter('range', beam.defaultVisRange);
       p.addParameter('mask', []);
-      p.addParameter('plot_axes', []);
+      p.addParameter('plot_axes', []);   % Not used (just filtered)
       p.addParameter('data', ott.utils.VswfData(), ...
           @(x) isa(x, 'ott.utils.VswfData'));
       p.KeepUnmatched = true;
@@ -703,7 +705,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       if nargout >= 1
         varargout{1} = imout;
         if nargout >= 2
-          varargout{2} = {xrange, yrange};
+          varargout{2} = {xrange, yrange, xyz};
           if nargout >= 3
             varargout{3} = data;
           end

@@ -84,7 +84,7 @@ function testIntensityMoment(testCase)
   emptyBeam = ott.beam.BscBeam();
   
   testCase.verifyEqual(ints, beam1.power, 'RelTol', 1e-2, 'power');
-  testCase.verifyEqual(moment./beam1.speed, ...
+  testCase.verifyEqual(0 - moment./beam1.speed, ...
     beam1.force(emptyBeam), 'RelTol', 1e-2, 'AbsTol', 1e-23, 'moment');
 
 end
