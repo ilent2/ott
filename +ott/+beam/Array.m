@@ -301,13 +301,15 @@ classdef Array < ott.beam.ArrayType
       [EH, vswfData] = target(beam.data(1), xyz, unmatched{:});
       EH = repmat(EH, [1, 1, numel(beam.data)]);
 
-      for ii = 1:numel(beam.data)
+      for ii = 2:numel(beam.data)
         [EH(:, :, ii), vswfData] = target(beam.data(ii), xyz, ...
             unmatched{:}, 'data', vswfData);
       end
 
       if strcmpi(beam.arrayType, 'coherent')
+        coords = EH(4:6, :, 1);
         EH = sum(EH, 3);
+        EH(4:6, :) = coords;
       end
     end
 
@@ -335,8 +337,11 @@ classdef Array < ott.beam.ArrayType
       end
 
       if strcmpi(beam.arrayType, 'coherent')
+        coords = E(4:6, :, 1);
         E = sum(E, 3);
         H = sum(H, 3);
+        E(4:6, :) = coords;
+        H(4:6, :) = coords;
       end
     end
 
