@@ -17,9 +17,15 @@ function testFromDirection(testCase)
   testCase.verifyEqual(beam.Nmax, Nmax, 'Nmax');
   testCase.verifyEqual(beam.direction, dir, 'direction');
   
-  % Test fields are correct
+  % Test fields are correct in near-field
   Exyz = beam.efieldRtp([0;0;0]).vxyz;
   testCase.verifyEqual(abs(Exyz), abs(pol), 'AbsTol', 1e-15, 'field direction');
+  
+  % Test fields are correct in far-field
+  rtp = ott.utils.xyz2rtp([dir, -dir]);
+  Exyz = beam.efarfield(rtp, 'basis', 'outgoing').vxyz;
+  testCase.verifyEqual(abs(Exyz)./abs(Exyz(1)), [pol, 0*pol], ...
+      'AbsTol', 1e-15, 'far-field direction');
 
 end
 

@@ -29,8 +29,12 @@ classdef PlaneWave < ott.bsc.Bsc
       %
       % Parameters
       %   - Nmax (numeric) -- Size of beam shape coefficient data.
-      %   - direction (3xN numeric) -- Directions for plane waves.
+      %
+      %   - direction (3xN numeric) -- Propagation direction.
+      %     Cartesian coordinates.
+      %
       %   - polarisation (3xN numeric) -- Directions for polarisation.
+      %     Cartesian coordinates.
       %
       % Optional named arguments
       %   - data (ott.utils.VswfData) -- Field data for repeated field
@@ -50,7 +54,8 @@ classdef PlaneWave < ott.bsc.Bsc
         'polarisation must be 3xN numeric');
 
       % Get spherical coordinates for plane wave vectors
-      [Ertp, rtp] = ott.utils.xyzv2rtpv(polarisation, direction);
+      % Negate direction
+      [Ertp, rtp] = ott.utils.xyzv2rtpv(polarisation, -direction);
 
       ablength = ott.utils.combined_index(Nmax, Nmax);
 
