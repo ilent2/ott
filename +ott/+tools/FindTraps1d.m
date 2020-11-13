@@ -437,6 +437,10 @@ classdef FindTraps1d
       if ~oldHold
         hold off;
       end
+      
+      if nargout == 0
+        clear h;
+      end
     end
 
     function [grouped, stats] = groupStable(traps, varargin)
