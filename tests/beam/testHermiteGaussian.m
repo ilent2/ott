@@ -19,6 +19,10 @@ function testConstruct(testCase)
   testCase.verifyEqual(beam.polfield, [1, 1i], 'polfield');
   testCase.verifyEqual(beam.polbasis, 'cartesian', 'polbasis');
   testCase.verifyEqual(beam.isGaussian, false, 'isGauss');
+  
+  % Check beam direction
+  moment = beam.intensityMoment();
+  testCase.verifyGreaterThan(moment(3), 0, 'beam should go in +z');
 
 end
 
@@ -26,6 +30,7 @@ function testFromNa(testCase)
 
   NA = 0.9;
   beam = ott.beam.HermiteGaussian.FromNa(NA);
+  testCase.verifyLessThan(beam.waist, beam.wavelength*10, 'waist may be wrong');
 
 end
 

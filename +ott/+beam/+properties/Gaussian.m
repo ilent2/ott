@@ -38,8 +38,15 @@ classdef Gaussian < ott.beam.properties.Polarisation ...
 
   methods % Getters/setters
     function beam = set.waist(beam, val)
-      assert(isnumeric(val) && isscalar(val), ...
-        'waist must be numeric scalar');
+      assert(isnumeric(val) && isscalar(val) && val >= 0, ...
+        'waist must be positive numeric scalar');
+      
+      % Warning user about large beam waists
+      if val > 1e-3
+        warning('ott:beam:properties:Gaussian:large_waist', ...
+          'beam waist larger than 1e-3 meters');
+      end
+      
       beam.waistInternal = val;
       beam.data = [];
     end

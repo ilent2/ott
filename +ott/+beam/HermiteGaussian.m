@@ -48,21 +48,32 @@ classdef HermiteGaussian < ott.beam.BscFinite ...
       p.addParameter('mapping', 'sin');
       p.addParameter('index_medium', 1.0);
       p.addParameter('truncation_angle', []);
+      p.addParameter('calculate', true);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
 
       paraxial_order = p.Results.mmode + p.Results.nmode;
 
+      % Set the default truncation angle to the specified NA
       truncation_angle = p.Results.truncation_angle;
       if isempty(truncation_angle)
         truncation_angle = ott.utils.na2angle(Na, p.Results.index_medium);
       end
 
+      % Construct beam (parsing remaining parameters)
+      beam = ott.beam.HermiteGaussian(0, ...
+          'truncation_angle', truncation_angle, ...
+          varargin{:}, 'calculate', false);
+        
+      % Calculate and set waist
       waist = ott.bsc.LgParaxial.WaistFromNa(Na, p.Results.index_medium, ...
           paraxial_order, p.Results.mapping);
-
-      beam = ott.beam.HermiteGaussian(waist, ...
-          'truncation_angle', truncation_angle, varargin{:});
+      beam.waist = waist * beam.wavelength;
+      
+      % Calculate beam data if requested
+      if p.Results.calculate
+        beam = beam.recalculate([]);
+      end
     end
   end
 
