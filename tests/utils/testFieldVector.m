@@ -84,3 +84,34 @@ function testMathsCart(testCase)
   testCase.verifyEqual(double(s1), v1 / 2, 'sum');
 
 end
+
+function testSubsasgnDifferentTypes(testCase)
+
+  loc = randn(3, 6);
+  val = randn(3, 6);
+  Cart = ott.utils.FieldVectorCart(val, loc);
+  Sph = ott.utils.FieldVectorSph(Cart);
+  
+  % Explicit cast
+  cpy = Cart;
+  cpy(:, 4:6) = ott.utils.FieldVectorCart(Sph(:, 4:6));
+  testCase.verifyEqual(double(cpy), double(Cart), 'AbsTol', 1e-14, ...
+    'explicit cast');
+  
+  % Explicit cast with 'like'
+  % Doesn't seem to work by default in 2018a or 2020b, added a workaround
+  % to FieldVector class (cast method) to implement the behaviour I expect
+  cpy = Cart;
+  cpy(:, 4:6) = cast(Sph(:, 4:6), 'like', cpy);
+  testCase.verifyEqual(double(cpy), double(Cart), 'AbsTol', 1e-14, ...
+    'explicit cast with like');
+  
+  % Implicit cast
+  % Doesn't seem to work in 2018a, works fine in 2020b
+  cpy = Cart;
+  cpy(:, 4:6) = Sph(:, 4:6);
+  testCase.verifyEqual(double(cpy), double(Cart), 'AbsTol', 1e-14, ...
+    'implicit cast');
+
+end
+

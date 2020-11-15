@@ -1,7 +1,10 @@
 classdef FieldVector < double
 % Base class for classes encapsulating field vector data.
 %
-% Properties (possibly computed)
+% .. warning:: This class may not behave as expected in Matlab R2018a
+%     and earlier.  Use with caution.
+%
+% .. warning:: Direct element access is not recommended with this class.
 %
 % Methods
 %   - plus, minus, uminus, times, mtimes, rdivide, mrdivide
@@ -46,6 +49,45 @@ classdef FieldVector < double
   end
 
   methods
+    function fv = cast(fv, type, varargin)
+      % Cast FieldVector to a differnt ata type/class.
+      %
+      % This is useful in R2018a where implicit cast dont always seem
+      % to work correctly (the problem seems to be fixed in R2020b).
+      %
+      % Usage
+      %   fv = cast(fv, 'like', other) -- Casts field vector type to
+      %   match other.  If other is not a field vector, defers to
+      %   builtin cast method.
+      %
+      %   fv = cast(fv, typename) -- Casts to specified field vector type.
+      %   If typename is not a field vector type, defers to builtin method.
+      
+      atype = type;
+      if nargin == 3
+        atype = class(varargin{1});
+      end
+      
+      % Do field vector casts (if needed)
+      if strcmpi(atype, 'ott.utils.FieldVectorCart')
+        fv = ott.utils.FieldVectorCart(fv);
+        
+        % Defer to base for sparsity/complexity/everything else
+        if nargin == 3
+          fv = builtin('cast', fv, type, varargin{:});
+        end
+      elseif strcmpi(atype, 'ott.utils.FieldVectorSph')
+        fv = ott.utils.FieldVectorSph(fv);
+        
+        % Defer to base for sparsity/complexity/everything else
+        if nargin == 3
+          fv = builtin('cast', fv, type, varargin{:});
+        end
+      else
+        fv = builtin('cast', fv, type, varargin{:});
+      end
+    end
+    
     function fv = vxyz(fv, varargin)
       % Get Cartesian field vector instance
 

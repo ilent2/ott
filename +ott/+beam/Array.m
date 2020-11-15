@@ -302,8 +302,11 @@ classdef Array < ott.beam.ArrayType
       EH = repmat(EH, [1, 1, numel(beam.data)]);
 
       for ii = 2:numel(beam.data)
-        [EH(:, :, ii), vswfData] = target(beam.data(ii), xyz, ...
+        [EHf, vswfData] = target(beam.data(ii), xyz, ...
             unmatched{:}, 'data', vswfData);
+          
+        % Added cast as workaround to 'bug' in R2018a
+        EH(:, :, ii) = cast(EHf, 'like', EH);
       end
 
       if strcmpi(beam.arrayType, 'coherent')
@@ -332,8 +335,12 @@ classdef Array < ott.beam.ArrayType
       H = repmat(H, [1, 1, numel(beam.data)]);
 
       for ii = 2:numel(beam.data)
-        [E(:, :, ii), H(:, :, ii), vswfData] = target(beam.data(ii), ...
+        [Ef, Hf, vswfData] = target(beam.data(ii), ...
             xyz, unmatched{:}, 'data', vswfData);
+          
+        % Added cast as workaround to 'bug' in R2018a
+        E(:, :, ii) = cast(Ef, 'like', E);
+        H(:, :, ii) = cast(Hf, 'like', H);
       end
 
       if strcmpi(beam.arrayType, 'coherent')
