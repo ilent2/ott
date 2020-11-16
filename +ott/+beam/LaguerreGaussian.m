@@ -108,7 +108,7 @@ classdef LaguerreGaussian < ott.beam.BscFinite ...
       %   - power (numeric) -- Beam power [W].  Default: ``1.0``.
       %
       %   - truncation_angle (numeric) -- Adds a hard edge truncation
-      %     to the beam in the far-field.  Default: ``pi`` (i.e., no
+      %     to the beam in the far-field.  Default: ``pi/2`` (i.e., no
       %     truncation added).
       %
       %   - calculate (logical) -- If the beam should be calculated after
@@ -123,7 +123,7 @@ classdef LaguerreGaussian < ott.beam.BscFinite ...
       p.addParameter('polfield', [1, 1i], @isnumeric);
       p.addParameter('polbasis', 'cartesian');
       p.addParameter('mapping', 'sin');
-      p.addParameter('truncation_angle', pi);
+      p.addParameter('truncation_angle', pi/2);
       p.addParameter('power', 1.0);
       p.addParameter('calculate', true);
       p.KeepUnmatched = true;
