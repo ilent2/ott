@@ -297,19 +297,23 @@ classdef Annular < ott.bsc.Bsc
       %   beam = beam.translateZ(z)
 
       ott.utils.nargoutCheck(beam, nargout);
+      
+      % Make sure sizes match
+      Npos = numel(z);
+      Nbeams = numel(beam);
+      assert(Npos == Nbeams || Npos == 1 || Nbeams == 1, ...
+        'Number of beams and positions must match or be scalar');
+      if Npos == 1, z = repelem(z, Nbeams); end
+      if Nbeams == 1, beam = repmat(beam, Npos); end
 
       assert(isnumeric(z) && isvector(z), ...
           'z must be numeric vector');
+        
+      dz = z .* cos([beam.theta]);
+      dz = exp(-1i.*dz.*2*pi);
 
-      ibeam = beam;
-
-      for ii = 1:numel(z)
-        dz = z(ii) .* cos(ibeam.theta);
-        dz = exp(-1i.*dz.*2*pi);
-
-        % Apply translation
-        beam(ii) = ibeam .* dz;
-      end
+      % Apply translation
+      beam = beam .* dz;
     end
   end
 

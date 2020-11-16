@@ -232,7 +232,10 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %     Uses the position, rotation and T-matrix properties.
       %
       % Optional named arguments
-      %   - position (3xN numeric) -- Particle position.
+      %   - position (3xN numeric | 3x1 cell) -- Particle position.
+      %     Can either be Cartesian position vectors or a cell array
+      %     with ``{X, Y, Z}`` cartesian coordinates.  Each matrix in
+      %     cell array must have the same size.
       %     Default: ``particle.position``.
       %
       %   - rotation (3x3N numeric) -- Particle rotation.
@@ -243,9 +246,16 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       p.addParameter('rotation', particle.rotation);
       p.parse(varargin{:});
       
-      % Get position and rotation, check size/types
+      % Get position and rotation
       position = p.Results.position;
       rotation = p.Results.rotation;
+      
+      % Convert cell array to vector format
+      if iscell(position)
+        position = [position{1}(:), position{2}(:), position{3}(:)].';
+      end
+      
+      % Check sizes
       assert(isnumeric(position) && ismatrix(position) && size(position, 1) == 3, ...
         'position must be 3xN numeric matrix');
       assert(isnumeric(rotation) && ismatrix(rotation) ...
@@ -296,6 +306,10 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
         end
       end
       
+      if iscell(p.Results.position)
+        ibsc = reshape(ibsc, size(p.Results.position{1}));
+        sbsc = reshape(sbsc, size(p.Results.position{1}));
+      end
     end
 
     %

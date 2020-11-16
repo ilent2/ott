@@ -160,6 +160,7 @@ ott.beam.BscFinite.getSetShrinkNmaxRelTol(0.01);
 
 % Next time we create a beam, it will use this new tolerance::
 
+figure();
 beam = ott.beam.Gaussian();
 disp(beam.data.Nmax);
 tic

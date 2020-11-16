@@ -259,7 +259,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
   end
 
   methods
-    function beam = Bsc(varargin)
+    function beam = Bsc(oa, ob)
       % Construct a new beam object
       %
       % Usage
@@ -271,37 +271,32 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %
       % Parameters
       %   - a,b (numeric) -- Vectors of VSWF coefficients
-
-      p = inputParser;
-      p.addOptional('a', zeros(0, 1), ...
-          @(x) isnumeric(x) || isa(x, 'ott.bsc.Bsc'));
-      p.addOptional('b', zeros(0, 1), @isnumeric);
-      p.parse(varargin{:});
-
-      oa = p.Results.a;
-      ob = p.Results.b;
-
-      if nargin == 1 && isa(oa, 'ott.bsc.Bsc')
+      
+      if nargin == 0
+        % Empty Bsc
+        oa = zeros(0, 1);
+        ob = zeros(0, 1);
+      elseif nargin == 1
+        % Get Bsc data from other beam
+        assert(isa(oa, 'ott.bsc.Bsc'), ...
+          'Input must be ott.bsc.Bsc instance when single input');
         [oa, ob] = oa.getCoefficients();
       end
-
-      if ~ismatrix(oa) || size(oa, 2) > 1 ...
-          || ~ismatrix(ob) || size(ob, 2) > 1
-        % Construct array of beams
-        sza = size(oa);
-        szb = size(ob);
-        assert(numel(sza) == numel(szb) && all(sza == szb), ...
-          'dimensions of ''a'' and ''b'' must match');
-        beam = repmat(beam, 1, sza(2:end));
-        for ii = 1:numel(beam)
-          beam(ii).a = oa(:, ii);
-          beam(ii).b = ob(:, ii);
-        end
-      else
-        % Construct single beam
-        beam.a = oa;
-        beam.b = ob;
+      
+      % Empty input should produce a beam
+      if isempty(oa) && isempty(ob)
+        oa = zeros(0, 1);
+        ob = zeros(0, 1);
       end
+      
+      % Ensure sizes match
+      assert(ndims(oa) == ndims(ob) && all(size(oa) == size(ob)), ...
+        'size of a and b must match');
+      
+      % Pre-allocate space for data
+      sza = size(oa);
+      beam = repmat(beam, [1, sza(2:end)]);
+      beam = beam.setCoefficients(oa, ob);
     end
 
     function tmatrix = ott.tmatrix.Tmatrix(beam)
@@ -325,7 +320,13 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
     %
 
     function [E, data] = efarfield(beam, rtp, varargin)
-      % Calculate E far-field
+      % Calculate E far-field.
+      %
+      % This function has two behaviours depending on if the beam data
+      % is full or sparse.  If full, it attempts to calculate all the
+      % required field components at once; if sparse, it slowly loops
+      % through each VSWF mode.  If there is not enough memory available to
+      % do the full calculation, sparse will probably run much faster.
       %
       % Usage
       %   [E, data] = beam.efarfield(rtp, ...)
@@ -365,18 +366,42 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         error('ott:bsc:Bsc:efarfield:unknown_basis', ...
             'Unknown value for basis parameter');
       end
+      
+      if issparse(ai)
+        % We probably don't have enough memory to do the non-sparse
+        % calculation directly, so loop slowly through each ci
+        
+        % Allocate memory for output
+        Etheta = zeros(1, size(rtp, 2), size(ai, 2));
+        Ephi = Etheta;
+        
+        for ii = 1:numel(ci)
+          
+          % Get or calculate spherical harmonics
+          [~, Ytheta, Yphi, data] = p.Results.data.evaluateYtp(...
+              ci(ii), rtp(2, :), rtp(3, :));
 
-      % Get or calculate spherical harmonics
-      [~, Ytheta, Yphi, data] = p.Results.data.evaluateYtp(...
-          ci, rtp(2, :), rtp(3, :));
+          oai = permute(full(ai(ii, :)), [1, 3, 2]);
+          obi = permute(full(bi(ii, :)), [1, 3, 2]);
+            
+          Etheta = Etheta + oai .* Yphi + obi .* Ytheta;
+          Ephi = Ephi -oai .* Ytheta + obi .* Yphi;
+        end
+      else
 
-      % Re-arrange a/b for multiplication
-      ai = permute(full(ai), [1, 3, 2]);
-      bi = permute(full(bi), [1, 3, 2]);
+        % Get or calculate spherical harmonics
+        [~, Ytheta, Yphi, data] = p.Results.data.evaluateYtp(...
+            ci, rtp(2, :), rtp(3, :));
 
-      % Calculate field components
-      Etheta = sum(ai .* Yphi + bi .* Ytheta, 1);
-      Ephi = sum(-ai .* Ytheta + bi .* Yphi, 1);
+        % Re-arrange a/b for multiplication
+        ai = permute(ai, [1, 3, 2]);
+        bi = permute(bi, [1, 3, 2]);
+
+        % Calculate field components
+        Etheta = sum(ai .* Yphi + bi .* Ytheta, 1);
+        Ephi = sum(-ai .* Ytheta + bi .* Yphi, 1);
+        
+      end
 
       % Package output
       Ertp = [zeros(size(Etheta)); Etheta; Ephi];
@@ -737,6 +762,11 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % If both AbsTol and RelTol are specified, only elements satisfying
 
       ott.utils.nargoutCheck(beam, nargout);
+      
+      if isempty(beam)
+        nbeam = beam;
+        return;
+      end
 
       p = inputParser;
       p.addParameter('AbsTol', [], @isnumeric);
@@ -768,7 +798,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       pw0 = [beam.power];
       nbeam = beam;
 
-      for ii = minNmax:beam.Nmax
+      for ii = minNmax:max([0, beam.Nmax])
 
         total_orders = min(ott.utils.combined_index(ii, ii), size(oa, 1));
         na = oa(1:total_orders, :);
@@ -843,6 +873,11 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       %   [...] = beam.getCoefficients(ci) behaves as above but only returns
       %   the requested beam cofficients a(ci) and b(ci) in a dense format.
       %   Returns zeros for any ci not in the beam.
+      
+      if isempty(beam)
+        [varargout{1:nargout}] = deal(zeros(0,0));
+        return;
+      end
 
       rowmax = size(beam(1).a, 1);
       if ~all(cellfun(@(a) size(a, 1) == rowmax, {beam.a, beam.b}))
@@ -1113,7 +1148,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       else
         [oa, ob] = beam.getCoefficients();
         safeD = D(:, 1:size(oa, 1));
-        beam = ott.bsc.Bsc(safeD * oa, safeD * ob);
+        beam = beam.setCoefficients(safeD * oa, safeD * ob);
       end
     end
 
@@ -1234,8 +1269,16 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Package output
       if nargout == 3
         varargout{1:3} = {fx, fy, fz};
+        if ~isvector(ibeam)
+          for ii = 1:3
+            varargout{ii} = reshape(varargout{ii}, size(ibeam));
+          end
+        end
       else
         varargout{1} = [fx(:) fy(:) fz(:)].';
+        if ~isvector(ibeam)
+          varargout{1} = reshape(varargout{1}, [3, size(ibeam)]);
+        end
       end
     end
 
@@ -1276,8 +1319,16 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Package output
       if nargout == 3
         varargout{1:3} = {tx, ty, tz};
+        if ~isvector(ibeam)
+          for ii = 1:3
+            varargout{ii} = reshape(varargout{ii}, size(ibeam));
+          end
+        end
       else
         varargout{1} = [tx(:) ty(:) tz(:)].';
+        if ~isvector(ibeam)
+          varargout{1} = reshape(varargout{1}, [3, size(ibeam)]);
+        end
       end
     end
 
@@ -1335,8 +1386,16 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Package output
       if nargout == 3
         varargout{1:3} = {sx, sy, sz};
+        if ~isvector(ibeam)
+          for ii = 1:3
+            varargout{ii} = reshape(varargout{ii}, size(ibeam));
+          end
+        end
       else
         varargout{1} = [sx(:) sy(:) sz(:)].';
+        if ~isvector(ibeam)
+          varargout{1} = reshape(varargout{1}, [3, size(ibeam)]);
+        end
       end
     end
   end

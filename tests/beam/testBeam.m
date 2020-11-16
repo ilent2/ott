@@ -19,7 +19,7 @@ function testVisNearfield(testCase)
   f = figure();
   testCase.addTeardown(@close, f);
 
-  abeam = ott.beam.BscBeam(ott.bsc.Bsc([1; 2; 3]));
+  abeam = ott.beam.BscBeam(ott.bsc.Bsc([1; 2; 3], zeros(3, 1)));
   abeam.visNearfield();
 
   abeam.visNearfield('axis', 'x', 'range', [5, 5]);
@@ -37,7 +37,7 @@ function testVisFarfield(testCase)
   f = figure();
   testCase.addTeardown(@close, f);
 
-  abeam = ott.beam.BscBeam(ott.bsc.Bsc([1; 2; 3]));
+  abeam = ott.beam.BscBeam(ott.bsc.Bsc([1; 2; 3], zeros(3, 1)));
   abeam.visFarfield();
     
   im = abeam.visFarfield();
@@ -50,7 +50,7 @@ function testVisFarfieldSlice(testCase)
   f = figure();
   testCase.addTeardown(@close, f);
 
-  abeam = ott.beam.BscBeam(ott.bsc.Bsc([1; 2; 3]));
+  abeam = ott.beam.BscBeam(ott.bsc.Bsc([1; 2; 3], zeros(3, 1)));
   abeam.visFarfieldSlice(0.0);
 
 end
@@ -60,15 +60,15 @@ function testVisFarfieldSphere(testCase)
   f = figure();
   testCase.addTeardown(@close, f);
 
-  abeam = ott.beam.BscBeam(ott.bsc.Bsc([1; 2; 3]));
+  abeam = ott.beam.BscBeam(ott.bsc.Bsc([1; 2; 3], zeros(3, 1)));
   abeam.visFarfieldSphere();
 
 end
 
 function testFarfieldSphereModesMatch(testCase)
 
-  beam1 = ott.beam.BscBeam(ott.bsc.Bsc([1;0;0]));
-  beam2 = ott.beam.BscBeam(ott.bsc.Bsc([0;0;1]));
+  beam1 = ott.beam.BscBeam(ott.bsc.Bsc([1;0;0], zeros(3, 1)));
+  beam2 = ott.beam.BscBeam(ott.bsc.Bsc([0;0;1], zeros(3, 1)));
   
   s1 = beam1.visFarfieldSphere();
   s2 = beam2.visFarfieldSphere();

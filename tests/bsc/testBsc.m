@@ -87,9 +87,9 @@ function testFromDenseEmpty(testCase)
   mm = [];
 
   bsc = ott.bsc.Bsc.FromDenseBeamVectors(a, b, nn, mm);
-  testCase.verifyEmpty(bsc.a);
-  testCase.verifyEmpty(bsc.b);
-  testCase.verifyEqual(bsc.Nmax, 0);
+  testCase.verifyEmpty([bsc.a]);
+  testCase.verifyEmpty([bsc.b]);
+  testCase.verifyEqual(max([0, bsc.Nmax]), 0);
 
 end
 
@@ -103,7 +103,7 @@ end
 
 function testSetNmax(testCase)
 
-  bsc = ott.bsc.Bsc([10;10;10;0.1]);
+  bsc = ott.bsc.Bsc([10;10;10;0.1], zeros(4, 1));
 
   bsc.Nmax = 20;
   testCase.verifyEqual(bsc.Nmax, 20);
@@ -115,7 +115,7 @@ end
 
 function testShrinkNmax(testCase)
 
-  beam = ott.bsc.Bsc([10;10;10;0.1]);
+  beam = ott.bsc.Bsc([10;10;10;0.1], zeros(4, 1));
   testCase.assertEqual(beam.Nmax, 2);
   
   sbeam = beam.shrinkNmax('RelTol', 1.0e-2);
@@ -129,7 +129,7 @@ end
 function testConcateration(testCase)
 
   a = ott.bsc.Bsc([1, 2, 3].', [4, 5, 6].');
-  b = ott.bsc.Bsc([1, 2, 3, 7, 8, 9, 10, 11].', [4, 5, 6].');
+  b = ott.bsc.Bsc([1, 2, 3, 7, 8, 9, 10, 11].', [4, 5, 6, zeros(1,5)].');
   bsc = [a, b];
 
   testCase.verifySize(bsc, [1, 2]);
@@ -142,7 +142,7 @@ function testForceTorque(testCase)
   % Verify the result from forcetorque matches individual force/torque funcs
 
   a = ott.bsc.Bsc([1; 2; 3], [4; 5; 6]);
-  b = ott.bsc.Bsc([1; 2; 3; 7; 8; 9; 10; 11], [4; 5; 6]);
+  b = ott.bsc.Bsc([1; 2; 3; 7; 8; 9; 10; 11], [4; 5; 6; zeros(5,1)]);
 
   f0 = a.force(b);
   t0 = a.torque(b);
@@ -160,7 +160,7 @@ end
 function testGetCoefficients(testCase)
 
   abeam = ott.bsc.Bsc([1; 2; 3], [4; 5; 6]);
-  bbeam = ott.bsc.Bsc([1; 2; 3; 7; 8; 9; 10; 11], [4; 5; 6]);
+  bbeam = ott.bsc.Bsc([1; 2; 3; 7; 8; 9; 10; 11], [4; 5; 6; zeros(5,1)]);
   beam = [abeam, bbeam];
 
   ab = beam.getCoefficients([1, 2, 3]);
@@ -186,8 +186,8 @@ end
 
 function testPlus(testCase)
 
-  abeam = ott.bsc.Bsc([1; 2; 3]);
-  bbeam = ott.bsc.Bsc([4; 5; 6]);
+  abeam = ott.bsc.Bsc([1; 2; 3], zeros(3, 1));
+  bbeam = ott.bsc.Bsc([4; 5; 6], zeros(3, 1));
 
   sbeam = abeam + bbeam;
   testCase.verifyEqual(sbeam.a, [5; 7; 9], 'a only');
@@ -199,8 +199,8 @@ end
 
 function testMinus(testCase)
 
-  abeam = ott.bsc.Bsc([1; 2; 3]);
-  bbeam = ott.bsc.Bsc([4; 5; 6]);
+  abeam = ott.bsc.Bsc([1; 2; 3], zeros(3, 1));
+  bbeam = ott.bsc.Bsc([4; 5; 6], zeros(3, 1));
 
   sbeam = abeam - bbeam;
   testCase.verifyEqual(sbeam.a, [-3; -3; -3], 'a only');
@@ -209,7 +209,7 @@ end
 
 function testDivide(testCase)
 
-  abeam = ott.bsc.Bsc([2; 4; 8]);
+  abeam = ott.bsc.Bsc([2; 4; 8], zeros(3, 1));
 
   rbeam = abeam ./ 2;
   testCase.verifyEqual(rbeam.a, [1;2;4]);
@@ -221,7 +221,7 @@ end
 
 function testGpuArray(testCase)
 
-  abeam = ott.bsc.Bsc([1; 2; 3]);
+  abeam = ott.bsc.Bsc([1; 2; 3], zeros(3, 1));
   abeam = gpuArray(abeam);
   testCase.verifyInstanceOf(abeam.a, 'gpuArray', 'cast to gpu');
   abeam = gather(abeam);
@@ -231,7 +231,7 @@ end
 
 function testSparse(testCase)
 
-  beam = ott.bsc.Bsc([1; 2; 3]);
+  beam = ott.bsc.Bsc([1; 2; 3], zeros(3, 1));
   testCase.verifyFalse(issparse(beam), 'full check');
 
   sbeam = sparse(beam);
@@ -283,7 +283,7 @@ end
 
 function testPower(testCase)
 
-  abeam = ott.bsc.Bsc([1; 2; 3]);
+  abeam = ott.bsc.Bsc([1; 2; 3], zeros(3, 1));
   abeam.power = 1;
   testCase.verifyEqual(abeam.power, 1, 'set power to 1');
 
@@ -307,14 +307,14 @@ end
 
 function testTranslateXyz(testCase)
 
-  abeam = ott.bsc.Bsc([1; 2; 3]);
+  abeam = ott.bsc.Bsc([1; 2; 3], zeros(3, 1));
   bbeam = abeam.translateXyz([0;0;1]);
 
 end
 
 function testRealImagAbs(testCase)
 
-  beam = ott.bsc.Bsc([1i; 2; 3i]);
+  beam = ott.bsc.Bsc([1i; 2; 3i], zeros(3, 1));
 
   abeam = abs(beam);
   testCase.verifyEqual(abeam.a, [1; 2; 3], 'abs');
@@ -329,7 +329,7 @@ end
 
 function testTmatrixCast(testCase)
 
-  beam = ott.bsc.Bsc([1i; 2; 3i]);
+  beam = ott.bsc.Bsc([1i; 2; 3i], zeros(3, 1));
   beam = [beam, beam, beam, beam, beam, beam];
 
   tmatrix = ott.tmatrix.Tmatrix(beam);
@@ -339,7 +339,7 @@ end
 
 function testHfieldRtp(testCase)
 
-  beam = ott.bsc.Bsc([1i; 2; 3i]);
+  beam = ott.bsc.Bsc([1i; 2; 3i], zeros(3, 1));
   rtp = mod(randn(3, 5), pi);
   E = beam.hfieldRtp(rtp);
   testCase.verifyInstanceOf(E, 'ott.utils.FieldVector');

@@ -676,7 +676,7 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
         tmatrix(ii).Nmax(2) = colNmax;
 
         % Convert to Bsc and apply shrinkNmax to remaining columns
-        bsc = ott.bsc.Bsc(tmatrix(ii).data);
+        bsc = ott.bsc.Bsc(tmatrix(ii));
         bsc = bsc.shrinkNmax('RelTol', p.Results.RelTol, ...
             'AbsTol', p.Results.AbsTol);
         tmatrix(ii) = ott.tmatrix.Tmatrix(bsc);

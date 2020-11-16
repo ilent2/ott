@@ -20,34 +20,26 @@
 % Add toolbox to path (uncomment this line if OTT is not already on the path)
 %addpath('../');
 
-%% Setup particle
-% The first step is to setup the particle.
-% For this simulation we use a spherical particle with a 1 micron radius.
-% We describe the geometry and let the `FromShape` method choose an
-% appropriate T-matrix method (for spheres, this will be `ott.tmatrix.Mie`).
-
-% Create geometry for shape
-radius = 1.0e-6;      % Sphere radius [m]
-shape = ott.shape.Sphere(radius);
-
-% Setup particle
-particle = ott.particle.Particle.FromShape(shape, 'index_relative', 1.2);
-
 %% Setup beam
-% The next step is to calculate the incident beam.
+% The first step is to calculate the incident beam.
 % The following creates a Gaussian beam tightly focussed by a microscope
 % objective.  The back aperture of the microscope objective creates a
 % hard edge, we model this by setting the `truncation_angle` parameter
 % of the Gaussian beam class.
 
 % Calculate truncation angle for modelling a microscope objective
-NA = 1.2;
+NA_obj = 1.2;
 index_medium = 1.33;
-truncation_angle = asin(NA/index_medium);
+truncation_angle = asin(NA_obj/index_medium);
+
+% In this example, our Gaussian beam convergence angle is also
+% described by an NA value.  This value is larger than the truncation
+% angle, corresponding to overfilling.
+NA_beam = 1.25;
 
 % All beam parameters have SI units (radians for angles)
-beam = ott.beam.Gaussian(...
-    'waist', 1.0e-6, 'power', 0.01, 'truncation_angle', truncation_angle, ...
+beam = ott.beam.Gaussian.FromNa(NA_beam, ...
+    'power', 0.01, 'truncation_angle', truncation_angle, ...
     'index_medium', index_medium, 'wavelength0', 1064e-9);
 
 %% Generate visualisation of beam
@@ -65,6 +57,22 @@ subplot(1, 2, 2);
 beam.visNearfield();
 title('Nearfield');
 
+%% Setup particle
+% The next step is to setup the particle.
+% For this simulation we use a spherical particle with a 1 micron radius.
+% We describe the geometry and let the `FromShape` method choose an
+% appropriate T-matrix method (for spheres, this will be `ott.tmatrix.Mie`).
+
+% Create geometry for shape
+radius = 1.0e-6;      % Sphere radius [m]
+shape = ott.shape.Sphere(radius);
+
+% Setup particle
+particle = ott.particle.Fixed.FromShape(shape, ...
+    'index_medium', beam.index_medium, ...
+    'index_particle', 1.2*beam.index_medium, ...  % Could also use 'index_relative'
+    'wavelength0', beam.wavelength0);
+
 %% Calculate axial and radial force profiles
 % For spherical particles in beams with only a single focus, we are often
 % interested in the 1-dimensional position-force profiles.  These can
@@ -77,9 +85,9 @@ title('Nearfield');
 % the axial equilibrium. If the particle/beam does not have an axial
 % equilibrium then the coordinate origin is used.
 
-% Calculate force along axis
-z = linspace(-1, 1, 100)*6*beam.wavelength;
-fz = beam.force(particle, 'position', [0;0;1].*z);
+% Calculate force on the particle along the axis
+z = linspace(-1, 1, 60)*6*beam.wavelength;
+fz = -beam.force(particle, 'position', [0;0;1].*z);
 
 % Find traps along axis
 traps = ott.tools.FindTraps1d.FromArray(z, fz(3, :));
@@ -87,13 +95,14 @@ traps = ott.tools.FindTraps1d.FromArray(z, fz(3, :));
 % Get the axial equilibrium (might have no trap, in which case use z=0)
 if isempty(traps)
   z0 = 0.0;
+  warning('No axial equilibrium found within range');
 else
   z0 = traps(1).position;
 end
 
 % Calculate radial force
 r = linspace(-1, 1, 100)*6*beam.wavelength;
-fr = beam.force(particle, 'position', [1;0;0].*r + [0;0;z0]);
+fr = -beam.force(particle, 'position', [1;0;0].*r + [0;0;z0]);
 
 %% Generate plot of force along x and z
 % The particle/beam functions use SI units and the resulting force/torque
@@ -111,11 +120,42 @@ xlabel('z position [m]');
 ylabel('force [N]');
 legend({'X', 'Y', 'Z'});
 
+% Add equilibrium marker (if found)
+if ~isempty(traps)
+  hold on;
+  traps.plot()
+  hold off;
+  legend({'X', 'Y', 'Z', 'Center', 'Min/Max'});
+end
+
 subplot(1, 2, 2);
 plot(r, fr);
 xlabel('x position [m]');
 ylabel('force [N]');
 legend({'X', 'Y', 'Z'});
+
+%% Calculate force using far-field integral
+% In some cases, it is also useful to calculate the force by integrating
+% the scattered fields in the far-field.  This will often take much longer
+% and will be less accurate than the above method, use with caution.
+% The following takes about 35 seconds.
+
+f0 = beam.intensityMoment();
+fz = zeros(3, numel(z));
+
+tic
+for ii = 1:numel(z)
+  
+  sbeam = beam.scatter(particle, 'position', [0;0;1].*z(ii));
+  fz(:, ii) = -(sbeam.intensityMoment() - f0)./beam.speed;
+  
+end
+toc
+
+figure();
+plot(z, fz);
+xlabel('z position [m]');
+ylabel('force [N]');
 
 %% Generate 2-D visualisation of force
 % When the trap is harmonic, the axial/radial force profiles are sufficient
@@ -130,20 +170,25 @@ legend({'X', 'Y', 'Z'});
 r = linspace(-1, 1, 40)*6*beam.wavelength;
 z = linspace(-1, 1, 40)*6*beam.wavelength;
 
+tic
 [R, Z] = meshgrid(r, z);
-F = beam.force(particle, 'position', {R, 0*R, Z});
+F = -beam.force(particle, 'position', {R, 0*R, Z});
+toc
 
 % Calculate magnitude of force
-Fmag = vecnorm(F, 2, 3);
+Fmag = squeeze(vecnorm(F, 2));
+Fr = squeeze(F(1, :, :));
+Fz = squeeze(F(3, :, :));
 
 % Generate colormap/quiver plot showing force
 figure();
-imagesc(R, Z, Fmag);
+imagesc(r, z, Fmag);
+axis image;
 hold on;
-quiver(R, Z, Fmag(:, :, 1), Fmag(:, :, 3));
+quiver(R, Z, Fr, Fz, 'w');
 hold off;
 xlabel('x position [m]');
 ylabel('y position [m]');
 cb = colorbar();
-yaxis(cb, 'Force [N]');
+ylabel(cb, 'Force [N]');
 

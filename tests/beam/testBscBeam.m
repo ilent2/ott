@@ -121,8 +121,8 @@ end
 function testForceFunctions(testCase)
   % These are effectively definitions from OTTv1
 
-  bsc1 = ott.bsc.Bsc([1;2;3], 0);
-  bsc2 = ott.bsc.Bsc([3;2;1], 0);
+  bsc1 = ott.bsc.Bsc([1;2;3], zeros(3, 1));
+  bsc2 = ott.bsc.Bsc([3;2;1], zeros(3, 1));
   
   beam1 = ott.beam.BscBeam(bsc1);
   beam2 = ott.beam.BscBeam(bsc2);
