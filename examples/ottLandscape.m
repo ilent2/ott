@@ -42,9 +42,8 @@ beam = ott.beam.Gaussian.FromNa(NA, ...
     'polbasis', 'cartesian', 'polfield', [1, 1i], ...
     'truncation_angle', pi/2);
 
-% Allocate memory for traps
-traps = ott.tools.FindTraps1d();
-traps(numel(index), numel(radius)) = traps;
+% Allocate memory for traps (set initially to all nans)
+traps = ott.tools.FindTraps1d.invalid(numel(index), numel(radius));
 
 %% Run calculation
 
@@ -67,19 +66,24 @@ for ii = 1:numel(radius)
   z = linspace(-1, 1, 100)*zScale;
 
   % Translate beam
-  % Use the maximum particle size for translation N-max (we don't care
+  % Use the maximum particle size for translation Nmax (we don't care
   % about multipole modes above Nmax since they aren't involved in
   % scattering).
-  tbeams = beam.getData([]).translateXyz([0;0;1].*z, ...
-      'Nmax', ott.utils.ka2nmax(beam.wavenumber*max(radius)));
+  Nmax = ott.utils.ka2nmax(beam.wavenumber*max(radius));
+  tbeams = ott.bsc.Bsc(beam).translateZ(z, ...
+      'Nmax', Nmax);
 
   for jj = 1:numel(index)
 
-    particle = ott.tmatrix.Mie(radius(ii)./beam.wavelength, ...
-        index(jj)./beam.index_medium);
+    tmatrix = ott.tmatrix.Mie(radius(ii)./beam.wavelength, ...
+        index(jj)./beam.index_medium, 'Nmax', Nmax);
+      
+    % Calculate scattered beams
+    sbeams = tmatrix * tbeams;
 
     % Calculate force and find traps
-    fz = tbeams.force(particle);
+    fz = -tbeams.force(tbeams + 2*sbeams)./beam.speed;
+    fz = gather(fz);
     our_traps = ott.tools.FindTraps1d.FromArray(z, fz(3, :));
     if ~isempty(our_traps)
       traps(jj, ii) = our_traps(1);
@@ -92,10 +96,11 @@ toc
 %% Generate a plot
 
 figure();
-maxforce = [traps.max_force];
-imagesc(radius, index, maxforce);
+param = reshape([traps.maxforce], size(traps));
+imagesc(radius, index, param, 'AlphaData', ~isnan(param));
+set(gca(), 'ydir', 'normal')
 xlabel('Radius [m]');
 ylabel('Refractive Index');
 cb = colorbar();
-yaxis(cb, 'Q_{max}');
+ylabel(cb, 'Q_{|max|}');
 

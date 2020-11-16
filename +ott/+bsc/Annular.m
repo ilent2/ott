@@ -303,8 +303,8 @@ classdef Annular < ott.bsc.Bsc
       Nbeams = numel(beam);
       assert(Npos == Nbeams || Npos == 1 || Nbeams == 1, ...
         'Number of beams and positions must match or be scalar');
-      if Npos == 1, z = repelem(z, Nbeams); end
-      if Nbeams == 1, beam = repmat(beam, Npos); end
+      if Npos == 1, z = repelem(z, 1, Nbeams); end
+      if Nbeams == 1, beam = repmat(beam, 1, Npos); end
 
       assert(isnumeric(z) && isvector(z), ...
           'z must be numeric vector');

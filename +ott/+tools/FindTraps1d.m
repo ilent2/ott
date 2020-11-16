@@ -398,6 +398,32 @@ classdef FindTraps1d
       traps.minposition = nan;
       traps.maxposition = nan;
     end
+    
+    function traps = invalid(varargin)
+      % Construct an array of invalid traps, sets all values to nan
+      %
+      % Usage
+      %   traps = ott.tools.FindTraps1d.invalid(...)
+      %
+      % Additional parameters are passed to repmat.  For example, to
+      % create a 3x5 array of invalid traps, use::
+      %
+      %   traps = ott.tools.FindTraps1d.invalid(3, 5);
+      
+      traps = ott.tools.FindTraps1d();
+      traps.position = nan;
+      traps.stiffness = nan;
+      traps.depth = nan;
+      traps.range = [nan, nan];
+      traps.minforce = nan;
+      traps.maxforce = nan;
+      traps.minposition = nan;
+      traps.maxposition = nan;
+      
+      if nargin ~= 0
+        traps = repmat(traps, varargin{:});
+      end
+    end
   end
 
   methods

@@ -1,4 +1,4 @@
-classdef Bsc < matlab.mixin.Heterogeneous ...
+classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
     & ott.utils.RotateHelper & ott.utils.TranslateHelper
 % Class representing vector spherical wave function beam shape coefficients.
 % Inherits from :class:`ott.utils.RotateHelper`
@@ -28,6 +28,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 %
 % Methods
 %   - Bsc        -- Class constructor
+%   - nbeams     -- Get the total number of beams in array
 %   - issparse   -- Check if the beam data is sparse
 %   - full       -- Make the beam data full
 %   - sparse     -- Make the beam data sparse
@@ -73,7 +74,11 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties (SetAccess=protected)
+  properties (SetAccess=protected, Hidden)
+    data       % Internal (contiguous-ish) data for beam [a; b]
+  end
+
+  properties (SetAccess=protected, Dependent)
     a          % Beam shape coefficients `a` vector
     b          % Beam shape coefficients `b` vector
   end
@@ -289,13 +294,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         ob = zeros(0, 1);
       end
       
-      % Ensure sizes match
-      assert(ndims(oa) == ndims(ob) && all(size(oa) == size(ob)), ...
-        'size of a and b must match');
-      
-      % Pre-allocate space for data
-      sza = size(oa);
-      beam = repmat(beam, [1, sza(2:end)]);
+      % Store data
       beam = beam.setCoefficients(oa, ob);
     end
 
@@ -308,12 +307,30 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       % Each beam in the beam array becomes a column of the T-matrix.
       % Uses :meth:`getCoefficients` to get the T-matrix data.
 
-      data = beam.getCoefficients();
-      tmatrix = ott.tmatrix.Tmatrix(data);
+      odata = beam.getCoefficients();
+      tmatrix = ott.tmatrix.Tmatrix(odata);
     end
   end
 
   methods (Sealed)
+    
+    function n = nbeams(beam)
+      % Count the total number of beams in this beam array.
+      %
+      % This is equal to the number of columns in each beam data block.
+      % This number corresponds to the number of columns in (assuming
+      % all beams are similar sizes)::
+      %
+      %   a = [beam.a];
+      %
+      % Usage
+      %   n = beam.nbeams()
+      
+      n = 0;
+      for ii = 1:numel(beam)
+        n = n + numel(beam(ii).data)/size(beam(ii).data, 1);
+      end
+    end
 
     %
     % Field calculation functions
@@ -405,7 +422,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       Ertp = [zeros(size(Etheta)); Etheta; Ephi];
-      rtp = repmat(rtp, [1, 1, numel(beam)]);
+      rtp = repmat(rtp, [1, 1, beam.nbeams]);
       E = ott.utils.FieldVectorSph(Ertp, rtp);
     end
 
@@ -465,7 +482,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       Ertp = [Er; Etheta; Ephi];
-      rtp = repmat(rtp, [1, 1, numel(beam)]);
+      rtp = repmat(rtp, [1, 1, beam.nbeams]);
       E = ott.utils.FieldVectorSph(Ertp, rtp);
     end
 
@@ -525,7 +542,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       Hrtp = -1i*[Hr; Htheta; Hphi];
-      rtp = repmat(rtp, [1, 1, numel(beam)]);
+      rtp = repmat(rtp, [1, 1, beam.nbeams]);
       H = ott.utils.FieldVectorSph(Hrtp, rtp);
     end
 
@@ -541,7 +558,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       b = false(size(beam));
       for ii = 1:numel(beam)
-        b(ii) = issparse(beam(ii).a) & issparse(beam(ii).b);
+        b(ii) = issparse(beam(ii).data);
       end
     end
 
@@ -554,8 +571,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       ott.utils.nargoutCheck(beam, nargout);
 
       for ii = 1:numel(beam)
-        beam(ii).a = full(beam(ii).a);
-        beam(ii).b = full(beam(ii).b);
+        beam(ii).data = full(beam(ii).data);
       end
     end
 
@@ -571,8 +587,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       ott.utils.nargoutCheck(beam, nargout);
 
       for ii = 1:numel(beam)
-        beam(ii).a = sparse(beam(ii).a);
-        beam(ii).b = sparse(beam(ii).b);
+        beam(ii).data = sparse(beam(ii).data);
       end
     end
 
@@ -633,9 +648,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       ott.utils.nargoutCheck(beam, nargout);
 
-      beam.a = gpuArray(beam.a);
-      beam.b = gpuArray(beam.b);
-
+      for ii = 1:numel(beam)
+        beam(ii).data = gpuArray(beam(ii).data);
+      end
     end
 
     function beam = gather(beam)
@@ -649,9 +664,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       ott.utils.nargoutCheck(beam, nargout);
 
-      beam.a = gather(beam.a);
-      beam.b = gather(beam.b);
-
+      for ii = 1:numel(beam)
+        beam(ii).data = gather(beam(ii).data);
+      end
     end
 
     %
@@ -845,13 +860,18 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         end
       end
 
-      assert(all(size(a) == size(b)), 'size of a and b must match');
-      assert(numel(beam) == size(a, 2), ...
-        'a/b must have same number of colums as number of beams');
+      assert(ndims(a) == ndims(b) && all(size(a) == size(b)), ...
+        'size of a and b must match');
 
-      for ii = 1:numel(beam)
-        beam(ii).a = a(:, ii);
-        beam(ii).b = b(:, ii);
+      if numel(beam) ~= 1
+        assert(numel(beam) == numel(a)/size(a, 1), ...
+          'number of columns in a/b must match number of beams');
+        
+        for ii = 1:numel(beam)
+          beam(ii).data = [a(:, ii); b(:, ii)];
+        end
+      else
+        beam.data = [a; b];
       end
     end
 
@@ -879,16 +899,20 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         return;
       end
 
-      rowmax = size(beam(1).a, 1);
-      if ~all(cellfun(@(a) size(a, 1) == rowmax, {beam.a, beam.b}))
+      rowmax = size(beam(1).data, 1);
+      if ~all(cellfun(@(a) size(a, 1) == rowmax, {beam.data}))
 
         % Build arrays for beam data (can't use setNmax)
-        rowmax = max(cellfun(@(a) size(a, 1), {beam.a, beam.b}));
-        oa = zeros(rowmax, numel(beam));
+        rowmax = max(cellfun(@(a) size(a, 1), {beam.a}));
+        oa = zeros(rowmax, 0);
         ob = oa;
         for ii = 1:numel(beam)
-          oa(1:size(beam(ii).a, 1), ii) = beam(ii).a;
-          ob(1:size(beam(ii).b, 1), ii) = beam(ii).b;
+          aii = beam(ii).a;
+          bii = beam(ii).b;
+          aii(rowmax, :) = 0;
+          bii(rowmax, :) = 0;
+          oa = [oa, aii];    % This feels like kludge, need to time it
+          ob = [ob, bii];
         end
 
       else
@@ -897,17 +921,15 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       end
 
       % If ci omitted, return all a and b
-      if nargin == 1
-        ci = 1:size(oa, 1);
-      end
-      
-      % Insert zeros for any omitted cis
-      oa(ci(ci > size(oa, 1)), :) = 0;
-      ob(ci(ci > size(ob, 1)), :) = 0;
+      if nargin >= 2
+        % Insert zeros for any omitted cis
+        oa(ci(ci > size(oa, 1)), :) = 0;
+        ob(ci(ci > size(ob, 1)), :) = 0;
 
-      % Get only requested elements
-      oa = oa(ci, :);
-      ob = ob(ci, :);
+        % Get only requested elements
+        oa = oa(ci, :);
+        ob = ob(ci, :);
+      end
 
       % Package output
       if nargout == 1
@@ -934,15 +956,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       if p.Results.full
 
         % Get size of each beam vector
-        na = zeros(1, numel(beam));
-        nb = zeros(1, numel(beam));
-        for ii = 1:numel(beam)
-          na(ii) = numel(beam(ii).a);
-          nb(ii) = numel(beam(ii).b);
-        end
+        nvec = cellfun(@(a) size(a, 1), {beam.a});
 
         % Construct full list of cis
-        ci = (1:max([na; nb])).';
+        ci = (1:max(nvec)).';
 
       else
 
@@ -1007,8 +1024,9 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       ott.utils.nargoutCheck(beam, nargout);
       
-      [oa, ob] = beam.getCoefficients();
-      beam = beam.setCoefficients(-oa, -ob);
+      for ii = 1:numel(beam)
+        beam(ii).data = -beam(ii).data;
+      end
     end
 
     function beam = minus(beam1, beam2)
@@ -1091,26 +1109,39 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
       if isa(a, 'ott.bsc.Bsc')
         [oa, ob] = a.getCoefficients();
-        if ismatrix(a)
+        if ismatrix(b)
           beam = ott.bsc.Bsc(oa * b, ob * b);
         else
-          beam = a.setCoefficients(oa * b, ob * b);
+          beam = scalarMult(a, b);
         end
       else
-        [oa, ob] = b.getCoefficients();
         assert(ismatrix(a) && isnumeric(a), ...
           'first argumet must be a numeric scalar, matrix or Bsc instance');
         
         if isscalar(a)
-          % Set and preserve type
-          beam = b.setCoefficients(a * oa, a * ob);
-        elseif size(a, 2) == 2*size(oa, 1)
-          ab = a * [oa; ob];
-          beam = ott.bsc.Bsc(ab(1:end/2, :), ...
-              ab(1+end/2:end, :));
+          beam = scalarMult(b, a);
         else
-          % Set, creating new Bsc instance
-          beam = ott.bsc.Bsc(a * oa, a * ob);
+          % Demote type to Bsc
+          if strcmpi(class(b), 'ott.bsc.Bsc')
+            beam = b;
+          else
+            beam(numel(b)) = ott.bsc.Bsc();
+          end
+          
+          for ii = 1:numel(beam)
+            if size(a, 2) == size(b(ii).data, 1)
+              beam(ii).data = a * b(ii).data;
+            else
+              beam(ii).a = a * b(ii).a;
+              beam(ii).b = a * b(ii).b;
+            end
+          end
+        end
+      end
+      
+      function beam = scalarMult(beam, a)
+        for jj = 1:numel(beam)
+          beam(jj).data = beam(jj).data * a;
         end
       end
     end
@@ -1407,7 +1438,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
     %
 
     function [beam, A, B] = translateZ(beam, z, varargin)
-      % Apply translation along z axis
+      % Apply translation along z axis.
+      %
+      % If the input beam is an array, returns an array of beams with
+      % sub-beams.  Otherwise returns a single beam with sub-beams.
       %
       % Usage
       %   beam = beam.translateZ(z, ...)
@@ -1440,15 +1474,41 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         case 'regular'
           translation_type = 'sbesselj';
       end
-
-      % Calculate tranlsation matrices
+      
+      % Calculate all tranlsation matrices
       [A, B] = ott.utils.translate_z(...
           [p.Results.Nmax, max([beam.Nmax])], ...
           z, 'type', translation_type);
-
-      % Apply translation to beam
-      beam = [A, B; B, A] * beam;
-
+        
+      % Apply translations
+      for ii = 1:numel(beam)
+        if numel(z) == 1
+          beam(ii).data = [A, B; B, A] * beam(ii).data;
+        else
+          beam(ii).data = subtranslate(beam(ii).data, A, B);
+        end
+      end
+      
+      function data = subtranslate(data, A, B)
+      
+        % Make sure sizes match
+        Npos = numel(A);
+        Nbeams = numel(data)/size(data, 1);
+        assert(Npos == Nbeams || Nbeams == 1, ...
+          'Number of beams and positions must match or be scalar');
+        
+        if Nbeams == 1
+          col = data;
+          data = zeros(2*size(A{1}, 1), numel(A), 'like', data);
+          for jj = 1:numel(A)
+            data(:, jj) = [A{jj}, B{jj}; B{jj}, A{jj}] * col;
+          end
+        else
+          for jj = 1:numel(A)
+            data(:, jj) = [A{jj}, B{jj}; B{jj}, A{jj}] * data(:, jj);
+          end
+        end
+      end
     end
 
   end
@@ -1701,24 +1761,13 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
         beam = sqrt(val ./ beam.power) * beam;
       end
     end
-
-    function beam = set.a(beam, val)
-      % Validate new a values
-      if isempty(val)
-        val = zeros(0, 1, 'like', val);
-      end
-      assert(iscolumn(val), ...
-          'a must be a column vector');
-      beam.a = val;
+    
+    function val = get.a(beam)
+      val = beam.data(1:end/2, :);
     end
-    function beam = set.b(beam, val)
-      % Validate new b values
-      if isempty(val)
-        val = zeros(0, 1, 'like', val);
-      end
-      assert(iscolumn(val), ...
-          'b must be a column vector');
-      beam.b = val;
+    
+    function val = get.b(beam)
+      val = beam.data(end/2+1:end, :);
     end
   end
 end
