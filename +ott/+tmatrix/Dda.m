@@ -241,6 +241,9 @@ classdef Dda < ott.tmatrix.Tmatrix
 
       % Store dda instance
       tmatrix.dda = dda;
+      
+      assert(~isempty(dda.locations), ...
+        'can''t run DDA without any locations');
 
       % Get or calculate Nmax
       Nmax = ott.tmatrix.Tmatrix.getValidateNmax(...
@@ -378,6 +381,7 @@ classdef Dda < ott.tmatrix.Tmatrix
 
       % Calculate FieldVector data
       rtp = ott.utils.xyz2rtp(tmatrix.dda.locations);
+      rtp(2, :) = pi-rtp(2, :);
       [fE, data] = beam.efieldRtp(rtp, ...
           'data', data, 'basis', 'regular');
 
