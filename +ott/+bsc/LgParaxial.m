@@ -443,7 +443,7 @@ classdef LgParaxial < ott.bsc.Bsc
         % Construct a beam with far-field point matching
         [modes, vswfData] = ott.bsc.Bsc.PmFarfield(rtp, Ertp, ci(midx), ...
             'data', vswfData);
-        newmodes = [newmodes, modes];
+        newmodes = [newmodes, modes.split()];
       end
 
       % Sort new rows (to match order of inputs)

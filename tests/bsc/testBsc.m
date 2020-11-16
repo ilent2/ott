@@ -21,7 +21,7 @@ function testConstructArray(testCase)
   a = rand(3, 5);
   b = rand(3, 5);
   bsc = ott.bsc.Bsc(a, b);
-  testCase.verifySize(bsc, [1, 5], 'bsc size');
+  testCase.verifyEqual(bsc.nbeams, 5, 'bsc size');
   testCase.verifyEqual([bsc.a], a, 'a');
   testCase.verifyEqual([bsc.b], b, 'b');
 

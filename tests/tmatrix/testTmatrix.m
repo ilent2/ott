@@ -51,7 +51,7 @@ function testBscCast(testCase)
   tmatrix = ott.tmatrix.Tmatrix(data);
   beam = ott.bsc.Bsc(tmatrix);
 
-  testCase.verifySize(beam, [1, 6], 'size');
+  testCase.verifyEqual(beam.nbeams, 6, 'size');
   testCase.verifyEqual(beam.getCoefficients(), data, 'data');
 
 end

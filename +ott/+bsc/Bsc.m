@@ -159,7 +159,7 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       if nargout == 1
-        varargout{1} = [TE, TM];
+        varargout{1} = subcat(2, TE, TM);
       else
         varargout{1} = TE;
         varargout{2} = TM;
@@ -328,7 +328,66 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
       
       n = 0;
       for ii = 1:numel(beam)
-        n = n + numel(beam(ii).data)/size(beam(ii).data, 1);
+        if numel(beam(ii).data) == 0
+          n = n + 1;  % Empty beams are still beams
+        else
+          n = n + numel(beam(ii).data)/size(beam(ii).data, 1);
+        end
+      end
+    end
+    
+    function beam = subbeam(beam, varargin)
+      % Select sub-beam from beam
+      %
+      % Usage
+      %   subbeam = beam.subbeam(idx, ...)
+      
+      beam.data = beam.data(:, varargin{:});
+    end
+    
+    function beam = subsum(beam, dim)
+      % Sub sub-arrays of beams
+      %
+      % Usage
+      %   beam = subsum(beam, dim)
+      %
+      % Parameters
+      %   - dim -- (Optional) dimension to sum over.  Default is the
+      %     second non-singleton dimension of data.
+      
+      for ii = 1:numel(beam)
+
+        % Handle default value for dimension
+        if nargin < 2
+          dim = max([2, find(size(beam.data) > 1, 1)]);
+        end
+        
+        beam.data = sum(beam.data, dim);
+      end
+    end
+    
+    function beam = subcat(dim, beam, varargin)
+      % Concatenate sub-beams
+      %
+      % Usage
+      %   beam = subcat(dim, beam1, beam2, ...)
+      
+      for ii = 1:numel(varargin)
+        beam.data = cat(dim, beam.data, varargin{ii}.data);
+      end
+    end
+    
+    function beams = split(beam)
+      % Split sub-array of beams into separate beam objects
+      %
+      % Usage
+      %   beams = beam.split()
+      
+      beams = ott.bsc.Bsc.empty();
+      for ii = 1:numel(beam)
+        for jj = 1:beam(ii).nbeams
+          beams = [beams, beam(ii).subbeam(jj)];
+        end
       end
     end
 
@@ -618,6 +677,8 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
       for ii = 1:numel(beam)
 
         [oa, ob] = beam(ii).getCoefficients();
+        oa = sparse(oa);
+        ob = sparse(ob);
         pw = abs(oa).^2 + abs(ob).^2;
 
         non_zero = true(size(pw));
@@ -631,8 +692,7 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
         oa(~non_zero) = 0;
         ob(~non_zero) = 0;
 
-        beam(ii).a = sparse(oa);
-        beam(ii).b = sparse(ob);
+        beam(ii) = beam(ii).setCoefficients(oa, ob);
       end
     end
 

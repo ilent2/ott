@@ -148,7 +148,7 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 
       % Combine beams now if coherent
       if strcmpi(beam.arrayType, 'coherent')
-        bsc = sum(bsc);
+        bsc = sum(subsum(bsc));
       end
 
       % Apply scale to data

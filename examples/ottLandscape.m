@@ -28,6 +28,7 @@
 %addpath('../');
 
 % Resolution for image
+% With 100x50, this takes about 90 seconds
 NR = 100;
 NI = 50;
 
@@ -83,7 +84,6 @@ for ii = 1:numel(radius)
 
     % Calculate force and find traps
     fz = -tbeams.force(tbeams + 2*sbeams)./beam.speed;
-    fz = gather(fz);
     our_traps = ott.tools.FindTraps1d.FromArray(z, fz(3, :));
     if ~isempty(our_traps)
       traps(jj, ii) = our_traps(1);

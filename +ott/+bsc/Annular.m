@@ -285,8 +285,14 @@ classdef Annular < ott.bsc.Bsc
       p.parse(varargin{:});
 
       beam = beam@ott.bsc.Bsc(p.Results.a, p.Results.b);
-      for ii = 1:numel(beam)
-        beam(ii).theta = p.Results.theta(ii);
+      
+      if numel(p.Results.theta) == 1
+        beam.theta = p.Results.theta;
+      else
+        beam = beam.split();
+        for ii = 1:numel(beam)
+          beam(ii).theta = p.Results.theta(ii);
+        end
       end
     end
 
