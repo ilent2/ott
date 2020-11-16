@@ -34,6 +34,28 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
   properties (Dependent)
     apparentPower   % Apparent power of the BSC data
   end
+  
+  methods (Static)
+    function DefaultScatterProgressCallback(data)
+      % Default progress callback for :meth:`scatterBsc`.
+      %
+      % Prints the progress to the terminal.
+      %
+      % Usage
+      %   DefaultScatterProgressCallback(data)
+      %
+      % Parameters
+      %   - data (struct) -- Structure with two fields: ``iteration``
+      %     and ``total``.
+      
+      % Print progress every 5%
+      iout = round(0.05*data.total);
+      if mod(data.iteration, iout) == 0
+        disp(['Scatter progress... ' ...
+          num2str((data.iteration)/data.total*100) '%']);
+      end
+    end
+  end
 
   methods
     function bm = BscBeam(varargin)
@@ -240,10 +262,17 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %
       %   - rotation (3x3N numeric) -- Particle rotation.
       %     Default: ``particle.rotation``.
+      %
+      %   - progress (function_handle) -- Function to call for progress
+      %     updates during method evaluation.  Takes one argument, see
+      %     :meth:`DefaultScatterProgressCallback` for more information.
+      %     Default: ``[]`` (for N < 200) and
+      %     ``@DefaultScatterProgressCallback`` (otherwise).
       
       p = inputParser;
       p.addParameter('position', particle.position);
       p.addParameter('rotation', particle.rotation);
+      p.addParameter('progress', []);
       p.parse(varargin{:});
       
       % Get position and rotation
@@ -271,6 +300,16 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       if Npos == 1, position = repmat(position, [1, Nrot]); end
       if Nrot == 1, rotation = repmat(rotation, [1, Npos]); end
 
+      % Handle default argument for progress callback
+      progress_cb = p.Results.progress;
+      if isempty(progress_cb)
+        if Nwork >= 200
+          progress_cb = @ott.beam.BscBeam.DefaultScatterProgressCallback;
+        else
+          progress_cb = @(x) [];
+        end
+      end
+
       % Get required Nmax for beam data
       Nmax = 0;
       if ~isempty(particle.tmatrix)
@@ -287,6 +326,9 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       else
         sbsc = [];
       end
+        
+      % Report initial progress
+      progress_cb(struct('total', Nwork, 'iteration', 0));
       
       for ii = 1:Nwork
 
@@ -304,6 +346,9 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
         if ~isempty(particle.tmatrix)
           sbsc(ii) = particle.tmatrix * ibsc(ii);
         end
+        
+        % Report progress
+        progress_cb(struct('total', Nwork, 'iteration', ii));
       end
       
       if iscell(p.Results.position)
