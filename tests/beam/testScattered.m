@@ -150,4 +150,68 @@ function testScatteringPreservesPower(testCase)
     'beam power should be preserved with non-absorbing particle');
 
 end
+
+function testFarfieldTranslationsIncident(testCase)
+
+  beam1 = ott.beam.Gaussian();
+  beam2 = ott.beam.Empty();
+  beam = ott.beam.Scattered('incident', beam1, 'scattered', beam2);
   
+  rtp = [ones(1, 5); mod(abs(randn(2, 5)), pi)];
+  
+  Ertp1 = beam1.efarfield(rtp);
+  Ertp2 = beam.efarfield(rtp);
+  testCase.assertEqual(Ertp1.vxyz, Ertp2.vxyz, 'original position');
+  
+  % Tranlsate incident and beam
+  xyz = randn(3, 1)*beam.wavelength;
+  beam.position = xyz;
+  beam1.position = xyz;
+  
+  Ertp1 = beam1.efarfield(rtp);
+  Ertp2 = beam.efarfield(rtp);
+  testCase.verifyEqual(Ertp1.vxyz, Ertp2.vxyz, 'scat.position');
+  
+  xyz2 = randn(3, 1)*beam.wavelength;
+  beam.incident.position = xyz2;
+  beam1.position = xyz + xyz2;
+  
+  Ertp1 = beam1.efarfield(rtp);
+  Ertp2 = beam.efarfield(rtp);
+  testCase.verifyEqual(Ertp1.vxyz, Ertp2.vxyz, ...
+    'AbsTol', 2e-14, 'scat.incident');
+  
+end
+
+function testFarfieldTranslationsScattered(testCase)
+
+  beam1 = ott.beam.Gaussian();
+  beam2 = ott.beam.Empty();
+  beam = ott.beam.Scattered('incident', beam2, 'scattered', beam1);
+  beam1 = beam1 * 2;
+  
+  rtp = [ones(1, 5); mod(abs(randn(2, 5)), pi)];
+  
+  Ertp1 = beam1.efarfield(rtp);
+  Ertp2 = beam.efarfield(rtp);
+  testCase.assertEqual(Ertp1.vxyz, Ertp2.vxyz, 'original position');
+  
+  % Tranlsate incident and beam
+  xyz = randn(3, 1)*beam.wavelength;
+  beam.position = xyz;
+  beam1.position = xyz;
+  
+  Ertp1 = beam1.efarfield(rtp);
+  Ertp2 = beam.efarfield(rtp);
+  testCase.verifyEqual(Ertp1.vxyz, Ertp2.vxyz, 'scat.position');
+  
+  xyz2 = randn(3, 1)*beam.wavelength;
+  beam.scattered.position = xyz2;
+  beam1.position = xyz + xyz2;
+  
+  Ertp1 = beam1.efarfield(rtp);
+  Ertp2 = beam.efarfield(rtp);
+  testCase.verifyEqual(Ertp1.vxyz, Ertp2.vxyz, ...
+    'AbsTol', 2e-14, 'scat.scattered');
+  
+end

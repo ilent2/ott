@@ -7,6 +7,9 @@ classdef BscFinite < ott.beam.BscBeam
 % BSC coefficients at any other location can be found by applying a
 % translation to the beam data.
 %
+% Far-fields are calculated without applying a translation to the BSC
+% data, instead the fields are calculated at the origin and phase shifted.
+%
 % As with the :class:`BscBeam` class, this class assumes a regular beam.
 %
 % Properties
@@ -122,6 +125,39 @@ classdef BscFinite < ott.beam.BscBeam
       % Apply scale
       bsc = bsc * beam.scale;
     end
+    
+    %
+    % Field calculation functions
+    %
+
+    function varargout = efarfield(beam, varargin)
+      % Calculate the electric field (in SI units)
+      %
+      % Calculates the fields in the local reference frame and then
+      % applies phase/rotations to give the global far-field.
+      %
+      % Usage
+      %   [E, H, ...] = beam.efarfield(rtp, ...)
+      %
+      % Parameters
+      %   - rtp (3xN | 2xN numeric) -- Spherical coordinates for field
+      %     calculation. Packaged [r; theta; phi] or [theta; phi].
+      %
+      % See :class:`+ott.+bsc.Bsc` for further details.
+      
+      % Get rotation/position and clear beam properties
+      % TODO: Rotations
+      scat_position = beam.position;
+      beam.position = [0;0;0];
+      
+      % Defer to base for field calculation
+      [varargout{1:nargout}] = efarfield@ott.beam.BscBeam(beam, varargin{:});
+
+      if nargout >= 1
+        % Apply phase shifts to far-fields
+        varargout{1} = beam.translateFarfields(varargout{1}, -scat_position);
+      end
+    end
   end
 
   methods (Hidden)
@@ -129,7 +165,7 @@ classdef BscFinite < ott.beam.BscBeam
       % Applies the translation to the beam shape coefficients
       % Can be overloaded by sub-classes to change default behaviour
 
-      bsc = bsc.translateXyz(beam.position ./ beam.wavelength, ...
+      bsc = bsc.translateXyz(-beam.position ./ beam.wavelength, ...
           'Nmax', Nmax, 'basis', 'regular');
     end
   end

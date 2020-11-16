@@ -67,24 +67,15 @@ classdef FieldVector < double
       if nargin == 3
         atype = class(varargin{1});
       end
+        
+      % Defer to builtin for sparsity/complexity/everything else
+      fv(:, :) = builtin('cast', fv, type, varargin{:});
       
       % Do field vector casts (if needed)
       if strcmpi(atype, 'ott.utils.FieldVectorCart')
         fv = ott.utils.FieldVectorCart(fv);
-        
-        % Defer to base for sparsity/complexity/everything else
-        if nargin == 3
-          fv = builtin('cast', fv, type, varargin{:});
-        end
       elseif strcmpi(atype, 'ott.utils.FieldVectorSph')
         fv = ott.utils.FieldVectorSph(fv);
-        
-        % Defer to base for sparsity/complexity/everything else
-        if nargin == 3
-          fv = builtin('cast', fv, type, varargin{:});
-        end
-      else
-        fv = builtin('cast', fv, type, varargin{:});
       end
     end
     
@@ -122,18 +113,37 @@ classdef FieldVector < double
       end
     end
 
-    function out = sum(vec, dim)
+    function out = sum(vec, dim, fvkeep)
       % Sum field vectors along specified dimension
       %
       % Usage
-      %   fv = sum(fv, dim)
+      %   fv = sum(fv, dim) -- Returns a field vector without any
+      %   coordinate information.
+      %
+      %   fv = sum(fv, dim, keep) -- When ``keep`` is 'keepFirst',
+      %   keeps the coordinates of the first element in the specified
+      %   dimension.
       %
       % If dimension is 1, returns a double.  Otherwise returns a
       % field vector.
+      
+      % Cast to Cartesian
+      vec = ott.utils.FieldVectorCart(vec);
 
+      % Do sum on double data
       out = sum(vec.vxyz, dim);
 
       if size(out, 1) == 3
+        
+        % Set coordinates (if requested)
+        if nargin == 3
+          assert(strcmpi(fvkeep, 'keepFirst'), ...
+            'keep argument must be ''keepFirst''');
+          idx = repmat({':'}, 1, ndims(vec));
+          idx{dim} = 1;
+          out = [out; double(vec(4:6, idx{2:end}))];
+        end
+        
         out = ott.utils.FieldVectorCart(out);
       end
     end

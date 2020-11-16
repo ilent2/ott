@@ -13,7 +13,10 @@ classdef FieldVectorSph < ott.utils.FieldVector
 
   methods
     function fv = FieldVectorSph(varargin)
-      % Construct a new field vector instance
+      % Construct a new field vector instance.
+      %
+      % If coordiantes are provided, verifies that they satisfy
+      % ``r >= 0; 0 <= t <= pi; 0 < p <= 2*pi`` otherwise issues a warning.
       %
       % Usage
       %   fv = FieldVectorSph(rtpv, rtp)
@@ -27,6 +30,14 @@ classdef FieldVectorSph < ott.utils.FieldVector
       %     Default: ``zeros(size(rtpv))``.
 
       fv = fv@ott.utils.FieldVector(varargin{:});
+      
+      % Check for valid range of values
+      if size(fv, 1) == 6 && (any(fv(4, :)) < 0 ...
+          || any(fv(5, :) < 0 | fv(5, :) > pi) ...
+          || any(fv(6, :) < 0 | fv(6, :) > 2*pi))
+        warning('ott:utils:FieldVectorSph:rtp_outside_range', ...
+          'rtp values outside expected range, results may be unexpected');
+      end
     end
 
     function sfv = ott.utils.FieldVectorCart(fv)

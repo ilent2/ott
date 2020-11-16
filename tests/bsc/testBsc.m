@@ -30,7 +30,7 @@ end
 function testPmNearfield(testCase)
 
   target = ott.bsc.Bsc([1;0;0;0;0;0;0;0], [0;0;0;0;0;0;0;0]);
-  rtp = randn(3, 100);
+  rtp = mod(randn(3, 100), pi);
   E = target.efieldRtp(rtp);
 
   pmbeam = full(ott.bsc.Bsc.PmNearfield(rtp, E.vrtp, 1:8));
@@ -147,6 +147,13 @@ function testForceTorque(testCase)
   f0 = a.force(b);
   t0 = a.torque(b);
   s0 = a.spin(b);
+  
+  % Test force sign
+  bsc = ott.bsc.PlaneWave.FromDirection(2, [0;0;1], [1;0;0]);
+  bsc0 = ott.bsc.Bsc();
+  fz = bsc0.force(bsc);
+  testCase.verifyGreaterThan(fz(3), 0, ...
+    'force should match propagation direction');
 
 end
 
@@ -333,7 +340,7 @@ end
 function testHfieldRtp(testCase)
 
   beam = ott.bsc.Bsc([1i; 2; 3i]);
-  rtp = randn(3, 5);
+  rtp = mod(randn(3, 5), pi);
   E = beam.hfieldRtp(rtp);
   testCase.verifyInstanceOf(E, 'ott.utils.FieldVector');
   testCase.verifyFalse(issparse(E), 'returned values should be full');

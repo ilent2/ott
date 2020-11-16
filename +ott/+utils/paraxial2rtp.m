@@ -1,6 +1,9 @@
 function rtp = paraxial2rtp(xy, mapping, direction)
 % Convert from paraxial coordinates to spherical coordinates.
 %
+% Coordinates have the range ``r > 0; 0 <= t <= pi; 0 <= p < 2*pi``.
+% Values outside the paraxial hemisphere are set to NaN.
+%
 % Usage
 %   rtp = paraxial2rtp(xy, mapping, direction)
 %
@@ -20,7 +23,7 @@ function rtp = paraxial2rtp(xy, mapping, direction)
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-phi = atan2(xy(2, :), xy(1, :));
+phi = atan2(xy(2, :), xy(1, :))+pi;
 rr = vecnorm(xy, 2, 1);
 switch mapping
   case 'sin'

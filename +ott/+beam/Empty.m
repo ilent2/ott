@@ -66,7 +66,7 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       % Usage
       %   [E, vswfData] = beam.efield(xyz, ...)
 
-      E = ott.utils.FieldVectorCart(zeros(size(xyz)));
+      E = ott.utils.FieldVectorCart(zeros(size(xyz)), xyz);
       if nargout == 2
         vswfData = ott.utils.VswfData();
       end
@@ -78,7 +78,7 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       % Usage
       %   [H, vswfData] = beam.hfield(xyz, ...)
 
-      H = ott.utils.FieldVectorCart(zeros(size(xyz)));
+      H = ott.utils.FieldVectorCart(zeros(size(xyz)), xyz);
       if nargout == 2
         vswfData = ott.utils.VswfData();
       end
@@ -90,7 +90,7 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       % Usage
       %   [E, H, vswfData] = beam.ehfield(xyz, ...)
 
-      E = ott.utils.FieldVectorCart(zeros(size(xyz)));
+      E = ott.utils.FieldVectorCart(zeros(size(xyz)), xyz);
       H = E;
       if nargout == 3
         vswfData = ott.utils.VswfData();
@@ -103,7 +103,7 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       % Usage
       %   [E, vswfData] = beam.efield(rtp, ...)
 
-      E = ott.utils.FieldVectorCart(zeros(size(rtp)));
+      E = ott.utils.FieldVectorSph(zeros(size(rtp)), rtp);
       if nargout == 2
         vswfData = ott.utils.VswfData();
       end
@@ -115,7 +115,7 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       % Usage
       %   [H, vswfData] = beam.hfield(rtp, ...)
 
-      H = ott.utils.FieldVectorCart(zeros(size(rtp)));
+      H = ott.utils.FieldVectorSph(zeros(size(rtp)), rtp);
       if nargout == 2
         vswfData = ott.utils.VswfData();
       end
@@ -127,7 +127,7 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       % Usage
       %   [E, H, vswfData] = beam.ehfield(rtp, ...)
 
-      E = ott.utils.FieldVectorCart(zeros(size(rtp)));
+      E = ott.utils.FieldVectorSph(zeros(size(rtp)), rtp);
       H = E;
       if nargout == 3
         vswfData = ott.utils.VswfData();
@@ -140,7 +140,10 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       % Usage
       %   [E, vswfData] = beam.efarfield(xyz, ...)
 
-      E = ott.utils.FieldVectorCart(zeros(3, size(rtp, 2)));
+      % Ensure rtp size is 3xN
+      [~, rtp] = ott.utils.rtpFarfield(rtp);
+
+      E = ott.utils.FieldVectorSph(zeros(3, size(rtp, 2)), rtp);
       if nargout == 2
         vswfData = ott.utils.VswfData();
       end
@@ -152,7 +155,10 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       % Usage
       %   [H, vswfData] = beam.hfarfield(xyz, ...)
 
-      H = ott.utils.FieldVectorCart(zeros(3, size(rtp, 2)));
+      % Ensure rtp size is 3xN
+      [~, rtp] = ott.utils.rtpFarfield(rtp);
+
+      H = ott.utils.FieldVectorSph(zeros(3, size(rtp, 2)), rtp);
       if nargout == 2
         vswfData = ott.utils.VswfData();
       end
@@ -164,44 +170,10 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       % Usage
       %   [E, H, vswfData] = beam.ehfarfield(xyz, ...)
 
-      E = ott.utils.FieldVectorCart(zeros(3, size(rtp, 2)));
-      H = E;
-      if nargout == 3
-        vswfData = ott.utils.VswfData();
-      end
-    end
+      % Ensure rtp size is 3xN
+      [~, rtp] = ott.utils.rtpFarfield(rtp);
 
-    function [E, vswfData] = eparaxial(~, xy, varargin)
-      % Returns zeros the same size as input coordinates.
-      %
-      % Usage
-      %   [E, vswfData] = beam.eparaxial(xyz, ...)
-
-      E = ott.utils.FieldVectorCart(zeros(3, size(xy, 2)));
-      if nargout == 2
-        vswfData = ott.utils.VswfData();
-      end
-    end
-
-    function [H, vswfData] = hparaxial(~, xy, varargin)
-      % Returns zeros the same size as input coordinates.
-      %
-      % Usage
-      %   [H, vswfData] = beam.hparaxial(xyz, ...)
-
-      H = ott.utils.FieldVectorCart(zeros(3, size(xy, 2)));
-      if nargout == 2
-        vswfData = ott.utils.VswfData();
-      end
-    end
-
-    function [E, H, vswfData] = ehparaxial(~, xy, varargin)
-      % Returns zeros the same size as input coordinates.
-      %
-      % Usage
-      %   [E, H, vswfData] = beam.ehfield(xyz, ...)
-
-      E = ott.utils.FieldVectorCart(zeros(3, size(xy, 2)));
+      E = ott.utils.FieldVectorSph(zeros(3, size(rtp, 2)), rtp);
       H = E;
       if nargout == 3
         vswfData = ott.utils.VswfData();

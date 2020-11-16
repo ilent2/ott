@@ -1211,7 +1211,7 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
       Bz=1./(n+1).*sqrt(n.*(n-m+1).*(n+m+1).*(n+2)./(2*n+3)./(2*n+1)) ... %.*n
           .*imag(anp1.*conj(ai)+bnp1.*conj(bi)-(pnp1).*conj(p) ...
           -(qnp1).*conj(q));
-      fz=2*sum(Az+Bz);
+      fz=-2*sum(Az+Bz);
 
       % Calculate the XY force
       Axy=1i./n./(n+1).*sqrt((n-m).*(n+m+1)) ...
@@ -1505,8 +1505,10 @@ classdef Bsc < matlab.mixin.Heterogeneous ...
 
         for ii = 1:Nrots
 
+          % Hmm, not sure if this negative factor for theta is fudge/kludge,
+          % but it seems to make the translations have the correct phase.
           rtp = ott.utils.xyz2rtp(xyz(:, ii));
-          R = ott.utils.rotz(rtp(3)*180/pi) * ott.utils.roty(rtp(2)*180/pi);
+          R = ott.utils.rotz(rtp(3)*180/pi) * ott.utils.roty(-rtp(2)*180/pi);
 
           if nargout > 1
             [newbeam, D{ii}] = ibsc.rotate(R);

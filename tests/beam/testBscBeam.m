@@ -38,7 +38,7 @@ function testGetData(testCase)
   testCase.verifyEqual(trial, rbsc, 'rotate');
   
   % Translate small
-  tbsc = bsc.translateXyz([0.001;0;0], 'Nmax', 1);
+  tbsc = bsc.translateXyz(-[0.001;0;0], 'Nmax', 1);
   tbeam = beam.translateXyz([0.001;0;0]*beam.wavelength);
   trial = ott.bsc.Bsc(tbeam);
   testCase.verifyEqual(trial, tbsc, 'translate');
@@ -107,7 +107,7 @@ function testFarfieldFunctions(testCase)
   bsc = ott.bsc.Bsc([1;2;3], [4;5;6]);
   beam = ott.beam.BscBeam(bsc, 'index_medium', index, 'omega', omega);
   
-  rtp = randn(3, 5);
+  rtp = mod(randn(3, 5), pi);
   
   trialE = beam.efarfield(rtp);
   trialH = beam.hfarfield(rtp);
@@ -154,11 +154,45 @@ function testScatter(testCase)
   
   sbeam = beam.scatter(particle);
   testCase.assertInstanceOf(sbeam, 'ott.beam.Scattered');
+  
+  % Index
   testCase.verifyEqual(sbeam.index_medium, n_medium, 'sbeam_index');
   testCase.verifyEqual(sbeam.scattered.index_medium, n_medium, 'scat index');
   testCase.verifyEqual(sbeam.incident.index_medium, n_medium, 'inc index');
   testCase.verifyEqual(sbeam.internal.index_medium, n_medium * n_rel, 'int index');
+  
+  % omega
+  testCase.verifyEqual(sbeam.omega, beam.omega, 'omega');
+  testCase.verifyEqual(sbeam.scattered.omega, beam.omega, 'scat omega');
+  testCase.verifyEqual(sbeam.incident.omega, beam.omega, 'inc omega');
+  testCase.verifyEqual(sbeam.internal.omega, beam.omega, 'int omega');
+  
+  % Position
+  testCase.verifyEqual(sbeam.position, [0;0;0], 'position');
+  testCase.verifyEqual(sbeam.scattered.position, [0;0;0], 'scat position');
+  testCase.verifyEqual(sbeam.incident.position, [0;0;0], 'inc position');
+  testCase.verifyEqual(sbeam.internal.position, [0;0;0], 'int position');
 
+end
+
+function testScatterPositions(testCase)
+
+  n_medium = 1.35;
+  n_rel = 1.2;
+  beam = ott.beam.PlaneWave('index_medium', n_medium);
+  
+  sphere = ott.shape.Sphere(beam.wavelength);
+  particle = ott.particle.Fixed.FromShape(sphere, ...
+    'index_relative', n_rel, 'internal', true, ...
+    'wavelength0', beam.wavelength0);
+  
+  xyz = [0.2; 0.5; -0.1];
+  sbeam = beam.scatter(particle, 'position', xyz);
+  
+  testCase.verifyEqual(sbeam.position, xyz, 'position');
+  testCase.verifyEqual(sbeam.scattered.position, [0;0;0], 'scat pos');
+  testCase.verifyEqual(sbeam.incident.position, -xyz, 'inc position');
+  testCase.verifyEqual(sbeam.internal.position, [0;0;0], 'int position');
 end
 
 function testScatterForce(testCase)
@@ -168,18 +202,14 @@ function testScatterForce(testCase)
     ott.shape.Sphere(beam.wavelength0), 'index_relative', 1.2, ...
     'wavelength0', beam.wavelength0);
   
-  pos = [0.5;0;0]*beam.wavelength;
+  pos = [0.1;-0.2;-0.1]*beam.wavelength;
   
   sbeam = beam.scatter(particle, 'position', pos);
   F1 = sbeam.force();
   
   F2 = beam.force(particle, 'position', pos);
   
-  % Need to swap position (get force in particle reference fraome)
-  beam.position = -sbeam.position;
-  sbeam.position = [0;0;0];
-  F3 = (sbeam.intensityMoment('type', 'scattered') ...
-    - beam.intensityMoment())./beam.speed;
+  F3 = (sbeam.intensityMoment() - beam.intensityMoment())./beam.speed;
   
   testCase.verifyEqual(F1, F2, 'RelTol', 6e-2, ...
     'direct force and scatter force dont match');

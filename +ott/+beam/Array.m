@@ -16,6 +16,9 @@ classdef Array < ott.beam.ArrayType
 % Properties
 %   - data        -- Array of coherent/incoherent beams
 %   - arrayType   -- Type of array (either coherent/incoherent/array)
+%
+% Supported casts
+%   - ott.bsc.Bsc -- Only supported if content is Bsc beams
 
 % Copyright 2020 Isaac Lenton (aka ilent2)
 % This file is part of OTT, see LICENSE.md for information about
@@ -52,6 +55,26 @@ classdef Array < ott.beam.ArrayType
 
       bm = bm@ott.beam.ArrayType(unmatched{:});
       bm.data = p.Results.data;
+    end
+    
+    function bsc = ott.bsc.Bsc(beam, varargin)
+      % Cast each beam to a Bsc instance
+      %
+      % Usage
+      %   bsc = ott.bsc.Bsc(beam, ...)
+      %
+      % Additional parameters passed to Bsc casts cast.
+      
+      bsc(numel(beam.data)) = ott.bsc.Bsc();
+      for ii = 1:numel(beam.data)
+        elm = beam.data(ii).translateXyz(beam.position).rotate(beam.rotation);
+        bsc(ii) = ott.bsc.Bsc(elm, varargin{:});
+      end
+      
+      % Combine coherent beams
+      if strcmpi(beam.arrayType, 'coherent')
+        bsc = sum(bsc);
+      end
     end
 
     function varargout = efield(beam, varargin)
@@ -287,68 +310,51 @@ classdef Array < ott.beam.ArrayType
     function [EH, vswfData] = singleOutputHelper(beam, ...
           target, xyz, varargin)
       % Helper for single output field calculation functions
-
-      p = inputParser;
-      p.addParameter('data', ott.utils.VswfData());
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
       
       target = @(b, varargin) target(...
           b.rotate(beam.rotation).translateXyz(beam.position), ...
           varargin{:});
 
-      [EH, vswfData] = target(beam.data(1), xyz, unmatched{:});
+      [EH, vswfData] = target(beam.data(1), xyz, varargin{:});
       EH = repmat(EH, [1, 1, numel(beam.data)]);
 
       for ii = 2:numel(beam.data)
         [EHf, vswfData] = target(beam.data(ii), xyz, ...
-            unmatched{:}, 'data', vswfData);
+            varargin{:}, 'data', vswfData);
           
         % Added cast as workaround to 'bug' in R2018a
         EH(:, :, ii) = cast(EHf, 'like', EH);
       end
 
-      if strcmpi(beam.arrayType, 'coherent')
-        coords = EH(4:6, :, 1);
-        EH = sum(EH, 3);
-        EH(4:6, :) = coords;
+      if strcmpi(beam.arrayType, 'coherent') && numel(beam.data) > 1
+        EH = sum(EH, 3, 'keepFirst');
       end
     end
 
     function [E, H, vswfData] = doubleOutputHelper(beam, ...
           target, xyz, varargin)
       % Helper for double output field calculation functions
-
-      p = inputParser;
-      p.addParameter('data', ott.utils.VswfData());
-      p.KeepUnmatched = true;
-      p.parse(varargin{:});
-      unmatched = ott.utils.unmatchedArgs(p);
       
       target = @(b, varargin) target(...
-          b.rotate(beam.rotation).translateXyz(beam.position), ...
+          b.rotate(beam.rotation).translateXyz(-beam.position), ...
           varargin{:});
 
-      [E, H, vswfData] = target(beam.data(1), xyz, unmatched{:});
+      [E, H, vswfData] = target(beam.data(1), xyz, varargin{:});
       E = repmat(E, [1, 1, numel(beam.data)]);
       H = repmat(H, [1, 1, numel(beam.data)]);
 
       for ii = 2:numel(beam.data)
         [Ef, Hf, vswfData] = target(beam.data(ii), ...
-            xyz, unmatched{:}, 'data', vswfData);
+            xyz, varargin{:}, 'data', vswfData);
           
         % Added cast as workaround to 'bug' in R2018a
         E(:, :, ii) = cast(Ef, 'like', E);
         H(:, :, ii) = cast(Hf, 'like', H);
       end
 
-      if strcmpi(beam.arrayType, 'coherent')
-        coords = E(4:6, :, 1);
-        E = sum(E, 3);
-        H = sum(H, 3);
-        E(4:6, :) = coords;
-        H(4:6, :) = coords;
+      if strcmpi(beam.arrayType, 'coherent') && numel(beam.data) > 1
+        E = sum(E, 3, 'keepFirst');
+        H = sum(H, 3, 'keepFirst');
       end
     end
 

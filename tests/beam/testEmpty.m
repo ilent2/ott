@@ -37,23 +37,30 @@ function testField(testCase)
 
   beam = ott.beam.Empty();
   xyz = randn(3, 5);
-  target = ott.utils.FieldVectorCart(zeros(size(xyz)));
+  target = ott.utils.FieldVectorCart(zeros(size(xyz)), xyz);
+    
+  rtp = mod(randn(3, 5), pi);
+  targetS = ott.utils.FieldVectorSph(zeros(size(rtp)), rtp);
+  targetF = ott.utils.FieldVectorSph(zeros(size(rtp)), ...
+      [ones(1, size(rtp, 2)); rtp(2:3, :)]);
+    
+  xy = randn(2, 5);
   
   testCase.verifyEqual(beam.efield(xyz), target, 'efield');
   testCase.verifyEqual(beam.hfield(xyz), target, 'hfield');
   testCase.verifyEqual(beam.ehfield(xyz), target, 'ehfield');
   
-  testCase.verifyEqual(beam.efarfield(xyz), target, 'efarfield');
-  testCase.verifyEqual(beam.hfarfield(xyz), target, 'hfarfield');
-  testCase.verifyEqual(beam.ehfarfield(xyz), target, 'efarhfield');
+  testCase.verifyEqual(beam.efarfield(rtp), targetF, 'efarfield');
+  testCase.verifyEqual(beam.hfarfield(rtp), targetF, 'hfarfield');
+  testCase.verifyEqual(beam.ehfarfield(rtp), targetF, 'efarhfield');
   
-  testCase.verifyEqual(beam.efieldRtp(xyz), target, 'efieldRtp');
-  testCase.verifyEqual(beam.hfieldRtp(xyz), target, 'hfieldRtp');
-  testCase.verifyEqual(beam.ehfieldRtp(xyz), target, 'ehfieldRtp');
+  testCase.verifyEqual(beam.efieldRtp(rtp), targetS, 'efieldRtp');
+  testCase.verifyEqual(beam.hfieldRtp(rtp), targetS, 'hfieldRtp');
+  testCase.verifyEqual(beam.ehfieldRtp(rtp), targetS, 'ehfieldRtp');
   
-  testCase.verifyEqual(beam.eparaxial(xyz), target, 'ep');
-  testCase.verifyEqual(beam.hparaxial(xyz), target, 'hp');
-  testCase.verifyEqual(beam.ehparaxial(xyz), target, 'ehp');
+  testCase.verifyEqual(beam.eparaxial(xy).vrtp(), zeros(size(xyz)), 'ep');
+  testCase.verifyEqual(beam.hparaxial(xy).vrtp(), zeros(size(xyz)), 'hp');
+  testCase.verifyEqual(beam.ehparaxial(xy).vrtp(), zeros(size(xyz)), 'ehp');
   
   testCase.verifyEqual(beam.intensityMoment(), zeros(3, 1), 'im');
 end

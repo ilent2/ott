@@ -290,9 +290,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %     calculation. Packaged [x; y].
       %
       % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
       %   - mapping (enum) -- Mapping for paraxial projection.
       %     See :func:`ott.utils.paraxial2rtp` for details.
       %     Default: ``'sin'``.
@@ -301,21 +298,18 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %     See :func:`ott.utils.paraxial2rtp` for details.
       %     Default: ``'pos'``.
       %
-      %   - basis (enum) -- Basis for field calculation.  Must be either
-      %     'incoming' or 'outgoing'.  Default: ``'incoming'``.
+      % Additional parameters passed to :meth:`efarfield`.
 
       p = inputParser;
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
       p.addParameter('mapping', 'sin');
-      p.addParameter('basis', 'incoming');
       p.addParameter('direction', 'pos');
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       rtp = ott.utils.paraxial2rtp(xy, ...
           p.Results.mapping, p.Results.direction);
-      [varargout{1:nargout}] = beam.efarfield(rtp, ...
-        'data', p.Results.data, 'basis', p.Results.basis);
+      [varargout{1:nargout}] = beam.efarfield(rtp, unmatched{:});
     end
 
     function varargout = hparaxial(beam, xy, varargin)
@@ -330,9 +324,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %     calculation. Packaged [x; y].
       %
       % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
       %   - mapping (enum) -- Mapping for paraxial projection.
       %     See :func:`ott.utils.paraxial2rtp` for details.
       %     Default: ``'sin'``.
@@ -341,21 +332,18 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %     See :func:`ott.utils.paraxial2rtp` for details.
       %     Default: ``'pos'``.
       %
-      %   - basis (enum) -- Basis for field calculation.  Must be either
-      %     'incoming' or 'outgoing'.  Default: ``'incoming'``.
+      % Additional parameters passed to :meth:`hfarfield`.
 
       p = inputParser;
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
       p.addParameter('mapping', 'sin');
       p.addParameter('direction', 'pos');
-      p.addParameter('basis', 'incoming');
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       rtp = ott.utils.paraxial2rtp(xy, ...
           p.Results.mapping, p.Results.direction);
-      [varargout{1:nargout}] = beam.hfarfield(rtp, ...
-        'data', p.Results.data, 'basis', p.Results.basis);
+      [varargout{1:nargout}] = beam.hfarfield(rtp, unmatched{:});
     end
 
     function varargout = ehparaxial(beam, xy, varargin)
@@ -370,9 +358,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %     calculation. Packaged [x; y].
       %
       % Optional named parameters
-      %   - data (ott.utils.VswfData) -- Field data for repeated field
-      %     calculation.  Default is an empty VswfData structure.
-      %
       %   - mapping (enum) -- Mapping for paraxial projection.
       %     See :func:`ott.utils.paraxial2rtp` for details.
       %     Default: ``'sin'``.
@@ -380,17 +365,19 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %   - direction (enum | 2 numeric) -- Mapping direction.
       %     See :func:`ott.utils.paraxial2rtp` for details.
       %     Default: ``'pos'``.
+      %
+      % Additional parameters passed to :meth:`ehfarfield`.
 
       p = inputParser;
-      p.addParameter('data', ott.utils.VswfData(), ...
-          @(x) isa(x, 'ott.utils.VswfData'));
       p.addParameter('mapping', 'sin');
       p.addParameter('direction', 'pos');
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
 
       rtp = ott.utils.paraxial2rtp(xy, ...
           p.Results.mapping, p.Results.direction);
-      [varargout{1:nargout}] = beam.ehfarfield(rtp, 'data', p.Results.data);
+      [varargout{1:nargout}] = beam.ehfarfield(rtp, unmatched{:});
     end
 
     function [E, H, vswfData] = ehfarfield(beam, rtp, varargin)
@@ -448,6 +435,39 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 
       [E, vswfData] = beam.efieldRtp(rtp, varargin{:});
       [H, vswfData] = beam.hfieldRtp(rtp, 'data', vswfData);
+    end
+    
+    function [Efv, psi] = translateFarfields(beam, Efv, direction)
+      % Applies a phase shift to the far-fields similar to a translation
+      %
+      % Usage
+      %   [Efv, psi] = beam.translateFarfields(Efv, direction)
+      %
+      % Returns
+      %   - Efv (ott.utils.FieldVector) -- Scaled fields.
+      %   - psi (N numeric) -- Phase factors.
+      %
+      % Parameters
+      %   - Efv (ott.utils.FieldVector) -- Far-fields to shift.
+      %
+      %   - direction (3x1 numeric) -- Direction and distance to shift.
+      %     Cartesian coordinates.
+      
+      if all(direction == [0;0;0])
+        % No work to do
+        sz = size(Efv);
+        psi = ones(1, sz(2:end));
+      else
+        % Convert to cartesian field vector
+        Efv = ott.utils.FieldVectorCart(Efv);
+
+        % Get coordinates and normlise
+        uxyz = double(Efv(4:6, :));
+        uxyz = uxyz ./ vecnorm(uxyz);
+        
+        psi = sum(uxyz .* direction, 1) * beam.wavenumber;
+        Efv = Efv .* exp(1i*psi);
+      end
     end
 
     %
@@ -574,10 +594,8 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 
       rtp = [ones(numel(theta), 1), theta(:), phi(:)].';
 
-      % Calculate Cartesian coordinates
-      % negate z, So integrals match sign convention used in :meth:`force`.
+      % Calculate Cartesian coordinate unit vectors
       uxyz = ott.utils.rtp2xyz(rtp);
-      uxyz(3, :) = -uxyz(3, :);
 
       % Calculate field and E2
       [E, varargout{3:nargout}] = beam.efarfield(rtp, ...
@@ -931,6 +949,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       ptheta = linspace(0, 2*pi, p.Results.npts);
       [r, ptheta, phi] = ott.utils.matchsize(0, ptheta(:), p.Results.phi);
       rtp = [r(:), ptheta(:), phi(:)].';
+      rtp = ott.utils.sanitiseRtp(rtp);
 
       % Calculate fields
       [E, vswfData] = beam.efarfield(rtp, 'data', p.Results.data, ...

@@ -287,7 +287,7 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        rtpI = beam.global2local(rtp);
+        rtpI = beam.global2localRtp(rtp);
         [Ef, vswfData] = beam.internal.efieldRtp(...
             rtpI(:, binside), unmatched{:}, 'data', vswfData);
         E(:, binside) = Ef.vrtp;
@@ -335,7 +335,7 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        rtpI = beam.global2local(rtp);
+        rtpI = beam.global2localRtp(rtp);
         [Hf, vswfData] = beam.internal.hfieldRtp(...
             rtpI(:, binside), unmatched{:}, 'data', vswfData);
         H(:, binside) = Hf.vrtp;
@@ -385,7 +385,7 @@ classdef Scattered < ott.beam.Beam
 
       % Calculate internal fields
       if ~isempty(beam.internal)
-        rtpI = beam.global2local(rtp);
+        rtpI = beam.global2localRtp(rtp);
         [Ef, Hf, vswfData] = beam.internal.ehfieldRtp(...
             rtpI(:, binside), unmatched{:}, 'data', vswfData);
         E(:, binside) = Ef.vrtp;
@@ -407,6 +407,9 @@ classdef Scattered < ott.beam.Beam
     function varargout = efarfield(beam, rtp, varargin)
       % Calculate the electric field (in SI units)
       %
+      % Calculates the fields in the local reference frame and then
+      % applies phase/rotations to give the global far-field.
+      %
       % Usage
       %   [E, vswfData] = beam.efarfield(rtp, ...)
       %
@@ -422,16 +425,28 @@ classdef Scattered < ott.beam.Beam
       %
       % Unmatched parameters are passed to the corresponding method
       % of the incident/scattered :class:`Beam` class.
+      
+      % TODO: Rotations
+      
+      scat_position = beam.position;
+      beam.position = [0;0;0];
 
       % Get external data and unmatched arguments
       [odata, unmatched] = beam.getAndParseType(varargin{:});
 
-      % Calculate fields
+      % Calculate fields (in local reference frame)
       [varargout{1:nargout}] = odata.efarfield(rtp, unmatched{:});
+      
+      if nargout >= 1
+        varargout{1} = beam.translateFarfields(varargout{1}, -scat_position);
+      end
     end
 
     function varargout = hfarfield(beam, rtp, varargin)
       % Calculate the magnetic field (in SI units)
+      %
+      % Calculates the fields in the local reference frame and then
+      % applies phase/rotations to give the global far-field.
       %
       % Usage
       %   [H, vswfData] = beam.hfarfield(rtp, ...)
@@ -448,16 +463,28 @@ classdef Scattered < ott.beam.Beam
       %
       % Unmatched parameters are passed to the corresponding method
       % of the incident/scattered :class:`Beam` class.
+      
+      % TODO: Rotations
+      
+      scat_position = beam.position;
+      beam.position = [0;0;0];
 
       % Get external data and unmatched arguments
       [odata, unmatched] = beam.getAndParseType(varargin{:});
 
       % Calculate fields
       [varargout{1:nargout}] = odata.hfarfield(rtp, unmatched{:});
+      
+      if nargout >= 1
+        varargout{1} = beam.translateFarfields(varargout{1}, -scat_position);
+      end
     end
 
     function varargout = ehfarfield(beam, rtp, varargin)
       % Calculate the electric and magnetic field (in SI units)
+      %
+      % Calculates the fields in the local reference frame and then
+      % applies phase/rotations to give the global far-field.
       %
       % Usage
       %   [E, H, vswfData] = beam.ehfarfield(rtp, ...)
@@ -474,90 +501,24 @@ classdef Scattered < ott.beam.Beam
       %
       % Unmatched parameters are passed to the corresponding method
       % of the incident/scattered :class:`Beam` class.
+      
+      % TODO: Rotations
+      
+      scat_position = beam.position;
+      beam.position = [0;0;0];
 
       % Get external data and unmatched arguments
       [odata, unmatched] = beam.getAndParseType(varargin{:});
 
       % Calculate fields
       [varargout{1:nargout}] = odata.ehfarfield(rtp, unmatched{:});
-    end
-
-    function varargout = eparaxial(beam, xy, varargin)
-      % Calculate the electric field (in SI units)
-      %
-      % Usage
-      %   [E, vswfData] = beam.eparaxial(xy, ...)
-      %
-      % Parameters
-      %   - xy (2xN numeric) -- Paraxial coordinates for field
-      %     calculation. Packaged [x; y].
-      %
-      % Optional named parameters
-      %   - type (enum) -- Type of field to calculate.  Can be either
-      %     'incident', 'scattered', or 'total'.  When only the
-      %     ``scattered`` property is set, 'scattered' and 'total' behave
-      %     the same.  Default: ``'total'``.
-      %
-      % Unmatched parameters are passed to the corresponding method
-      % of the incident/scattered :class:`Beam` class.
-
-      % Get external data and unmatched arguments
-      [odata, unmatched] = beam.getAndParseType(varargin{:});
-
-      % Calculate fields
-      [varargout{1:nargout}] = odata.eparaxial(xy, unmatched{:});
-    end
-
-    function varargout = hparaxial(beam, xy, varargin)
-      % Calculate the magnetic field (in SI units)
-      %
-      % Usage
-      %   [H, vswfData] = beam.hparaxial(xy, ...)
-      %
-      % Parameters
-      %   - xy (2xN numeric) -- Paraxial coordinates for field
-      %     calculation. Packaged [x; y].
-      %
-      % Optional named parameters
-      %   - type (enum) -- Type of field to calculate.  Can be either
-      %     'incident', 'scattered', or 'total'.  When only the
-      %     ``scattered`` property is set, 'scattered' and 'total' behave
-      %     the same.  Default: ``'total'``.
-      %
-      % Unmatched parameters are passed to the corresponding method
-      % of the incident/scattered :class:`Beam` class.
-
-      % Get external data and unmatched arguments
-      [odata, unmatched] = beam.getAndParseType(varargin{:});
-
-      % Calculate fields
-      [varargout{1:nargout}] = odata.hparaxial(xy, unmatched{:});
-    end
-
-    function varargout = ehparaxial(beam, xy, varargin)
-      % Calculate the electric and magnetic field (in SI units)
-      %
-      % Usage
-      %   [E, H, vswfData] = beam.ehparaxial(xy, ...)
-      %
-      % Parameters
-      %   - xy (2xN numeric) -- Paraxial coordinates for field
-      %     calculation. Packaged [x; y].
-      %
-      % Optional named parameters
-      %   - type (enum) -- Type of field to calculate.  Can be either
-      %     'incident', 'scattered', or 'total'.  When only the
-      %     ``scattered`` property is set, 'scattered' and 'total' behave
-      %     the same.  Default: ``'total'``.
-      %
-      % Unmatched parameters are passed to the corresponding method
-      % of the incident/scattered :class:`Beam` class.
-
-      % Get external data and unmatched arguments
-      [odata, unmatched] = beam.getAndParseType(varargin{:});
-
-      % Calculate fields
-      [varargout{1:nargout}] = odata.ehparaxial(xy, unmatched{:});
+      
+      if nargout >= 1
+        [varargout{1}, psi] = beam.translateFarfields(varargout{1}, -scat_position);
+        if nargout >= 2
+          varargout{2} = varargout{2} .* psi;
+        end
+      end
     end
     
     %
@@ -656,15 +617,15 @@ classdef Scattered < ott.beam.Beam
       %
       %   [fx, fy, fz] = ibeam.force(...) -- As above, but unpacking
       %   the outputs for X/Y/Z.
+      
+      % Get total field (or scattered if incident not set)
+      [odata, ~] = beam.getAndParseType('type', 'total');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for force without arguments');
-        [varargout{1:nargout}] = beam.incident.force(beam.scattered);
+        [varargout{1:nargout}] = beam.incident.force(odata);
       else
-        % Get total field (or scattered if incident not set)
-        [odata, ~] = beam.getAndParseType('type', 'total');
-
         [varargout{1:nargout}] = odata.force(obeam);
       end
     end
@@ -684,15 +645,15 @@ classdef Scattered < ott.beam.Beam
       %
       %   [tx, ty, tz] = ibeam.torque(...) -- As above, but unpacking
       %   the outputs for X/Y/Z.
+      
+      % Get total field (or scattered if incident not set)
+      [odata, ~] = beam.getAndParseType('type', 'total');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for torque without arguments');
-        [varargout{1:nargout}] = beam.incident.torque(beam.scattered);
+        [varargout{1:nargout}] = beam.incident.torque(odata);
       else
-        % Get total field (or scattered if incident not set)
-        [odata, ~] = beam.getAndParseType('type', 'total');
-
         [varargout{1:nargout}] = odata.torque(obeam);
       end
     end
@@ -712,15 +673,15 @@ classdef Scattered < ott.beam.Beam
       %
       %   [sx, sy, sz] = ibeam.spin(...) -- As above, but unpacking
       %   the outputs for X/Y/Z.
+      
+      % Get total field (or scattered if incident not set)
+      [odata, ~] = beam.getAndParseType('type', 'total');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for spin without arguments');
-        [varargout{1:nargout}] = beam.incident.spin(beam.scattered);
+        [varargout{1:nargout}] = beam.incident.spin(odata);
       else
-        % Get total field (or scattered if incident not set)
-        [odata, ~] = beam.getAndParseType('type', 'total');
-
         [varargout{1:nargout}] = odata.spin(obeam);
       end
     end
@@ -738,15 +699,15 @@ classdef Scattered < ott.beam.Beam
       %   scattered beam ``sbeam``.
       %
       %   Outputs 3x[N...] matrix depending on the number and shape of beams.
+      
+      % Get total field (or scattered if incident not set)
+      [odata, ~] = beam.getAndParseType('type', 'total');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for forcetorque without arguments');
-        [varargout{1:nargout}] = beam.incident.forcetorque(beam.scattered);
+        [varargout{1:nargout}] = beam.incident.forcetorque(odata);
       else
-        % Get total field (or scattered if incident not set)
-        [odata, ~] = beam.getAndParseType('type', 'total');
-
         [varargout{1:nargout}] = odata.forcetorque(obeam);
       end
     end

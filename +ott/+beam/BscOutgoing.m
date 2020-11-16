@@ -81,12 +81,12 @@ classdef BscOutgoing < ott.beam.BscFinite
       % Check translation distance
       kanmax = ott.utils.nmax2ka(Nmax);
       kabsc = ott.utils.nmax2ka(bsc.Nmax);
-      if beam.position * beam.wavenumber < kanmax + kabsc
+      if any(abs(beam.position * beam.wavenumber) < kanmax + kabsc)
         warning('ott:beam:BscOutgoing:small_translation', ...
           'Small translation of outgoing beam may give unexpected results');
       end
 
-      bsc = bsc.translateXyz(beam.position ./ beam.wavelength, ...
+      bsc = bsc.translateXyz(-beam.position ./ beam.wavelength, ...
           'Nmax', Nmax, 'basis', 'outgoing');
     end
   end

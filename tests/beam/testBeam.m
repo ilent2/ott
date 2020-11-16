@@ -84,8 +84,8 @@ function testIntensityMoment(testCase)
   emptyBeam = ott.beam.BscBeam();
   
   testCase.verifyEqual(ints, beam1.power, 'RelTol', 1e-2, 'power');
-  testCase.verifyEqual(0 - moment./beam1.speed, ...
-    beam1.force(emptyBeam), 'RelTol', 1e-2, 'AbsTol', 1e-23, 'moment');
+  testCase.verifyEqual(moment./beam1.speed, ...
+    emptyBeam.force(beam1), 'RelTol', 1e-2, 'AbsTol', 1e-23, 'moment');
 
 end
 
@@ -95,10 +95,36 @@ function testForce(testCase)
   beam2 = ott.beam.BscBeam();
   Fb = beam1.force(beam2);
   
-  bsc1 = beam1.data;
+  bsc1 = ott.bsc.Bsc(beam1);
   bsc2 = ott.bsc.Bsc(beam2);
   Fq = bsc1.force(bsc2) * beam1.power ./ beam1.speed;
   
   testCase.verifyEqual(Fb, Fq, 'force');
 
 end
+
+function testTranslateFarfield(testCase)
+
+  beam = ott.beam.Gaussian();
+  bsc1 = ott.bsc.Bsc(beam, beam.data.Nmax);
+  beam.position = [-0.3;0.2;0.5]*beam.wavelength;
+  bsc2 = ott.bsc.Bsc(beam, beam.data.Nmax + 50);
+  
+  beam1 = ott.beam.BscBeam(bsc1);
+  beam2 = ott.beam.BscBeam(bsc2);
+  
+  % Incoming hemisphere only
+  rtp = [ones(1, 5); pi-pi/2*rand(1, 5); 2*pi*rand(1, 5)];
+  
+  Ertp1 = beam1.efarfield(rtp, 'basis', 'outgoing');
+  Ertp2 = beam2.efarfield(rtp, 'basis', 'outgoing');
+  
+  % Translate Ertp1 to location 2
+  Ertp3 = beam1.translateFarfields(Ertp1, -beam.position);
+  
+  testCase.verifyEqual(Ertp3.vxyz, Ertp2.vxyz, ...
+      'AbsTol', 1e-12, 'translated');
+
+end
+
+

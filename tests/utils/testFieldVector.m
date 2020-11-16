@@ -2,34 +2,64 @@ function tests = testFieldVector
   tests = functiontests(localfunctions);
 end
 
-function setupOnce(testCase)
+function setupOnce(~)
   addpath('../../');
 end
 
 function testCartesianToSpherical(testCase)
 
-  loc = randn(3, 5);
-  val = randn(3, 5);
-  S = ott.utils.FieldVectorCart(val, loc);
+  xyz = randn(3, 5);
+  xyzv = randn(3, 5);
+  S = ott.utils.FieldVectorCart(xyzv, xyz);
 
-  rtp = ott.utils.xyzv2rtpv(val, loc);
+  [rtpv, rtp] = ott.utils.xyzv2rtpv(xyzv, xyz);
   
-  testCase.verifyEqual(S.vxyz, val, 'xyz');
-  testCase.verifyEqual(S.vrtp, rtp, 'xyz');
+  % Check original
+  testCase.verifyEqual(S.vxyz, xyzv, 'xyzv');
+  testCase.verifyEqual(S.vrtp, rtpv, 'rtpv');
+  testCase.verifyEqual(double(S(4:6, :)), xyz, 'xyz');
+  
+  % Cast to Sph
+  P = ott.utils.FieldVectorSph(S);
+  testCase.verifyEqual(P.vxyz, xyzv, 'AbsTol', 1e-13, 'xyzv cast');
+  testCase.verifyEqual(P.vrtp, rtpv, 'AbsTol', 1e-13, 'rtpv cast');
+  testCase.verifyEqual(double(P(4:6, :)), rtp, 'rtp');
   
 end
 
 function testSphericalToCartesian(testCase)
 
-  loc = randn(3, 5);
-  val = randn(3, 5);
-  S = ott.utils.FieldVectorSph(val, loc);
+  rtp = [abs(randn(1, 5)); pi*rand(1, 5); 2*pi*rand(1, 5)];
+  rtpv = randn(3, 5);
+  S = ott.utils.FieldVectorSph(rtpv, rtp);
 
-  xyz = ott.utils.rtpv2xyzv(val, loc);
+  [xyzv, xyz] = ott.utils.rtpv2xyzv(rtpv, rtp);
   
-  testCase.verifyEqual(S.vrtp, val, 'xyz');
-  testCase.verifyEqual(S.vxyz, xyz, 'xyz');
+  % Check original
+  testCase.verifyEqual(S.vrtp, rtpv, 'rtpv');
+  testCase.verifyEqual(S.vxyz, xyzv, 'xyzv');
+  testCase.verifyEqual(double(S(4:6, :)), rtp, 'rtp');
   
+  % Cast to Cart
+  P = ott.utils.FieldVectorCart(S);
+  testCase.verifyEqual(P.vxyz, xyzv, 'AbsTol', 1e-13, 'xyzv cast');
+  testCase.verifyEqual(P.vrtp, rtpv, 'AbsTol', 1e-13, 'rtpv cast');
+  testCase.verifyEqual(double(P(4:6, :)), xyz, 'xyz');
+  
+end
+
+function testSphOutsideRange(testCase)
+
+  rtp = [[-1;0.2;0.3], [1;-0.5;0.0], [1;0.2;5*pi]];
+  rtpv = randn(3, 3);
+  
+  testCase.verifyWarning(@construct, ...
+    'ott:utils:FieldVectorSph:rtp_outside_range');
+  
+  function S = construct
+    S = ott.utils.FieldVectorSph(rtpv, rtp);
+  end
+
 end
 
 function testMathsCart(testCase)

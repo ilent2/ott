@@ -122,7 +122,7 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 
       % Translate the beam
       % Assumes beam is a regular beam
-      bsc = bsc.translateXyz(beam.position ./ beam.wavelength, 'Nmax', Nmax);
+      bsc = bsc.translateXyz(-beam.position ./ beam.wavelength, 'Nmax', Nmax);
 
       % Combine beams now if coherent
       if strcmpi(beam.arrayType, 'coherent')
@@ -178,13 +178,16 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       p.addParameter('rotation', particle.rotation);
       p.parse(varargin{:});
       
-      % Update particle position/rotation
       scat_position = p.Results.position;
       scat_rotation = p.Results.rotation;
       
+      % Work in the particle reference frame
+      particle.position = [0;0;0];
+      particle.rotation = eye(3);
+      ibeam = ibeam.translateXyz(-scat_position).rotate(scat_rotation.');
+      
       % Calculate scattered Bscs
-      [ibsc, sbsc] = ibeam.scatterBsc(particle, ...
-        'position', scat_position, 'rotation', scat_rotation);
+      [ibsc, sbsc] = ibeam.scatterBsc(particle);
 
       % Calculate external component
       if ~isempty(sbsc)
@@ -205,11 +208,6 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       end
 
       % Package output
-      % Set outgoing field to have 0 position and offset the scattered beam
-      particle.position = [0;0;0];
-      particle.rotation = eye(3);
-      ibeam.position = -scat_position;
-      ibeam.rotation = scat_rotation.';
       sbeam = ott.beam.Scattered(...
           'scattered', sbeam, 'incident', ibeam, ...
           'particle', particle, 'internal', nbeam, ...
@@ -290,7 +288,7 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
         ibsc(ii) = ott.bsc.Bsc(tbeam, Nmax);
 
         % Apply particle rotation
-        ibsc(ii) = ibsc(ii).rotate(rotation(:, (1:3) + (ii-1)*3));
+        ibsc(ii) = ibsc(ii).rotate(rotation(:, (1:3) + (ii-1)*3).');
 
         % Calculate external component
         if ~isempty(particle.tmatrix)
@@ -480,15 +478,20 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %
       % Usage
       %   force = incident_beam.force(scattered_beam) -- Calculates
-      %   difference in momentum between two beams.
+      %   difference in momentum between two beams: F = Scat - Inc.
       %
       %   force = incident_beam.force(particle, ...) -- First calculates
       %   scattering, then calculates force from difference in momentum.
-      %   Additional parameters are passed to :meth:`scatter`.
+      %   Additional parameters are passed to :meth:`scatterBsc`.
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
+        
+        % Calculate scattered field (incident-scattered)
         [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
+        
+        % Convert to incoming-outgoing
+        sbsc = ibsc + 2*sbsc;
       else
         % Apply the scattered beams translation to ourselves
         % Perhaps this isn't the best thing to do, but I'm not sure
@@ -523,7 +526,12 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
+        
+        % Calculate scattered field (incident-scattered)
         [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
+        
+        % Convert to incoming-outgoing
+        sbsc = ibsc + 2*sbsc;
       else
         % Apply the scattered beams translation to ourselves
         % Perhaps this isn't the best thing to do, but I'm not sure
@@ -558,7 +566,12 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
+        
+        % Calculate scattered field (incident-scattered)
         [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
+        
+        % Convert to incoming-outgoing
+        sbsc = ibsc + 2*sbsc;
       else
         % Apply the scattered beams translation to ourselves
         % Perhaps this isn't the best thing to do, but I'm not sure

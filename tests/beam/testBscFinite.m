@@ -34,9 +34,27 @@ function testGetData(testCase)
   % Translate and grow
   Nmax = 10;
   tbsc = bsc.translateXyz([0.001;0;0], 'Nmax', Nmax);
-  tbeam = beam.translateXyz([0.001;0;0]*beam.wavelength);
+  tbeam = beam.translateXyz(-[0.001;0;0]*beam.wavelength);
   trial = ott.bsc.Bsc(tbeam, Nmax);
   testCase.verifyEqual(trial, tbsc, 'translate');
   
+end
+
+function testTranslateFarfields(testCase)
+  % This test is similar to the test in testBeam.m but with BscFinite
+
+  beam = ott.beam.Gaussian();   % BscFinite instance
+  beam.position = [0.4;-0.5;2.4]*beam.wavelength;
+  bsc = ott.bsc.Bsc(beam, beam.data.Nmax + 50);
+  beam2 = ott.beam.BscBeam(bsc);
+  
+  rtp = [ones(1, 5); mod(randn(2, 5), pi)];
+  
+  Ertp1 = beam.efarfield(rtp, 'basis', 'outgoing');
+  Ertp2 = beam2.efarfield(rtp, 'basis', 'outgoing');
+  
+  testCase.verifyEqual(Ertp2.vxyz, Ertp1.vxyz, ...
+      'AbsTol', 2e-13, 'translated');
+
 end
 
