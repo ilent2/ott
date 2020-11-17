@@ -22,46 +22,66 @@
 %% Setup beam and particle
 
 % Spherical particle, 1um radius
-radius = 1.0e-6;
+radius = 0.3e-6;
 shape = ott.shape.Sphere(radius);
 
 % Particle relative refractive index
 index_relative = 1.1;
 
-particle = ott.particle.Fixed.FromShape(shape, index_relative, ...
-    'viscosity', 0.001);
-
 beam = ott.beam.Gaussian.FromNa(1.2, 'index_medium', 1.33, ...
     'wavelength0', 1064e-9, 'power', 0.01);
+
+particle = ott.particle.Fixed.FromShape(shape, ...
+    'index_relative', index_relative, 'viscosity', 0.001, ...
+    'wavelength0', beam.wavelength0, 'index_medium', beam.index_medium);
 
 %% Setup dynamics simulation
 
 temperature = 300.0;      % Temperature [K]
 
-dynamics = ott.tools.Dynamics(beam, particle, ...
-    'time_step', 1.0e-4, 'temperature', temperature);
+dynamics = ott.tools.Dynamics('beam', beam, 'particle', particle, ...
+    'timeStep', 1.0e-5, 'temperature', temperature);
+  
+% To enable dynamics simulations with intertia we also need to include mass
+% This is still experimental and might be unstable.
+% dynamics.particle = dynamics.particle.setMassFromDensity(45.0); % polystyrene
+% dynamics.particle.moment = (2/5)*dynamics.particle.mass*radius^2;
 
 %% Run the simulation
 
+% Setup a figure to show the progress
+figure();
+ax = axes();
+axis([-1,1,-1,1,-1,1]*1e-6);
+
 x0 = [0;0;0];
-x = dynamics.simulate(x0);
+totalTime = 1e-1;
+[t, x] = dynamics.simulate(totalTime, 'position', x0, ...
+  'plot_axes', ax, 'outputRate', 0.01);
 
 %% Generate a plot of the results
 
 figure();
 plot3(x(1, :), x(2, :), x(3, :));
 xlabel('x [m]');
-xlabel('y [m]');
-xlabel('z [m]');
+ylabel('y [m]');
+zlabel('z [m]');
 daspect([1, 1, 1]);
 
 %% Generate 2-D histogram of position
 
-xbins = linspace(-1, 1, 100)*1e-6;
-ybins = linspace(-1, 1, 100)*1e-6;
+xbins = linspace(-1, 1, 20)*0.1e-6;
+ybins = linspace(-1, 1, 20)*0.1e-6;
 
 figure();
+subplot(1, 2, 1);
 histogram2(x(1, :), x(2, :), xbins, ybins);
-xlabel('X [m]');
-xlabel('Y [m]');
+xlabel('x [m]');
+ylabel('y [m]');
 
+subplot(1, 2, 2);
+counts = histcounts2(x(1, :), x(2, :), xbins, ybins);
+imagesc(xbins, ybins, counts);
+xlabel('x [m]');
+ylabel('y [m]');
+axis image;

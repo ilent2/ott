@@ -210,7 +210,8 @@ classdef Dynamics
       end
 
       % Two different loops depending on if we need inertia
-      if isempty(sim.particle.mass) || sim.particle.mass == 0
+      if (isempty(sim.particle.mass) && isempty(sim.particle.moment)) ...
+          || (sim.particle.mass == 0 && sim.particle.moment == 0)
 
         % No mass, no inertia
 
@@ -219,7 +220,8 @@ classdef Dynamics
         else
           invGamma = eye(6);
         end
-        bmterm = sqrt(2*kb*sim.temperature) * invGamma^(1/2);
+        bmterm = sqrt(2*kb*sim.temperature) * invGamma^(1/2) ...
+          ./ sqrt(sim.timeStep);
 
         for ii = 2:numel(t)
 
@@ -231,7 +233,7 @@ classdef Dynamics
           [fo, to] = optforce(xc, Rc);
 
           % Convert to position units and add BM
-          ft = invGamma * [fo; to] + bmterm * randn(6, 1);
+          ft = -invGamma * [fo; to] + bmterm * randn(6, 1);
 
           % Update position/rotation
           x(:, ii) = xc + ft(1:3)*dt;
@@ -251,26 +253,33 @@ classdef Dynamics
 
         % With mass, get a local copy
         mass = sim.particle.mass;
+        moment = sim.particle.moment;
         if ~isempty(sim.particle.drag)
-          drag = sim.particle.drag.gamma;
+          drag = sim.particle.drag;
         else
           drag = eye(3);
         end
-        denom = inv(mass./dt.^2 + 1/(2*dt)*drag);
-        bmterm = sqrt(2*kb*sim.temperature*drag./dt);
+        massmoment = [[1;1;1]*mass; [1;1;1]*moment];
+        denom = inv(diag(massmoment) + dt * drag);
+        bmterm = sqrt(2*kb*sim.temperature./dt) * drag^(1/2);
+        
+        % Initial derivatives
+        % TODO: Add initial rotation derivative
+        dx = zeros(6, 1);
+        dx(1:3) = (x(:, 2) - x(:, 1))./dt;
 
         for ii = 3:numel(t)
 
           % Calculate optical force/torque
           [fo, to] = optforce(x(:, ii-1), R(:, (1:3) + (ii-2)*3));
+          gft = -[fo; to];
+          
+          % Calculate new derivative
+          dx = denom * (dx.*massmoment + gft.*dt + dt*bmterm*randn(6, 1)); %#ok<MINV>
 
-          % Calculate other force components
-          ff = mass*(2*x(:, ii-1) - x(:, ii-2))./dt^2 + fo ...
-              + drag*x(:, ii-2)./(2*dt) + bmterm * rand(3, 1);
-
-          % TODO: Torque terms
           % Update position/rotation
-          x(:, ii) = denom * ff;
+          x(:, ii) = x(:, ii-1) + dx(1:3)*dt;
+          R(:, (1:3) + (ii-1)*3) = sim.rotation_matrix(dx(4:6)*dt)*R(:, (1:3) + (ii-2)*3);
 
           % Update plot
           plotData = sim.updatePlot(plotData, ...

@@ -192,26 +192,49 @@ function testFarfieldTranslationsScattered(testCase)
   
   rtp = [ones(1, 5); mod(abs(randn(2, 5)), pi)];
   
-  Ertp1 = beam1.efarfield(rtp);
-  Ertp2 = beam.efarfield(rtp);
-  testCase.assertEqual(Ertp1.vxyz, Ertp2.vxyz, 'original position');
+  oErtp1 = beam1.efarfield(rtp);
+  oErtp2 = beam.efarfield(rtp);
+  testCase.assertEqual(oErtp1.vxyz, oErtp2.vxyz, 'original position');
   
-  % Tranlsate incident and beam
+  % Tranlsate whole beam
   xyz = randn(3, 1)*beam.wavelength;
   beam.position = xyz;
   beam1.position = xyz;
+  runTestFields('Tranlsate whole beam');
   
-  Ertp1 = beam1.efarfield(rtp);
-  Ertp2 = beam.efarfield(rtp);
-  testCase.verifyEqual(Ertp1.vxyz, Ertp2.vxyz, 'scat.position');
-  
+  % Translate whole beam and sub-beam
   xyz2 = randn(3, 1)*beam.wavelength;
   beam.scattered.position = xyz2;
   beam1.position = xyz + xyz2;
+  runTestFields('Translate whole beam and sub-beam');
   
-  Ertp1 = beam1.efarfield(rtp);
-  Ertp2 = beam.efarfield(rtp);
-  testCase.verifyEqual(Ertp1.vxyz, Ertp2.vxyz, ...
-    'AbsTol', 2e-14, 'scat.scattered');
+  % Rotate whole beam
+  beam.scattered.position = [0;0;0];
+  beam.position = [0;0;0];
+  beam1.position = [0;0;0];
+  beam = beam.rotateY(pi/2);
+  beam1 = beam1.rotateY(pi/2);
+  runTestFields('rotate whole beam');
   
+  % Rotate and translate whole beam
+  beam = beam.translateXyz(xyz);
+  beam1 = beam1.translateXyz(xyz);
+  runTestFields('rotate and translate whole beam');
+  
+  % Apply rotations/translations to whole and sub
+  beam.position = [0;0;0]; beam.rotation = eye(3);
+  beam1.position = [0;0;0]; beam1.rotation = eye(3);
+  beam.scattered = beam.scattered.rotateY(pi/2).translateXyz(xyz);
+  beam = beam.rotateY(pi/4).translateXyz(xyz2);
+  Ry = ott.utils.roty(45);
+  beam1 = beam1.rotateY(pi/4 + pi/2).translateXyz(Ry*xyz + xyz2);
+  
+  function runTestFields(name)
+    basis = 'incoming';
+    Ertp1 = beam1.efarfield(rtp, 'basis', basis);
+    Ertp2 = beam.efarfield(rtp, 'basis', basis);
+    testCase.verifyEqual(Ertp1.vxyz, Ertp2.vxyz, ...
+      'AbsTol', 1e-13, name);
+  end
 end
+

@@ -241,7 +241,7 @@ classdef Stokes < ott.utils.RotateHelper ...
       iTensor = obj.inverse;
     end
 
-    function drag = mtimes(obj, vec)
+    function drag = mtimes(a, b)
       % Calculate the drag using the tensor and a velocity vector
       %
       % Usage:
@@ -249,8 +249,22 @@ classdef Stokes < ott.utils.RotateHelper ...
       %
       % If tensor.forward is not set, attempts to calculate the drag
       % from the inverse of the inverse drag tensor.
-
-      drag = obj.forward * vec;
+      
+      if isa(a, 'ott.drag.Stokes')
+        drag = a.forward * b;
+      else
+        drag = a * b.forward;
+      end
+    end
+    
+    function num = mpower(obj, pow)
+      % Raise drag tensor to the power of value
+      %
+      % Usage
+      %   value = drag^power
+      
+      assert(isa(obj, 'ott.drag.Stokes'), 'first argument must be drag tensor');
+      num = obj.forward^pow;
     end
 
     function num = vecnorm(obj, varargin)

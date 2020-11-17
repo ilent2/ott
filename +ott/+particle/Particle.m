@@ -18,6 +18,7 @@ classdef Particle < matlab.mixin.Heterogeneous ...
 %   - drag        -- Describes the drag (particle-fluid interaction)
 %   - tinternal   -- T-matrix for internal scattered field (optional)
 %   - mass        -- Particle mass [kg] (optional)
+%   - moment      -- Particle moment of inertia [kg m^2] (optional)
 %
 % Properties
 %   - position    -- Particle position [m]
@@ -40,6 +41,7 @@ classdef Particle < matlab.mixin.Heterogeneous ...
 
   properties
     mass         % Particle mass [kg] (optional)
+    moment       % Particle moment of inertia [kg m^2] (optional)
   end
 
   methods
@@ -88,6 +90,16 @@ classdef Particle < matlab.mixin.Heterogeneous ...
         assert(isnumeric(val) && isscalar(val) && val >= 0, ...
             'mass must be positive numeric scalar or empty');
         particle.mass = val;
+      end
+    end
+    
+    function particle = set.moment(particle, val)
+      if isempty(val)
+        particle.moment = [];
+      else
+        assert(isnumeric(val) && isscalar(val) && val >= 0, ...
+            'moment must be positive numeric scalar or empty');
+        particle.moment = val;
       end
     end
   end

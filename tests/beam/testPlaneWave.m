@@ -29,3 +29,13 @@ function testConstruct(testCase)
 
 end
 
+function testConstructZeroNmax(testCase)
+
+  polarisation = [1, 0];
+  Nmax = 0;
+  beam = ott.beam.PlaneWave(polarisation, 'Nmax', Nmax);
+  
+  bsc = ott.bsc.Bsc(beam);
+  testCase.verifyEqual(bsc.nbeams, 1, 'num beams');
+end
+

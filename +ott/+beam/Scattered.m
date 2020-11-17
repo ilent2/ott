@@ -10,6 +10,8 @@ classdef Scattered < ott.beam.Beam
 % Properties
 %   - incident    -- Beam data incident on the particle
 %   - scattered   -- Beam data scattered by the particle
+%   - outgoing    -- Outgoing modes radiation from the particle
+%   - incoming    -- Incoming modes scattered by the particle
 %   - internal    -- Internal beam data (optional)
 %   - particle    -- Particle responsible for scattering (optional)
 %
@@ -51,9 +53,11 @@ classdef Scattered < ott.beam.Beam
   end
 
   properties (Dependent)
-    shape       % Either particle or the shape property of particle
+    outgoing     % Outgoing modes radiation from the particle
+    incoming     % Incoming modes scattered by the particle
+    shape        % Either particle or the shape property of particle
     index_medium % Refractive index of incident/scattered medium
-    omega       % Optical frequency
+    omega        % Optical frequency
   end
 
   methods
@@ -617,15 +621,15 @@ classdef Scattered < ott.beam.Beam
       %
       %   [fx, fy, fz] = ibeam.force(...) -- As above, but unpacking
       %   the outputs for X/Y/Z.
-      
-      % Get total field (or scattered if incident not set)
-      [odata, ~] = beam.getAndParseType('type', 'total');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for force without arguments');
-        [varargout{1:nargout}] = beam.incident.force(odata);
+        [odata, ~] = beam.getAndParseType('type', 'outgoing');
+        [idata, ~] = beam.getAndParseType('type', 'incoming');
+        [varargout{1:nargout}] = idata.force(odata);
       else
+        [odata, ~] = beam.getAndParseType('type', 'total');
         [varargout{1:nargout}] = odata.force(obeam);
       end
     end
@@ -645,15 +649,15 @@ classdef Scattered < ott.beam.Beam
       %
       %   [tx, ty, tz] = ibeam.torque(...) -- As above, but unpacking
       %   the outputs for X/Y/Z.
-      
-      % Get total field (or scattered if incident not set)
-      [odata, ~] = beam.getAndParseType('type', 'total');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for torque without arguments');
-        [varargout{1:nargout}] = beam.incident.torque(odata);
+        [odata, ~] = beam.getAndParseType('type', 'outgoing');
+        [idata, ~] = beam.getAndParseType('type', 'incoming');
+        [varargout{1:nargout}] = idata.torque(odata);
       else
+        [odata, ~] = beam.getAndParseType('type', 'total');
         [varargout{1:nargout}] = odata.torque(obeam);
       end
     end
@@ -673,15 +677,15 @@ classdef Scattered < ott.beam.Beam
       %
       %   [sx, sy, sz] = ibeam.spin(...) -- As above, but unpacking
       %   the outputs for X/Y/Z.
-      
-      % Get total field (or scattered if incident not set)
-      [odata, ~] = beam.getAndParseType('type', 'total');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for spin without arguments');
-        [varargout{1:nargout}] = beam.incident.spin(odata);
+        [odata, ~] = beam.getAndParseType('type', 'outgoing');
+        [idata, ~] = beam.getAndParseType('type', 'incoming');
+        [varargout{1:nargout}] = idata.spin(odata);
       else
+        [odata, ~] = beam.getAndParseType('type', 'total');
         [varargout{1:nargout}] = odata.spin(obeam);
       end
     end
@@ -699,15 +703,15 @@ classdef Scattered < ott.beam.Beam
       %   scattered beam ``sbeam``.
       %
       %   Outputs 3x[N...] matrix depending on the number and shape of beams.
-      
-      % Get total field (or scattered if incident not set)
-      [odata, ~] = beam.getAndParseType('type', 'total');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for forcetorque without arguments');
-        [varargout{1:nargout}] = beam.incident.forcetorque(odata);
+        [odata, ~] = beam.getAndParseType('type', 'outgoing');
+        [idata, ~] = beam.getAndParseType('type', 'incoming');
+        [varargout{1:nargout}] = idata.forcetorque(odata);
       else
+        [odata, ~] = beam.getAndParseType('type', 'total');
         [varargout{1:nargout}] = odata.forcetorque(obeam);
       end
     end
@@ -771,20 +775,21 @@ classdef Scattered < ott.beam.Beam
       switch p.Results.type
         case 'total'
           odata = ott.beam.Array([beam.incident, 2*beam.scattered], ...
-              'arrayType', 'coherent', ...
-              'position', beam.position, 'rotation', beam.rotation);
+              'arrayType', 'coherent');
         case 'incident'
           odata = beam.incident;
-          odata = odata.translateXyz(beam.position);
-          odata = odata.rotate(beam.rotation);
         case 'scattered'
           odata = beam.scattered;
-          odata = odata.translateXyz(beam.position);
-          odata = odata.rotate(beam.rotation);
+        case 'outgoing'
+          odata = beam.outgoing;
+        case 'incoming'
+          odata = beam.incoming;
         otherwise
           error('ott:beam:Scattered:unknown_type', ...
               'Unknown type specified, must be incident, scattered or total');
       end
+      
+      odata = odata.rotate(beam.rotation).translateXyz(beam.position);
     end
 
     function val = defaultVisRangeInternal(beam)
@@ -833,7 +838,24 @@ classdef Scattered < ott.beam.Beam
         beam.scattered = val;
       end
     end
-
+    
+    function beam = get.outgoing(beam)
+      sbsc = ott.bsc.Bsc(beam.scattered);
+      ibsc = ott.bsc.Bsc(beam.incident, sbsc.Nmax);
+      beam = ott.beam.BscOutgoing(ibsc + 2*sbsc, ...
+        'omega', beam.omega, 'index_medium', beam.index_medium);
+    end
+    
+    function beam = get.incoming(beam)
+      
+      % Getting a sbsc instance just for Nmax seems wasteful
+      sbsc = ott.bsc.Bsc(beam.scattered);
+      ibsc = ott.bsc.Bsc(beam.incident, sbsc.Nmax);
+      
+      beam = ott.beam.BscFinite(ibsc, ...
+        'omega', beam.omega, 'index_medium', beam.index_medium);
+    end
+      
     function beam = set.particle(beam, val)
       if isempty(val)
         beam.particle = [];

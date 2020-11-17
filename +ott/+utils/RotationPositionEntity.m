@@ -117,6 +117,7 @@ classdef (Abstract) RotationPositionEntity < ...
         case 'global'
           for ii = 1:numel(obj)
             obj(ii).rotation = mat(:, :, ii) * obj(ii).rotation;
+            obj(ii).position = mat(:, :, ii) * obj(ii).position;
           end
         case 'local'
           for ii = 1:numel(obj)

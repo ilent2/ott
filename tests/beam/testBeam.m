@@ -81,7 +81,7 @@ function testIntensityMoment(testCase)
 
   beam1 = ott.beam.Gaussian('power', 2);
   [moment, ints] = beam1.intensityMoment();
-  emptyBeam = ott.beam.BscBeam();
+  emptyBeam = ott.beam.Empty();
   
   testCase.verifyEqual(ints, beam1.power, 'RelTol', 1e-2, 'power');
   testCase.verifyEqual(moment./beam1.speed, ...

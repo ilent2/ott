@@ -26,6 +26,19 @@ function testLocalTranslation(testCase)
 
 end
 
+function testRotation(testCase)
+
+  obj = ott.utils.RotationPositionProp();
+  obj.position = [1;0;0];
+  
+  trial = obj.rotateY(pi/2, 'origin', 'global');
+  testCase.verifyEqual(trial.position, [0;0;-1], 'AbsTol', 1.0e-15, 'global');
+  
+  trial = obj.rotateY(pi/2, 'origin', 'local');
+  testCase.verifyEqual(trial.position, obj.position, 'AbsTol', 1.0e-15, 'local');
+
+end
+
 function testHetrogeneousArray(testCase)
 
   beam(1) = ott.beam.Empty();

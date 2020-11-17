@@ -24,6 +24,14 @@ function testConstructArray(testCase)
   testCase.verifyEqual(bsc.nbeams, 5, 'bsc size');
   testCase.verifyEqual([bsc.a], a, 'a');
   testCase.verifyEqual([bsc.b], b, 'b');
+  
+  % Tset empty array
+  a = zeros(0, 5);
+  b = zeros(0, 5);
+  bsc = ott.bsc.Bsc(a, b);
+  testCase.verifyEqual(bsc.nbeams, 5, 'bsc size');
+  testCase.verifyEqual(bsc.a, a, 'a');
+  testCase.verifyEqual(bsc.b, b, 'b');
 
 end
 

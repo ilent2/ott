@@ -38,10 +38,45 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
       bm = bm@ott.beam.properties.IndexOmegaProps(omega, index);
       bm = bm@ott.beam.Beam(unmatched{:});
     end
+    
+    function bsc = ott.bsc.Bsc(~, varargin)
+      % Construct empty Bsc instance
+      bsc = ott.bsc.Bsc();
+    end
 
     %
     % Force calculation methods
     %
+    
+    function varargout = force(ebeam, other, varargin)
+      % Calculate force, defering to other beam force method
+      %
+      % Usage
+      %   [F, ...] = emptyBeam.force(other, ...)
+      
+      [varargout{1:nargout}] = other.force(ebeam, varargin{:});
+      varargout{1} = -varargout{1};
+    end
+    
+    function varargout = torque(ebeam, other, varargin)
+      % Calculate torque, defering to other beam torque method
+      %
+      % Usage
+      %   [F, ...] = emptyBeam.torque(other, ...)
+      
+      [varargout{1:nargout}] = other.torque(ebeam, varargin{:});
+      varargout{1} = -varargout{1};
+    end
+    
+    function varargout = spin(ebeam, other, varargin)
+      % Calculate spin, defering to other beam spin method
+      %
+      % Usage
+      %   [F, ...] = emptyBeam.spin(other, ...)
+      
+      [varargout{1:nargout}] = other.spin(ebeam, varargin{:});
+      varargout{1} = -varargout{1};
+    end
 
     function [moment, ints, data] = intensityMoment(~, varargin)
       % Calculate moment of the beam intensity in the far-field.

@@ -29,6 +29,17 @@ function testFromDirection(testCase)
 
 end
 
+function testZeroNmax(testCase)
+
+  dir = randn(3, 2);
+  pol = randn(3, 2);
+  Nmax = 0;
+  beam = ott.bsc.PlaneWave.FromDirection(Nmax, dir, pol);
+  
+  testCase.verifySize(beam, [1, size(dir, 2)], 'size');
+  testCase.verifyEqual([beam.Nmax], [0, 0], 'nmax');
+end
+
 function testSetPower(testCase)
 
   Nmax = 40;

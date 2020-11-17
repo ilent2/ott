@@ -40,7 +40,7 @@ classdef (Abstract) RotateHelper
 
       ott.utils.nargoutCheck(obj, nargout);
 
-      [varargout{1:nargout}] = obj.rotateInternal(mat);
+      [varargout{1:nargout}] = obj.rotateInternal(mat, varargin{:});
     end
 
     function varargout = rotateX(obj, angle, varargin)

@@ -305,21 +305,23 @@ classdef Array < ott.beam.ArrayType
           @(odata, varargin) odata.ehparaxial(varargin{:}), varargin{:});
     end
   end
-
+  
   methods (Hidden)
+    function varargout = transformHelper(beam, subbeam, target, varargin)
+      [varargout{1:nargout}] = target(...
+        subbeam.rotate(beam.rotation).translateXyz(beam.position), ...
+        varargin{:});
+    end
+    
     function [EH, vswfData] = singleOutputHelper(beam, ...
           target, xyz, varargin)
       % Helper for single output field calculation functions
-      
-      target = @(b, varargin) target(...
-          b.rotate(beam.rotation).translateXyz(beam.position), ...
-          varargin{:});
 
-      [EH, vswfData] = target(beam.data(1), xyz, varargin{:});
+      [EH, vswfData] = beam.transformHelper(beam.data(1), target, xyz, varargin{:});
       EH = repmat(EH, [1, 1, numel(beam.data)]);
 
       for ii = 2:numel(beam.data)
-        [EHf, vswfData] = target(beam.data(ii), xyz, ...
+        [EHf, vswfData] = beam.transformHelper(beam.data(ii), target, xyz, ...
             varargin{:}, 'data', vswfData);
           
         % Added cast as workaround to 'bug' in R2018a
@@ -334,17 +336,13 @@ classdef Array < ott.beam.ArrayType
     function [E, H, vswfData] = doubleOutputHelper(beam, ...
           target, xyz, varargin)
       % Helper for double output field calculation functions
-      
-      target = @(b, varargin) target(...
-          b.rotate(beam.rotation).translateXyz(-beam.position), ...
-          varargin{:});
 
-      [E, H, vswfData] = target(beam.data(1), xyz, varargin{:});
+      [E, H, vswfData] = beam.transformHelper(beam.data(1), target, xyz, varargin{:});
       E = repmat(E, [1, 1, numel(beam.data)]);
       H = repmat(H, [1, 1, numel(beam.data)]);
 
       for ii = 2:numel(beam.data)
-        [Ef, Hf, vswfData] = target(beam.data(ii), ...
+        [Ef, Hf, vswfData] = beam.transformHelper(beam.data(ii), target, ...
             xyz, varargin{:}, 'data', vswfData);
           
         % Added cast as workaround to 'bug' in R2018a

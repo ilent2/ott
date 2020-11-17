@@ -210,11 +210,13 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       
       % Calculate scattered Bscs
       [ibsc, sbsc] = ibeam.scatterBsc(particle);
-
+      
       % Calculate external component
       if ~isempty(sbsc)
+        sbsc = sbsc.rotate(scat_rotation);
         sbeam = ott.beam.BscOutgoing(sbsc, ...
           'index_medium', ibeam.index_medium, 'omega', ibeam.omega);
+        sbeam.rotation = scat_rotation.';
       else
         sbeam = [];
       end
@@ -222,9 +224,11 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       % Calculate internal component
       if ~isempty(particle.tinternal)
         sint = particle.tinternal * ibsc;
+        sint = sint.rotate(scat_rotation);
         index_particle = ibeam.index_medium * particle.tinternal.index_relative;
         nbeam = ott.beam.BscBeam(sint, ...
           'index_medium', index_particle, 'omega', ibeam.omega);
+        nbeam.rotation = scat_rotation.';
       else
         nbeam = [];
       end
@@ -343,6 +347,7 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
         ibsc(ii) = ott.bsc.Bsc(tbeam, Nmax);
 
         % Apply particle rotation
+        % We are now in the particle frame with both ibsc and sbsc
         ibsc(ii) = ibsc(ii).rotate(rotation(:, (1:3) + (ii-1)*3).');
 
         % Calculate external component
@@ -528,14 +533,14 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       bsc = ott.bsc.Bsc(beam);
       [varargout{1:nargout}] = bsc.hfieldRtp(...
           rtp./[beam.wavelength;1;1], varargin{:});
-
+        
       if nargout >= 1
         varargout{1} = varargout{1} ./ sqrt(beam.index_medium) ...
           .* 2 .* beam.wavenumber ./ sqrt(beam.impedance);
       end
     end
 
-    function varargout = force(ibeam, sbeam, varargin)
+    function F = force(ibeam, sbeam, varargin)
       % Calculate force (in Newtons)
       %
       % Usage
@@ -548,31 +553,49 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
+      
+        p = inputParser;
+        p.addParameter('rotation', [sbeam.rotation]);
+        p.KeepUnmatched = true;
+        p.parse(varargin{:});
         
         % Calculate scattered field (incident-scattered)
         [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
         
+        % Get particle rotation
+        particle_rot = p.Results.rotation;
+        
         % Convert to incoming-outgoing
         sbsc = ibsc + 2*sbsc;
       else
+        
+        % Get particle rotation (to be applied later)
+        particle_rot = sbeam.rotation;
+        
         % Apply the scattered beams translation to ourselves
         % Perhaps this isn't the best thing to do, but I'm not sure
         % where else we should do this.
         % TODO: Rotation too!!!
-        ibeam = ibeam.translateXyz(sbeam.position);
+        ibeam = ibeam.translateXyz(-sbeam.position).rotate(sbeam.rotation.');
         sbeam.position = [0;0;0];
+        sbeam.rotation = eye(3);
         
-        ibsc = ott.bsc.Bsc(ibeam);
         sbsc = ott.bsc.Bsc(sbeam);
+        
+        % Use Nmax from sbsc, we don't apply translations to sbsc so
+        % this Nmax should correspond to the scattered Nmax.
+        ibsc = ott.bsc.Bsc(ibeam, sbsc.Nmax);
       end
 
       % Calculate force using internal methods
-      [varargout{1:nargout}] = ibsc.force(sbsc);
+      F = ibsc.force(sbsc);
+      
+      % Apply particle rotation term to result
+      % This avoid calculating a wigner matrix
+      F = particle_rot * F;
 
       % Convert units of output to SI
-      for ii = 1:nargout
-        varargout{ii} = varargout{ii} ./ ibeam.speed;
-      end
+      F = F ./ ibeam.speed;
     end
 
     function varargout = torque(ibeam, sbeam, varargin)

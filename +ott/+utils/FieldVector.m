@@ -1,4 +1,4 @@
-classdef FieldVector < double
+classdef FieldVector < double & ott.utils.RotateHelper
 % Base class for classes encapsulating field vector data.
 %
 % .. warning:: This class may not behave as expected in Matlab R2018a
@@ -45,6 +45,41 @@ classdef FieldVector < double
       assert(any(size(data, 1) == [3, 6]), ...
         'First dimension of data [vec; pos] must be 3 or 6');
       field = field@double(data);
+    end
+  end
+  
+  methods (Hidden, Sealed)
+    function fv = rotateInternal(fv, mat, varargin)
+      % Implement global and local rotations
+
+      p = inputParser;
+      p.addParameter('origin', 'global');
+      p.parse(varargin{:});
+      
+      fv = ott.utils.FieldVectorCart(fv);
+
+      switch p.Results.origin
+        case 'global'
+          data = mat * fv.vxyz(':', ':');
+          if size(fv, 1) == 6
+            data = [data; mat * double(fv(4:6, :))];
+          end
+          data = reshape(data, size(fv));
+          fv = ott.utils.FieldVectorCart(data);
+        case 'local'
+          data = mat * fv.vxyz(':', ':');
+          if size(fv, 1) == 6
+            data = [data; double(fv(4:6, :))];
+          end
+          data = reshape(data, size(fv));
+          fv = ott.utils.FieldVectorCart(data);
+        otherwise
+          error('Unknown origin for rotation');
+      end
+
+      if nargout == 0
+        clear fv
+      end
     end
   end
 

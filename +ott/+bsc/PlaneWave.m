@@ -116,8 +116,14 @@ classdef PlaneWave < ott.bsc.Bsc
       p.parse(varargin{:});
 
       beam = beam@ott.bsc.Bsc(p.Results.a, p.Results.b);
-      for ii = 1:numel(beam)
-        beam(ii).direction = p.Results.direction(:, ii);
+      
+      if size(p.Results.direction, 2) == 1
+        beam.direction = p.Results.direction;
+      else
+        beam = beam.split();
+        for ii = 1:numel(beam)
+          beam(ii).direction = p.Results.direction(:, ii);
+        end
       end
     end
 

@@ -289,7 +289,7 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
       end
       
       % Empty input should produce a beam
-      if isempty(oa) && isempty(ob)
+      if ismatrix(oa) && size(oa, 2) == 0 && ismatrix(ob) && size(ob, 2) == 0
         oa = zeros(0, 1);
         ob = zeros(0, 1);
       end
@@ -328,11 +328,10 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
       
       n = 0;
       for ii = 1:numel(beam)
-        if numel(beam(ii).data) == 0
-          n = n + 1;  % Empty beams are still beams
-        else
-          n = n + numel(beam(ii).data)/size(beam(ii).data, 1);
-        end
+        
+        % Calculate size by omitting first dimension
+        sz = size(beam(ii).data);
+        n = n + prod(sz(2:end));
       end
     end
     
@@ -924,7 +923,8 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
         'size of a and b must match');
 
       if numel(beam) ~= 1
-        assert(numel(beam) == numel(a)/size(a, 1), ...
+        sza = size(a);
+        assert(numel(beam) == prod(sza(2:end)), ...
           'number of columns in a/b must match number of beams');
         
         for ii = 1:numel(beam)

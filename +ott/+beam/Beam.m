@@ -492,10 +492,10 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       assert(isa(other, 'ott.beam.Beam'), ...
         'second argument must be a Beam instance');
 
-      fbeam = beam.intensityMoment();
-      obeam = other.intensityMoment();
+      fbeam = beam.intensityMoment() ./ beam.speed;
+      obeam = other.intensityMoment() ./ other.speed;
 
-      f = fbeam - obeam;
+      f = obeam - fbeam;
     end
 
     function t = torque(~, varargin)
