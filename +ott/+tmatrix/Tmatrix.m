@@ -57,11 +57,15 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 % See LICENSE.md for information about using/distributing this file.
 
   properties
-    type          % Type of T-matrix (total, scattered or internal)
     data          % The matrix this class encapsulates
+  end
+  
+  properties (Hidden)
+    typeInternal  % T-matrix type (actual value)
   end
 
   properties (Dependent)
+    type          % Type of T-matrix (total, scattered or internal)
     Nmax          % Current size of T-matrix
     total         % Total version of the T-matrix
     scattered     % Scattered version of the T-matrix
@@ -913,9 +917,7 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       % Check output arguments
       ott.utils.nargoutCheck(tmatrix, nargout);
 
-      S = warning('off', 'ott:scat:vswf:Tmatrix:type_change');
-      tmatrix.type = val;
-      warning(S);
+      tmatrix.typeInternal = val;
     end
 
     function varargout = columnCheck(tmatrix, varargin)
@@ -1049,19 +1051,24 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 
       tmatrix.data = val;
     end
-
-    function tmatrix = set.type(tmatrix, val)
-
-      % Check type
+    
+    function tmatrix = set.typeInternal(tmatrix, val)
       assert(any(strcmpi(val, {'internal', 'total', 'scattered'})), ...
           'type must be ''internal'' ''total'' or ''scattered''');
+      tmatrix.typeInternal = val;
+    end
+
+    function tmatrix = set.type(tmatrix, val)
 
       % Warn user they may be doing the wrong thing
       warning('ott:scat:vswf:Tmatrix:type_change', ...
         ['Changing the type property doesnt change the type', newline, ...
         'Use tmatrix.total or tmatrix.scattered instead']);
 
-      tmatrix.type = val;
+      tmatrix.typeInternal = val;
+    end
+    function val = get.type(tmatrix)
+      val = tmatrix.typeInternal;
     end
 
     function tmatrix = get.total(tmatrix)

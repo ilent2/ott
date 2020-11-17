@@ -270,8 +270,8 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %     ``@DefaultScatterProgressCallback`` (otherwise).
       
       p = inputParser;
-      p.addParameter('position', particle.position);
-      p.addParameter('rotation', particle.rotation);
+      p.addParameter('position', [particle.position]);
+      p.addParameter('rotation', [particle.rotation]);
       p.addParameter('progress', []);
       p.parse(varargin{:});
       
@@ -294,11 +294,15 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       % Count amount of work, repmat position/rotation if required
       Npos = size(position, 2);
       Nrot = size(rotation, 2)/3;
-      Nwork = max(Npos, Nrot);
-      assert(Npos == 1 || Nrot == 1 || Npos == Nrot, ...
-        'Number of position and rotations must be equal or 1');
-      if Npos == 1, position = repmat(position, [1, Nrot]); end
-      if Nrot == 1, rotation = repmat(rotation, [1, Npos]); end
+      Npart = numel(particle);
+      Nwork = max([Npos, Nrot, Npart]);
+      assert((Npos == Nwork || Npos == 1) ...
+        && (Nrot == Nwork || Nrot == 1) ...
+        && (Npart == Nwork || Npart == 1), ...
+        'Number of position/rotation/particles must be equal or 1');
+      if Npos ~= Nwork, position = repmat(position, [1, Nwork]); end
+      if Nrot ~= Nwork, rotation = repmat(rotation, [1, Nwork]); end
+      if Npart ~= Nwork, particle = repmat(particle, [1, Nwork]); end
 
       % Handle default argument for progress callback
       progress_cb = p.Results.progress;
@@ -312,17 +316,16 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
 
       % Get required Nmax for beam data
       Nmax = 0;
-      if ~isempty(particle.tmatrix)
-        Nmax = max(Nmax, particle.tmatrix.Nmax(2));
+      if numel([particle.tmatrix]) == numel(particle)
+        ts = [particle.tmatrix];
+        Nmax = max(cat(1, [0, 0], ts.Nmax), 1);
+        Nmax = Nmax(2);
       end
       
       % Pre-allocate space for results
-      ab = sparse(ott.utils.combined_index(Nmax, Nmax), Nwork);
-      ibsc = ott.bsc.Bsc(ab, ab);
-      if ~isempty(particle.tmatrix)
-        sNmax = particle.tmatrix.Nmax(1);
-        ab = sparse(ott.utils.combined_index(sNmax, sNmax), Nwork);
-        sbsc = ott.bsc.Bsc(ab, ab);
+      ibsc(Nwork) = ott.bsc.Bsc();
+      if numel([particle.tmatrix]) == numel(particle)
+        sbsc(Nwork) = ott.bsc.Bsc();
       else
         sbsc = [];
       end
@@ -343,8 +346,8 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
         ibsc(ii) = ibsc(ii).rotate(rotation(:, (1:3) + (ii-1)*3).');
 
         % Calculate external component
-        if ~isempty(particle.tmatrix)
-          sbsc(ii) = particle.tmatrix * ibsc(ii);
+        if ~isempty(particle(ii).tmatrix)
+          sbsc(ii) = particle(ii).tmatrix * ibsc(ii);
         end
         
         % Report progress

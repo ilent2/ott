@@ -23,6 +23,10 @@
 % Add toolbox to path (uncomment this line if OTT is not already on the path)
 %addpath('../');
 
+% On R2018a this script seems to crash matlab when variables/classes are not
+% cleared before running, you may want to comment this line...
+clear all;
+
 %% Define properties for particles/beams
 
 % Refractive indices of water and vaterite
@@ -70,17 +74,22 @@ ylabel('Z Position [m]');
 
 %% Generate the T-matrix
 
-radius = logspace(-8, -6.2147, 20);
+radius = logspace(-7.0, -6.2147, 20);
 times = zeros(size(radius));
 
 % Clear/allocate memory for T-matrices
-clear Ts;
-Ts(numel(radius)) = ott.tmatrix.Tmatrix();
+Ts = ott.tmatrix.Tmatrix();
+Ts = repmat(Ts, 1, numel(radius));
+
+particle = ott.particle.Fixed();
+particle = repmat(particle, 1, numel(radius));
 
 for ii = 1:length(times)
+  
+    disp(['Particle number : ' num2str(ii)]);
 
     % Pre-calculate voxel locations
-    shape = ott.shapes.Sphere(radius(ii));
+    shape = ott.shape.Sphere(radius(ii));
     voxels = shape.voxels(spacing, 'even_range', true);
 
     if numel(voxels) == 0
@@ -89,7 +98,7 @@ for ii = 1:length(times)
     end
 
     % Calculate polarizability unit
-    upol = ott.utils.polarizability.LDR(spacing ./ wavelength0, ...
+    upol = ott.tmatrix.dda.polarizability.LDR(spacing ./ wavelength0, ...
         [index_o; index_o; index_e] ./ index_medium);
 
     % Calculate sheaf-of-wheta orientations
@@ -106,10 +115,11 @@ for ii = 1:length(times)
 
     % Could also use 'ott.tmatrix.dda.Dda' which may run better
     % when memory is limited.
-    dda = ott.tmatrix.dda.DdaHighMem(voxels, polarizability, ...
-        'xySymmetry', true, 'zRotSymmetry', 0);
+    dda = ott.tmatrix.dda.DdaHighMem(voxels./wavelength_medium, ...
+        polarizabilities, 'xySymmetry', true, 'zRotSymmetry', 0);
 
     Ts(ii) = ott.tmatrix.Dda(dda);
+    particle(ii) = ott.particle.Fixed('tmatrix', Ts(ii));
 
     times(ii) = toc();
 end
@@ -138,12 +148,13 @@ title('DDA Run-time');
 % TmatrixDda to match the ci-orders in the beam.  Increase resolution.
 
 beam = ott.beam.Gaussian.FromNa(1.1, 'index_medium', index_medium, ...
-  'power', 1.0, 'wavelength0', wavelength0, 'polarisation', [1, -1i]);
+  'power', 1.0, 'wavelength0', wavelength0, ...
+  'polfield', [1, -1i], 'polbasis', 'cartesian');
 
-tz = beam.torque(Ts, 'position', [0;0;0], 'rotation', eye(3));
+tz = -beam.torque(particle, 'position', [0;0;0], 'rotation', eye(3));
 
 figure();
-plot(radius(end-length(Ts)+1:end), tz(3:3:end, :));
+plot(radius(end-length(Ts)+1:end), tz(3, :));
 xlabel('Radius [m]');
 ylabel('Torque [a.u.]');
 
