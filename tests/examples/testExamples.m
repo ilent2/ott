@@ -39,7 +39,7 @@ function testLandscape(testCase)
 end
 
 function testNeuralNetwork(testCase)
-  ottNeuralNetwok
+  ottNeuralNetwork();
 end
 
 function testNonSpherical(testCase)

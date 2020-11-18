@@ -25,7 +25,7 @@
 
 % On R2018a this script seems to crash matlab when variables/classes are not
 % cleared before running, you may want to comment this line...
-clear all;
+clearvars;
 
 %% Define properties for particles/beams
 

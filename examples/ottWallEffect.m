@@ -16,39 +16,58 @@
 
 %% Setup beam and particle
 
-% Spherical particle, 1um radius
-radius = 1.0e-6;
+% Spherical particle, 1um radius, 1um above a wall
+radius = 0.5e-6;
 shape = ott.shape.Sphere(radius);
+plane = ott.shape.Plane();
+plane.position = [0;0;-2*radius];
+geometry = [shape, plane];
 
 % Particle relative refractive index
 index_relative = 1.1;
 
-particle = ott.particle.Fixed.FromShape(shape, index_relative, ...
-    'viscosity', 0.001);
-
-% Replace the particle drag tensor with a sphere-wall drag tensor
-% Hmm, which one should we choose, and should it change?
-%
-% Also, this behaves slightly differently??
-particle.drag = ott.drag.Stokes... todo
-
+% Setup beam
 beam = ott.beam.Gaussian.FromNa(1.2, 'index_medium', 1.33, ...
     'wavelength0', 1064e-9, 'power', 0.01);
+
+% Setup particle: sphere T-matrix + plane/sphere geometry
+particle = ott.particle.Fixed();
+particle.tmatrix = ott.tmatrix.Tmatrix.FromShape(shape./beam.wavelength, ...
+  'index_relative', index_relative);
+particle.shape = geometry;
 
 %% Setup dynamics simulation
 
 temperature = 300.0;      % Temperature [K]
 
-dynamics = ott.tools.Dynamics(beam, particle, ...
-    'time_step', 1.0e-4, 'temperature', temperature);
+dragMethod = @(shape) ott.drag.StokesSphereWall.FromShape(shape, ...
+  'viscosity', 0.001);
+
+dynamics = ott.dynamics.WallEffect('beam', beam, 'particle', particle, ...
+    'timeStep', 1.0e-4, 'temperature', temperature, ...
+    'dragMethod', dragMethod);
 
 %% Run the simulation
 
+% Setup a figure to show the progress
+figure();
+ax = axes();
+axis([-1,1,-1,1,-1,1]*1.5e-6);
+
 x0 = [0;0;0];
-x = dynamics.simulate(x0);
+totalTime = 1e-2;   % Simulation time [s]
+outputRate = 0.1;   % How frequently the figure is updated [s]
+[t, x] = dynamics.simulate(totalTime, 'position', x0, ...
+  'plot_axes', ax, 'outputRate', outputRate);
 
-%% Generate visualisations of the results
+%% Generate 2-D histogram of position
 
-% TODO: What visualisations do we want?
-% How fast does it run, can we look at power spectrums/correlations?
+zbins = linspace(-1, 1, 20)*0.1e-6;
+xbins = linspace(-1, 1, 20)*0.1e-6;
 
+figure();
+counts = histcounts2(x(3, :), x(1, :), zbins, xbins);
+imagesc(zbins, xbins, counts);
+xlabel('z [m]');
+ylabel('x [m]');
+axis image;

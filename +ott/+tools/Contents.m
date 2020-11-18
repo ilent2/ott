@@ -1,12 +1,10 @@
-% ott.tools Contains tools for simulating dynamics and finding traps.
-%
-% This sub-package contains method for simulating dynamics and finding
-% the location of optical traps.  The contents/location may change in
-% a future release of OTT.
+% ott.tools Contains tools for working with optical tweezers simulations.
 %
 % Contents
-%   Dynamics    - Simple dynamics simulations with a fixed time step.
-%   FindTraps1d - Descriptions and method for finding traps in 1-dimension.
+%   FindTraps1d   - Descriptions and method for finding traps in 1-dimension.
+%   FitHarmonic   - Fit a harmonic potential to the force or position data.
+%   powerSpectrum - Generate power spectrum from force data.
+%   velocityField - Calculate velocity field from time and position data
 %
 % Copyright 2020 Isaac Lenton (aka ilent2)
 % This file is part of the optical tweezers toolbox.

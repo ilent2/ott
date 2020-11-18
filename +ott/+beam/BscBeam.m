@@ -49,7 +49,7 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %     and ``total``.
       
       % Print progress every 5%
-      iout = round(0.05*data.total);
+      iout = round(0.1*data.total);
       if mod(data.iteration, iout) == 0
         disp(['Scatter progress... ' ...
           num2str((data.iteration)/data.total*100) '%']);
@@ -550,7 +550,55 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %   force = incident_beam.force(particle, ...) -- First calculates
       %   scattering, then calculates force from difference in momentum.
       %   Additional parameters are passed to :meth:`scatterBsc`.
+      
+      % Calculate force
+      F = forceHelper(ibeam, sbeam, @(i, s) i.force(s), varargin{:});
 
+      % Convert units of output to SI
+      F = F ./ ibeam.speed;
+    end
+
+    function T = torque(ibeam, sbeam, varargin)
+      % Calculate torque (in Newton meters)
+      %
+      % Usage
+      %   torque = incident_beam.torque(scattered_beam) -- Calculates
+      %   difference in momentum between two beams.
+      %
+      %   torque = incident_beam.torque(particle, ...) -- First calculates
+      %   scattering, then calculates torque from difference in momentum.
+      %   Additional parameters are passed to :meth:`scatter`.
+
+      % Calculate force
+      T = forceHelper(ibeam, sbeam, @(i, s) i.torque(s), varargin{:});
+
+      % Convert units of output to SI
+      T = T ./ ibeam.omega;
+    end
+
+    function T = spin(ibeam, sbeam, varargin)
+      % Calculate spin (in Newton meters)
+      %
+      % Usage
+      %   spin = incident_beam.spin(scattered_beam) -- Calculates
+      %   difference in momentum between two beams.
+      %
+      %   spin = incident_beam.spin(particle, ...) -- First calculates
+      %   scattering, then calculates spin from difference in momentum.
+      %   Additional parameters are passed to :meth:`scatter`.
+
+      % Calculate force
+      T = forceHelper(ibeam, sbeam, @(i, s) i.spin(s), varargin{:});
+
+      % Convert units of output to SI
+      T = T ./ ibeam.omega;
+    end
+  end
+
+  methods (Hidden)
+    function O = forceHelper(ibeam, sbeam, func, varargin)
+      % Helper for force/torque methdods
+      
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
       
@@ -575,7 +623,6 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
         % Apply the scattered beams translation to ourselves
         % Perhaps this isn't the best thing to do, but I'm not sure
         % where else we should do this.
-        % TODO: Rotation too!!!
         ibeam = ibeam.translateXyz(-sbeam.position).rotate(sbeam.rotation.');
         sbeam.position = [0;0;0];
         sbeam.rotation = eye(3);
@@ -588,98 +635,13 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       end
 
       % Calculate force using internal methods
-      F = ibsc.force(sbsc);
+      O = func(ibsc, sbsc);
       
       % Apply particle rotation term to result
       % This avoid calculating a wigner matrix
-      F = particle_rot * F;
-
-      % Convert units of output to SI
-      F = F ./ ibeam.speed;
+      O = reshape(particle_rot * O(:, :), size(O));
     end
-
-    function varargout = torque(ibeam, sbeam, varargin)
-      % Calculate torque (in Newton meters)
-      %
-      % Usage
-      %   torque = incident_beam.torque(scattered_beam) -- Calculates
-      %   difference in momentum between two beams.
-      %
-      %   torque = incident_beam.torque(particle, ...) -- First calculates
-      %   scattering, then calculates torque from difference in momentum.
-      %   Additional parameters are passed to :meth:`scatter`.
-
-      % Calculate scattering if required
-      if ~isa(sbeam, 'ott.beam.Beam')
-        
-        % Calculate scattered field (incident-scattered)
-        [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
-        
-        % Convert to incoming-outgoing
-        sbsc = ibsc + 2*sbsc;
-      else
-        % Apply the scattered beams translation to ourselves
-        % Perhaps this isn't the best thing to do, but I'm not sure
-        % where else we should do this.
-        % TODO: Rotation too!!!
-        ibeam = ibeam.translateXyz(sbeam.position);
-        sbeam.position = [0;0;0];
-        
-        ibsc = ott.bsc.Bsc(ibeam);
-        sbsc = ott.bsc.Bsc(sbeam);
-      end
-
-      % Calculate torque using internal methods
-      [varargout{1:nargout}] = ibsc.torque(sbsc);
-
-      % Convert units of output to SI
-      for ii = 1:nargout
-        varargout{ii} = varargout{ii} ./ ibeam.omega;
-      end
-    end
-
-    function varargout = spin(ibeam, sbeam, varargin)
-      % Calculate spin (in Newton meters)
-      %
-      % Usage
-      %   spin = incident_beam.spin(scattered_beam) -- Calculates
-      %   difference in momentum between two beams.
-      %
-      %   spin = incident_beam.spin(particle, ...) -- First calculates
-      %   scattering, then calculates spin from difference in momentum.
-      %   Additional parameters are passed to :meth:`scatter`.
-
-      % Calculate scattering if required
-      if ~isa(sbeam, 'ott.beam.Beam')
-        
-        % Calculate scattered field (incident-scattered)
-        [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
-        
-        % Convert to incoming-outgoing
-        sbsc = ibsc + 2*sbsc;
-      else
-        % Apply the scattered beams translation to ourselves
-        % Perhaps this isn't the best thing to do, but I'm not sure
-        % where else we should do this.
-        % TODO: Rotation too!!!
-        ibeam = ibeam.translateXyz(sbeam.position);
-        sbeam.position = [0;0;0];
-        
-        ibsc = ott.bsc.Bsc(ibeam);
-        sbsc = ott.bsc.Bsc(sbeam);
-      end
-
-      % Calculate spin using internal methods
-      [varargout{1:nargout}] = ibsc.spin(sbsc);
-
-      % Convert units of output to SI
-      for ii = 1:nargout
-        varargout{ii} = varargout{ii} ./ ibeam.omega;
-      end
-    end
-  end
-
-  methods (Hidden)
+    
     function val = defaultVisRangeInternal(beam)
       val = [1,1] .* ott.utils.nmax2ka(...
           max([1, beam.data.Nmax]))./beam.wavenumber ./ sqrt(2);

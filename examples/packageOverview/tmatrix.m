@@ -25,7 +25,7 @@ camlight; lighting gouraud;
 title('Sphere (Mie)');
 
 T = ott.tmatrix.Mie.FromShape(shape, ...
-  'relative_index', relative_index);
+  'index_relative', relative_index);
 
 %% Spheroid (Smarties)
 
@@ -40,7 +40,7 @@ camlight; lighting gouraud;
 title('Spheroid (Smarties)');
 
 T = ott.tmatrix.Smarties.FromShape(shape, ...
-  'relative_index', relative_index);
+  'index_relative', relative_index);
 
 %% Cylinder (Pointmatch, DDA, EBCM)
 
@@ -54,7 +54,7 @@ camlight; lighting gouraud;
 title(['Cylinder' newline '(Pointmatch, Dda, Ebcm)']);
 
 T = ott.tmatrix.Tmatrix.SmartCylinder(shape, ...
-    'relative_index', relative_index);
+    'index_relative', relative_index);
 
 %% Star shaped (Pointmatch)
 
@@ -89,7 +89,7 @@ title(['Star shaped' newline '(Pointmatch)']);
 
 % Create T-matrix for only one shape
 T = ott.tmatrix.Pointmatch.FromShape(shape(1).*0.1, ...
-    'relative_index', relative_index);
+    'index_relative', relative_index);
 
 %% Rotationally symmetric (EBCM)
 
@@ -105,7 +105,7 @@ camlight; lighting gouraud;
 title(['Axially Symmetric' newline '(Ebcm)']);
 
 % Create T-matrix for only one shape
-T = ott.tmatrix.Ebcm.FromShape(shape(1), 'relative_index', relative_index);
+T = ott.tmatrix.Ebcm.FromShape(shape(1), 'index_relative', relative_index);
 
 %% Layered spheres (MieLayered)
 
@@ -132,7 +132,7 @@ camlight; lighting gouraud;
 title(['Arbitrary Shape' newline '(Dda)']);
 
 T = ott.tmatrix.Dda.FromShape(shape./shape.maxRadius.*0.1, ...
-    'relative_index', relative_index);
+    'index_relative', relative_index);
 
 %% Tweak positioning
 

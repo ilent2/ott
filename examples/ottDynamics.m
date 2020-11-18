@@ -22,7 +22,7 @@
 %% Setup beam and particle
 
 % Spherical particle, 1um radius
-radius = 0.3e-6;
+radius = 0.5e-6;
 shape = ott.shape.Sphere(radius);
 
 % Particle relative refractive index
@@ -39,8 +39,8 @@ particle = ott.particle.Fixed.FromShape(shape, ...
 
 temperature = 300.0;      % Temperature [K]
 
-dynamics = ott.tools.Dynamics('beam', beam, 'particle', particle, ...
-    'timeStep', 1.0e-5, 'temperature', temperature);
+dynamics = ott.dynamics.Isolated('beam', beam, 'particle', particle, ...
+    'timeStep', 1.0e-4, 'temperature', temperature);
   
 % To enable dynamics simulations with intertia we also need to include mass
 % This is still experimental and might be unstable.
@@ -55,9 +55,10 @@ ax = axes();
 axis([-1,1,-1,1,-1,1]*1e-6);
 
 x0 = [0;0;0];
-totalTime = 1e-1;
+totalTime = 1e-2;   % Simulation time [s]
+outputRate = 0.1;   % How frequently the figure is updated [s]
 [t, x] = dynamics.simulate(totalTime, 'position', x0, ...
-  'plot_axes', ax, 'outputRate', 0.01);
+  'plot_axes', ax, 'outputRate', outputRate);
 
 %% Generate a plot of the results
 

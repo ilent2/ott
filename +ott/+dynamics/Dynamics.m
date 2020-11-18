@@ -1,5 +1,5 @@
-classdef Dynamics
-% Simple dynamics simulations with a fixed time step.
+classdef (Abstract) Dynamics
+% Abstract base for simple dynamics simulations with a fixed time step.
 %
 % This class stores properties related to dynamics simulations and contains
 % methods for running simple dynamics simulations with fixed step sizes.
@@ -12,6 +12,10 @@ classdef Dynamics
 % force is only included when the ``particle.tmatrix`` property is set.
 % Inertia is included when ``particle.mass`` is set.
 %
+% This class defines two abstract methods, one which is called for each
+% simulation step and the other which is called to initialise the simulation
+% data.
+%
 % In a future release, this class will change/move.  It would be nice to
 % support other variable step size dynamics simulations.
 %
@@ -21,8 +25,15 @@ classdef Dynamics
 %   - temperature -- Temperature for Brownian motion term [K]
 %   - timeStep    -- Simulation time step [s]
 %
+% Constant properties
+%   - boltzmannConstant   --  Boltzmann constant [m2.kg/s2/K]
+%
 % Methods
 %   - simulate    -- Run dynamics simulation
+%
+% Abstract methods
+%   - simulationStep -- Run a step of the simulation.
+%   - setupSimulation -- Called to setup the simulation.
 %
 % Static methods
 %   - rotation_matrix -- Convert from torque to rotation matrix
@@ -36,6 +47,15 @@ classdef Dynamics
     particle        % A particle which scatters the beam
     temperature     % Temperature for Brownian motion term [K]
     timeStep        % Simulation time step
+  end
+
+  properties (Constant)
+    boltzmannConstant = 1.3806e-23    % Boltzmann constant [m2.kg/s2/K]
+  end
+
+  methods (Abstract)
+    setupSimulation(~)
+    simulationStep(~)
   end
 
   methods (Static)
@@ -169,15 +189,6 @@ classdef Dynamics
           && isscalar(time) && time > 0), ...
           'time must be empty or positive numeric scalar');
 
-      % Setup the figure if required
-      our_axes = p.Results.plot_axes;
-      if isempty(time) || ~isempty(our_axes)
-        plotData = sim.setupAxes(our_axes, ...
-            p.Results.outputRate, sim.particle.shape);
-      else
-        plotData = sim.setupAxes();   % Create empty plotData
-      end
-
       % Calculate number of time steps
       numSteps = ceil(time ./ sim.timeStep);
       t = 0:sim.timeStep:numSteps*sim.timeStep;
@@ -198,99 +209,39 @@ classdef Dynamics
         R(:, 1:6) = repmat(p.Results.rotation, 1, 2);
       end
 
-      kb = 1.3806e-23;    % Boltzmann constant [m2.kg/s2/K]
+      % Setup the simulation
+      i0 = sim.setupSimulation(t, x, R);
       dt = sim.timeStep;
 
-      % Optical force calculation function
-      if ~isempty(sim.particle.tmatrix)
-        optforce = @(x, R) forcetorque(sim.beam, sim.particle, ...
-            'position', x, 'rotation', R);
+      % Setup the figure if required
+      % Do this after running setupSimulation (just in case properties change)
+      our_axes = p.Results.plot_axes;
+      if isempty(time) || ~isempty(our_axes)
+        plotData = sim.setupAxes(our_axes, p.Results.outputRate);
       else
-        optforce = @(~, ~) deal(zeros(3, 1), zeros(3, 1));
+        plotData = sim.setupAxes();   % Create empty plotData
       end
 
-      % Two different loops depending on if we need inertia
-      if (isempty(sim.particle.mass) && isempty(sim.particle.moment)) ...
-          || (sim.particle.mass == 0 && sim.particle.moment == 0)
+      for ii = i0:numel(t)
 
-        % No mass, no inertia
+        xc = x(:, ii-1);
+        Rc = R(:, (1:3) + (ii-2)*3);
 
-        if ~isempty(sim.particle.drag)
-          invGamma = inv(sim.particle.drag);
-        else
-          invGamma = eye(6);
+        % Calculate simulation step
+        dx = sim.simulationStep(t(ii-1), xc, Rc);
+
+        % Update position/rotation
+        x(:, ii) = xc + dx(1:3)*dt;
+        R(:, (1:3) + (ii-1)*3) = sim.rotation_matrix(dx(4:6)*dt)*Rc;
+
+        % Update plot
+        plotData = sim.updatePlot(plotData, ...
+            t(ii), x(:, ii), R(:, (1:3) + (ii-1)*3));
+
+        % Check if we should stop
+        if ~plotData.running
+          break;
         end
-        bmterm = sqrt(2*kb*sim.temperature) * invGamma^(1/2) ...
-          ./ sqrt(sim.timeStep);
-
-        for ii = 2:numel(t)
-
-          % Get current position/rotation
-          xc = x(:, ii-1);
-          Rc = R(:, (1:3) + (ii-2)*3);
-
-          % Calculate force/torque
-          [fo, to] = optforce(xc, Rc);
-
-          % Convert to position units and add BM
-          ft = -invGamma * [fo; to] + bmterm * randn(6, 1);
-
-          % Update position/rotation
-          x(:, ii) = xc + ft(1:3)*dt;
-          R(:, (1:3) + (ii-1)*3) = sim.rotation_matrix(ft(4:6)*dt)*Rc;
-
-          % Update plot
-          plotData = sim.updatePlot(plotData, ...
-              x(:, ii), R(:, (1:3) + (ii-1)*3));
-
-          % Check if we should stop
-          if ~plotData.running
-            break;
-          end
-        end
-
-      else
-
-        % With mass, get a local copy
-        mass = sim.particle.mass;
-        moment = sim.particle.moment;
-        if ~isempty(sim.particle.drag)
-          drag = sim.particle.drag;
-        else
-          drag = eye(3);
-        end
-        massmoment = [[1;1;1]*mass; [1;1;1]*moment];
-        denom = inv(diag(massmoment) + dt * drag);
-        bmterm = sqrt(2*kb*sim.temperature./dt) * drag^(1/2);
-        
-        % Initial derivatives
-        % TODO: Add initial rotation derivative
-        dx = zeros(6, 1);
-        dx(1:3) = (x(:, 2) - x(:, 1))./dt;
-
-        for ii = 3:numel(t)
-
-          % Calculate optical force/torque
-          [fo, to] = optforce(x(:, ii-1), R(:, (1:3) + (ii-2)*3));
-          gft = -[fo; to];
-          
-          % Calculate new derivative
-          dx = denom * (dx.*massmoment + gft.*dt + dt*bmterm*randn(6, 1)); %#ok<MINV>
-
-          % Update position/rotation
-          x(:, ii) = x(:, ii-1) + dx(1:3)*dt;
-          R(:, (1:3) + (ii-1)*3) = sim.rotation_matrix(dx(4:6)*dt)*R(:, (1:3) + (ii-2)*3);
-
-          % Update plot
-          plotData = sim.updatePlot(plotData, ...
-              x(:, ii), R(:, (1:3) + (ii-1)*3));
-
-          % Check if we should stop
-          if ~plotData.running
-            break;
-          end
-        end
-
       end
 
       % Remove extra entries in t/x/R
@@ -307,11 +258,32 @@ classdef Dynamics
     end
   end
 
-  methods (Hidden, Static)
-    function plotData = setupAxes(oaxes, outputRate, shape)
+  methods (Hidden)
+    function optforce = opticalForceMethod(sim)
+      % Get a function handle for calculating the optical force
+      %
+      % Usage
+      %   func = sim.calcualteOpticalForce()
+
+      if ~isempty(sim.particle.tmatrix)
+        optforce = @(~, x, R) genForceTorque(x, R);
+      else
+        optforce = @(~, ~, ~) zeros(6, 1);
+      end
+
+      function ft = genForceTorque(x, R)
+        [f, t] = forcetorque(sim.beam, sim.particle, ...
+            'position', x, 'rotation', R);
+        ft = [f; t];
+      end
+    end
+  end
+
+  methods (Hidden)
+    function plotData = setupAxes(sim, oaxes, outputRate)
       % Setup a axes for visualising the simulation
 
-      if nargin == 0
+      if nargin == 1
         plotData = struct('running', true, 'axes', []);
         return;
       end
@@ -330,6 +302,7 @@ classdef Dynamics
           'Callback', @buttonCallback);
 
       % Get or generate default shape
+      shape = sim.particle.shape;
       if isempty(shape)
         shape = ott.shape.Sphere(1.0e-6);
       end
@@ -340,8 +313,10 @@ classdef Dynamics
       % Setup plot data
       plotData = struct();
       plotData.axes = oaxes;
-      plotData.patch = opatch;
-      plotData.patchVertices = opatch.Vertices.';
+      plotData.patch = opatch(1);
+      plotData.patchVertices = opatch(1).Vertices.' - shape(1).position;
+      plotData.patchOffset = shape(1).position;
+      plotData.title = title(oaxes, 'Dynamics Simulation');
       plotData.running = true;
       plotData.stopButton = stopButton;
       plotData.time = now;
@@ -352,7 +327,7 @@ classdef Dynamics
       end
     end
 
-    function plotData = updatePlot(plotData, x, R)
+    function plotData = updatePlot(sim, plotData, t, x, R)
       % Update the plot
 
       % Check if we need to do anything
@@ -370,7 +345,11 @@ classdef Dynamics
       if (now - plotData.time) > plotData.outputRate/86400
 
         % Update patch position
-        plotData.patch.Vertices = (R*plotData.patchVertices + x).';
+        plotData.patch.Vertices = (R*plotData.patchVertices + x ...
+            + plotData.patchOffset).';
+
+        % Update title
+        plotData.title.String = ['Simulation time: ' num2str(t) ' [s]'];
 
         % Update content and run callback functions
         drawnow;

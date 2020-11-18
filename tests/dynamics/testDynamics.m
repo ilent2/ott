@@ -8,7 +8,7 @@ end
 
 function testConstructDefault(testCase)
 
-  dynamics = ott.tools.Dynamics();
+  dynamics = ott.dynamics.Isolated();
   testCase.verifyEqual(dynamics.particle, ott.particle.Fixed(), 'particle');
   testCase.verifyEqual(dynamics.timeStep, 1e-4, 'time');
   testCase.verifyEqual(dynamics.beam, ott.beam.Empty(), 'beam');
@@ -23,7 +23,7 @@ function testConstructArgs(testCase)
   timeStep = 1;
   temperature = 1;
 
-  dynamics = ott.tools.Dynamics('beam', beam, 'timeStep', timeStep, ...
+  dynamics = ott.dynamics.Isolated('beam', beam, 'timeStep', timeStep, ...
       'temperature', temperature, 'particle', particle);
   testCase.verifyEqual(dynamics.particle, particle, 'particle');
   testCase.verifyEqual(dynamics.timeStep, timeStep, 'time');
@@ -39,7 +39,7 @@ function testSimulateCoverage(testCase)
   timeStep = 1;
   temperature = 1;
 
-  dynamics = ott.tools.Dynamics('beam', beam, 'timeStep', timeStep, ...
+  dynamics = ott.dynamics.Isolated('beam', beam, 'timeStep', timeStep, ...
       'temperature', temperature, 'particle', particle);
 
   [t, x, R] = dynamics.simulate(2*timeStep);
@@ -61,11 +61,13 @@ function testSetupAxes(testCase)
   testCase.addTeardown(@() close(h));
   
   % Test no data
-  pd = ott.tools.Dynamics.setupAxes();
+  sim = ott.dynamics.Isolated();
+  pd = sim.setupAxes();
   testCase.verifyEqual(pd, struct('running', true, 'axes', []));
   
   ax = [];
-  pd = ott.tools.Dynamics.setupAxes(ax, 1, ott.shape.Sphere());
+  sim.particle.shape = ott.shape.Sphere();
+  pd = sim.setupAxes(ax, 1);
   
   testCase.verifyInstanceOf(pd.axes, 'matlab.graphics.axis.Axes');
   testCase.verifyInstanceOf(pd.patch, 'matlab.graphics.primitive.Patch');
@@ -79,7 +81,7 @@ function testSetupAxes(testCase)
   
   % Test existing axes
   ax = axes();
-  pd = ott.tools.Dynamics.setupAxes(ax, 1, ott.shape.Sphere());
+  pd = sim.setupAxes(ax, 1);
   testCase.verifyEqual(pd.axes, ax);
   
 end
@@ -89,14 +91,17 @@ function testUpdatePlot(testCase)
   h = figure();
   testCase.addTeardown(@() close(h));
   
-  pd = ott.tools.Dynamics.setupAxes();
-  pd2 = ott.tools.Dynamics.updatePlot(pd, [], []);
+  sim = ott.dynamics.Isolated();
+  pd = sim.setupAxes();
+  pd2 = sim.updatePlot(pd, [], []);
   testCase.verifyEqual(pd, pd2);
   
   ax = [];
-  pd = ott.tools.Dynamics.setupAxes(ax, 1, ott.shape.Sphere());
+  sim.particle.shape = ott.shape.Sphere();
+  pd = sim.setupAxes(ax, 1);
   pd.time = 0;
-  ott.tools.Dynamics.updatePlot(pd, [1;0;0], eye(3));
+  t = 1.0;
+  sim.updatePlot(pd, t, [1;0;0], eye(3));
   testCase.verifyEqual(pd.patch.Vertices, pd.patchVertices.' + [1,0,0]);
 
 end

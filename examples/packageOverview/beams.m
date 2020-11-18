@@ -49,48 +49,66 @@ title('Ince-Gaussian');
 subplot(rows, cols, idx); idx = idx + 1;
 
 beam = ott.beam.PlaneWave();
-beam.visNearfield('axis', 'y', 'field', 'Re(Ex)');
+beam.visNearfield('axis', 'y', 'range', [1,1]*2e-6, 'field', 'Re(Ex)');
 title('Plane Wave');
 
 %% Annular beam (Bessel, Webber, Mathieu)
 
 subplot(rows, cols, idx); idx = idx + 1;
 
-beam = [ott.beam.Bessel('theta', pi/4),
-        ott.beam.Webber('theta', pi/4),
+beam = [ott.beam.Bessel('theta', pi/4), ...
+        ott.beam.Webber('theta', pi/4), ...
         ott.beam.Mathieu('theta', pi/4)];
-beam(1).visNearfield('axis', 'y', 'field', 'Re(Ex)');
+beam(1).visNearfield('axis', 'y', 'range', [1,1]*2e-6, 'field', 'Re(Ex)');
 title(['Annular Beams' newline '(Bessel, Webber, Mathieu)']);
 
 %% Arrays of beams
 
 subplot(rows, cols, idx); idx = idx + 1;
 
-beam = [ott.beam.Gaussian(), ott.beam.LaguerreGaussian(1, 2)];
-beam(1).position = [1;1;0];
-beam(2).position = [-1;-1;0];
+beam = [ott.beam.Gaussian(), ott.beam.LaguerreGaussian(...
+    'lmode', 1, 'pmode', 2)];
+beam(1).position = [1;1;0]*beam(1).wavelength;
+beam(2).position = [-1;-1;0]*beam(1).wavelength;
 beam = ott.beam.Array(beam, 'arrayType', 'coherent');
 beam.visNearfield();
-title(['Beams Arrays' newline '(Coherent, Incoherent)']);
+title(['Beams Arrays' newline '(Coherent/Incoherent)']);
 
 %% Paraxial point matching
 % Useful for simulating SLMs or beams were we know the far-field
 
-phase = ones(20, 1) .* [linspace(0, 5*pi, 10), linspace(5*pi, 0, 10)];
-beam = ott.beam.PmParaxial('phase', phase);
-beam.visNearfield();
-title('PmParaxial');
-
 subplot(rows, cols, idx); idx = idx + 1;
+
+% Generate coordinates for pattern
+x = linspace(-1, 1, 20);
+y = linspace(-1, 1, 20);
+[X, Y] = ndgrid(x, y);
+P = atan2(X, Y);
+
+% Calculate incident field
+E0 = exp(-(X.^2 + Y.^2)./4);
+
+% Calculate SLM-like pattern
+kx = 2;
+phi = 2*pi*kx*X + 2*P;
+
+% Calculate field at back aperture
+E = E0 .* exp(1i*phi);
+
+% Calculate beam
+beam = ott.beam.PmParaxial.InterpProfile(X, Y, E, 'Nmax', 20);
+beam.visNearfield('range', [1,1]*6e-6);
+title('PmParaxial');
 
 %% Scattered beams
 
 subplot(rows, cols, idx); idx = idx + 1;
 
 beam = ott.beam.Gaussian();
-shape = ott.shape.Sphere();
+shape = ott.shape.Sphere(1.2*beam.wavelength0);
 particle = ott.particle.Fixed.FromShape(shape, ...
-    'internal', true, 'relative_index', 1.2);
-sbeam = particle * beam;
+    'internal', true, 'index_relative', 1.2, ...
+    'wavelength0', beam.wavelength0);
+sbeam = beam.scatter(particle);
 sbeam.visNearfield('axis', 'y');
 

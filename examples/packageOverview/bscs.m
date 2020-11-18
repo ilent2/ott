@@ -14,7 +14,7 @@ idx = 1;
 
 %% Simple BSC beams
 
-bsc = ott.bsc.Bsc([1;0;0], 0);
+bsc = ott.bsc.Bsc([1;0;0], zeros(3, 1));
 beam = ott.beam.BscBeam(bsc);
 beam.visFarfieldSphere('type', '3dpolar');
 title('Bsc');
