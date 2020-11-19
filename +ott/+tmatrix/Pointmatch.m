@@ -55,8 +55,8 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
           disp(['Setup: ' num2str(data.iteration) ...
               ' / ' num2str(data.total)]);
         case 'inv'
-          disp(['Inversion: ' num2str(data.iteration) ...
-              ' / ' num2str(data.total)]);
+          disp(['Inversion: ' num2str(data.iteration + data.total+1) ...
+              ' / ' num2str(2*data.total + 1)]);
         otherwise
           error('Unknown stage');
       end
@@ -237,6 +237,10 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
       import ott.utils.*
 
       % Generate T-matrix
+      
+      % Supress Matlab warnings about sparse arrays growing, we are often
+      % memory bound before this realistically becomes a problem
+      %#ok<*SPRIX>
 
       if Texternal.zRotSymmetry == 0
 
@@ -437,7 +441,7 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
         Nmax, progress_callback)
       % Calculate the coefficient and incident wave matrices
 
-      normals = tmatrix.nrtp;
+      normals = tmatrix.nrtp.';
       npoints = size(tmatrix.rtp, 2);
       total_orders = ott.utils.combined_index(Nmax, Nmax);
 
@@ -454,46 +458,41 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
 
       import ott.utils.vswf;
 
-      % Helper to calculate perpendicular component
-      % Note: dot product order is important here!!!
-      perpcomponent = @(V) V.' - dot(normals, V.') .* normals;
-
       for n = 1:Nmax
-        for m = -n:n
+        m = -n:n;
 
-          % INCIDENT-SCATTERED
-          [M1,N1,~,~,M2,N2] = vswf(n,m,k_medium*r,theta,phi);
-          [M3,N3] = vswf(n,m,k_particle*r,theta,phi,3);
+        % INCIDENT-SCATTERED
+        [M1,N1,~,~,M2,N2] = vswf(n,m,k_medium*r,theta,phi);
+        [M3,N3] = vswf(n,m,k_particle*r,theta,phi,3);
 
-          ci = ott.utils.combined_index(n,m);
+        ci = ott.utils.combined_index(n,m);
 
-          M1 = perpcomponent(M1);
-          N1 = perpcomponent(N1);
-          M2 = perpcomponent(M2);
-          N2 = perpcomponent(N2);
-          M3 = perpcomponent(M3);
-          N3 = perpcomponent(N3);
-          M1 = M1(:);
-          N1 = N1(:);
-          M2 = M2(:);
-          N2 = N2(:);
-          M3 = M3(:);
-          N3 = N3(:);
+        M1 = perpcomponent(M1);
+        N1 = perpcomponent(N1);
+        M2 = perpcomponent(M2);
+        N2 = perpcomponent(N2);
+        M3 = perpcomponent(M3);
+        N3 = perpcomponent(N3);
 
-          % 1 is outgoing field, 3 is particle field, 2 is incoming field
-          coeff_matrix(:,ci) = - [ M1; N1 ];
-          coeff_matrix(:,ci+total_orders) = - [ N1; M1 ];
-          coeff_matrix(:,ci+2*total_orders) = [ M3; k_particle/k_medium*N3 ];
-          coeff_matrix(:,ci+3*total_orders) = [ N3; k_particle/k_medium*M3 ];
+        % 1 is outgoing field, 3 is particle field, 2 is incoming field
+        coeff_matrix(:,ci) = - [ M1; N1 ];
+        coeff_matrix(:,ci+total_orders) = - [ N1; M1 ];
+        coeff_matrix(:,ci+2*total_orders) = [ M3; k_particle/k_medium*N3 ];
+        coeff_matrix(:,ci+3*total_orders) = [ N3; k_particle/k_medium*M3 ];
 
-          incident_wave_matrix(:,ci) = [ M2; N2 ];
-          incident_wave_matrix(:,ci+total_orders) = [ N2; M2 ];
-
-        end
+        incident_wave_matrix(:,ci) = [ M2; N2 ];
+        incident_wave_matrix(:,ci+total_orders) = [ N2; M2 ];
 
         % Output progress
         progress_callback(struct('stage', 'setup', ...
-            'iteration', ci, 'total', total_orders));
+            'iteration', ci(end), 'total', total_orders));
+      end
+      
+      function V = perpcomponent(V)
+        % Helper to calculate perpendicular component
+        V = permute(reshape(V, npoints, [], 3), [1, 3, 2]);
+        V = V - sum(normals .* V, 2) .* normals;
+        V = reshape(V, 3*npoints, []);
       end
     end
   end

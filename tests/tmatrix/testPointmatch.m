@@ -14,7 +14,8 @@ end
 
 function testFromStarShape(testCase)
 
-  shape = ott.shape.Sphere(0.1);
+  Tmie = testCase.TestData.Tmie;
+  shape = ott.shape.Sphere(Tmie.radius);
   index = 1.2;
   tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, index);
 
@@ -23,7 +24,6 @@ function testFromStarShape(testCase)
   testCase.verifyEqual(tmatrix.zRotSymmetry, 0, 'z');
 
   % Compare T-matrix data to target
-  Tmie = testCase.TestData.Tmie;
   testCase.assertEqual(tmatrix.Nmax, Tmie.Nmax, 'Nmax');
   testCase.verifyEqual(tmatrix.data, Tmie.data, ...
       'AbsTol', 1.0e-6, 'Tmie');
@@ -39,12 +39,11 @@ end
 
 function testSymmetryOptions(testCase)
 
-  radius = 0.1;
-  shape = ott.shape.Sphere(radius);
-  index = 1.2;
   Tmie = testCase.TestData.Tmie;
+  shape = ott.shape.Sphere(Tmie.radius);
+  index = 1.2;
   
-  Nmax = ott.utils.ka2nmax(2*pi*radius);
+  Nmax = ott.utils.ka2nmax(2*pi*Tmie.radius);
 
   ntheta = 2*(Nmax + 2);
   nphi = 3*(Nmax + 2)+1;
@@ -87,12 +86,12 @@ function testInternalMie(testCase)
   shape = ott.shape.Sphere(1.0);
   index = 1.2;
   
-  [~, Tmie] = ott.tmatrix.Mie(shape.radius, ...
+  [~, target] = ott.tmatrix.Mie(shape.radius, ...
       'index_relative', index);
 
   [~, tmatrix] = ott.tmatrix.Pointmatch.FromShape(shape, index);
   
-  testCase.verifyEqual(tmatrix.data, Tmie.data, ...
+  testCase.verifyEqual(tmatrix.data, target.data, ...
     'AbsTol', 1.0e-6, 'internal');
 end
 
