@@ -34,7 +34,7 @@ classdef Mie < ott.tmatrix.Tmatrix
   end
 
   methods (Static)
-    function tmatrix = FromShape(shape, varargin)
+    function varargout = FromShape(shape, varargin)
       % Construct a T-matrix from a shape object.
       %
       % Uses :meth:`ShapeMaxRadius` but raises a warning if the
@@ -58,10 +58,10 @@ classdef Mie < ott.tmatrix.Tmatrix
             'Shape is not a sphere, using maxRadius property');
       end
 
-      tmatrix = ott.tmatrix.Mie.ShapeMaxRadius(shape, varargin{:});
+      [varargout{1:nargout}] = ott.tmatrix.Mie.ShapeMaxRadius(shape, varargin{:});
     end
 
-    function tmatrix = ShapeVolume(shape, varargin)
+    function varargout = ShapeVolume(shape, varargin)
       % Construct Mie T-matrix with radius from shape volume
       %
       % Usage
@@ -76,10 +76,10 @@ classdef Mie < ott.tmatrix.Tmatrix
           'shape must be a single ott.shape.Shape');
 
       radius = ((3/4/pi) * shape.volume).^(1/3);
-      tmatrix = ott.tmatrix.Mie(radius, varargin{:});
+      [varargout{1:nargout}] = ott.tmatrix.Mie(radius, varargin{:});
     end
 
-    function tmatrix = ShapeMaxRadius(shape, varargin)
+    function varargout = ShapeMaxRadius(shape, varargin)
       % Construct Mie T-matrix with radius from shape max radius
       %
       % Usage
@@ -93,7 +93,7 @@ classdef Mie < ott.tmatrix.Tmatrix
       assert(numel(shape) == 1 && isa(shape, 'ott.shape.Shape'), ...
           'shape must be a single ott.shape.Shape');
 
-      tmatrix = ott.tmatrix.Mie(shape.maxRadius, varargin{:});
+      [varargout{1:nargout}] = ott.tmatrix.Mie(shape.maxRadius, varargin{:});
     end
   end
 
