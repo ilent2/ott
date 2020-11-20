@@ -306,8 +306,9 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       directions = ott.utils.rtp2xyz(ones(size(theta)), theta, phi);
 
       % Find intersections
+      fudge = 1.8;   % Add ~sqrt(3) for bounding box intersection
       locs = shape.intersect(shape.position .* ones(size(directions)), ...
-          directions);
+          shape.position + directions.*shape.maxRadius*fudge);
 
       % Calculate radii
       R = vecnorm(locs);

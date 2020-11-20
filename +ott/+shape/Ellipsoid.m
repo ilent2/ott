@@ -10,6 +10,8 @@ classdef Ellipsoid < ott.shape.Shape ...
 %
 % Supported casts
 %   - ott.shape.Spehre -- Only works when ellipsoid is a sphere
+%   - ott.shape.AxisymInterp -- Only works when zRotSymmetry == 0
+%   - ott.shape.PatchMesh
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.

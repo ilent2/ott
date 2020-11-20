@@ -40,6 +40,9 @@ function testIntersectInternal(testCase)
   
   t2 = shape.intersectInternal([0, 0; 0, 0; 0, 0], [2, 0; 0, 2; 0, 0]);
   testCase.verifyEqual(t2, [0.5, 0; 0, 0.5; 0, 0], 't2');
+  
+  t3 = shape.intersectAll([0;0;0], [0;0;2]);
+  testCase.verifyEqual(t3, [[0;0;0.5], nan(3, 1)], 't3');
 
 end
 

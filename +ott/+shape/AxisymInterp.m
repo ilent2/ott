@@ -303,9 +303,14 @@ classdef AxisymInterp < ott.shape.Shape ...
     function b = insideRzInternal(shape, rz)
       % Determine if inside by counting how many edges are above point
       % "up" is in the radial direction.
+      %
+      % For this to work, we can't have overlapping edges.  This
+      % could sometimes lead to edges being missed.
       
       assert(isnumeric(rz) && ismatrix(rz) && size(rz, 1) == 2, ...
           'rz must be 2xN numeric matrix');
+      assert(all(rz(1, :) >= 0), ...
+        'all radii must be positive for this implementation');
 
       % Find points greater or less than query points
       %   - ignore points with same z position
@@ -325,7 +330,7 @@ classdef AxisymInterp < ott.shape.Shape ...
 
       % Discard edges we don't care about
       y4 = y4 .* edges;
-      y4(y4 < rz(1, :)) = 0;
+      y4(y4 < rz(1, :).') = 0;
 
       % Determine if inside (count edges above)
       b = mod(sum(y4 > 0, 2).', 2) == 1;
@@ -343,36 +348,47 @@ classdef AxisymInterp < ott.shape.Shape ...
 
     function nz = normalsRzInternal(shape, rz)
       % Calculate normals by finding the closest edge to the point
-      % This follows a similar procedure to the insideRzInternal function.
+      %
+      % Draws a box around each edge, if the point is within this
+      % box, returns the normal of the corresponding edge.  If
+      % multiple edge boxes contain point, returns nearest edge.
       
-      assert(isnumeric(rz) && ismatrix(rz) && size(rz, 1) == 2, ...
-          'rz must be 2xN numeric matrix');
-
-      % Find points greater or less than query points
-      %   - ignore points with same z position
-      %   - only care about points connected to edges
-      pts_lt = shape.points(2, 1:end-1) > rz(2, :).';
-      pts_gt = shape.points(2, 2:end) < rz(2, :).';
-
-      % Find edges crossing points
-      edges = pts_lt & pts_gt;
-
-      % Calculate intersection for every edge
-      m = (shape.points(1, 2:end) - shape.points(1, 1:end-1)) ...
-          ./ (shape.points(2, 2:end) - shape.points(2, 1:end-1));
-      x = rz(2, :).' - shape.points(2, 1:end-1);
-      c = shape.points(1, 1:end-1);
-      y4 = m.*x + c;
-
-      % Discard edges we don't care about
-      y4 = y4 .* edges;
-
-      % Find which edge is closest
-      [~, idx] = min(abs(y4 - rz(1, :)), [], 2);
-
-      % Compute formals and normalize
-      nz = [ones(size(idx)).'; m(idx).'];
-      nz = nz ./ vecnorm(nz);
+      % Calculate edge vectors
+      vecs = shape.points(:, 2:end) - shape.points(:, 1:end-1);
+      vecL = vecnorm(vecs);
+      
+      % Calculate normal vector
+      vecN = vecs([2, 1], :) .* [-1; 1] ./ vecL;
+      
+      % Calculate point locations relative to vertices
+      locs = cat(3, rz(1, :).' - shape.points(1, 1:end-1), ...
+          rz(2, :).' - shape.points(2, 1:end-1));
+      locs = permute(locs, [3, 2, 1]);
+      
+      % Calculate perpendicular/parallel distance to edge
+      sdist = sum(locs .* vecN, 1);
+      pdist = sum(locs .* vecs, 1) ./ vecL.^2;
+      
+      stol = 1.0e-2*shape.maxRadius;
+      ptol = 1.0e-2;
+      
+      % Find edges in immediate rect
+      found = abs(sdist) < stol & pdist >= 0 & pdist <= 1;
+      
+      % Do extra work for not found points
+      not_found = ~any(found, 2);
+      if any(not_found)
+        nfound = abs(sdist) < stol & pdist >= -ptol & pdist <= 1+ptol;
+        found(:, :, not_found) = nfound(:, :, not_found);
+      end
+      
+      % Find minimum distance
+      sdist(:, ~found) = nan;
+      [val, idx] = min(abs(sdist), [], 2);
+      
+      % Retrieve normals
+      nz = vecN(:, idx);
+      nz(:, isnan(val)) = nan;
     end
 
     function S = surfInternal(shape, varargin)

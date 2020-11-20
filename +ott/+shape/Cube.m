@@ -104,7 +104,7 @@ classdef Cube < ott.shape.Shape ...
       P = Q1 + dist.*D;
 
       % Remove points outside faces
-      w = shape.width./2 + eps(1);
+      w = shape.width./2 + eps(shape.width./2);
       I = [abs(P(1, 1:2, :)) > w | abs(P(2, 1:2, :)) > w, ...
            abs(P(2, 3:4, :)) > w | abs(P(3, 3:4, :)) > w, ...
            abs(P(1, 5:6, :)) > w | abs(P(3, 5:6, :)) > w];
@@ -118,11 +118,12 @@ classdef Cube < ott.shape.Shape ...
       % Sort intersection and keep max 2
       [~, idx1] = min(dist, [], 2);
       dist2 = dist;
-      idx1 = sub2ind([size(dist, 2), size(dist, 3)], idx1(:).', 1:numel(idx1));
-      dist2(:, idx1) = nan;
+      idx1s = sub2ind([size(dist, 2), size(dist, 3)], idx1(:).', 1:numel(idx1));
+      dist2(:, idx1s) = nan;
       [~, idx2] = min(dist2, [], 2);
-      idx2 = sub2ind([size(dist, 2), size(dist, 3)], idx2(:).', 1:numel(idx2));
-      idx = [idx1; idx2];
+      idx2(idx2 == idx1) = mod(idx2(idx2 == idx1)+1, 6);  % Set to a nan face
+      idx2s = sub2ind([size(dist, 2), size(dist, 3)], idx2(:).', 1:numel(idx2));
+      idx = [idx1s; idx2s];
       
       dist = reshape(dist(:, idx), 1, 2, []);
       P = reshape(P(:, idx), 3, 2, []);
