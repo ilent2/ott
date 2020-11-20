@@ -137,9 +137,9 @@ classdef Smarties < ott.tmatrix.Tmatrix
 
       % Setup structure for SMARTIES inputs
       stParams = struct();
-      stParams.a = tmatrix.ordinary * 2*pi;
-      stParams.c = tmatrix.extraordinary * 2*pi;
-      stParams.k1 = 1.0;
+      stParams.a = tmatrix.ordinary;
+      stParams.c = tmatrix.extraordinary;
+      stParams.k1 = 2*pi;
       stParams.s = tmatrix.index_relative;
       stParams.N = Nmax;
       stParams.nNbTheta = npts;
