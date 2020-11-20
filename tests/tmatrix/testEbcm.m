@@ -40,7 +40,7 @@ function testInternalMie(testCase)
   testCase.verifyEqual(tmatrix.xySymmetry, true, 'xySymmetry');
 
   % Compare to Mie result
-  [~, Tmie] = ott.tmatrix.Mie(radius, 'index_relative', index, ...
+  [~, Tmie] = ott.tmatrix.Mie.FromShape(shape, 'index_relative', index, ...
       'Nmax', Nmax);
   testCase.verifyEqual(tmatrix.data, Tmie.data, 'AbsTol', 2.0e-2, 'data');
 

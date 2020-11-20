@@ -86,7 +86,7 @@ function testInternalMie(testCase)
   shape = ott.shape.Sphere(1.0);
   index = 1.2;
   
-  [~, target] = ott.tmatrix.Mie(shape.radius, ...
+  [~, target] = ott.tmatrix.Mie.FromShape(shape, ...
       'index_relative', index);
 
   [~, tmatrix] = ott.tmatrix.Pointmatch.FromShape(shape, index);
