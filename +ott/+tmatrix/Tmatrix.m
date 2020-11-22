@@ -546,10 +546,11 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 
         % Resize rows
         if total_orders1 > midpoint1
-          A11(total_orders1, :) = 0;
-          A12(total_orders1, :) = 0;
-          A21(total_orders1, :) = 0;
-          A22(total_orders1, :) = 0;
+          Z = zeros(total_orders1-size(A11, 1), size(A11, 2));
+          A11(end+1:total_orders1, :) = Z;
+          A12(end+1:total_orders1, :) = Z;
+          A21(end+1:total_orders1, :) = Z;
+          A22(end+1:total_orders1, :) = Z;
         else
 
           % Calculate power in modes to be removed
@@ -580,10 +581,11 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 
         % Resize columns
         if total_orders2 > midpoint2
-          A11(:, total_orders2) = 0;
-          A12(:, total_orders2) = 0;
-          A21(:, total_orders2) = 0;
-          A22(:, total_orders2) = 0;
+          Z = zeros(size(A11, 1), total_orders2-size(A11, 2));
+          A11(:, end+1:total_orders2) = Z;
+          A12(:, end+1:total_orders2) = Z;
+          A21(:, end+1:total_orders2) = Z;
+          A22(:, end+1:total_orders2) = Z;
         else
 
           % Calculate power in modes to be removed

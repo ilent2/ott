@@ -228,6 +228,10 @@ function testResizing(testCase)
   testCase.verifyTrue(size(Tnew1.data, 1) > size(T.data, 1) ...
       && size(Tnew1.data, 2) == size(T.data, 2), ...
       'Tmatrix size not increased correctly (index input)');
+    
+  T = ott.tmatrix.Tmatrix();
+  T.Nmax = [2, 0];
+  testCase.verifyEqual(T.Nmax, [2, 0], 'resize empty tmatrix');
 end
 
 function testShrinkNmax(testCase)
