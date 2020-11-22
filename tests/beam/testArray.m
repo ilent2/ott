@@ -21,6 +21,26 @@ function testConstruct(testCase)
   testCase.verifyEqual(beamA.arrayType, 'array', 'type');
 end
 
+function testEmptyArray(testCase)
+
+  beam = ott.beam.Beam.empty(1, 0);
+  beamA = ott.beam.Array(beam, 'arrayType', 'array');
+  
+  testCase.verifyEqual(beamA.index_medium, nan, 'index');
+  testCase.verifyEqual(beamA.omega, nan, 'omega');
+  
+end
+
+function testArrayOfArrays(testCase)
+
+  beam = ott.beam.Empty('index_medium', 1.33);
+  beamA = ott.beam.Array([beam, beam], 'arrayType', 'coherent');
+  beamB = ott.beam.Array([beamA, beam], 'arrayType', 'array');
+  
+  testCase.verifyEqual(beamB.index_medium, beam.index_medium, 'index');
+
+end
+
 function testCoherent(testCase)
 
   beam(1) = testCase.TestData.beam1;

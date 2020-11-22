@@ -359,6 +359,15 @@ classdef Array < ott.beam.ArrayType
     function val = defaultVisRangeInternal(beam)
       val = beam.data.defaultVisRange();
     end
+    
+    function val = getArrayProperty(beam, name)
+      % Get a specified property from an array
+      %
+      % Matlab prevents accessing a property of the same class from within
+      % the properties get method.  So we do this instead.
+      val = subsref(beam.dataInternal(1), ...
+        struct('type', '.', 'subs', name));
+    end
   end
 
   methods % Getters/setters
@@ -376,9 +385,9 @@ classdef Array < ott.beam.ArrayType
         end
       end
 
-      assert(numel(unique([val.index_medium])) == 1, ...
+      assert(isempty(val) || all(val(1).index_medium == [val.index_medium]), ...
           'all beams must have the same refractive index');
-      assert(numel(unique([val.omega])) == 1, ...
+      assert(isempty(val) || all(val(1).omega == [val.omega]), ...
           'all beams must have the same optical frequency');
 
       % Store data
@@ -389,11 +398,19 @@ classdef Array < ott.beam.ArrayType
     end
 
     function val = get.omega(beam)
-      val = beam.data(1).omega;
+      if isempty(beam.data)
+        val = nan;
+      else
+        val = getArrayProperty(beam, 'omega');
+      end
     end
 
     function val = get.index_medium(beam)
-      val = beam.data(1).index_medium;
+      if isempty(beam.data)
+        val = nan;
+      else
+        val = getArrayProperty(beam, 'index_medium');
+      end
     end
   end
 end
