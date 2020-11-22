@@ -24,6 +24,8 @@ classdef Array < ott.beam.ArrayType
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+% TODO: This class should have its own force/torque methods
+
   properties (Dependent)
     data      % Array of coherent/incoherent beams
     index_medium    % Medium refractive index
@@ -68,13 +70,62 @@ classdef Array < ott.beam.ArrayType
       bsc(numel(beam.data)) = ott.bsc.Bsc();
       for ii = 1:numel(beam.data)
         elm = beam.data(ii).translateXyz(beam.position).rotate(beam.rotation);
-        bsc(ii) = ott.bsc.Bsc(elm, varargin{:});
+        bsc(ii) = ott.bsc.Bsc(elm, varargin{:}) * beam.scale;
       end
       
       % Combine coherent beams
       if strcmpi(beam.arrayType, 'coherent')
         bsc = sum(bsc);
       end
+    end
+    
+    function sbeam = scatterInternal(beam, particle)
+      % Calculate how a particle scatters the beam
+      %
+      % Usage
+      %   sbeam = scatter(ibeam, particle)
+      %
+      % Returns
+      %   - sbeam (ott.beam.Scattered) -- Scattered beam encapsulating
+      %     the particle, incident beam, scattered beams(s).  For a
+      %     method which doesn't create a scattered beam, see
+      %     :meth:`scatterBsc`.
+      %
+      % Parameters
+      %   - particle (ott.particle.Particle) -- Particle with
+      %     T-matrix properties (possibly internal and external).
+      
+      % Apply transformation to beam data
+      odata = beam.data.rotate(beam.rotation).translateXyz(beam.position);
+      
+      % Scatter
+      sdata = odata.scatter(particle);
+      
+      % Make scattered beams coherent
+      scat_data = [sdata.scattered];
+      if ~isempty(scat_data)
+        scat = ott.beam.Array(scat_data, 'arrayType', 'coherent');
+        scat = scat * beam.scale;
+      else
+        scat = [];
+      end
+      
+      % Make internal beams coherent
+      intn_data = [sdata.internal];
+      if ~isempty(intn_data)
+        intn = ott.beam.Array(intn_data, 'arrayType', 'coherent');
+        intn = intn * beam.scale;
+      else
+        intn = [];
+      end
+      
+      % Package output into single coherent beam
+      beam = beam.translateXyz(-sdata(1).position) ...
+          .rotate(sdata(1).rotation.');
+      sbeam = ott.beam.Scattered(...
+          'scattered', scat, 'incident', beam, ...
+          'particle', sdata(1).particle, 'internal', intn, ...
+          'position', sdata(1).position, 'rotation', sdata(1).rotation);
     end
 
     function varargout = efield(beam, varargin)
@@ -331,6 +382,8 @@ classdef Array < ott.beam.ArrayType
       if strcmpi(beam.arrayType, 'coherent') && numel(beam.data) > 1
         EH = sum(EH, 3, 'keepFirst');
       end
+      
+      EH = EH * beam.scale;
     end
 
     function [E, H, vswfData] = doubleOutputHelper(beam, ...
@@ -354,6 +407,9 @@ classdef Array < ott.beam.ArrayType
         E = sum(E, 3, 'keepFirst');
         H = sum(H, 3, 'keepFirst');
       end
+      
+      E = E * beam.scale;
+      H = H * beam.scale;
     end
 
     function val = defaultVisRangeInternal(beam)

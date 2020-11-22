@@ -533,7 +533,8 @@ classdef Scattered < ott.beam.Beam
       % Create a visualisation of the beam.
       %
       % If the shape property of the beam is set, also draws a contour
-      % around the edge of the shape.
+      % around the edge of the shape.  Does this recursively for all
+      % incident scattered beams.
       %
       % Usage
       %   beam.visNearfield(...) -- display an image of the beam in
@@ -584,17 +585,20 @@ classdef Scattered < ott.beam.Beam
         end
       
         % Get data for inside/outside
-        inside = beam.insideXyz(XY{3});
+        inside = beam.insideXyz(XY{3}, 'recursive', true);
         inside = reshape(inside, numel(XY{2}), numel(XY{1}));
+        
+        if ~all(inside(1) == inside(:))
 
-        % Smooth contour data (makes things look nicer)
-        inside = ott.utils.gaussfilt(double(inside), p.Results.contourSmooth);
+          % Smooth contour data (makes things look nicer)
+          inside = ott.utils.gaussfilt(double(inside), p.Results.contourSmooth);
 
-        % Draw contour on plot
-        hold on;
-        [~, ch] = contour(our_axes, XY{1}, XY{2}, inside, [0.5, 0.5], 'w--');
-        ch.LineWidth = 2;
-        hold off;
+          % Draw contour on plot
+          hold on;
+          [~, ch] = contour(our_axes, XY{1}, XY{2}, inside, [0.5, 0.5], 'w--');
+          ch.LineWidth = 2;
+          hold off;
+        end
       end
       
       if nargout == 0
@@ -606,7 +610,7 @@ classdef Scattered < ott.beam.Beam
     % Force/torque related methods
     %
 
-    function varargout = force(beam, obeam)
+    function varargout = force(beam, obeam, varargin)
       % Calculate change in linear momentum between beams.
       %
       % Uses the internal bsc data of the two beams to calculate the
@@ -630,11 +634,11 @@ classdef Scattered < ott.beam.Beam
         [varargout{1:nargout}] = idata.force(odata);
       else
         [odata, ~] = beam.getAndParseType('type', 'total');
-        [varargout{1:nargout}] = odata.force(obeam);
+        [varargout{1:nargout}] = odata.force(obeam, varargin{:});
       end
     end
 
-    function varargout = torque(beam, obeam)
+    function varargout = torque(beam, obeam, varargin)
       % Calculate change in angular momentum between beams.
       %
       % Uses the internal bsc data of the two beams to calculate the
@@ -658,11 +662,11 @@ classdef Scattered < ott.beam.Beam
         [varargout{1:nargout}] = idata.torque(odata);
       else
         [odata, ~] = beam.getAndParseType('type', 'total');
-        [varargout{1:nargout}] = odata.torque(obeam);
+        [varargout{1:nargout}] = odata.torque(obeam, varargin{:});
       end
     end
 
-    function varargout = spin(beam, obeam)
+    function varargout = spin(beam, obeam, varargin)
       % Calculate change in spin angular momentum between beams.
       %
       % Uses the internal bsc data of the two beams to calculate the
@@ -686,11 +690,11 @@ classdef Scattered < ott.beam.Beam
         [varargout{1:nargout}] = idata.spin(odata);
       else
         [odata, ~] = beam.getAndParseType('type', 'total');
-        [varargout{1:nargout}] = odata.spin(obeam);
+        [varargout{1:nargout}] = odata.spin(obeam, varargin{:});
       end
     end
 
-    function varargout = forcetorque(beam, obeam)
+    function varargout = forcetorque(beam, obeam, varargin)
       % Calculate change in momentum between beams
       %
       % Usage
@@ -712,13 +716,46 @@ classdef Scattered < ott.beam.Beam
         [varargout{1:nargout}] = idata.forcetorque(odata);
       else
         [odata, ~] = beam.getAndParseType('type', 'total');
-        [varargout{1:nargout}] = odata.forcetorque(obeam);
+        [varargout{1:nargout}] = odata.forcetorque(obeam, varargin{:});
       end
     end
 
     %
     % Generic methods
     %
+    
+    function sbeam = scatterInternal(beam, particle, varargin)
+      % Calculate how a particle scatters the beam.
+      %
+      % This does not include optical interaction between particles.
+      %
+      % Usage
+      %   sbeam = scatter(ibeam, particle)
+      %
+      % Returns
+      %   - sbeam (ott.beam.Scattered) -- Scattered beam encapsulating
+      %     the particle, incident beam, scattered beams(s).  For a
+      %     method which doesn't create a scattered beam, see
+      %     :meth:`scatterBsc`.
+      %
+      % Parameters
+      %   - particle (ott.particle.Particle) -- Particle with
+      %     T-matrix properties (possibly internal and external).
+      
+      if beam.insideXyz(particle.position)
+        % Internal scattering
+        [odata, ~] = beam.getAndParseType('type', 'internal', varargin{:});
+      else
+        % External scattering
+        [odata, ~] = beam.getAndParseType('type', 'total', varargin{:});
+      end
+      
+      % TODO: Check if particle overlaps boundary
+      
+      sbeam = odata.scatterInternal(particle);
+      sbeam.incident = beam.translateXyz(-sbeam.position) ...
+          .rotate(sbeam.rotation.');
+    end
 
     function binside = insideRtp(beam, rtp)
       % Calculate if points are inside the particle (Spherical coordi.)
@@ -740,11 +777,23 @@ classdef Scattered < ott.beam.Beam
       end
     end
 
-    function binside = insideXyz(beam, xyz)
+    function binside = insideXyz(beam, xyz, varargin)
       % Calculate if points are inside the particle.
       %
       % Uses the :meth:`+ott.+shape.Shape.insideXyz` method of particle.
       % If no particle is provided, returns a vector of false.
+      %
+      % Usage
+      %   b = beam.insideXyz(xyz, ...)
+      %
+      % Optional named arguments
+      %   - recursive (logical) -- If true, and the incident beam is
+      %     a scattered beam, also calls the incident beam internal method.
+      %     Default: ``false``
+      
+      p = inputParser;
+      p.addParameter('recursive', false);
+      p.parse(varargin{:});
       
       xyz = beam.global2local(xyz);
       
@@ -757,6 +806,10 @@ classdef Scattered < ott.beam.Beam
         else % Only have incident and/or scattered
           binside = false(1, size(xyz, 2));
         end
+      end
+      
+      if p.Results.recursive && isa(beam.incident, 'ott.beam.Scattered')
+        binside = binside | beam.incident.insideXyz(xyz, 'recursive', true);
       end
     end
   end

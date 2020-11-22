@@ -172,11 +172,11 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
           'recalculate is not implemented for these type of beam');
     end
 
-    function sbeam = scatter(ibeam, particle, varargin)
+    function sbeam = scatterInternal(ibeam, particle)
       % Calculate how a particle scatters the beam
       %
       % Usage
-      %   sbeam = scatter(ibeam, particle, ...)
+      %   sbeam = scatter(ibeam, particle)
       %
       % Returns
       %   - sbeam (ott.beam.Scattered) -- Scattered beam encapsulating
@@ -187,23 +187,10 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       % Parameters
       %   - particle (ott.particle.Particle) -- Particle with
       %     T-matrix properties (possibly internal and external).
-      %
-      % Optional named arguments
-      %   - position (3x1 numeric) -- Particle position.
-      %     Default: ``particle.position``.
-      %
-      %   - rotation (3x3 numeric) -- Particle rotation.
-      %     Default: ``particle.rotation``.
-
-      p = inputParser;
-      p.addParameter('position', particle.position);
-      p.addParameter('rotation', particle.rotation);
-      p.parse(varargin{:});
-      
-      scat_position = p.Results.position;
-      scat_rotation = p.Results.rotation;
       
       % Work in the particle reference frame
+      scat_position = particle.position;
+      scat_rotation = particle.rotation;
       particle.position = [0;0;0];
       particle.rotation = eye(3);
       ibeam = ibeam.translateXyz(-scat_position).rotate(scat_rotation.');

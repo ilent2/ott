@@ -18,6 +18,7 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
 %
 % Methods
 %   - efield, hfield, ehfield, ...    -- Returns zeros
+%   - scatter -- Returns a scattered beam with empty parts
 
 % Copyright 2020 Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -42,6 +43,39 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
     function bsc = ott.bsc.Bsc(~, varargin)
       % Construct empty Bsc instance
       bsc = ott.bsc.Bsc();
+    end
+    
+    function sbeam = scatterInternal(beam, particle)
+      % Calculate how a particle scatters the beam
+      %
+      % Usage
+      %   sbeam = scatter(ibeam, particle)
+      %
+      % Returns
+      %   - sbeam (ott.beam.Scattered) -- Scattered beam encapsulating
+      %     the particle, incident beam, scattered beams(s).  For a
+      %     method which doesn't create a scattered beam, see
+      %     :meth:`scatterBsc`.
+      %
+      % Parameters
+      %   - particle (ott.particle.Particle) -- Particle with
+      %     T-matrix properties (possibly internal and external).
+      
+      % Calculate internal component
+      if ~isempty(particle.tinternal)
+        index_particle = beam.index_medium * particle.tinternal.index_relative;
+        nbeam = ott.beam.Empty(sint, ...
+          'index_medium', index_particle, 'omega', beam.omega);
+      else
+        nbeam = [];
+      end
+      
+      % Package output
+      sbeam = ott.beam.Scattered(...
+          'scattered', beam, 'incident', beam, ...
+          'particle', particle, 'internal', nbeam, ...
+          'position', [0;0;0], 'rotation', eye(3));
+      
     end
 
     %

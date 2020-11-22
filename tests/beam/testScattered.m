@@ -238,3 +238,30 @@ function testFarfieldTranslationsScattered(testCase)
   end
 end
 
+function testMultiScattering(testCase)
+
+  beam = ott.beam.Gaussian();
+  particle2 = ott.particle.Fixed.FromShape(...
+    ott.shape.Sphere(beam.wavelength*0.5), ...
+    'wavelength0', beam.wavelength0, 'index_relative', 1.2, 'internal', true);
+  particle1 = ott.particle.Fixed('tmatrix', ...
+    ott.tmatrix.Tmatrix('type', 'scattered'));
+  
+  x = linspace(-1, 1, 10);
+  xyz = [0;0;2] + [1;0;0].*x;
+  
+  sbeam1 = beam.scatter(particle1, 'position', [0;0;-1]*beam.wavelength) ...
+      .scatter(particle2, 'position', [0;0;1]*beam.wavelength);
+  sbeam2 = beam.scatter(particle2, 'position', [0;0;1]*beam.wavelength);
+  E1 = sbeam1.efield(xyz*beam.wavelength);
+  E2 = sbeam2.efield(xyz*beam.wavelength);
+  testCase.verifyEqual(E1, E2, 'fields dont match (transparent first)');
+  
+  sbeam1 = beam.scatter(particle2, 'position', [0;0;-1]*beam.wavelength) ...
+      .scatter(particle1, 'position', [0;0;1]*beam.wavelength);
+  sbeam2 = beam.scatter(particle2, 'position', [0;0;-1]*beam.wavelength);
+  E1 = sbeam1.efield(xyz*beam.wavelength);
+  E2 = sbeam2.efield(xyz*beam.wavelength);
+  testCase.verifyEqual(E1, E2, 'fields dont match (transparent second)');
+  
+end

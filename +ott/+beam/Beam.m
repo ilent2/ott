@@ -37,6 +37,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 % Methods
 %   - setWavelength -- Set wavelength property
 %   - setWavenumber -- Set wavenumber property
+%   - scatter       -- Calculate how a beam is scattered
 %
 % Field calculation methods
 %   - ehfield    -- Calculate electric and magnetic fields around the origin
@@ -73,6 +74,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
 %   - hfieldRtp  -- Calculate magnetic field around the origin (sph. coords.)
 %   - efarfield  -- Calculate electric fields in the far-field
 %   - hfarfield  -- Calculate magnetic fields in the far-field
+%   - scatterInternal -- Called to calculate the scattered beam
 
 % Copyright 2018-2020 Isaac Lenton
 % This file is part of the optical tweezers toolbox.
@@ -106,6 +108,7 @@ classdef Beam < matlab.mixin.Heterogeneous ...
     hfieldRtp(~)   % Calculate magnetic field around the origin (sph. coords.)
     efarfield(~)   % Calculate electric fields in the far-field
     hfarfield(~)   % Calculate magnetic fields in the far-field
+    scatterInternal(~)     % Called to calculate the scattered beam
   end
 
   methods (Static)
@@ -484,13 +487,41 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       % Usage
       %   force = beam.force(other_beam)
       %
+      %   force = beam.force(particle, ...)
+      %
       % Returns
       %   - 3x1 numeric vector.
       
       assert(isa(beam, 'ott.beam.Beam'), ...
         'first argument must be Beam instance');
-      assert(isa(other, 'ott.beam.Beam'), ...
-        'second argument must be a Beam instance');
+      
+      if ~isa(other, 'ott.beam.Beam')
+        % TODO: This is a bit of duplication between BscBeam and in the
+        % future (once implemented) Array.  Can we improve it?
+        
+        p = inputParser;
+        p.addParameter('position', other.position);
+        p.addParameter('rotation', other.rotation);
+        p.parse(varargin{:});
+        
+        rotation = p.Results.rotation;
+        position = p.Results.position;
+        
+        Nrot = size(rotation, 2)/3;
+        Npos = size(position, 2);
+        assert(Nrot == Npos || Nrot == 1 || Npos == 1, ...
+          'number of rotations/positions must mach or be singular');
+        if Npos == 1, position = repmat(position, 1, Nrot); end
+        if Nrot == 1, rotation = repmat(rotation, 1, Npos); end
+        
+        f = zeros(3, size(position, 2));
+        for ii = 1:size(position, 2)
+          sbeam = beam.scatter(other, 'position', position(:, ii), ...
+            'rotation', rotation(:, (1:3) + (ii-1)*3));
+          f(:, ii) = sbeam.force();
+        end
+        return;
+      end
 
       fbeam = beam.intensityMoment() ./ beam.speed;
       obeam = other.intensityMoment() ./ other.speed;
@@ -969,6 +1000,43 @@ classdef Beam < matlab.mixin.Heterogeneous ...
   end
 
   methods (Sealed)
+    
+    function sbeam = scatter(ibeam, particle, varargin)
+      % Calculate how a particle scatters the beam
+      %
+      % Usage
+      %   sbeam = scatter(ibeam, particle, ...)
+      %
+      % Returns
+      %   - sbeam (ott.beam.Scattered) -- Scattered beam encapsulating
+      %     the particle, incident beam, scattered beams(s).  For a
+      %     method which doesn't create a scattered beam, see
+      %     :meth:`scatterBsc`.
+      %
+      % Parameters
+      %   - particle (ott.particle.Particle) -- Particle with
+      %     T-matrix properties (possibly internal and external).
+      %
+      % Optional named arguments
+      %   - position (3x1 numeric) -- Particle position.
+      %     Default: ``particle.position``.
+      %
+      %   - rotation (3x3 numeric) -- Particle rotation.
+      %     Default: ``particle.rotation``.
+      
+      p = inputParser;
+      p.addParameter('position', particle.position);
+      p.addParameter('rotation', particle.rotation);
+      p.parse(varargin{:});
+      
+      particle.position = p.Results.position;
+      particle.rotation = p.Results.rotation;
+      
+      sbeam(numel(ibeam)) = ott.beam.Empty();
+      for ii = 1:numel(ibeam)
+        sbeam(ii) = ibeam(ii).scatterInternal(particle);
+      end
+    end
 
     %
     % Mathematical operators
@@ -1297,6 +1365,12 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       else
         error('axis must be character or a 2 or 3 element cell array');
       end
+    end
+  end
+  
+  methods (Static, Sealed, Access = protected)
+    function default_object = getDefaultScalarElement
+      default_object = ott.beam.Empty();
     end
   end
 
