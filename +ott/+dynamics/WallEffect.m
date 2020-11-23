@@ -151,19 +151,40 @@ classdef WallEffect < ott.dynamics.Dynamics
         return;
 
       end
+      
+      % Update particle position
+      % We cant make shape persistent since we use it for the figure
+      sim.particle.shape(1).position = x;
+      
+      % Check if particle has collided with wall
+      if sim.hasCollided
+        dx = nan(3, 1);
+        return;
+      end
 
       % Calculate force/torque
       gft = -optforce(t, x, R);
 
       % Calculate drag at this position
-      % We cant make shape persistent since we use it for the figure
-      sim.particle.shape(1).position = x;
       drag = sim.dragMethod(sim.particle.shape);
 
       % Calculate step
       dx = internalStep(gft, drag);
       odx = dx;
 
+    end
+    
+    function b = hasCollided(sim)
+      % Check if the particle has collided with the wall
+      %
+      % Usage
+      %   b = sim.hasCollided()
+      
+      norm = sim.particle.shape(2).normal;
+      dist = dot(norm, sim.particle.shape(1).position ...
+        - sim.particle.shape(2).position);
+      b = dist <= sim.particle.shape(1).radius;
+      
     end
   end
 

@@ -229,6 +229,9 @@ classdef (Abstract) Dynamics
 
         % Calculate simulation step
         dx = sim.simulationStep(t(ii-1), xc, Rc);
+        if any(isnan(dx))
+          break;
+        end
 
         % Update position/rotation
         x(:, ii) = xc + dx(1:3)*dt;
@@ -245,7 +248,7 @@ classdef (Abstract) Dynamics
       end
 
       % Remove extra entries in t/x/R
-      if ~plotData.running
+      if ~plotData.running || any(isnan(dx))
         t(ii+1:end) = [];
         x(:, ii+1:end) = [];
         R(:, ii*3+1:end) = [];
