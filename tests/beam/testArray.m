@@ -120,3 +120,55 @@ function testFieldCoverage(testCase)
   cbeam.ehparaxial([0;0]);
 
 end
+
+function testIntensityMoment(testCase)
+
+  beam(1) = testCase.TestData.beam1;
+  beam(2) = testCase.TestData.beam1;
+  beam(1).position = [-1;0;0]*1e-6;
+  beam(2).position = [1;0;0]*1e-6;
+  
+  cbeam = ott.beam.Array(beam, 'arrayType', 'incoherent');
+  
+  [mom, ints] = cbeam.intensityMoment();
+  testCase.verifyEqual(ints, 2*beam(1).power, 'AbsTol', 1e-16, 'RelTol', 1e-3, 'power');
+  testCase.verifyEqual(mom, 2*beam(1).intensityMoment(), 'AbsTol', 1e-16, 'moment');
+  
+  cbeam.arrayType = 'coherent';
+  [mom, ints] = cbeam.intensityMoment();
+  testCase.verifySize(mom, [3, 1], 'coherent mom');
+  testCase.verifySize(ints, [1, 1], 'coherent pow');
+  
+  cbeam.arrayType = 'array';
+  [mom, ints] = cbeam.intensityMoment();
+  testCase.verifySize(mom, [3, 1, 2], 'array mom');
+  testCase.verifySize(ints, [1, 1, 2], 'array pow');
+  
+end
+
+function testForce(testCase)
+
+  beam(1) = testCase.TestData.beam1;
+  beam(2) = testCase.TestData.beam1;
+  beam(1).position = [-1;0;0]*1e-6;
+  beam(2).position = [1;0;0]*1e-6;
+  
+  xyz = [0.5;0;0]*beam(1).wavelength;
+  particle = ott.particle.Fixed.FromShape(...
+    ott.shape.Sphere(beam(1).wavelength), ...
+    'wavelength0', beam(1).wavelength0, ...
+    'index_relative', 1.2);
+  cbeam = ott.beam.Array(beam, 'arrayType', 'array');
+
+  f = cbeam.force(particle, 'position', xyz);
+  testCase.verifySize(f, [3, 1, 2], 'array');
+  
+  cbeam.arrayType = 'coherent';
+  f = cbeam.force(particle, 'position', xyz);
+  testCase.verifySize(f, [3, 1], 'coherent');
+  
+  cbeam.arrayType = 'incoherent';
+  f = cbeam.force(particle, 'position', xyz);
+  testCase.verifySize(f, [3, 1], 'incoherent');
+  
+end

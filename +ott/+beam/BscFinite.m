@@ -102,6 +102,8 @@ classdef BscFinite < ott.beam.BscBeam
       %   - Nmax (numeric) -- Desired Nmax.  This parameter is ignored
       %     except when a translation is applied, in which case the
       %     translated beam has this Nmax.  Default: current Nmax or 0.
+      
+      % TODO: This has a bit of duplication with BscBeam cast, fix?
 
       if nargin < 2
         Nmax = max([0, beam.data.Nmax]);
@@ -119,11 +121,13 @@ classdef BscFinite < ott.beam.BscBeam
       % Translate the beam
       bsc = beam.translateBscInternal(bsc, Nmax);
 
-      % Apply power to beam
-      bsc.power = bsc.power * beam.power;
+      % Combine beams now if coherent
+      if strcmpi(beam.arrayType, 'coherent')
+        bsc = sum(subsum(bsc));
+      end
 
-      % Apply scale
-      bsc = bsc * beam.scale;
+      % Apply power and scale
+      bsc = bsc * beam.scale * sqrt(beam.power);
     end
     
     %

@@ -294,6 +294,10 @@ function testPower(testCase)
   abeam = ott.bsc.Bsc([1; 2; 3], zeros(3, 1));
   abeam.power = 1;
   testCase.verifyEqual(abeam.power, 1, 'set power to 1');
+  
+  arraybeam = subcat(2, abeam, abeam);
+  arraybeam.power = [1, 2];
+  testCase.verifyEqual(arraybeam.power, [1, 2], 'set array power');
 
   abeam.power = 0;
   testCase.verifyEqual(abeam.power, 0, 'set power to 0');

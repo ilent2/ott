@@ -67,10 +67,26 @@ classdef Array < ott.beam.ArrayType
       %
       % Additional parameters passed to Bsc casts cast.
       
+      Nwork = numel(beam.data);
+      for ii = 1:numel(varargin)
+        assert(numel(varargin{ii}) == 1 || numel(varargin{ii}) == Nwork, ...
+          'optional arguments must be scalars or match size of beam array');
+      end
+      
       bsc(numel(beam.data)) = ott.bsc.Bsc();
       for ii = 1:numel(beam.data)
         elm = beam.data(ii).translateXyz(beam.position).rotate(beam.rotation);
-        bsc(ii) = ott.bsc.Bsc(elm, varargin{:}) * beam.scale;
+        
+        % Unpack arguments for specific beam
+        % This feels a little kludgy, perhaps its ok... arrayfun?
+        ourargs = varargin;
+        for jj = 1:numel(ourargs)
+          if numel(ourargs{jj}) ~= 1
+            ourargs{jj} = ourargs{jj}(ii);
+          end
+        end
+        
+        bsc(ii) = ott.bsc.Bsc(elm, ourargs{:}) * beam.scale;
       end
       
       % Combine coherent beams
@@ -101,19 +117,19 @@ classdef Array < ott.beam.ArrayType
       % Scatter
       sdata = odata.scatter(particle);
       
-      % Make scattered beams coherent
+      % Make scattered beams arrays
       scat_data = [sdata.scattered];
       if ~isempty(scat_data)
-        scat = ott.beam.Array(scat_data, 'arrayType', 'coherent');
+        scat = ott.beam.Array(scat_data, 'arrayType', beam.arrayType);
         scat = scat * beam.scale;
       else
         scat = [];
       end
       
-      % Make internal beams coherent
+      % Make internal beams arrays
       intn_data = [sdata.internal];
       if ~isempty(intn_data)
-        intn = ott.beam.Array(intn_data, 'arrayType', 'coherent');
+        intn = ott.beam.Array(intn_data, 'arrayType', beam.arrayType);
         intn = intn * beam.scale;
       else
         intn = [];
@@ -127,6 +143,64 @@ classdef Array < ott.beam.ArrayType
           'particle', sdata(1).particle, 'internal', intn, ...
           'position', sdata(1).position, 'rotation', sdata(1).rotation);
     end
+    
+    %
+    % Force calculation functions
+    %
+    
+    function f = force(beam, other, varargin)
+      % Calculate the difference in momentum between beams.
+      %
+      % Usage
+      %   force = beam.force(other_beam)
+      %
+      %   force = beam.force(particle, ...)
+      %
+      % Returns
+      %   - 3xNxM numeric vector where N is the number of positions
+      %     and M is the number of beams in the array.
+      %
+      % Optional named parameters
+      %   - position (3x1 numeric) -- Particle position.
+      %
+      %   - rotation (3x3 numeric) -- Particle orientation.
+      
+      assert(isa(beam, 'ott.beam.Array'), ...
+        'first argument must be a Array instance');
+      
+      if strcmpi(beam.arrayType, 'coherent')
+        f = force@ott.beam.Beam(beam, other, varargin{:});
+      else
+        f(:, :) = force@ott.beam.Beam(beam.data(1), other, varargin{:});
+        f = repmat(f, [1, 1, numel(beam.data)]);
+        for ii = 2:numel(beam.data)
+          f(:, :, ii) = force@ott.beam.Beam(beam.data(ii), other, varargin{:});
+        end
+        
+        if strcmpi(beam.arrayType, 'incoherent')
+          f = sum(f, 3);
+        end
+      end
+    end
+
+    function varargout = intensityMoment(beam, varargin)
+      % Calculate the intensity moment, combining results if incoherent.
+      %
+      % For usage/parameters, see :meth:`Beam.intensityMoment`.
+      
+      [varargout{1:nargout}] = intensityMoment@ott.beam.Beam(beam, varargin{:});
+      
+      if strcmpi(beam.arrayType, 'incoherent') && nargout >= 1
+        varargout{1} = sum(varargout{1}, 3);
+        if nargout >= 2
+          varargout{2} = sum(varargout{2}, 3);
+        end
+      end
+    end
+    
+    %
+    % Field calculation functions
+    %
 
     function varargout = efield(beam, varargin)
       % Calculate the electric field (in SI units)

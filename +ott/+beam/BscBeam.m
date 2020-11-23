@@ -618,11 +618,12 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
         
         % Use Nmax from sbsc, we don't apply translations to sbsc so
         % this Nmax should correspond to the scattered Nmax.
-        ibsc = ott.bsc.Bsc(ibeam, sbsc.Nmax);
+        ibsc = ott.bsc.Bsc(ibeam, [sbsc.Nmax]);
       end
 
       % Calculate force using internal methods
       O = func(ibsc, sbsc);
+      O = reshape(O, 3, [], numel(ibsc));
       
       % Apply particle rotation term to result
       % This avoid calculating a wigner matrix

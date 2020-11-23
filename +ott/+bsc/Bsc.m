@@ -358,10 +358,10 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
 
         % Handle default value for dimension
         if nargin < 2
-          dim = max([2, find(size(beam.data) > 1, 1)]);
+          dim = max([2, find(size(beam(ii).data) > 1, 1)]);
         end
         
-        beam.data = sum(beam.data, dim);
+        beam(ii).data = sum(beam(ii).data, dim);
       end
     end
     
@@ -1070,10 +1070,19 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
       else
         ci = ci2;
       end
-
-      [a1, b1] = beam1.getCoefficients(ci);
-      [a2, b2] = beam2.getCoefficients(ci);
-      beam = ott.bsc.Bsc(a1+a2, b1+b2);
+      
+      assert(numel(beam1) == numel(beam2) ...
+        || numel(beam1) == 1 || numel(beam2) == 1, ...
+        'number of beams must match or be scalar');
+      
+      % Add beams, preserving major-size
+      Nbeams = max(numel(beam1), numel(beam2));
+      beam(Nbeams) = ott.bsc.Bsc();
+      for ii = 1:Nbeams
+        [a1, b1] = beam1(min(numel(beam1), ii)).getCoefficients(ci);
+        [a2, b2] = beam2(min(numel(beam2), ii)).getCoefficients(ci);
+        beam(ii) = ott.bsc.Bsc(a1+a2, b1+b2);
+      end
     end
 
     function beam = uminus(beam)
@@ -1136,13 +1145,17 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
       % Provides element-wise multiplication of BSC coefficients.
       %
       % Usage
-      %   beam = beam .* row_vec
+      %   beam = beam .* row_vec    or    beam = row_vec .* beam
       %   Multiplies each beam by the elements of `row_vec`.
+      
+      % Ensure order is correct
+      if ~isa(beam, 'ott.bsc.Bsc')
+        [beam, rv] = deal(rv, beam);
+      end
 
-      assert(isa(beam, 'ott.bsc.Bsc'), 'first argument must be a Bsc');
       assert(isnumeric(rv) && ismatrix(rv) && size(rv, 1) == 1 ...
-          && size(rv, 2) == numel(beam), ...
-          'second argument must be row vector matching N-beams');
+          && (size(rv, 2) == beam.nbeams || isscalar(rv)), ...
+          'number of elements in row vector must match number of beams');
 
       [oa, ob] = beam.getCoefficients();
       beam = beam.setCoefficients(oa .* rv, ob .* rv);
@@ -1169,10 +1182,10 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
 
       if isa(a, 'ott.bsc.Bsc')
         [oa, ob] = a.getCoefficients();
-        if ismatrix(b)
-          beam = ott.bsc.Bsc(oa * b, ob * b);
-        else
+        if isscalar(b)
           beam = scalarMult(a, b);
+        else
+          beam = ott.bsc.Bsc(oa * b, ob * b);
         end
       else
         assert(ismatrix(a) && isnumeric(a), ...
@@ -1815,11 +1828,9 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
       p = gather(full(sum(abs(oa).^2 + abs(ob).^2, 1)));
     end
     function beam = set.power(beam, val)
-      if val == 0 && isfinite(beam.power)
-        beam = 0 * beam;
-      else
-        beam = sqrt(val ./ beam.power) * beam;
-      end
+      scale = sqrt(val ./ beam.power);
+      scale(val == 0 & isfinite([beam.power])) = 0;
+      beam = scale .* beam;
     end
     
     function val = get.a(beam)

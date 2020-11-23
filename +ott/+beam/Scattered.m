@@ -894,19 +894,32 @@ classdef Scattered < ott.beam.Beam
     
     function beam = get.outgoing(beam)
       sbsc = ott.bsc.Bsc(beam.scattered);
-      ibsc = ott.bsc.Bsc(beam.incident, sbsc.Nmax);
+      ibsc = ott.bsc.Bsc(beam.incident, [sbsc.Nmax]);
+    
+      arrayType = 'coherent';
+      if isa(beam.incident, 'ott.beam.ArrayType')
+        arrayType = beam.incident.arrayType;
+      end
+
       beam = ott.beam.BscOutgoing(ibsc + 2*sbsc, ...
-        'omega', beam.omega, 'index_medium', beam.index_medium);
+        'omega', beam.omega, 'index_medium', beam.index_medium, ...
+        'arrayType', arrayType);
     end
     
     function beam = get.incoming(beam)
       
       % Getting a sbsc instance just for Nmax seems wasteful
       sbsc = ott.bsc.Bsc(beam.scattered);
-      ibsc = ott.bsc.Bsc(beam.incident, sbsc.Nmax);
+      ibsc = ott.bsc.Bsc(beam.incident, [sbsc.Nmax]);
+    
+      arrayType = 'coherent';
+      if isa(beam.incident, 'ott.beam.ArrayType')
+        arrayType = beam.incident.arrayType;
+      end
       
       beam = ott.beam.BscFinite(ibsc, ...
-        'omega', beam.omega, 'index_medium', beam.index_medium);
+        'omega', beam.omega, 'index_medium', beam.index_medium, ...
+        'arrayType', arrayType);
     end
       
     function beam = set.particle(beam, val)
