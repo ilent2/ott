@@ -1,6 +1,6 @@
-classdef Pointmatch < ott.tmatrix.Tmatrix
+classdef Pointmatch < ott.tmatrix.Homogeneous
 % Constructs a T-matrix using the point matching method.
-% Inherits from :class:`ott.tmatrix.Tmatrix`.
+% Inherits from :class:`ott.tmatrix.Homogeneous`.
 %
 % The point matching method is described in
 %
@@ -29,7 +29,6 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
 % See LICENSE.md for information about using/distributing this file.
 
   properties (SetAccess=protected)
-    index_relative    % Relative refractive index of particle
     rtp           % Location for point matching (3xN numeric)
     nrtp          % Surface normals at rtp-locations (3xN numeric)
     zRotSymmetry  % Z-axis rotational symmetry (1 = no symmetry)
@@ -498,12 +497,6 @@ classdef Pointmatch < ott.tmatrix.Tmatrix
   end
 
   methods % Getters/setter
-    function tmatrix = set.index_relative(tmatrix, val)
-      assert(isnumeric(val) && isscalar(val), ...
-          'relative refractive index must be numeric scalar');
-      tmatrix.index_relative = val;
-    end
-
     function tmatrix = set.rtp(tmatrix, val)
       assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 3, ...
           'rtp must be a 3xN matrix');

@@ -1,6 +1,6 @@
-classdef Smarties < ott.tmatrix.Tmatrix
+classdef Smarties < ott.tmatrix.Homogeneous
 % Constructs a T-matrix using SMARTIES.
-% Inherits from :class:`ott.tmatrix.Tmatrix`.
+% Inherits from :class:`ott.tmatrix.Homogeneous`.
 %
 % SMARTIES is a method for calculating T-matrices for spheroids, full
 % details can be found in
@@ -31,7 +31,6 @@ classdef Smarties < ott.tmatrix.Tmatrix
   properties (SetAccess=protected)
     ordinary          % Ordinary radius
     extraordinary     % Extra-ordinary radius
-    index_relative    % Relative refractive index of particle
   end
 
   methods (Static)
@@ -259,12 +258,6 @@ classdef Smarties < ott.tmatrix.Tmatrix
       assert(isnumeric(val) && isscalar(val) && val > 0, ...
           'extraordinary radius must be positive numeric scalar');
       tmatrix.extraordinary = val;
-    end
-
-    function tmatrix = set.index_relative(tmatrix, val)
-      assert(isnumeric(val) && isscalar(val), ...
-          'relative refractive index must be numeric scalar');
-      tmatrix.index_relative = val;
     end
   end
 end

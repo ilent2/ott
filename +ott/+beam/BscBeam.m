@@ -209,7 +209,7 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       end
       
       % Calculate internal component
-      if ~isempty(particle.tinternal)
+      if ~isempty(particle.tinternal) && isa(particle.tinternal, 'ott.tmatrix.Homogeneous')
         sint = particle.tinternal * ibsc;
         sint = sint.rotate(scat_rotation);
         index_particle = ibeam.index_medium * particle.tinternal.index_relative;

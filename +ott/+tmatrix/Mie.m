@@ -1,6 +1,6 @@
-classdef Mie < ott.tmatrix.Tmatrix
+classdef Mie < ott.tmatrix.Homogeneous
 % Construct T-matrix with Mie scattering coefficients.
-% Inherits from :class:`ott.tmatrix.Tmatrix`.
+% Inherits from :class:`ott.tmatrix.Homogeneous`.
 %
 % The Mie coefficients describe the scattering of a sphere.
 % They can also be used to give a reasonable estimate of the force
@@ -29,7 +29,6 @@ classdef Mie < ott.tmatrix.Tmatrix
 
   properties (SetAccess=protected)
     radius            % Radius of sphere [units of wavelength]
-    index_relative    % Relative refractive index
     relative_permeability % Relative permeability
   end
 
@@ -58,7 +57,8 @@ classdef Mie < ott.tmatrix.Tmatrix
             'Shape is not a sphere, using maxRadius property');
       end
 
-      [varargout{1:nargout}] = ott.tmatrix.Mie.ShapeMaxRadius(shape, varargin{:});
+      [varargout{1:nargout}] = ott.tmatrix.Mie.ShapeMaxRadius(...
+          shape, varargin{:});
     end
 
     function varargout = ShapeVolume(shape, varargin)
@@ -201,12 +201,6 @@ classdef Mie < ott.tmatrix.Tmatrix
       assert(isnumeric(val) && isscalar(val) && val > 0, ...
           'radius must be positive numeric scalar');
       tmatrix.radius = val;
-    end
-
-    function tmatrix = set.index_relative(tmatrix, val)
-      assert(isnumeric(val) && isscalar(val), ...
-          'relative refractive index must be numeric scalar');
-      tmatrix.index_relative = val;
     end
 
     function tmatrix = set.relative_permeability(tmatrix, val)

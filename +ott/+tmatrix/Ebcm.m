@@ -1,4 +1,4 @@
-classdef Ebcm < ott.tmatrix.Tmatrix
+classdef Ebcm < ott.tmatrix.Homogeneous
 % Constructs a T-matrix using extended boundary conditions method.
 % Inherits from :class:`ott.tmatrix.Tmatrix`.
 %
@@ -27,7 +27,6 @@ classdef Ebcm < ott.tmatrix.Tmatrix
     points         % (2xN numeric) Surface points [r; theta]
     normals        % (2xN numeric) Normals at points [nr; ntheta]
     areas          % (1xN numeric) Conic section surface areas
-    index_relative % (numeric) Relative refractive index of particle
     xySymmetry     % (logical) True if using xy-mirror optimisations
     invMethod      % Inversion method used for T-matrix calculation
   end
@@ -403,12 +402,6 @@ classdef Ebcm < ott.tmatrix.Tmatrix
   end
 
   methods % Getters/setter
-    function tmatrix = set.index_relative(tmatrix, val)
-      assert(isnumeric(val) && isscalar(val), ...
-          'relative index must be numeric scalar');
-      tmatrix.index_relative = val;
-    end
-
     function tmatrix = set.points(tmatrix, val)
       assert(isnumeric(val) && ismatrix(val) && size(val, 1) == 2, ...
           'points must be 2xN numeric matrix');
