@@ -6,6 +6,7 @@ function [rv,thetav,phiv,r,theta,phi] = xyzv2rtpv(xv,yv,zv,x,y,z)
 %
 %   [vec_sph,pos_sph] = XYZV2RTPV(vec_cart, pos_cart)
 %   As above, but with 3xN matrices as inputs and outputs.
+%   vec can also be 3xNxM, but pos must be a 3xN matrix.
 %
 % Parameters
 %   - r      -- radial distance [0, Inf)
@@ -24,17 +25,19 @@ function [rv,thetav,phiv,r,theta,phi] = xyzv2rtpv(xv,yv,zv,x,y,z)
 
 if nargin == 2
 
-  assert(size(xv, 1) == 3, 'pos must be 3xN matrix');
-  assert(size(yv, 1) == 3, 'vec must be 3xN matrix');
+  assert(size(yv, 1) == 3 && ismatrix(yv), 'pos must be 3xN matrix');
+  assert(size(xv, 1) == 3, 'vec must be 3xNxM matrix');
   assert(size(xv, 2) == size(yv, 2), ...
-      'Number of points in vec and pos must match');
+      'Second dimension of vec and pos must match');
 
    x = yv(1,:).';
    y = yv(2,:).';
    z = yv(3,:).';
-   zv = xv(3,:).';
-   yv = xv(2,:).';
-   xv = xv(1,:).';
+   
+   szrv = size(xv);
+   zv = reshape(xv(3,:), [numel(x), 1, szrv(3:end)]);
+   yv = reshape(xv(2,:), [numel(x), 1, szrv(3:end)]);
+   xv = reshape(xv(1,:), [numel(x), 1, szrv(3:end)]);
 
 elseif nargin == 6
 
@@ -64,15 +67,15 @@ J=[sin(theta).*cos(phi),sin(theta).*sin(phi),cos(theta);...
     -sin(phi),cos(phi),zeros(size(theta))];
 
 %Pack Cartesian vector field
-xyzv=[xv,yv,zv];
+xyzv = cat(2, xv, yv, zv);
 
 %Separate the Jacobian and multiply for each unit vector.
-rv = dot(J(1:length(theta),:),xyzv,2);
-thetav = dot(J(length(theta)+1:2*length(theta),:),xyzv,2);
-phiv = dot(J(2*length(theta)+1:3*length(theta),:),xyzv,2);
+rv = sum(J(1:length(theta),:) .* xyzv, 2);
+thetav = sum(J(length(theta)+1:2*length(theta),:) .* xyzv, 2);
+phiv = sum(J(2*length(theta)+1:3*length(theta),:) .* xyzv, 2);
 
 if nargout < 3
-   rv = [ rv(:) thetav(:) phiv(:) ].';
+   rv = permute(cat(2, rv, thetav, phiv), [2, 1 3:ndims(xyzv)]);
    thetav = [ r(:) theta(:) phi(:) ].';
 end
 
