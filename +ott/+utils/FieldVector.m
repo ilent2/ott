@@ -198,7 +198,10 @@ classdef FieldVector < double & ott.utils.RotateHelper
     end
     
     function vec = dot(v1, v2)
-      % Vector dot product
+      % Vector dot product.
+      %
+      % Internally performs ``sum(A.*B, 1)``, this is different from the
+      % behaviour of built-in dot which does ``A'*B`` (complex conjugate).
       %
       % Usage
       %   s = dot(fv, fv)
@@ -207,7 +210,7 @@ classdef FieldVector < double & ott.utils.RotateHelper
         && isa(v2, 'ott.utils.FieldVector'), ...
         'Both inputs must be field vectors');
       
-      vec = dot(v1.vxyz, v2.vxyz);
+      vec = sum(v1.vxyz .* v2.vxyz, 1);
     end
     
     function vec = vecnorm(vec)
