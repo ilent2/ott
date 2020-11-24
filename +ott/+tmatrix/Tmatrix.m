@@ -339,18 +339,6 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
       end
     end
 
-    function tmatrix = ott.tmatrix.Tmatrix(tmatrix)
-      % Downcast T-matrix to base class
-      %
-      % Usage
-      %   tmatrix = ott.tmatrix.Tmatrix(tmatrix)
-
-      for ii = 1:numel(tmatrix)
-        tmatrix(ii) = ott.tmatrix.Tmatrix(tmatrix(ii).data, ...
-            'type', tmatrix(ii).type);
-      end
-    end
-
     %
     % Sparsity functions
     %
