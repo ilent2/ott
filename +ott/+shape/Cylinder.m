@@ -138,10 +138,10 @@ classdef Cylinder < ott.shape.Shape ...
       ends = top | bottom;
 
       nxz = zeros(2, numel(theta));
-      nxz(1, sides) = sin(theta(sides));
-      nxz(2, sides) = cos(theta(sides));
-      nxz(1, ends) = abs(cos(theta(ends)));
-      nxz(2, ends) = - sin(theta(ends)) .* sign(cos(theta(ends)));
+      nxz(1, sides) = 1;
+      nxz(2, sides) = 0;
+      nxz(1, ends) = 0;
+      nxz(2, ends) = -sign(sin(theta(ends) - pi/2));
     end
 
     function [P, N, dist] = intersectAllInternal(shape, x0, x1, varargin)

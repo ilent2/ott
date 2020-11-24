@@ -67,4 +67,16 @@ function testIntersect(testCase)
 
 end
 
+function testNormals(testCase)
+
+  shape = ott.shape.Cylinder();
+  
+  rtp = [[1;0.1;0], [1;pi-0.1;0]];
+  n = shape.normalsRtp(rtp);
+  testCase.verifyEqual(n, [0;0;1].*[1,-1], 'AbsTol', 1e-16, 'rtp normal z');
+  
+  n = shape.normalsRtp([1;pi/2-0.1;0]);
+  testCase.verifyEqual(n, [1;0;0], 'AbsTol', 1e-16, 'rtp normal x');
+
+end
 
