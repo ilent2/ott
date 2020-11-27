@@ -591,7 +591,9 @@ classdef Scattered < ott.beam.Beam
         if ~all(inside(1) == inside(:))
 
           % Smooth contour data (makes things look nicer)
-          inside = ott.utils.gaussfilt(double(inside), p.Results.contourSmooth);
+          if p.Results.contourSmooth ~= 0
+            inside = ott.utils.gaussfilt(double(inside), p.Results.contourSmooth);
+          end
 
           % Draw contour on plot
           hold on;

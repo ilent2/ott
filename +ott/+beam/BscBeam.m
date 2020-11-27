@@ -627,7 +627,13 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       
       % Apply particle rotation term to result
       % This avoid calculating a wigner matrix
-      O = reshape(particle_rot * O(:, :), size(O));
+      if size(particle_rot, 2) == 3
+        O = reshape(particle_rot * O(:, :), size(O));
+      else
+        for ii = 1:size(particle_rot, 2)/3
+          O(:, :, ii) = particle_rot(:, (1:3) + (ii-1)*3) * O(:, :, ii);
+        end
+      end
     end
     
     function val = defaultVisRangeInternal(beam)

@@ -439,7 +439,7 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
         bi = ob .* (-1i).^n .* Nn;
       else
         error('ott:bsc:Bsc:efarfield:unknown_basis', ...
-            'Unknown value for basis parameter');
+            'basis must be either ''incoming'' or ''outgoing''');
       end
       
       if issparse(ai)
@@ -1372,7 +1372,7 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       if nargout == 3
-        varargout{1:3} = {fx, fy, fz};
+        [varargout{1:3}] = deal(fx, fy, fz);
         if ~isvector(ibeam)
           for ii = 1:3
             varargout{ii} = reshape(varargout{ii}, size(ibeam));
@@ -1422,7 +1422,7 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       if nargout == 3
-        varargout{1:3} = {tx, ty, tz};
+        [varargout{1:3}] = deal(tx, ty, tz);
         if ~isvector(ibeam)
           for ii = 1:3
             varargout{ii} = reshape(varargout{ii}, size(ibeam));
@@ -1489,7 +1489,7 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
 
       % Package output
       if nargout == 3
-        varargout{1:3} = {sx, sy, sz};
+        [varargout{1:3}] = deal(sx, sy, sz);
         if ~isvector(ibeam)
           for ii = 1:3
             varargout{ii} = reshape(varargout{ii}, size(ibeam));
@@ -1621,7 +1621,7 @@ classdef (InferiorClasses = {?gpuArray}) Bsc < matlab.mixin.Heterogeneous ...
       % Calculate rotation matrix for each requested rotation
       D = cell(1, Nrots);
       for ii = 1:Nrots
-        D = ott.utils.wigner_rotation_matrix(...
+        D{ii} = ott.utils.wigner_rotation_matrix(...
             max([0, beam.Nmax, p.Results.Nmax]), R(:, (1:3) + (ii-1)*3));
       end
 

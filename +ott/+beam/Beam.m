@@ -884,14 +884,9 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %
       %   - data (ott.utils.VswfData) -- Field data for repeated field
       %     calculation.  Default is an empty VswfData structure.
-      %
-      %   - basis (enum) -- Vector spherical wave function basis to
-      %     visualise.  Must be one of 'incoming' or 'outgoing'.
-      %     Default: ``'incoming'``.
 
       p = inputParser;
       p.addParameter('field', 'irradiance');
-      p.addParameter('basis', 'incoming');
       p.addParameter('normalise', false);
       p.addParameter('type', 'sphere');
       p.addParameter('npts', 100);
@@ -1023,6 +1018,10 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %
       %   - rotation (3x3 numeric) -- Particle rotation.
       %     Default: ``particle.rotation``.
+      
+      if isa(particle, 'ott.tmatrix.Tmatrix')
+        particle = ott.particle.Fixed('tmatrix', particle);
+      end
       
       p = inputParser;
       p.addParameter('position', particle.position);

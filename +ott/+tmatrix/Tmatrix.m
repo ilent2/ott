@@ -261,13 +261,17 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
 
       switch method
         case 'dda'
-          tmatrix = ott.tmatrix.Dda.FromShape(shape, index_relative, ...
-              'internal', p.Results.internal);
+          assert(p.Results.internal == false, ...
+            'DDA doesnt currently support internal T-matrices');
+          tmatrix = ott.tmatrix.Dda.FromShape(shape, ...
+              'index_relative', index_relative);
         case 'ebcm'
-          tmatrix = ott.tmatrix.Ebcm.FromShape(shape, index_relative, ...
+          tmatrix = ott.tmatrix.Ebcm.FromShape(shape, ...
+              'index_relative', index_relative, ...
               'internal', p.Results.internal);
         case 'pm'
-          tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, index_relative, ...
+          tmatrix = ott.tmatrix.Pointmatch.FromShape(shape, ...
+              'index_relative', index_relative, ...
               'internal', p.Results.internal);
         otherwise
           error('Internal error');
@@ -610,6 +614,27 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
         end
       end
     end
+    
+    function tmatrix = removeNans(tmatrix, varargin)
+      % Removes contigous nans from the end of the T-matrix
+      %
+      % This is useful for T-matrix calculation functions which may
+      % be unstable for large orders.
+      %
+      % Usage
+      %   tmatrix = tmatrix.removeNans()
+      
+      % Find maximum Nmax without nans
+      tnans = isnan(tmatrix.data);
+      lastCol = find(any(tnans, 1), 1, 'last');
+      lastRow = find(any(tnans, 2), 1, 'last');
+      oNmax = ott.utils.combined_index(max(lastCol, lastRow));
+      
+      % Shrink T-matrix
+      if ~isempty(oNmax)
+        tmatrix = tmatrix.setNmax(oNmax, 'RelTol', [], 'AbsTol', []);
+      end
+    end
 
     function tmatrix = shrinkNmax(tmatrix, varargin)
       % Shrink the size of the T-matrix while preserving power
@@ -673,7 +698,7 @@ classdef Tmatrix < matlab.mixin.Heterogeneous
         bsc = ott.bsc.Bsc(tmatrix(ii));
         bsc = bsc.shrinkNmax('RelTol', p.Results.RelTol, ...
             'AbsTol', p.Results.AbsTol);
-        tmatrix(ii) = ott.tmatrix.Tmatrix(bsc);
+        tmatrix(ii).data = ott.tmatrix.Tmatrix(bsc).data;
       end
     end
 

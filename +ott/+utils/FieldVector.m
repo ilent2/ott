@@ -183,18 +183,32 @@ classdef FieldVector < double & ott.utils.RotateHelper
       end
     end
     
-    function vec = cross(v1, v2)
+    function vec = cross(v1, v2, fvkeep)
       % Vector cross product
       %
       % Usage
       %   fv = cross(fv, fv)
+      %
+      %   fv = sum(fv, fv, keep) -- When ``keep`` is 'keepFirst',
+      %   keeps the coordinates of the first element in the specified
+      %   dimension.
       
       assert(isa(v1, 'ott.utils.FieldVector') ...
         && isa(v2, 'ott.utils.FieldVector'), ...
         'Both inputs must be field vectors');
       
-      vec = cross(v1.vxyz, v2.vxyz);
-      vec = ott.utils.FieldVectorCart(vec);
+      % Pre-cast v1 to cartesian, just in case we want to keep coordinates
+      v1 = ott.utils.FieldVectorCart(v1);
+      
+      data = cross(v1.vxyz, v2.vxyz);
+      
+      if nargin == 3
+        assert(strcmpi(fvkeep, 'keepFirst'), ...
+          'keep argument must be ''keepFirst''');
+        data = [data; double(v1(4:6, :))];
+      end
+        
+      vec = ott.utils.FieldVectorCart(data);
     end
     
     function vec = dot(v1, v2)

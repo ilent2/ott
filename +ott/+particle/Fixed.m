@@ -117,12 +117,16 @@ classdef Fixed < ott.particle.Particle
       %
       % Optional named arguments
       %   - shape (ott.shape.Shape) -- Geometry description.  Units: m.
+      %     Default: ``[]``.
       %
       %   - drag (ott.drag.Stokes) -- Drag tensor description.
+      %     Default: ``[]``.
       %
       %   - tmatrix (ott.tmatrix.Tmatrix) -- Scattering description.
+      %     Default: ``[]``.
       %
       %   - tinternal (ott.tmatrix.Tmatrix) -- Internal T-matrix.
+      %     Default: ``[]``.
       %
       %   - mass (numeric) -- Particle mass.  Default: ``[]``.
 

@@ -212,18 +212,22 @@ classdef MieLayered < ott.tmatrix.Tmatrix
         iTmatrix = tmatrix;
         iTmatrix.data = Tinternal;
         iTmatrix = iTmatrix.setType('internal');
+        iTmatrix = iTmatrix.removeNans().shrinkNmax();
 
         tmatrix.data = Texternal;
         tmatrix = tmatrix.setType('scattered');
+        tmatrix = tmatrix.removeNans().shrinkNmax();
 
       else
 
         if p.Results.internal
           tmatrix.data = Tinternal;
           tmatrix = tmatrix.setType('internal');
+          tmatrix = tmatrix.removeNans().shrinkNmax();
         else
           tmatrix.data = Texternal;
           tmatrix = tmatrix.setType('scattered');
+          tmatrix = tmatrix.removeNans().shrinkNmax();
         end
 
       end
