@@ -20,6 +20,10 @@ function [velocity, xedges, yedges, counts] = velocityField(t, xy, varargin)
 %
 %   [velocity, ...] = velocityField(t, x, XEDGES, YEDGES)
 
+% Copyright 2020 Isaac Lenton (aka ilent2)
+% This file is part of the optical tweezers toolbox.
+% See LICENSE.md for information about using/distributing this file.
+
   % Calculate positions and velocities with central differences
   avgPos = movmean(xy, 2, 2, 'Endpoints', 'discard');
   vels = diff(xy, 1, 2)./diff(t, 1, 2);
