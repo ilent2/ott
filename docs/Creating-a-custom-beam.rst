@@ -100,11 +100,12 @@ defined by the numerical aperture of the objective. The centre of the
 hemisphere corresponds to the centre of the images. The radial
 coordinate extends from the centre of the image to the edge of the image
 (the corners of the image do not contribute to the beam).
-``BscPmParaxial`` supports the following mapping functions \*
-``'sintheta'`` (default) image radius proportional to ``sin(theta)`` \*
-``'tantheta'`` image radius proportional to ``tan(theta)`` \*
-``'theta'`` image radius proportional to ``theta`` where ``theta`` is
-the polar coordinate on the hemisphere.
+``BscPmParaxial`` supports the following mapping functions
+
+  * ``'sintheta'`` (default) image radius proportional to ``sin(theta)``
+  * ``'tantheta'`` image radius proportional to ``tan(theta)``
+  * ``'theta'`` image radius proportional to ``theta`` where ``theta`` is
+    the polar coordinate on the hemisphere.
 
 .. code:: matlab
 
