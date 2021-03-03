@@ -14,6 +14,8 @@ acting on spherical and non-spherical particles in a laser beam.
 This version of the toolbox includes methods for calculating fluidic
 drag and Brownian forces, as well as examples for basic dynamics
 simulations.
+For more information, refer to the examples or the
+[documentation](https://ott.readthedocs.io/).
 
 Installation and usage
 ----------------------
