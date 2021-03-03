@@ -42,6 +42,12 @@ in the `ott.*` package, for example
 beam = ott.beam.Gaussian();
 ```
 
+or for the graphical user interface
+
+```matlab
+ott.ui.Launcher
+```
+
 More detailed instructions can be found in the Getting Started
 section of the [documentation](https://ott.readthedocs.io/).
 
