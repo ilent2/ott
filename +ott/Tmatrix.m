@@ -166,28 +166,30 @@ classdef Tmatrix
       %       'wavelength0', 1064e-9, ...
       %       'index_medium', 1.33, 'index_particle', 1.5);
 
-      % Parse inputs
+      % Parse inputs for "simple"
       p = inputParser;
       p.KeepUnmatched = true;
       p.addOptional('parameters', []);
       p.addParameter('method', '');
       p.addParameter('method_tol', []);
-
-      % Things required for k_medium
-      p.addParameter('k_medium', []);
-      p.addParameter('wavelength_medium', []);
-      p.addParameter('index_medium', []);
-      p.addParameter('wavelength0', []);
-
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
+      
+      % Parse remaining inputs for k_medium
+      pk = inputParser;
+      pk.KeepUnmatched = true;
+      pk.addParameter('k_medium', []);
+      pk.addParameter('wavelength_medium', []);
+      pk.addParameter('index_medium', []);
+      pk.addParameter('wavelength0', []);
+      pk.parse(unmatched{:});
 
       % Parse k_medium
-      k_medium = ott.Tmatrix.parser_k_medium(p, 2.0*pi);
+      k_medium = ott.Tmatrix.parser_k_medium(pk, 2.0*pi);
 
       % Get a shape object from the inputs
       if ischar(shape) && ~isempty(p.Results.parameters)
         shape = ott.shapes.Shape.simple(shape, p.Results.parameters);
-        varargin = varargin(2:end);
       elseif ~isa(shape, 'ott.shapes.Shape') || ~isempty(p.Results.parameters)
         error('Must input either Shape object or string and parameters');
       end
@@ -201,15 +203,15 @@ classdef Tmatrix
       end
       switch method
         case 'mie'
-          tmatrix = ott.TmatrixMie.simple(shape, varargin{:});
+          tmatrix = ott.TmatrixMie.simple(shape, unmatched{:});
         case 'smarties'
-          tmatrix = ott.TmatrixSmarties.simple(shape, varargin{:});
+          tmatrix = ott.TmatrixSmarties.simple(shape, unmatched{:});
         case 'pm'
-          tmatrix = ott.TmatrixPm.simple(shape, varargin{:});
+          tmatrix = ott.TmatrixPm.simple(shape, unmatched{:});
         case 'dda'
-          tmatrix = ott.TmatrixDda.simple(shape, varargin{:});
+          tmatrix = ott.TmatrixDda.simple(shape, unmatched{:});
         case 'ebcm'
-          tmatrix = ott.TmatrixEbcm.simple(shape, varargin{:});
+          tmatrix = ott.TmatrixEbcm.simple(shape, unmatched{:});
         otherwise
           error('Unsupported method specified');
       end

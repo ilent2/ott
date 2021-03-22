@@ -192,9 +192,6 @@ classdef TmatrixMie < ott.Tmatrix
       p.addParameter('wavelength_particle', []);
       p.addParameter('index_particle', []);
       
-      % Fields to enable compatability with Tmatrix.simple
-      p.addParameter('method', []);
-
       p.parse(varargin{:});
     end
     
