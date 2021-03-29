@@ -5,7 +5,7 @@ classdef Smarties < ott.tmatrix.Homogeneous
 % SMARTIES is a method for calculating T-matrices for spheroids, full
 % details can be found in
 %
-%   W.R.C. Somerville, B. Auguié, E.C. Le Ru,
+%   W.R.C. Somerville, B. AuguiÃ©, E.C. Le Ru,
 %   JQSRT, Volume 174, May 2016, Pages 39-55.
 %   https://doi.org/10.1016/j.jqsrt.2016.01.005
 %
