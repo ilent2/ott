@@ -50,7 +50,7 @@ classdef (Abstract) Dynamics
   end
 
   properties (Constant)
-    boltzmannConstant = 1.3806e-23    % Boltzmann constant [m2.kg/s2/K]
+    boltzmannConstant = 1.3806e-23;    % Boltzmann constant [m2.kg/s2/K]
   end
 
   methods (Abstract)
@@ -330,7 +330,7 @@ classdef (Abstract) Dynamics
       end
     end
 
-    function plotData = updatePlot(sim, plotData, t, x, R)
+    function plotData = updatePlot(~, plotData, t, x, R)
       % Update the plot
 
       % Check if we need to do anything

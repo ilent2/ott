@@ -25,4 +25,5 @@ the start of each of the following sections.
    Tools-Package.rst
    Utils-Package.rst
    Ui-Package.rst
+   Errors.rst
 

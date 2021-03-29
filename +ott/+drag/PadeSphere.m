@@ -5,7 +5,7 @@ classdef PadeSphere < ott.drag.StokesSphereWall
 % This class implements the Pade series approximation
 % for spherical particles moving near a planar surface.
 % The approximation should work for spacing between the sphere surface
-% and plane larger than :math:`10^{-2}\times`radius.
+% and plane larger than :math:`10^{-2}` radius.
 %
 % This class uses the coefficients included in
 %

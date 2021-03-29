@@ -5,7 +5,7 @@ classdef ChaouiSphere < ott.drag.StokesSphereWall
 % This class implements a polynomial fit to the exact solution
 % for spherical particles moving in creeping flow near a planar surface.
 % The approximation should work for spacing between the sphere surface
-% and plane between :math:`10^{-6}\times`radius and 1 radius.
+% and plane between :math:`10^{-6}` radius and 1 radius.
 %
 % This class implements the polynomial approximation described in
 %
@@ -47,6 +47,7 @@ classdef ChaouiSphere < ott.drag.StokesSphereWall
       %   - radius     -- Radius of sphere
       %   - separation -- Separation between sphere centre and surface
       %   - viscosity -- Viscosity of medium (optional, default: 1.0)
+      %
       % Parameters can also be passed as named arguments.
       % Unmatched parameters are passed to :class:`Stokes`.
 
