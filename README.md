@@ -4,6 +4,9 @@ ott - Optical Tweezers Toolbox
 [![Documentation Status](https://readthedocs.org/projects/ott/badge/?version=latest)](https://ott.readthedocs.io/en/latest/?badge=latest)
 [![View Optical Tweezers Toolbox on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/73541-optical-tweezers-toolbox)
 
+Overview
+--------
+
 The Optical Tweezers Toolbox is a collection of methods for modelling
 optically trapped particles.
 The toolbox includes methods for modelling
@@ -85,6 +88,8 @@ Contact us
 
 The best person to contact for inquiries about the toolbox or lincensing
 is [Isaac Lenton](mailto:uqilento@uq.edu.au).
+If you have suggestions/changes or if you found a bug, please feel free
+to open an issue on our [GitHub page](https://github.com/ilent2/ott/issues).
 
 File listing
 ------------
