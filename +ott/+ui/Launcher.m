@@ -49,8 +49,9 @@ classdef Launcher < matlab.apps.AppBase
 
       % Create figure
       app.LauncherUiFigure = uifigure;
+      app.LauncherUiFigure.Units = 'pixels';
+      app.LauncherUiFigure.Position = [ott.ui.support.defaultXy, 640, 360];
       app.LauncherUiFigure.Name = ott.ui.Launcher.UiName;
-      app.LauncherUiFigure.Position(3:4) = [640, 360];
       app.LauncherUiFigure.Resize = 'off';
 
       % Create overview box
