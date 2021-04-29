@@ -13,6 +13,7 @@
 %   +beam       - High level descriptions of optical tweezers beams
 %   +bsc        - Low level methods for working with beam shape coefficients
 %   +drag       - Methods for calculating drag tensors
+%   +dynamics   - Tools for simulating particle dynamics
 %   +particle   - High level particle descriptions (drag/tmatrix/mass/geometry)
 %   +shape      - Methods for describing particle geometry
 %   +tmatrix    - T-matrix description of optical scattering
