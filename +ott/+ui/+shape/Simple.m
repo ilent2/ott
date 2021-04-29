@@ -3,10 +3,23 @@ classdef Simple < ott.ui.shape.AppBase
 % For more complex shapes, consider using an external CAD program
 % and :class:`CadFileLoader`.
 %
-% This GUI can be launched from the launcher under
-% Shape -> CadFileLoader or running the following command:
+% Supported shapes:
+%   - Sphere
+%   - Ellipsoid
+%   - Cylinder
+%   - Cube
+%   - Rectangular Prism
+%   - Pill
+%   - Bicone
+%   - Cone Tipped Cylinder
+%   - Biconcave Disc
 %
-%   ott.ui.shape.CadFileLoader()
+% Some of these shapes may move to their own GUI in a future release.
+%
+% This GUI can be launched from the launcher under
+% Shape -> Simple or running the following command:
+%
+%   ott.ui.shape.Simple()
 %
 % The shape is stored internally and/or written to the matlab workspace
 % if a variable name is given for the shape.  To access the internal

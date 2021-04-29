@@ -48,7 +48,7 @@ classdef Launcher < matlab.apps.AppBase
       % Create app components (mostly based on UI designer code)
 
       % Create figure
-      app.LauncherUiFigure = uifigure;
+      app.LauncherUiFigure = uifigure('Visible', 'off');
       app.LauncherUiFigure.Units = 'pixels';
       app.LauncherUiFigure.Position = [ott.ui.support.defaultXy, 640, 360];
       app.LauncherUiFigure.Name = ott.ui.Launcher.UiName;
@@ -124,6 +124,9 @@ classdef Launcher < matlab.apps.AppBase
       app.ItemTextArea = uitextarea(LaunchPanel);
       app.ItemTextArea.Position = [m 9 (361-2*m) 137];
       app.ItemTextArea.Editable = 'off';
+
+      % Show the figure after all components are created
+      app.LauncherUiFigure.Visible = 'on';
     end
 
     function listBox = createNamedListBox(app, parent, varargin)
@@ -155,6 +158,13 @@ classdef Launcher < matlab.apps.AppBase
       if nargout == 0
         clear app;
       end
+    end
+
+    % Code that executes before app deletion
+    function delete(app)
+
+      % Delete UIFigure when app is deleted
+      delete(app.LauncherUiFigure);
     end
   end
 end
