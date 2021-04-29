@@ -6,8 +6,7 @@ function xy = defaultXy()
 % file.  If you use remote desktop, be careful using get-ScreenSize
 % and related functions.
 
-% Copyright 2021 IST Austria
-% Written by Isaac Lenton
+% Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
