@@ -22,7 +22,7 @@ classdef (Abstract) AppBase < matlab.apps.AppBase
     createComponents(app)
     startupFcn(app)
   end
-
+  
   methods (Access=public)
     function app = AppBase()
       % Start the CadFileLoader interface

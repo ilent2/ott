@@ -1,8 +1,28 @@
 classdef Simple < ott.ui.beam.AppBase
+% Generate a simple beam representation and visualise.
+%
+% Supported beams:
+%   - Gaussian
+%   - Laguerre-Gaussian
+%   - Hermite-Gaussian
+%   - Plane Wave
+%   - Mathieu
+%   - Webber
+%   - Bessel
+%
+% Some of these beams might move to their own interface in a future
+% release.
+%
+% This GUI can be launched from the launcher Beam -> Simple or by running:
+%
+%   ott.ui.beam.Simple
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+% TODO: Should we split this interface into Gaussian, PlaneWave
+% and Annular?
 
   properties (Constant)
     cnameText = 'Simple';

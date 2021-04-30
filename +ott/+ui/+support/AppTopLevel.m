@@ -18,6 +18,10 @@ classdef AppTopLevel < ott.ui.support.AppBase
     helpText
   end
   
+  methods (Abstract, Access=protected)
+    createMainComponents(app)
+  end
+  
   methods (Access=protected)
     function createFileMenuContent(app)
       % Overload this method to add other file menu content
@@ -75,11 +79,18 @@ classdef AppTopLevel < ott.ui.support.AppBase
       
     end
     
-    function createComponents(app)
+    function createMenuComponents(app)
       
       % Add a menu bar to the window
       app.createFileMenu();
       app.createHelpMenu();
+      
+    end
+    
+    function createComponents(app)
+      
+      app.createMenuComponents();
+      app.createMainComponents();
       
     end
   end

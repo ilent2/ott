@@ -50,8 +50,6 @@ classdef CadFileLoader < ott.ui.shape.AppBase
   
   % Properties that correspond to app components
   properties (Access = public)
-    GridLayout                      matlab.ui.container.GridLayout
-    LeftPanel                       matlab.ui.container.Panel
     CADFileEditFieldLabel           matlab.ui.control.Label
     CADFileEditField                matlab.ui.control.EditField
     Button                          matlab.ui.control.Button
@@ -63,48 +61,10 @@ classdef CadFileLoader < ott.ui.shape.AppBase
     VariableNameEditFieldLabel      matlab.ui.control.Label
     VariableNameEditField           matlab.ui.control.EditField
     ShowPreviewCheckBox             matlab.ui.control.CheckBox
-    UpdateButton                    matlab.ui.control.Button
-    OffsetSpinnerLabel              matlab.ui.control.Label
-    OffsetSpinner                   matlab.ui.control.Spinner
-    OffsetSpinner_2                 matlab.ui.control.Spinner
-    OffsetSpinner_3                 matlab.ui.control.Spinner
-    OffsetSpinner_4                 matlab.ui.control.Spinner
-    OffsetSpinner_5                 matlab.ui.control.Spinner
-    RotationSpinnerLabel            matlab.ui.control.Label
-    RotationSpinner                 matlab.ui.control.Spinner
-    AutoupdateCheckBox              matlab.ui.control.CheckBox
-    RightPanel                      matlab.ui.container.Panel
+    OffsetXyzSpinners               ott.ui.support.XyzSpinners
+    RotationXyzSpinners             ott.ui.support.XyzSpinners
     UIAxes                          matlab.ui.control.UIAxes
-  end
-  
-  % Properties that correspond to apps with auto-reflow
-  properties (Access = private)
-    onePanelWidth = 576;
-    onePanelHeight = 300;
-  end
-
-  % Callbacks that handle component events
-  methods (Access = private)
-
-    % Changes arrangement of the app based on UIFigure width
-    function updateAppLayout(app, ~)
-      currentFigureWidth = app.UIFigure.Position(3);
-      currentFigureHeight = app.UIFigure.Position(4);
-      if(currentFigureWidth <= app.onePanelWidth ...
-          || currentFigureHeight <= app.onePanelHeight)
-        % Change to a 2x1 grid
-        app.GridLayout.RowHeight = {418, 418};
-        app.GridLayout.ColumnWidth = {'1x'};
-        app.RightPanel.Layout.Row = 2;
-        app.RightPanel.Layout.Column = 1;
-      else
-        % Change to a 1x2 grid
-        app.GridLayout.RowHeight = {'1x'};
-        app.GridLayout.ColumnWidth = {251, '1x'};
-        app.RightPanel.Layout.Row = 1;
-        app.RightPanel.Layout.Column = 2;
-      end
-    end
+    updateCheckButton               ott.ui.support.UpdateCheckButton
   end
 
   % Component initialization
@@ -114,32 +74,24 @@ classdef CadFileLoader < ott.ui.shape.AppBase
     end
 
     % Create UIFigure and components
-    function createComponents(app)
+    function createLeftComponents(app)
       
-      % Configure figure
-      app.UIFigure.AutoResizeChildren = 'off';
-      app.UIFigure.SizeChangedFcn = createCallbackFcn(app, @updateAppLayout, true);
-      
-      createComponents@ott.ui.support.AppTopLevel(app);
+      lmargin = 10;
 
-      % Create GridLayout
-      app.GridLayout = uigridlayout(app.UIFigure);
-      app.GridLayout.ColumnWidth = {251, '1x'};
-      app.GridLayout.RowHeight = {'1x'};
-      app.GridLayout.ColumnSpacing = 0;
-      app.GridLayout.RowSpacing = 0;
-      app.GridLayout.Padding = [0 0 0 0];
-      app.GridLayout.Scrollable = 'on';
+      % Create VariableNameEditFieldLabel
+      app.VariableNameEditFieldLabel = uilabel(app.LeftPanel);
+      app.VariableNameEditFieldLabel.HorizontalAlignment = 'left';
+      app.VariableNameEditFieldLabel.Position = [lmargin 379 84 22];
+      app.VariableNameEditFieldLabel.Text = 'Variable Name';
 
-      % Create LeftPanel
-      app.LeftPanel = uipanel(app.GridLayout);
-      app.LeftPanel.Layout.Row = 1;
-      app.LeftPanel.Layout.Column = 1;
+      % Create VariableNameEditField
+      app.VariableNameEditField = uieditfield(app.LeftPanel, 'text');
+      app.VariableNameEditField.Position = [107 379 135 22];
 
       % Create CADFileEditFieldLabel
       app.CADFileEditFieldLabel = uilabel(app.LeftPanel);
-      app.CADFileEditFieldLabel.HorizontalAlignment = 'right';
-      app.CADFileEditFieldLabel.Position = [8 341 54 22];
+      app.CADFileEditFieldLabel.HorizontalAlignment = 'left';
+      app.CADFileEditFieldLabel.Position = [lmargin 341 54 22];
       app.CADFileEditFieldLabel.Text = 'CAD File';
 
       % Create CADFileEditField
@@ -153,8 +105,8 @@ classdef CadFileLoader < ott.ui.shape.AppBase
 
       % Create ScaleSpinnerLabel
       app.ScaleSpinnerLabel = uilabel(app.LeftPanel);
-      app.ScaleSpinnerLabel.HorizontalAlignment = 'right';
-      app.ScaleSpinnerLabel.Position = [94 269 35 22];
+      app.ScaleSpinnerLabel.HorizontalAlignment = 'left';
+      app.ScaleSpinnerLabel.Position = [lmargin 269 35 22];
       app.ScaleSpinnerLabel.Text = 'Scale';
 
       % Create ScaleSpinner
@@ -166,12 +118,12 @@ classdef CadFileLoader < ott.ui.shape.AppBase
       % Create XYMirrorSymmetryCheckBox
       app.XYMirrorSymmetryCheckBox = uicheckbox(app.LeftPanel);
       app.XYMirrorSymmetryCheckBox.Text = 'XY Mirror Symmetry';
-      app.XYMirrorSymmetryCheckBox.Position = [11 103 130 22];
+      app.XYMirrorSymmetryCheckBox.Position = [lmargin 103 130 22];
 
       % Create RotationalSymmetrySpinnerLabel
       app.RotationalSymmetrySpinnerLabel = uilabel(app.LeftPanel);
-      app.RotationalSymmetrySpinnerLabel.HorizontalAlignment = 'right';
-      app.RotationalSymmetrySpinnerLabel.Position = [8 136 117 22];
+      app.RotationalSymmetrySpinnerLabel.HorizontalAlignment = 'left';
+      app.RotationalSymmetrySpinnerLabel.Position = [lmargin 136 117 22];
       app.RotationalSymmetrySpinnerLabel.Text = 'Rotational Symmetry';
 
       % Create RotationalSymmetrySpinner
@@ -180,74 +132,27 @@ classdef CadFileLoader < ott.ui.shape.AppBase
       app.RotationalSymmetrySpinner.Position = [140 136 63 22];
       app.RotationalSymmetrySpinner.Value = 1;
 
-      % Create VariableNameEditFieldLabel
-      app.VariableNameEditFieldLabel = uilabel(app.LeftPanel);
-      app.VariableNameEditFieldLabel.HorizontalAlignment = 'right';
-      app.VariableNameEditFieldLabel.Position = [8 379 84 22];
-      app.VariableNameEditFieldLabel.Text = 'Variable Name';
-
-      % Create VariableNameEditField
-      app.VariableNameEditField = uieditfield(app.LeftPanel, 'text');
-      app.VariableNameEditField.Position = [107 379 135 22];
-
       % Create ShowPreviewCheckBox
       app.ShowPreviewCheckBox = uicheckbox(app.LeftPanel);
       app.ShowPreviewCheckBox.Text = 'Show Preview';
-      app.ShowPreviewCheckBox.Position = [8 43 98 22];
+      app.ShowPreviewCheckBox.Position = [lmargin 43 98 22];
       app.ShowPreviewCheckBox.Value = true;
-
-      % Create UpdateButton
-      app.UpdateButton = uibutton(app.LeftPanel, 'push');
-      app.UpdateButton.Enable = 'off';
-      app.UpdateButton.Position = [158 14 84 22];
-      app.UpdateButton.Text = 'Update';
-
-      % Create OffsetSpinnerLabel
-      app.OffsetSpinnerLabel = uilabel(app.LeftPanel);
-      app.OffsetSpinnerLabel.HorizontalAlignment = 'right';
-      app.OffsetSpinnerLabel.Position = [16 238 37 22];
-      app.OffsetSpinnerLabel.Text = 'Offset';
-
-      % Create OffsetSpinner
-      app.OffsetSpinner = uispinner(app.LeftPanel);
-      app.OffsetSpinner.Position = [60 238 65 22];
-
-      % Create OffsetSpinner_2
-      app.OffsetSpinner_2 = uispinner(app.LeftPanel);
-      app.OffsetSpinner_2.Position = [124 238 59 22];
-
-      % Create OffsetSpinner_3
-      app.OffsetSpinner_3 = uispinner(app.LeftPanel);
-      app.OffsetSpinner_3.Position = [182 238 60 22];
-
-      % Create OffsetSpinner_4
-      app.OffsetSpinner_4 = uispinner(app.LeftPanel);
-      app.OffsetSpinner_4.Position = [124 206 59 22];
-
-      % Create OffsetSpinner_5
-      app.OffsetSpinner_5 = uispinner(app.LeftPanel);
-      app.OffsetSpinner_5.Position = [182 206 60 22];
-
-      % Create RotationSpinnerLabel
-      app.RotationSpinnerLabel = uilabel(app.LeftPanel);
-      app.RotationSpinnerLabel.HorizontalAlignment = 'right';
-      app.RotationSpinnerLabel.Position = [3 206 50 22];
-      app.RotationSpinnerLabel.Text = 'Rotation';
-
-      % Create RotationSpinner
-      app.RotationSpinner = uispinner(app.LeftPanel);
-      app.RotationSpinner.Position = [60 206 65 22];
-
-      % Create AutoupdateCheckBox
-      app.AutoupdateCheckBox = uicheckbox(app.LeftPanel);
-      app.AutoupdateCheckBox.Text = 'Auto-update';
-      app.AutoupdateCheckBox.Position = [8 14 87 22];
-      app.AutoupdateCheckBox.Value = true;
-
-      % Create RightPanel
-      app.RightPanel = uipanel(app.GridLayout);
-      app.RightPanel.Layout.Row = 1;
-      app.RightPanel.Layout.Column = 2;
+      
+      % Offset spinners
+      app.OffsetXyzSpinners = ott.ui.support.XyzSpinners(app.LeftPanel, ...
+          'label', 'Offset', 'position', [10, 240]);
+        
+      % Rotation spinners
+      app.RotationXyzSpinners = ott.ui.support.XyzSpinners(app.LeftPanel, ...
+          'label', 'Rotation', 'position', [10, 210]);
+      
+      % Auto-update widget
+      app.updateCheckButton = ott.ui.support.UpdateCheckButton(...
+          app.LeftPanel, 'position', [lmargin, 14]);
+        
+    end
+    
+    function createRightComponents(app)
 
       % Create UIAxes
       app.UIAxes = uiaxes(app.RightPanel);
@@ -259,9 +164,7 @@ classdef CadFileLoader < ott.ui.shape.AppBase
       app.UIAxes.YAxisLocation = 'origin';
       app.UIAxes.YTick = [];
       app.UIAxes.Position = [7 45 373 328];
-
-      % Show the figure after all components are created
-      app.UIFigure.Visible = 'on';
+      
     end
   end
 

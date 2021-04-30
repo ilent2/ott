@@ -1,4 +1,4 @@
-classdef (Abstract) AppBase < ott.ui.support.AppTopLevel
+classdef (Abstract) AppBase < ott.ui.support.AppTwoColumn
 % Base class for shape creation application windows.
 %
 % This class is not intended to be instantiated directly.
