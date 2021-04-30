@@ -10,6 +10,7 @@ reportlist{end+1} = '../+ott/+shape';
 reportlist{end+1} = '../+ott/+shape/+mixin';
 reportlist{end+1} = '../+ott/+drag';
 reportlist{end+1} = '../+ott/+tools';
+reportlist{end+1} = '../+ott/+ui';
 reportlist{end+1} = '../+ott/+utils';
 reportlist{end+1} = '../examples';
 

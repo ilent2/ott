@@ -14,6 +14,7 @@
 %   - shape
 %   - tmatrix
 %   - tools
+%   - ui
 %   - utils
 %
 % Scripts

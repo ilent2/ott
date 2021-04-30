@@ -20,7 +20,7 @@ subpackages{end+1} = 'shape';
 subpackages{end+1} = 'tmatrix';
 subpackages{end+1} = 'tmatrix/dda';
 subpackages{end+1} = 'tools';
-% subpackages{end+1} = 'ui';
+subpackages{end+1} = 'ui';
 subpackages{end+1} = 'utils';
 if includeExamples
   subpackages{end+1} = 'examples';
@@ -37,7 +37,7 @@ if showCoverage
   coverage{end+1} = 'ott.shape';
   coverage{end+1} = 'ott.tmatrix';
   coverage{end+1} = 'ott.tools';
-  %coverage{end+1} = 'ott.ui';
+  coverage{end+1} = 'ott.ui';
   coverage{end+1} = 'ott.utils';
 end
 
