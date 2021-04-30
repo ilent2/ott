@@ -1,4 +1,4 @@
-function menu = createHelpMenu(fig)
+function menu = createHelpMenu(fig, windowHelp)
 % Add a OTT help menu to the specified uifigure
 %
 % Usage
@@ -29,5 +29,13 @@ ReportaBugMenu = uimenu(menu);
 ReportaBugMenu.Text = 'Report a Bug';
 ReportaBugMenu.MenuSelectedFcn = ...
     @(~, ~) web('https://github.com/ilent2/ott/issues', '-browser');
+  
+% Create window help popup button
+if nargin == 2
+  menuItem = uimenu(menu);
+  menuItem.Separator = 'on';
+  menuItem.Text = 'Window Help';
+  menuItem.MenuSelectedFcn = @(~, ~) helpdlg(windowHelp);
+end
 
 end

@@ -44,6 +44,63 @@ classdef Launcher < matlab.apps.AppBase
   end
 
   methods (Access=private)
+    
+    function ref = getCurrentAppList(app)
+      
+      % Meta-classes seem to need to be alocated dynamically.
+      
+      switch app.CategoryList.Value
+        case 'Beam'
+          ref = [?ott.ui.beam.PmParaxial, ...
+            ?ott.ui.beam.Scattered, ?ott.ui.beam.Simple, ...
+            ?ott.ui.beam.Visualise];
+        case 'Drag'
+          ref = [?ott.ui.drag.Simple];
+        case 'Dynamics'
+          ref = [?ott.ui.dynamics.Isolated];
+        case 'Particle'
+          ref = [?ott.ui.particle.Simple];
+        case 'Shape'
+          ref = [?ott.ui.shape.CadFileLoader, ?ott.ui.shape.Simple, ...
+              ?ott.ui.shape.Visualise];
+        case 'Tmatrix'
+          ref = [?ott.ui.tmatrix.Dda, ?ott.ui.tmatrix.Mie, ...
+              ?ott.ui.tmatrix.Pointmatch, ?ott.ui.tmatrix.Simple];
+        case 'Tools'
+          ref = [?ott.ui.tools.ForcePosition, ?ott.ui.tools.PowerSpectrum];
+        otherwise
+          error('Internal error');
+      end
+    end
+    
+    function LaunchButtonPushed(app, ~)
+      meta = app.ApplicationList.Value;
+      eval(meta.Name);
+    end
+
+    function ApplicationChangedCallback(app, ~)
+      meta = app.ApplicationList.Value;
+      name = findobj(meta.PropertyList, 'Name', 'nameText');
+      about = findobj(meta.PropertyList, 'Name', 'aboutText');
+      
+      app.TitleLabel.Text = name.DefaultValue;
+      app.ItemTextArea.Value = about.DefaultValue;
+    end
+    
+    function CategoryChangedCallback(app, ~)
+      ref = app.getCurrentAppList();
+      
+      names = {};
+      for ii = 1:length(ref)
+        nameProp = findobj(ref(ii).PropertyList, 'Name', 'cnameText');
+        names{ii} = nameProp.DefaultValue;
+      end
+      
+      app.ApplicationList.Items = names;
+      app.ApplicationList.ItemsData = ref;
+      app.ApplicationChangedCallback();
+    end
+
     function createComponents(app)
       % Create app components (mostly based on UI designer code)
 
@@ -98,13 +155,19 @@ classdef Launcher < matlab.apps.AppBase
       app.BugButton.ButtonPushedFcn = ...
           @(~, ~) web('https://github.com/ilent2/ott/issues', '-browser');
 
-      % Create category list box
-      app.CategoryList = app.createNamedListBox(app.LauncherUiFigure, ...
-          'Title', 'Category', 'Position', [14, 18, 110, 183]);
-
       % Create application list box
       app.ApplicationList = app.createNamedListBox(app.LauncherUiFigure, ...
           'Title', 'Application', 'Position', [140, 18, 110, 183]);
+      app.ApplicationList.ValueChangedFcn = createCallbackFcn(app, ...
+          @ApplicationChangedCallback, true);
+
+      % Create category list box
+      app.CategoryList = app.createNamedListBox(app.LauncherUiFigure, ...
+          'Title', 'Category', 'Position', [14, 18, 110, 183]);
+      app.CategoryList.Items = {'Beam', 'Drag', 'Dynamics', 'Particle', ...
+         'Shape', 'Tmatrix', 'Tools'};
+      app.CategoryList.ValueChangedFcn = createCallbackFcn(app, ...
+          @CategoryChangedCallback, true);
 
       % Create Panel
       LaunchPanel = uipanel(app.LauncherUiFigure);
@@ -115,6 +178,8 @@ classdef Launcher < matlab.apps.AppBase
       app.LaunchButton = uibutton(LaunchPanel, 'push');
       app.LaunchButton.Position = [(261-m) 152 100 22];
       app.LaunchButton.Text = 'Launch';
+      app.LaunchButton.ButtonPushedFcn = ...
+          createCallbackFcn(app, @LaunchButtonPushed, true);
 
       % Create TitleLabel
       app.TitleLabel = uilabel(LaunchPanel);
@@ -154,6 +219,12 @@ classdef Launcher < matlab.apps.AppBase
 
       % Create UI
       app.createComponents();
+      
+      % Run selection callbacks
+      app.CategoryChangedCallback();
+      
+      % Register the app with App Designer
+      registerApp(app, app.LauncherUiFigure)
 
       if nargout == 0
         clear app;

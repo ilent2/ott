@@ -27,8 +27,22 @@ classdef CadFileLoader < ott.ui.shape.AppBase
       ' such as Blender can be used to create and convert between CAD', ...
       ' files.'];
     
-    helpText = [];
-    
+    helpText = {ott.ui.shape.CadFileLoader.aboutText, ...
+      '', ...
+      ['VariableName (optional) : Name for the variable to ' ...
+      'genrate in the Matlab workspace.'], ...
+      '', ...
+      'CAD File : Input CAD file.  Must be STL or OBJ file.', ...
+      '', ...
+      'Scale : Object scale factor.', ...
+      '', ...
+      'Offset (x, y, z) : Object offset, meters.', ...
+      '', ...
+      'Rotation (x, y, z) : Rotation, degrees.', ...
+      '', ...
+      ['Rotational/XY Symmetry: Set these if the objects has', ...
+      'symetries (including rotations/translations).  If in ', ...
+      'doubt, do not set these.']};
   end
   
   % Properties that correspond to app components
@@ -99,9 +113,13 @@ classdef CadFileLoader < ott.ui.shape.AppBase
       % Create UIFigure and hide until all components are created
       app.UIFigure = uifigure('Visible', 'off');
       app.UIFigure.AutoResizeChildren = 'off';
-      app.UIFigure.Position = [100 100 636 418];
-      app.UIFigure.Name = 'UI Figure';
+      app.UIFigure.Position = [ott.ui.support.defaultXy, 640, 420];
+      app.UIFigure.Name = app.nameText;
       app.UIFigure.SizeChangedFcn = createCallbackFcn(app, @updateAppLayout, true);
+      
+      % Create menus
+      ott.ui.support.createLauncherMenuItem(app.UIFigure);
+      ott.ui.support.createHelpMenu(app.UIFigure, app.helpText);
 
       % Create GridLayout
       app.GridLayout = uigridlayout(app.UIFigure);
@@ -141,6 +159,8 @@ classdef CadFileLoader < ott.ui.shape.AppBase
       % Create ScaleSpinner
       app.ScaleSpinner = uispinner(app.LeftPanel);
       app.ScaleSpinner.Position = [144 269 100 22];
+      app.ScaleSpinner.Value = 1;
+      app.ScaleSpinner.Step = 0.1;
 
       % Create XYMirrorSymmetryCheckBox
       app.XYMirrorSymmetryCheckBox = uicheckbox(app.LeftPanel);
@@ -250,6 +270,9 @@ classdef CadFileLoader < ott.ui.shape.AppBase
 
       % Create UI
       app.createComponents();
+      
+      % Register the app with App Designer
+      registerApp(app, app.UIFigure);
 
       if nargout == 0
         clear app;

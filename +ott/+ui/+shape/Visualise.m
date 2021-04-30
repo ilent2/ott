@@ -14,6 +14,17 @@ classdef Visualise < matlab.apps.AppBase
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+  properties (Constant)
+    cnameText = 'Visualise';
+
+    nameText = 'Visualise Shape';
+
+    aboutText = ['Generate a visualisation of a shape.'];
+    
+    helpText = {ott.ui.shape.Visualise.aboutText, ...
+      ''};
+  end
+
   % Properties that correspond to app components
   properties (Access = public)
     UIFigure                    matlab.ui.Figure

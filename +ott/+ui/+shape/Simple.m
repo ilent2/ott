@@ -31,5 +31,18 @@ classdef Simple < ott.ui.shape.AppBase
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+  properties (Constant)
+    cnameText = 'Simple';
+
+    nameText = 'Simple Shape Generator';
+
+    aboutText = ['Generates a simple geometric shape.  For more complex' ...
+      ' shapes consider using a external CAD program and loading the' ...
+      ' shape using CadFileLoader.'];
+    
+    helpText = {ott.ui.shape.Simple.aboutText, ...
+      ''};
+  end
   
 end
