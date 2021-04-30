@@ -1,4 +1,4 @@
-classdef Launcher < matlab.apps.AppBase
+classdef Launcher < ott.ui.support.AppBase
 % Displays a list of graphical user interfaces included with OTT.
 %
 % Usage
@@ -12,11 +12,11 @@ classdef Launcher < matlab.apps.AppBase
 % using/distributing this file.
 
   properties (Constant)
-    UiName = 'Optical Tweezers Toolbox Launcher';
+    windowName = 'Optical Tweezers Toolbox Launcher';
+    windowSize = [640, 360];
   end
 
   properties (Access=public)
-    LauncherUiFigure    matlab.ui.Figure
     OttOverview         matlab.ui.control.TextArea
     GitHubButton        matlab.ui.control.Button
     ManualButton        matlab.ui.control.Button
@@ -33,7 +33,7 @@ classdef Launcher < matlab.apps.AppBase
       % Launch a new Launcher instance or present an existing one
 
       % Look for existing instance
-      lh = findall(0, 'Name', ott.ui.Launcher.UiName);
+      lh = findall(0, 'Name', ott.ui.Launcher.windowName);
 
       if isempty(lh)
         ott.ui.Launcher();
@@ -43,7 +43,7 @@ classdef Launcher < matlab.apps.AppBase
     end
   end
 
-  methods (Access=private)
+  methods (Access=protected)
     
     function ref = getCurrentAppList(app)
       
@@ -104,15 +104,11 @@ classdef Launcher < matlab.apps.AppBase
     function createComponents(app)
       % Create app components (mostly based on UI designer code)
 
-      % Create figure
-      app.LauncherUiFigure = uifigure('Visible', 'off');
-      app.LauncherUiFigure.Units = 'pixels';
-      app.LauncherUiFigure.Position = [ott.ui.support.defaultXy, 640, 360];
-      app.LauncherUiFigure.Name = ott.ui.Launcher.UiName;
-      app.LauncherUiFigure.Resize = 'off';
+      % Configure figure
+      app.UIFigure.Resize = 'off';
 
       % Create overview box
-      app.OttOverview = uitextarea(app.LauncherUiFigure);
+      app.OttOverview = uitextarea(app.UIFigure);
       app.OttOverview.Editable = 'off';
       app.OttOverview.Position = [14 217 502 120];
       app.OttOverview.Value = {
@@ -135,34 +131,34 @@ classdef Launcher < matlab.apps.AppBase
          'tweezers toolbox", [Journal to be decided](link to the article)']};
 
       % Create OTTonGitHubButton
-      app.GitHubButton = uibutton(app.LauncherUiFigure, 'push');
+      app.GitHubButton = uibutton(app.UIFigure, 'push');
       app.GitHubButton.Position = [528 308 100 22];
       app.GitHubButton.Text = 'OTT on GitHub';
       app.GitHubButton.ButtonPushedFcn = ...
           @(~, ~) web('https://github.com/ilent2/ott', '-browser');
 
       % Create OnlineManualButton
-      app.ManualButton = uibutton(app.LauncherUiFigure, 'push');
+      app.ManualButton = uibutton(app.UIFigure, 'push');
       app.ManualButton.Position = [528 266 100 22];
       app.ManualButton.Text = 'Online Manual';
       app.ManualButton.ButtonPushedFcn = ...
           @(~, ~) web('https://ott.readthedocs.io/en/latest/', '-browser');
 
       % Create ReportaBugButton
-      app.BugButton = uibutton(app.LauncherUiFigure, 'push');
+      app.BugButton = uibutton(app.UIFigure, 'push');
       app.BugButton.Position = [528 224 100 22];
       app.BugButton.Text = 'Report a Bug';
       app.BugButton.ButtonPushedFcn = ...
           @(~, ~) web('https://github.com/ilent2/ott/issues', '-browser');
 
       % Create application list box
-      app.ApplicationList = app.createNamedListBox(app.LauncherUiFigure, ...
+      app.ApplicationList = app.createNamedListBox(app.UIFigure, ...
           'Title', 'Application', 'Position', [140, 18, 110, 183]);
       app.ApplicationList.ValueChangedFcn = createCallbackFcn(app, ...
           @ApplicationChangedCallback, true);
 
       % Create category list box
-      app.CategoryList = app.createNamedListBox(app.LauncherUiFigure, ...
+      app.CategoryList = app.createNamedListBox(app.UIFigure, ...
           'Title', 'Category', 'Position', [14, 18, 110, 183]);
       app.CategoryList.Items = {'Beam', 'Drag', 'Dynamics', 'Particle', ...
          'Shape', 'Tmatrix', 'Tools'};
@@ -170,7 +166,7 @@ classdef Launcher < matlab.apps.AppBase
           @CategoryChangedCallback, true);
 
       % Create Panel
-      LaunchPanel = uipanel(app.LauncherUiFigure);
+      LaunchPanel = uipanel(app.UIFigure);
       LaunchPanel.Position = [267 19 361 181];
       m = 8;
 
@@ -189,9 +185,6 @@ classdef Launcher < matlab.apps.AppBase
       app.ItemTextArea = uitextarea(LaunchPanel);
       app.ItemTextArea.Position = [m 9 (361-2*m) 137];
       app.ItemTextArea.Editable = 'off';
-
-      % Show the figure after all components are created
-      app.LauncherUiFigure.Visible = 'on';
     end
 
     function listBox = createNamedListBox(app, parent, varargin)
@@ -211,31 +204,22 @@ classdef Launcher < matlab.apps.AppBase
       listBox = uilistbox(panel);
       listBox.Position = [0, 0, panel.Position(3), panel.Position(4)-20];
     end
-  end
-
-  methods (Access=public)
-    function app = Launcher()
-      % Create new Launcher instance or present existing instance
-
-      % Create UI
-      app.createComponents();
+    
+    function startupFcn(app)
       
       % Run selection callbacks
       app.CategoryChangedCallback();
+    end
+  end
+  
+  methods
+    function app = Launcher()
+      % Start the optical tweezers GUI launcher
       
-      % Register the app with App Designer
-      registerApp(app, app.LauncherUiFigure)
-
+      app = app@ott.ui.support.AppBase();
       if nargout == 0
         clear app;
       end
-    end
-
-    % Code that executes before app deletion
-    function delete(app)
-
-      % Delete UIFigure when app is deleted
-      delete(app.LauncherUiFigure);
     end
   end
 end

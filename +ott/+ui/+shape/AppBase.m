@@ -1,5 +1,4 @@
-classdef (Abstract) AppBase < matlab.apps.AppBase ...
-    & ott.ui.support.AppProperties
+classdef (Abstract) AppBase < ott.ui.support.AppTopLevel
 % Base class for shape creation application windows.
 %
 % This class is not intended to be instantiated directly.

@@ -14,6 +14,29 @@ classdef Dda < ott.ui.tmatrix.AppBase
     
     helpText = {ott.ui.tmatrix.Dda.aboutText, ...
       ''};
+    
+    windowName = ott.ui.beam.PmParaxial.nameText;
+    windowSize = [640, 420];
+  end
+  
+  methods (Access=protected)
+    function startupFcn(app)
+    end
+    
+    function createComponents(app)
+      createComponents@ott.ui.support.AppTopLevel(app);
+    end
+  end
+  
+  methods (Access=public)
+    function app=Dda()
+      % Start the ForcePosition GUI
+      
+      app = app@ott.ui.tmatrix.AppBase();
+      if nargout == 0
+        clear app;
+      end
+    end
   end
   
 end

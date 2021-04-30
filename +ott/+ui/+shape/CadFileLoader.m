@@ -43,11 +43,13 @@ classdef CadFileLoader < ott.ui.shape.AppBase
       ['Rotational/XY Symmetry: Set these if the objects has', ...
       'symetries (including rotations/translations).  If in ', ...
       'doubt, do not set these.']};
+    
+    windowName = ott.ui.beam.PmParaxial.nameText;
+    windowSize = [640, 420];
   end
   
   % Properties that correspond to app components
   properties (Access = public)
-    UIFigure                        matlab.ui.Figure
     GridLayout                      matlab.ui.container.GridLayout
     LeftPanel                       matlab.ui.container.Panel
     CADFileEditFieldLabel           matlab.ui.control.Label
@@ -106,20 +108,19 @@ classdef CadFileLoader < ott.ui.shape.AppBase
   end
 
   % Component initialization
-  methods (Access = private)
+  methods (Access = protected)
+    
+    function startupFcn(app)
+    end
 
     % Create UIFigure and components
     function createComponents(app)
-      % Create UIFigure and hide until all components are created
-      app.UIFigure = uifigure('Visible', 'off');
+      
+      % Configure figure
       app.UIFigure.AutoResizeChildren = 'off';
-      app.UIFigure.Position = [ott.ui.support.defaultXy, 640, 420];
-      app.UIFigure.Name = app.nameText;
       app.UIFigure.SizeChangedFcn = createCallbackFcn(app, @updateAppLayout, true);
       
-      % Create menus
-      ott.ui.support.createLauncherMenuItem(app.UIFigure);
-      ott.ui.support.createHelpMenu(app.UIFigure, app.helpText);
+      createComponents@ott.ui.support.AppTopLevel(app);
 
       % Create GridLayout
       app.GridLayout = uigridlayout(app.UIFigure);
@@ -267,23 +268,11 @@ classdef CadFileLoader < ott.ui.shape.AppBase
   methods (Access=public)
     function app = CadFileLoader()
       % Start the CadFileLoader interface
-
-      % Create UI
-      app.createComponents();
       
-      % Register the app with App Designer
-      registerApp(app, app.UIFigure);
-
+      app = app@ott.ui.shape.AppBase();
       if nargout == 0
         clear app;
       end
-    end
-
-    % Code that executes before app deletion
-    function delete(app)
-
-      % Delete UIFigure when app is deleted
-      delete(app.UIFigure)
     end
   end
 end

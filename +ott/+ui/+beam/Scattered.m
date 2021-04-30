@@ -14,6 +14,29 @@ classdef Scattered < ott.ui.beam.AppBase
     
     helpText = {ott.ui.beam.Scattered.aboutText, ...
       ''};
+    
+    windowName = ott.ui.beam.PmParaxial.nameText;
+    windowSize = [640, 420];
+  end
+  
+  methods (Access=protected)
+    function startupFcn(app)
+    end
+    
+    function createComponents(app)
+      createComponents@ott.ui.support.AppTopLevel(app);
+    end
+  end
+  
+  methods (Access=public)
+    function app=Scattered()
+      % Start the ForcePosition GUI
+      
+      app = app@ott.ui.beam.AppBase();
+      if nargout == 0
+        clear app;
+      end
+    end
   end
   
 end

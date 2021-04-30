@@ -1,4 +1,4 @@
-classdef Visualise < matlab.apps.AppBase
+classdef Visualise < ott.ui.shape.AppBase
 % Generate a visualisation of a OTT geometric shape.
 %
 % This GUI can be launched from the launcher under
@@ -23,11 +23,13 @@ classdef Visualise < matlab.apps.AppBase
     
     helpText = {ott.ui.shape.Visualise.aboutText, ...
       ''};
+    
+    windowName = ott.ui.beam.PmParaxial.nameText;
+    windowSize = [640, 350];
   end
 
   % Properties that correspond to app components
   properties (Access = public)
-    UIFigure                    matlab.ui.Figure
     GridLayout                  matlab.ui.container.GridLayout
     LeftPanel                   matlab.ui.container.Panel
     ShapeDropDownLabel          matlab.ui.control.Label
@@ -71,17 +73,19 @@ classdef Visualise < matlab.apps.AppBase
   end
 
   % Component initialization
-  methods (Access = private)
+  methods (Access = protected)
+    
+    function startupFcn(app)
+    end
 
     % Create UIFigure and components
     function createComponents(app)
 
-      % Create UIFigure and hide until all components are created
-      app.UIFigure = uifigure('Visible', 'off');
+      % Configure figure
       app.UIFigure.AutoResizeChildren = 'off';
-      app.UIFigure.Position = [100 100 634 351];
-      app.UIFigure.Name = 'UI Figure';
       app.UIFigure.SizeChangedFcn = createCallbackFcn(app, @updateAppLayout, true);
+      
+      createComponents@ott.ui.support.AppTopLevel(app);
 
       % Create GridLayout
       app.GridLayout = uigridlayout(app.UIFigure);
@@ -148,9 +152,6 @@ classdef Visualise < matlab.apps.AppBase
       app.UIAxes.YAxisLocation = 'origin';
       app.UIAxes.YTick = [];
       app.UIAxes.Position = [20 6 373 328];
-
-      % Show the figure after all components are created
-      app.UIFigure.Visible = 'on';
     end
   end
 
@@ -160,26 +161,15 @@ classdef Visualise < matlab.apps.AppBase
     function app = Visualise(shape)
       % Start the shape visualisation interface
       
+      app = app@ott.ui.shape.AppBase();
+      
       if nargin == 1
         % TODO
       end
       
-      % Create UIFigure and components
-      createComponents(app)
-
-      % Register the app with App Designer
-      registerApp(app, app.UIFigure)
-
       if nargout == 0
-        clear app
+        clear app;
       end
-    end
-
-    % Code that executes before app deletion
-    function delete(app)
-
-      % Delete UIFigure when app is deleted
-      delete(app.UIFigure)
     end
   end
 end
