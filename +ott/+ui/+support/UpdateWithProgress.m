@@ -1,4 +1,4 @@
-classdef UpdateWithProgress < handle
+classdef UpdateWithProgress < ott.ui.support.GridWidget
 % Create an update button with an adjacent progress bar
   
 % Copyright 2021 IST Austria, Written by Isaac Lenton
@@ -6,23 +6,16 @@ classdef UpdateWithProgress < handle
 % using/distributing this file.
 
   properties
-    Grid          matlab.ui.container.GridLayout
     Gauge         matlab.ui.control.LinearGauge
     Button      matlab.ui.control.Button
-  end
-  
-  properties (Dependent)
-    Layout
   end
   
   methods
     function obj = UpdateWithProgress(parent, varargin)
       
-      p = inputParser;
-      p.parse(varargin{:});
+      obj = obj@ott.ui.support.GridWidget(parent);
       
-      % Create grid
-      obj.Grid = uigridlayout(parent, [1, 2]);
+      % COnfigure grid
       obj.Grid.RowHeight = {22};
       obj.Grid.ColumnWidth = {70, 120};
       obj.Grid.ColumnSpacing = 10;
@@ -41,16 +34,6 @@ classdef UpdateWithProgress < handle
       obj.Gauge.Layout.Column = 2;
       obj.Gauge.Layout.Row = 1;
       
-    end
-  end
-  
-  methods
-    function val = get.Layout(obj)
-      val = obj.Grid.Layout;
-    end
-    
-    function set.Layout(obj, val)
-      obj.Grid.Layout = val;
     end
   end
 end

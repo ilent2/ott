@@ -20,6 +20,7 @@ classdef AppTopLevel < ott.ui.support.AppBase
   
   methods (Abstract, Access=protected)
     createMainComponents(app)
+    setDefaultValues(app, evt)
   end
   
   methods (Access=protected)
@@ -68,6 +69,23 @@ classdef AppTopLevel < ott.ui.support.AppBase
       menu = uimenu(app.UIFigure);
       menu.Text = 'File';
       
+      % Create ResettoDefaultsMenu
+      menuItem = uimenu(menu);
+      menuItem.MenuSelectedFcn = ...
+        createCallbackFcn(app, @setDefaultValues, true);
+      menuItem.Text = 'Reset to Defaults';
+
+%       % Create ClearOutputMenu
+%       app.ClearOutputMenu = uimenu(menu);
+%       app.ClearOutputMenu.MenuSelectedFcn = createCallbackFcn(app, @ClearOutputMenuSelected, true);
+%       app.ClearOutputMenu.Text = 'Clear Output';
+
+%       % Create GenerateCodeMenu
+%       app.GenerateCodeMenu = uimenu(menu);
+%       app.GenerateCodeMenu.MenuSelectedFcn = createCallbackFcn(app, @GenerateCodeMenuSelected, true);
+%       app.GenerateCodeMenu.Separator = 'on';
+%       app.GenerateCodeMenu.Text = 'Generate Code...';
+      
       % Add other content
       app.createFileMenuContent();
       
@@ -91,6 +109,9 @@ classdef AppTopLevel < ott.ui.support.AppBase
       
       app.createMenuComponents();
       app.createMainComponents();
+      
+      % Set default values of main components
+      app.setDefaultValues();
       
     end
   end

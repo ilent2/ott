@@ -1,4 +1,4 @@
-classdef Simple < ott.ui.beam.AppBase
+classdef Annular < ott.ui.beam.AppBase
 % Generate a simple beam representation and visualise.
 %
 % Supported beams:
@@ -25,16 +25,16 @@ classdef Simple < ott.ui.beam.AppBase
 % and Annular?
 
   properties (Constant)
-    cnameText = 'Simple';
+    cnameText = 'Annular';
 
     nameText = 'Simple Beam';
 
     aboutText = ['Generate a simple beam.'];
     
-    helpText = {ott.ui.beam.Simple.aboutText, ...
+    helpText = {ott.ui.beam.Annular.aboutText, ...
       ''};
     
-    windowName = ott.ui.beam.PmParaxial.nameText;
+    windowName = ott.ui.beam.Annular.nameText;
     windowSize = [640, 420];
   end
   
@@ -209,10 +209,11 @@ classdef Simple < ott.ui.beam.AppBase
   end
   
   methods (Access=public)
-    function app=Simple()
+    function app=Annular()
       % Start the ForcePosition GUI
       
       app = app@ott.ui.beam.AppBase();
+      
       if nargout == 0
         clear app;
       end

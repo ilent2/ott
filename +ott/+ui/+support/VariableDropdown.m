@@ -1,4 +1,4 @@
-classdef VariableDropdown < handle
+classdef VariableDropdown < ott.ui.support.GridWidget
 % A dropdown menu for selecting variables from the current workspace
   
 % Copyright 2021 IST Austria, Written by Isaac Lenton
@@ -6,25 +6,26 @@ classdef VariableDropdown < handle
 % using/distributing this file.
 
   properties (Access=public)
-    Grid          matlab.ui.container.GridLayout
     Label         matlab.ui.control.Label
     DropDown      matlab.ui.control.DropDown
   end
   
   properties (Dependent)
-    Layout
+    Value
+    ValueChangedFcn
   end
   
   methods
     function obj = VariableDropdown(parent, varargin)
       
+      obj = obj@ott.ui.support.GridWidget(parent);
+      
       p = inputParser;
       p.parse(varargin{:});
       
-      % Create grid
-      obj.Grid = uigridlayout(parent, [1, 2]);
+      % Configure grid
       obj.Grid.RowHeight = {22};
-      obj.Grid.ColumnWidth = {100, 100};
+      obj.Grid.ColumnWidth = {'1x', 100};
       obj.Grid.ColumnSpacing = 1;
       obj.Grid.RowSpacing = 1;
       
@@ -47,12 +48,12 @@ classdef VariableDropdown < handle
   end
   
   methods
-    function val = get.Layout(obj)
-      val = obj.Grid.Layout;
+    function set.Value(obj, val)
+      obj.DropDown.Value = val;
     end
     
-    function set.Layout(obj, val)
-      obj.Grid.Layout = val;
+    function set.ValueChangedFcn(obj, val)
+      obj.DropDown.ValueChangedFcn = val;
     end
   end
 end

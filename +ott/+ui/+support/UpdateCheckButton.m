@@ -1,4 +1,4 @@
-classdef UpdateCheckButton < handle
+classdef UpdateCheckButton < ott.ui.support.GridWidget
 % A check box and button for enabling/disabling auto-update and update.
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
@@ -29,34 +29,49 @@ classdef UpdateCheckButton < handle
       end
       
       % Emit UpdateCalled event (lazy: reuse input event...)
-      if strcmpi(obj.Value, 'on')
+      if obj.Value
         notify(obj, "UpdateCalled", evt);
       end
       
     end
+    
+    function ButtonPushedCb(obj, evt)
+      
+      % Emit UpdateCalled event (lazy: reuse input event...)
+      notify(obj, "UpdateCalled", evt);
+    end
   end
   
   methods
-    function obj = UpdateCheckButton(panel, varargin)
+    function obj = UpdateCheckButton(parent, varargin)
+      
+      obj = obj@ott.ui.support.GridWidget(parent);
+      
+      % Configure grid
+      obj.Grid.RowHeight = {22};
+      obj.Grid.ColumnWidth = {'1x', 70};
+      obj.Grid.ColumnSpacing = 10;
+      obj.Grid.RowSpacing = 1;
       
       p = inputParser;
       p.addParameter('position', [0, 0]);
       p.parse(varargin{:});
       
-      height = 22;
-      
       % Create AutoupdateCheckBox
-      obj.CheckBox = uicheckbox(panel);
+      obj.CheckBox = uicheckbox(obj.Grid);
       obj.CheckBox.Text = 'Auto-update';
-      obj.CheckBox.Position = [p.Results.position 87 height];
+      obj.CheckBox.Layout.Column = 1;
+      obj.CheckBox.Layout.Row = 1;
       obj.CheckBox.Value = true;
       obj.CheckBox.ValueChangedFcn = @(h,e) obj.onCheckBoxChanged(e);
       
       % Create UpdateButton
-      obj.Button = uibutton(panel, 'push');
+      obj.Button = uibutton(obj.Grid, 'push');
       obj.Button.Enable = 'off';
-      obj.Button.Position = [([150, 0] + p.Results.position), 84 height];
+      obj.Button.Layout.Column = 2;
+      obj.Button.Layout.Row = 1;
       obj.Button.Text = 'Update';
+      obj.Button.ButtonPushedFcn = @(h,e) obj.ButtonPushedCb(e);
       
     end
   end

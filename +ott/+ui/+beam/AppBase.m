@@ -13,6 +13,18 @@ classdef (Abstract) AppBase < ott.ui.support.AppTwoColumn
   end
   
   methods (Access=protected)
+    function updateBeamPreview(app)
+      
+      if isempty(app.beam)
+        return;
+      end
+      
+      app.beam.visNearfield('plot_axes', app.PreviewUIAxes, ...
+        'axis', 'y', 'range', [1,1]*2e-6, 'field', 'Re(Ex)', ...
+        'size', [60, 60]);
+      
+    end
+    
     function createBeamPreview(app)
 
       % Create UIAxes
