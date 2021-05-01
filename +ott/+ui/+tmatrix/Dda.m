@@ -15,16 +15,12 @@ classdef Dda < ott.ui.tmatrix.AppBase
     helpText = {ott.ui.tmatrix.Dda.aboutText, ...
       ''};
     
-    windowName = ott.ui.beam.PmParaxial.nameText;
+    windowName = ott.ui.tmatrix.Dda.nameText;
     windowSize = [640, 420];
   end
   
   methods (Access=protected)
     function startupFcn(app)
-    end
-    
-    function createComponents(app)
-      createComponents@ott.ui.support.AppTopLevel(app);
     end
   end
   

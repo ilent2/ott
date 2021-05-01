@@ -22,8 +22,11 @@ classdef Visualise < ott.ui.beam.AppBase
     function startupFcn(app)
     end
     
-    function createComponents(app)
-      createComponents@ott.ui.support.AppTopLevel(app);
+    function createRightComponents(app)
+      app.createBeamPreview();
+    end
+    
+    function createLeftComponents(app)
     end
   end
   

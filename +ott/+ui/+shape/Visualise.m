@@ -30,46 +30,18 @@ classdef Visualise < ott.ui.shape.AppBase
 
   % Properties that correspond to app components
   properties (Access = public)
-    GridLayout                  matlab.ui.container.GridLayout
-    LeftPanel                   matlab.ui.container.Panel
     ShapeDropDownLabel          matlab.ui.control.Label
     ShapeDropDown               matlab.ui.control.DropDown
     VisualisationDropDownLabel  matlab.ui.control.Label
     VisualisationDropDown       matlab.ui.control.DropDown
     UpdateButton                matlab.ui.control.Button
     AutoupdateCheckBox          matlab.ui.control.CheckBox
-    RightPanel                  matlab.ui.container.Panel
     UIAxes                      matlab.ui.control.UIAxes
   end
 
   % Properties that correspond to apps with auto-reflow
   properties (Access = private)
     onePanelWidth = 576;
-  end
-
-  % Callbacks that handle component events
-  methods (Access = private)
-
-    % Changes arrangement of the app based on UIFigure width
-    function updateAppLayout(app, event)
-      
-      warning('This should change to match CadFileLoader.m');
-      
-            currentFigureWidth = app.UIFigure.Position(3);
-            if(currentFigureWidth <= app.onePanelWidth)
-                % Change to a 2x1 grid
-                app.GridLayout.RowHeight = {351, 351};
-                app.GridLayout.ColumnWidth = {'1x'};
-                app.RightPanel.Layout.Row = 2;
-                app.RightPanel.Layout.Column = 1;
-            else
-                % Change to a 1x2 grid
-                app.GridLayout.RowHeight = {'1x'};
-                app.GridLayout.ColumnWidth = {220, '1x'};
-                app.RightPanel.Layout.Row = 1;
-                app.RightPanel.Layout.Column = 2;
-            end
-    end
   end
 
   % Component initialization
@@ -79,27 +51,7 @@ classdef Visualise < ott.ui.shape.AppBase
     end
 
     % Create UIFigure and components
-    function createComponents(app)
-
-      % Configure figure
-      app.UIFigure.AutoResizeChildren = 'off';
-      app.UIFigure.SizeChangedFcn = createCallbackFcn(app, @updateAppLayout, true);
-      
-      createComponents@ott.ui.support.AppTopLevel(app);
-
-      % Create GridLayout
-      app.GridLayout = uigridlayout(app.UIFigure);
-      app.GridLayout.ColumnWidth = {220, '1x'};
-      app.GridLayout.RowHeight = {'1x'};
-      app.GridLayout.ColumnSpacing = 0;
-      app.GridLayout.RowSpacing = 0;
-      app.GridLayout.Padding = [0 0 0 0];
-      app.GridLayout.Scrollable = 'on';
-
-      % Create LeftPanel
-      app.LeftPanel = uipanel(app.GridLayout);
-      app.LeftPanel.Layout.Row = 1;
-      app.LeftPanel.Layout.Column = 1;
+    function createLeftComponents(app)
 
       % Create ShapeDropDownLabel
       app.ShapeDropDownLabel = uilabel(app.LeftPanel);
@@ -136,11 +88,10 @@ classdef Visualise < ott.ui.shape.AppBase
       app.AutoupdateCheckBox.Text = 'Auto-update';
       app.AutoupdateCheckBox.Position = [13 212 87 22];
       app.AutoupdateCheckBox.Value = true;
-
-      % Create RightPanel
-      app.RightPanel = uipanel(app.GridLayout);
-      app.RightPanel.Layout.Row = 1;
-      app.RightPanel.Layout.Column = 2;
+      
+    end
+    
+    function createRightComponents(app)
 
       % Create UIAxes
       app.UIAxes = uiaxes(app.RightPanel);

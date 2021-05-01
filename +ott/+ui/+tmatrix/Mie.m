@@ -15,16 +15,12 @@ classdef Mie < ott.ui.tmatrix.AppBase
     helpText = {ott.ui.tmatrix.Mie.aboutText, ...
       ''};
     
-    windowName = ott.ui.beam.PmParaxial.nameText;
+    windowName = ott.ui.tmatrix.Mie.nameText;
     windowSize = [640, 420];
   end
   
   methods (Access=protected)
     function startupFcn(app)
-    end
-    
-    function createComponents(app)
-      createComponents@ott.ui.support.AppTopLevel(app);
     end
   end
   
@@ -33,6 +29,7 @@ classdef Mie < ott.ui.tmatrix.AppBase
       % Start the ForcePosition GUI
       
       app = app@ott.ui.tmatrix.AppBase();
+      
       if nargout == 0
         clear app;
       end
