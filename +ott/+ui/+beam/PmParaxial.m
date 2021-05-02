@@ -1,4 +1,4 @@
-classdef PmParaxial < ott.ui.beam.AppBase
+classdef PmParaxial < ott.ui.beam.NewBeamBase
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -176,7 +176,7 @@ classdef PmParaxial < ott.ui.beam.AppBase
     function app=PmParaxial()
       % Start the ForcePosition GUI
       
-      app = app@ott.ui.beam.AppBase();
+      app = app@ott.ui.beam.NewBeamBase();
       if nargout == 0
         clear app;
       end

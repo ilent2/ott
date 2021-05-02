@@ -1,4 +1,6 @@
-classdef PowerSpectrum < ott.ui.support.AppTopLevel
+classdef PowerSpectrum < ott.ui.support.AppTopLevel ...
+    & ott.ui.support.GenerateCodeMenu ...
+    & ott.ui.support.RefreshInputsMenu
 % Generate plot of power spectrum from position time series data
 %
 % This app cab be launched from the app launcher via Tools -> PowerSpectrum

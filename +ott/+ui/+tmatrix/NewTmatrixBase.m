@@ -1,8 +1,16 @@
-classdef AppBase < ott.ui.support.AppTopLevel
+classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel
+% Base class for T-matrix creation applications.
+%
+% Properties:
+%   - tmatrix
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+  properties (Constant)
+    windowSize = [640, 420];
+  end
 
   properties (SetAccess=protected)
     tmatrix
@@ -15,7 +23,19 @@ classdef AppBase < ott.ui.support.AppTopLevel
     UpdateButton        ott.ui.support.UpdateWithProgress
   end
   
+  methods (Access=protected, Abstract)
+    generateTmatrix(app)
+    generateCode(app)
+  end
+  
   methods (Access=protected)
+    function setDefaultValues(app)
+      app.VariableName.Value = '';
+      app.ParticleName.Value = '';
+      app.UpdateButton.Value = 0;
+      app.UpdateButton.ClearErrors();
+    end
+    
     function createMainComponents(app)
       
       % Create grid

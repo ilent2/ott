@@ -10,6 +10,10 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget
     Button      matlab.ui.control.Button
   end
   
+  properties (Dependent)
+    Value
+  end
+  
   methods
     function obj = UpdateWithProgress(parent, varargin)
       
@@ -34,6 +38,16 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget
       obj.Gauge.Layout.Column = 2;
       obj.Gauge.Layout.Row = 1;
       
+    end
+    
+    function ClearErrors(app)
+      % TODO
+    end
+  end
+  
+  methods
+    function set.Value(app, val)
+      app.Gauge.Value = val;
     end
   end
 end

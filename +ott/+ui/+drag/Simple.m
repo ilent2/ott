@@ -1,4 +1,6 @@
-classdef Simple < ott.ui.support.AppTopLevel
+classdef Simple < ott.ui.support.AppTopLevel ...
+    & ott.ui.support.RefreshInputsMenu ...
+    & ott.ui.support.GenerateCodeMenu
 % Constructs a drag tensor for a shape.
 % This interface uses :meth:`ott.drag.Stokes.FromShape`.
 
@@ -20,73 +22,83 @@ classdef Simple < ott.ui.support.AppTopLevel
       ''};
     
     windowName = ott.ui.drag.Simple.nameText;
-    windowSize = [550, 200];
+    windowSize = [522, 179];
   end
   
   % Properties that correspond to app components
   properties (Access = public)
-    VariableNameEditFieldLabel          matlab.ui.control.Label
-    VariableNameEditField               matlab.ui.control.EditField
-    ShapeDropDownLabel                  matlab.ui.control.Label
-    ShapeDropDown                       matlab.ui.control.DropDown
-    ViscositySpinnerLabel               matlab.ui.control.Label
-    ViscositySpinner                    matlab.ui.control.Spinner
+    
+    MainGrid              matlab.ui.container.GridLayout
+    
+    % Left column
+    VariableName          ott.ui.support.OutputVariableEntry
+    ShapeDropdown         ott.ui.support.VariableDropdown
+    ViscositySpinner      ott.ui.support.LabeledSpinner
+    updateCheckButton     ott.ui.support.UpdateCheckButton
+    
+    % Right column
     UITable                             matlab.ui.control.Table
-    updateCheckButton               ott.ui.support.UpdateCheckButton
   end
 
   methods (Access=protected)
-    function startupFcn(app)
+    
+    function setDefaultValues(app)
+      app.VariableName.Value = '';
+      app.ShapeDropdown.Value = '';
+      app.ViscositySpinner.Value = 1;
+      app.updateCheckButton.Value = true;
+      app.UITable.Data = repmat({''}, 6, 6);
+    end
+    
+    function code = generateCode(app)
+      code = {};  % TODO
     end
     
     function createMainComponents(app)
+      % Create application specific components
       
-      lmargin = 10;
-      wsize = [135 22];
-      x0 = 107;
-
-      % Create VariableNameEditFieldLabel
-      app.VariableNameEditFieldLabel = uilabel(app.UIFigure);
-      app.VariableNameEditFieldLabel.HorizontalAlignment = 'left';
-      app.VariableNameEditFieldLabel.Position = [lmargin 158 84 22];
-      app.VariableNameEditFieldLabel.Text = 'Variable Name';
-
-      % Create VariableNameEditField
-      app.VariableNameEditField = uieditfield(app.UIFigure, 'text');
-      app.VariableNameEditField.Position = [x0 158 wsize];
-
-      % Create ShapeDropDownLabel
-      app.ShapeDropDownLabel = uilabel(app.UIFigure);
-      app.ShapeDropDownLabel.HorizontalAlignment = 'left';
-      app.ShapeDropDownLabel.Position = [lmargin 128 40 22];
-      app.ShapeDropDownLabel.Text = 'Shape';
-
-      % Create ShapeDropDown
-      app.ShapeDropDown = uidropdown(app.UIFigure);
-      app.ShapeDropDown.Position = [x0 128 wsize];
-
-      % Create ViscositySpinnerLabel
-      app.ViscositySpinnerLabel = uilabel(app.UIFigure);
-      app.ViscositySpinnerLabel.HorizontalAlignment = 'left';
-      app.ViscositySpinnerLabel.Position = [lmargin 98 52 22];
-      app.ViscositySpinnerLabel.Text = 'Viscosity';
-
-      % Create ViscositySpinner
-      app.ViscositySpinner = uispinner(app.UIFigure);
-      app.ViscositySpinner.Position = [x0 98 wsize];
+      % Disable window resize
+      app.UIFigure.Resize = 'off';
+      
+      % Create grid
+      app.MainGrid = uigridlayout(app.UIFigure);
+      app.MainGrid.ColumnWidth = {200, '1x'};
+      app.MainGrid.RowHeight = {32, 32, 32, '1x', 32};
+      app.MainGrid.RowSpacing = 0;
+      app.MainGrid.ColumnSpacing = 20;
+      
+      % Variable name
+      app.VariableName = ott.ui.support.OutputVariableEntry(app.MainGrid);
+      app.VariableName.Layout.Row = 1;
+      app.VariableName.Layout.Column = 1;
+      
+      % Shape selector
+      app.ShapeDropdown = ott.ui.support.VariableDropdown(app.MainGrid, ...
+          'label', 'Shape', 'filter', 'ott.shape.Shape');
+      app.ShapeDropdown.Layout.Row = 2;
+      app.ShapeDropdown.Layout.Column = 1;
+      app.registerRefreshInput(app.ShapeDropdown);
+        
+      % Viscosity
+      app.ViscositySpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'label', 'Viscosity');
+      app.ViscositySpinner.Layout.Row = 3;
+      app.ViscositySpinner.Layout.Column = 1;
+      
+      % Auto-update widget
+      app.updateCheckButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
+      app.updateCheckButton.Layout.Row = 5;
+      app.updateCheckButton.Layout.Column = 1;
       
       % Create UITable
       cwidth = 40;
-      app.UITable = uitable(app.UIFigure);
+      app.UITable = uitable(app.MainGrid);
+      app.UITable.Layout.Row = [1, 5];
+      app.UITable.Layout.Column = 2;
       app.UITable.ColumnName = {'x', 'y', 'z', 'Rx', 'Ry', 'Rz'};
       app.UITable.RowName = {'x', 'y', 'z', 'Rx', 'Ry', 'Rz'};
       app.UITable.ColumnWidth = repmat({cwidth}, 1, 6);
-      app.UITable.Data = repmat({''}, 6, 6);
-      app.UITable.Position = [250 20 cwidth*6+42 160];
       
-      % Auto-update widget
-      app.updateCheckButton = ott.ui.support.UpdateCheckButton(...
-          app.UIFigure, 'position', [lmargin, 20]);
     end
   end
   

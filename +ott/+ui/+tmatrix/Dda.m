@@ -1,4 +1,5 @@
-classdef Dda < ott.ui.tmatrix.AppBase
+classdef Dda < ott.ui.tmatrix.NewTmatrixBase
+% Generate a T-matrix using the discrete dipole approximation.
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -9,14 +10,13 @@ classdef Dda < ott.ui.tmatrix.AppBase
 
     nameText = 'DDA T-matrix';
 
-    aboutText = ['Generate T-matrix using the discrete dipole ' ...
+    aboutText = ['Generate a T-matrix using the discrete dipole ' ...
       'approximation.'];
     
     helpText = {ott.ui.tmatrix.Dda.aboutText, ...
       ''};
     
     windowName = ott.ui.tmatrix.Dda.nameText;
-    windowSize = [640, 420];
   end
   
   methods (Access=protected)
@@ -28,7 +28,8 @@ classdef Dda < ott.ui.tmatrix.AppBase
     function app=Dda()
       % Start the ForcePosition GUI
       
-      app = app@ott.ui.tmatrix.AppBase();
+      app = app@ott.ui.tmatrix.NewTmatrixBase();
+      
       if nargout == 0
         clear app;
       end

@@ -1,14 +1,10 @@
-classdef Gaussian < ott.ui.beam.AppBase
+classdef Gaussian < ott.ui.beam.NewBeamBase
 % Generate a simple beam representation and visualise.
 %
 % Supported beams:
 %   - Gaussian
 %   - Laguerre-Gaussian
 %   - Hermite-Gaussian
-%   - Plane Wave
-%   - Mathieu
-%   - Webber
-%   - Bessel
 %
 % Some of these beams might move to their own interface in a future
 % release.
@@ -21,8 +17,7 @@ classdef Gaussian < ott.ui.beam.AppBase
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-% TODO: Should we split this interface into Gaussian, PlaneWave
-% and Annular?
+% TODO: Do we want a NA warning?
 
   properties (Constant)
     cnameText = 'Gaussian';
@@ -30,8 +25,7 @@ classdef Gaussian < ott.ui.beam.AppBase
     nameText = 'Create a Gaussian Beam';
 
     aboutText = ['Generate a Gaussian or related beam.  Can be used to' ...
-      ' create Gaussian, Laguerre-Gaussian, Hermite-Gaussian ' ...
-      'and Ince-Gaussian beams.'];
+      ' create Gaussian, Laguerre-Gaussian, Hermite-Gaussian.'];
     
     helpText = {ott.ui.beam.Gaussian.aboutText, ...
       ''};
@@ -75,138 +69,142 @@ classdef Gaussian < ott.ui.beam.AppBase
     
     function createLeftComponents(app)
       
-      % Create VariableNameEditFieldLabel
-      app.VariableNameEditFieldLabel = uilabel(app.LeftPanel);
-      app.VariableNameEditFieldLabel.HorizontalAlignment = 'right';
-      app.VariableNameEditFieldLabel.Position = [14 427 84 22];
-      app.VariableNameEditFieldLabel.Text = 'Variable Name';
-
-      % Create VariableNameEditField
-      app.VariableNameEditField = uieditfield(app.LeftPanel, 'text');
-      app.VariableNameEditField.Position = [148 427 100 22];
-      app.VariableNameEditField.Value = 'Beam';
-
-      % Create GenerateButton
-      app.GenerateButton = uibutton(app.LeftPanel, 'push');
-      app.GenerateButton.ButtonPushedFcn = createCallbackFcn(app, @GenerateButtonPushed, true);
-      app.GenerateButton.Position = [148 13 100 22];
-      app.GenerateButton.Text = 'Generate';
-
-      % Create RadialModeSpinnerLabel
-      app.RadialModeSpinnerLabel = uilabel(app.LeftPanel);
-      app.RadialModeSpinnerLabel.HorizontalAlignment = 'right';
-      app.RadialModeSpinnerLabel.Position = [14 380 73 22];
-      app.RadialModeSpinnerLabel.Text = 'Radial Mode';
-
-      % Create RadialModeSpinner
-      app.RadialModeSpinner = uispinner(app.LeftPanel);
-      app.RadialModeSpinner.Limits = [0 Inf];
-      app.RadialModeSpinner.RoundFractionalValues = 'on';
-      app.RadialModeSpinner.Position = [148 380 100 22];
-
-      % Create AzimuthalModeSpinnerLabel
-      app.AzimuthalModeSpinnerLabel = uilabel(app.LeftPanel);
-      app.AzimuthalModeSpinnerLabel.HorizontalAlignment = 'right';
-      app.AzimuthalModeSpinnerLabel.Position = [14 343 91 22];
-      app.AzimuthalModeSpinnerLabel.Text = 'Azimuthal Mode';
-
-      % Create AzimuthalModeSpinner
-      app.AzimuthalModeSpinner = uispinner(app.LeftPanel);
-      app.AzimuthalModeSpinner.RoundFractionalValues = 'on';
-      app.AzimuthalModeSpinner.Position = [148 343 100 22];
-
-      % Create WavelengthvacuumEditFieldLabel
-      app.WavelengthvacuumEditFieldLabel = uilabel(app.LeftPanel);
-      app.WavelengthvacuumEditFieldLabel.HorizontalAlignment = 'right';
-      app.WavelengthvacuumEditFieldLabel.Position = [14 225 122 22];
-      app.WavelengthvacuumEditFieldLabel.Text = 'Wavelength (vacuum)';
-
-      % Create WavelengthvacuumEditField
-      app.WavelengthvacuumEditField = uieditfield(app.LeftPanel, 'text');
-      app.WavelengthvacuumEditField.Position = [148 226 100 22];
-      app.WavelengthvacuumEditField.Value = '1.0';
-
-      % Create NmaxSpinnerLabel
-      app.NmaxSpinnerLabel = uilabel(app.LeftPanel);
-      app.NmaxSpinnerLabel.HorizontalAlignment = 'right';
-      app.NmaxSpinnerLabel.Position = [14 114 37 22];
-      app.NmaxSpinnerLabel.Text = 'Nmax';
-
-      % Create NmaxSpinner
-      app.NmaxSpinner = uispinner(app.LeftPanel);
-      app.NmaxSpinner.Limits = [1 Inf];
-      app.NmaxSpinner.RoundFractionalValues = 'on';
-      app.NmaxSpinner.Enable = 'off';
-      app.NmaxSpinner.Position = [148 115 100 22];
-      app.NmaxSpinner.Value = 20;
-
-      % Create AutoCheckBox
-      app.AutoCheckBox = uicheckbox(app.LeftPanel);
-      app.AutoCheckBox.ValueChangedFcn = createCallbackFcn(app, @AutoCheckBoxValueChanged, true);
-      app.AutoCheckBox.Text = 'Auto';
-      app.AutoCheckBox.Position = [89 114 47 22];
-      app.AutoCheckBox.Value = true;
-
-      % Create IndexmediumEditFieldLabel
-      app.IndexmediumEditFieldLabel = uilabel(app.LeftPanel);
-      app.IndexmediumEditFieldLabel.HorizontalAlignment = 'right';
-      app.IndexmediumEditFieldLabel.Position = [14 188 89 22];
-      app.IndexmediumEditFieldLabel.Text = 'Index (medium)';
-
-      % Create IndexmediumEditField
-      app.IndexmediumEditField = uieditfield(app.LeftPanel, 'text');
-      app.IndexmediumEditField.ValueChangedFcn = createCallbackFcn(app, @IndexmediumEditFieldValueChanged, true);
-      app.IndexmediumEditField.Position = [148 189 100 22];
-      app.IndexmediumEditField.Value = '1.0';
-
-      % Create NASpinnerLabel
-      app.NASpinnerLabel = uilabel(app.LeftPanel);
-      app.NASpinnerLabel.HorizontalAlignment = 'right';
-      app.NASpinnerLabel.Position = [14 151 25 22];
-      app.NASpinnerLabel.Text = 'NA';
-
-      % Create NASpinner
-      app.NASpinner = uispinner(app.LeftPanel);
-      app.NASpinner.Step = 0.1;
-      app.NASpinner.LowerLimitInclusive = 'off';
-      app.NASpinner.Limits = [0 Inf];
-      app.NASpinner.ValueChangedFcn = createCallbackFcn(app, @IndexmediumEditFieldValueChanged, true);
-      app.NASpinner.Position = [148 152 100 22];
-      app.NASpinner.Value = 0.9;
-
-      % Create Gauge
-      app.Gauge = uigauge(app.LeftPanel, 'linear');
-      app.Gauge.Enable = 'off';
-      app.Gauge.FontSize = 8;
-      app.Gauge.Position = [1 10 133 29];
-
-      % Create WarningNAlargerthanIndexmediumLabel
-      app.WarningNAlargerthanIndexmediumLabel = uilabel(app.LeftPanel);
-      app.WarningNAlargerthanIndexmediumLabel.Position = [10 61 221 22];
-      app.WarningNAlargerthanIndexmediumLabel.Text = 'Warning: NA larger than Index (medium)';
-
-      % Create PolarisationEditFieldLabel
-      app.PolarisationEditFieldLabel = uilabel(app.LeftPanel);
-      app.PolarisationEditFieldLabel.HorizontalAlignment = 'right';
-      app.PolarisationEditFieldLabel.Position = [14 300 68 22];
-      app.PolarisationEditFieldLabel.Text = 'Polarisation';
-
-      % Create PolarisationEditField
-      app.PolarisationEditField = uieditfield(app.LeftPanel, 'text');
-      app.PolarisationEditField.Position = [148 301 100 22];
-      app.PolarisationEditField.Value = '[1, 1i]';
-
-      % Create PowerEditFieldLabel
-      app.PowerEditFieldLabel = uilabel(app.LeftPanel);
-      app.PowerEditFieldLabel.HorizontalAlignment = 'right';
-      app.PowerEditFieldLabel.Position = [14 267 39 22];
-      app.PowerEditFieldLabel.Text = 'Power';
-
-      % Create PowerEditField
-      app.PowerEditField = uieditfield(app.LeftPanel, 'text');
-      app.PowerEditField.Position = [148 268 100 22];
-      app.PowerEditField.Value = '1.0';
+      % Create grid
+      app.MainGrid = uigridlayout(app.UIFigure);
+      app.MainGrid.RowHeight = repmat({32}, 1, 15);
+      app.MainGrid.RowHeight(end-2) = '1x';
+      app.MainGrid.ColumnWidth = {230};
+      app.MainGrid.ColumnSpacing = 1;
+      app.MainGrid.RowSpacing = 1;
       
+      % Variable name entry
+      app.VariableName = ott.ui.support.OutputVariableEntry(app.MainGrid);
+      app.VariableName.Layout.Row = 1;
+      app.VariableName.Layout.Column = 1;
+      app.VariableName.ValueChangedFcn = createCallbackFcn(app, ...
+          @nameChangedCb, true);
+        
+      % Beam type dropdown
+      app.BeamTypeDropdown = ott.ui.support.LabeledDropdown(app.MainGrid);
+      app.BeamTypeDropdown.Layout.Row = 2;
+      app.BeamTypeDropdown.Layout.Column = 1;
+      app.BeamTypeDropdown.ValueChangedFcn = createCallbackFcn(app, ...
+          @typeChangedCb, true);
+        
+      % Lmode spinner
+      app.LmodeSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'label', 'L mode');
+      app.LmodeSpinner.Layout.Row = 3;
+      app.LmodeSpinner.Layout.Column = 1;
+      app.LmodeSpinner.Step = 1;
+      app.LmodeSpinner.Limits = [-Inf,Inf];
+      app.LmodeSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+      
+      % Pmode spinner
+      app.PmodeSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'label', 'P mode');
+      app.PmodeSpinner.Layout.Row = 4;
+      app.PmodeSpinner.Layout.Column = 1;
+      app.PmodeSpinner.Step = 1;
+      app.PmodeSpinner.Limits = [0,Inf];
+      app.PmodeSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+      
+      % Mmode spinner
+      app.MmodeSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'label', 'M mode');
+      app.MmodeSpinner.Layout.Row = 5;
+      app.MmodeSpinner.Layout.Column = 1;
+      app.MmodeSpinner.Step = 1;
+      app.MmodeSpinner.Limits = [0,Inf];
+      app.MmodeSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+      
+      % Nmode spinner
+      app.NmodeSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'label', 'N mode');
+      app.NmodeSpinner.Layout.Row = 6;
+      app.NmodeSpinner.Layout.Column = 1;
+      app.NmodeSpinner.Step = 1;
+      app.NmodeSpinner.Limits = [0,Inf];
+      app.NmodeSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+      
+      % Wavelength spinner
+      app.WavelengthSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'label', 'Wavelength');
+      app.WavelengthSpinner.Layout.Row = 7;
+      app.WavelengthSpinner.Layout.Column = 1;
+      app.WavelengthSpinner.Step = 1e-7;
+      app.WavelengthSpinner.Limits = [1e-9, Inf];
+      app.WavelengthSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+      
+      % Refractive index spinner
+      app.IndexSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'label', 'Refractive Index');
+      app.IndexSpinner.Layout.Row = 8;
+      app.IndexSpinner.Layout.Column = 1;
+      app.IndexSpinner.Step = 0.1;
+      app.IndexSpinner.Limits = [0.1, Inf];
+      app.IndexSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+        
+      % NA spinner
+      app.NaSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'label', 'Numerical Aperture');
+      app.NaSpinner.Layout.Row = 9;
+      app.NaSpinner.Layout.Column = 1;
+      app.NaSpinner.Step = 0.1;
+      app.NaSpinner.LowerLimitInclusive = 'off';
+      app.NaSpinner.Limits = [0.0, Inf];
+      app.NaSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+        
+      % Polarisation jones vector entry
+      app.PolarisationEntry = ott.ui.support.JonesPolarisationEntry(...
+          app.MainGrid);
+      app.PolarisationEntry.Layout.Row = 10;
+      app.PolarisationEntry.Layout.Column = 1;
+      app.PolarisationEntry.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+      
+      % Power spinner  
+      app.PowerSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'label', 'Power');
+      app.PowerSpinner.Layout.Row = 11;
+      app.PowerSpinner.Layout.Column = 1;
+      app.PowerSpinner.Step = 0.1;
+      app.PowerSpinner.LowerLimitInclusive = 'off';
+      app.PowerSpinner.Limits = [0.0, Inf];
+      app.PowerSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+      
+      % Direction entry
+      app.RotationXyzSpinner = ott.ui.support.XyzSpinners(...
+          app.MainGrid, 'label', 'Rotation');
+      app.RotationXyzSpinner.Layout.Row = 12;
+      app.RotationXyzSpinner.Layout.Column = 1;
+      app.RotationXyzSpinner.Step = 10;
+      app.RotationXyzSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+          @valueChangedCb, true);
+      
+      % Preview checkbox
+      app.ShowPreviewCheckBox = uicheckbox(app.MainGrid);
+      app.ShowPreviewCheckBox.Text = 'Show Preview';
+      app.ShowPreviewCheckBox.Layout.Row = 14;
+      app.ShowPreviewCheckBox.Layout.Column = 1;
+      app.ShowPreviewCheckBox.Value = true;
+      app.ShowPreviewCheckBox.ValueChangedFcn = createCallbackFcn(app, ...
+          @showPreviewChangedCb, true);
+      
+      % Update button
+      app.UpdateButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
+      app.UpdateButton.Layout.Row = 15;
+      app.UpdateButton.Layout.Column = 1;
+      addlistener(app.UpdateButton, "UpdateCalled", @(h,e) app.updateCb(e));
+
     end
   end
   

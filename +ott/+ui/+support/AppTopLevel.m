@@ -6,6 +6,9 @@ classdef AppTopLevel < ott.ui.support.AppBase
 %   - nameText
 %   - aboutText
 %   - helpText
+%
+% Adds a menu to the window.  If the class is also a GenerateCodeMenu
+% instance, adds a GerenateCode button to the menu.
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -74,17 +77,23 @@ classdef AppTopLevel < ott.ui.support.AppBase
       menuItem.MenuSelectedFcn = ...
         createCallbackFcn(app, @setDefaultValues, true);
       menuItem.Text = 'Reset to Defaults';
+      
+      % Refresh inputs
+      if isa(app, 'ott.ui.support.RefreshInputsMenu')
+        menuItem = uimenu(menu);
+        menuItem.MenuSelectedFcn = ...
+          createCallbackFcn(app, @refreshInputsCb, true);
+        menuItem.Text = 'Refresh Inputs';
+      end
 
-%       % Create ClearOutputMenu
-%       app.ClearOutputMenu = uimenu(menu);
-%       app.ClearOutputMenu.MenuSelectedFcn = createCallbackFcn(app, @ClearOutputMenuSelected, true);
-%       app.ClearOutputMenu.Text = 'Clear Output';
-
-%       % Create GenerateCodeMenu
-%       app.GenerateCodeMenu = uimenu(menu);
-%       app.GenerateCodeMenu.MenuSelectedFcn = createCallbackFcn(app, @GenerateCodeMenuSelected, true);
-%       app.GenerateCodeMenu.Separator = 'on';
-%       app.GenerateCodeMenu.Text = 'Generate Code...';
+      % Create GenerateCodeMenu
+      if isa(app, 'ott.ui.support.GenerateCodeMenu')
+        menuItem = uimenu(menu);
+        menuItem.Separator = 'on';
+        menuItem.MenuSelectedFcn = createCallbackFcn(app, ...
+            @GenerateCodeMenuSelected, true);
+        menuItem.Text = 'Generate Code...';
+      end
       
       % Add other content
       app.createFileMenuContent();
@@ -109,6 +118,11 @@ classdef AppTopLevel < ott.ui.support.AppBase
       
       app.createMenuComponents();
       app.createMainComponents();
+      
+      % Populate drop down variable selectors
+      if isa(app, 'ott.ui.support.RefreshInputsMenu')
+        app.refreshInputsCb();
+      end
       
       % Set default values of main components
       app.setDefaultValues();

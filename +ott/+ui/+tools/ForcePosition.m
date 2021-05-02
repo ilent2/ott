@@ -1,4 +1,12 @@
-classdef ForcePosition < ott.ui.support.AppTwoColumn
+classdef ForcePosition < ott.ui.support.AppTwoColumn ...
+    & ott.ui.support.GenerateCodeMenu ...
+    & ott.ui.support.RefreshInputsMenu
+% Generate a plot of the force as a function of particle position.
+%
+% This app can be launched from the Launcher via Tools -> ForcePosition
+% or directly from the command line with:
+%
+%   ott.ui.tools.ForcePosition()
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -20,8 +28,8 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn
   end
   
   properties (Access=public)
-    UIAxes                         matlab.ui.control.UIAxes
-    UIAxes2                        matlab.ui.control.UIAxes
+    ForceAxes                      matlab.ui.control.UIAxes
+    TorqueAxes                     matlab.ui.control.UIAxes
     Panel                          matlab.ui.container.Panel
     CalculateButton                matlab.ui.control.Button
     OutputEditFieldLabel           matlab.ui.control.Label
@@ -171,16 +179,16 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn
       height = 220;
       
       % Create UIAxes
-      app.UIAxes = uiaxes(app.RightPanel);
-      xlabel(app.UIAxes, 'X')
-      ylabel(app.UIAxes, 'Force')
-      app.UIAxes.Position = [10 height+10 width height];
+      app.ForceAxes = uiaxes(app.RightPanel);
+      xlabel(app.ForceAxes, 'X')
+      ylabel(app.ForceAxes, 'Force')
+      app.ForceAxes.Position = [10 height+10 width height];
 
       % Create UIAxes2
-      app.UIAxes2 = uiaxes(app.RightPanel);
-      xlabel(app.UIAxes2, 'X')
-      ylabel(app.UIAxes2, 'Torque')
-      app.UIAxes2.Position = [10 10 width height];
+      app.TorqueAxes = uiaxes(app.RightPanel);
+      xlabel(app.TorqueAxes, 'X')
+      ylabel(app.TorqueAxes, 'Torque')
+      app.TorqueAxes.Position = [10 10 width height];
     end
   end
   

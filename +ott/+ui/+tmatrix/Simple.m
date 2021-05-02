@@ -1,4 +1,6 @@
-classdef Simple < ott.ui.tmatrix.AppBase
+classdef Simple < ott.ui.tmatrix.NewTmatrixBase
+% Generate a simple T-matrix by taking a guess at the appropriate
+% method based on the shape geometry.
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -17,7 +19,6 @@ classdef Simple < ott.ui.tmatrix.AppBase
       ''};
     
     windowName = ott.ui.tmatrix.Simple.nameText;
-    windowSize = [640, 420];
   end
   
   methods (Access=protected)
@@ -29,7 +30,8 @@ classdef Simple < ott.ui.tmatrix.AppBase
     function app=Simple()
       % Start the ForcePosition GUI
       
-      app = app@ott.ui.tmatrix.AppBase();
+      app = app@ott.ui.tmatrix.NewTmatrixBase();
+      
       if nargout == 0
         clear app;
       end

@@ -1,4 +1,11 @@
 classdef Isolated < ott.ui.support.AppTwoColumn
+% Simulate the dynamics of an isolated particle.
+% Internally uses the ott.dynamics.Isolated class.
+%
+% This application can be run from the Launcher via Dynamics -> Isolated
+% or launched directly from the command line with:
+%
+%   ott.ui.dynamics.Isolated()
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about

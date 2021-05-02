@@ -1,4 +1,5 @@
-classdef Mie < ott.ui.tmatrix.AppBase
+classdef Mie < ott.ui.tmatrix.NewTmatrixBase
+% Generate a T-matrix cotaining the Mie coefficients.
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -16,7 +17,6 @@ classdef Mie < ott.ui.tmatrix.AppBase
       ''};
     
     windowName = ott.ui.tmatrix.Mie.nameText;
-    windowSize = [640, 420];
   end
   
   methods (Access=protected)
@@ -28,7 +28,7 @@ classdef Mie < ott.ui.tmatrix.AppBase
     function app=Mie()
       % Start the ForcePosition GUI
       
-      app = app@ott.ui.tmatrix.AppBase();
+      app = app@ott.ui.tmatrix.NewTmatrixBase();
       
       if nargout == 0
         clear app;

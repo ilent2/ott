@@ -1,4 +1,4 @@
-classdef Annular < ott.ui.beam.AppBase
+classdef Annular < ott.ui.beam.NewBeamBase
 % Generate a simple beam representation and visualise.
 %
 % Supported beams:

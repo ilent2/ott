@@ -20,7 +20,12 @@ classdef (Abstract) AppBase < matlab.apps.AppBase
   
   methods (Abstract, Access=protected)
     createComponents(app)
-    startupFcn(app)
+  end
+  
+  methods (Access=protected)
+    function startupFcn(app)
+      % Overload this method for startup functionality
+    end
   end
   
   methods (Access=public)
