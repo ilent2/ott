@@ -1,4 +1,4 @@
-classdef Visualise < ott.ui.shape.AppBase
+classdef Visualise < ott.ui.support.AppTwoColumn
 % Generate a visualisation of a OTT geometric shape.
 %
 % This GUI can be launched from the launcher under

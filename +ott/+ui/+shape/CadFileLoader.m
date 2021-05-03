@@ -1,4 +1,5 @@
-classdef CadFileLoader < ott.ui.shape.AppBase
+classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
+    & ott.ui.support.GenerateCodeMenu
 % Generate a OTT shape from a computer aided design (CAD) file.
 %
 % This GUI can be launched from the launcher under
@@ -44,127 +45,81 @@ classdef CadFileLoader < ott.ui.shape.AppBase
       'symetries (including rotations/translations).  If in ', ...
       'doubt, do not set these.']};
     
-    windowName = ott.ui.beam.PmParaxial.nameText;
-    windowSize = [640, 420];
+    windowName = ott.ui.shape.CadFileLoader.nameText;
   end
   
   % Properties that correspond to app components
   properties (Access = public)
-    CADFileEditFieldLabel           matlab.ui.control.Label
-    CADFileEditField                matlab.ui.control.EditField
-    Button                          matlab.ui.control.Button
-    ScaleSpinnerLabel               matlab.ui.control.Label
-    ScaleSpinner                    matlab.ui.control.Spinner
+    CadFileSelector                 ott.ui.support.FileSelector
+    ScaleSpinner                    ott.ui.support.LabeledSpinner
     XYMirrorSymmetryCheckBox        matlab.ui.control.CheckBox
-    RotationalSymmetrySpinnerLabel  matlab.ui.control.Label
-    RotationalSymmetrySpinner       matlab.ui.control.Spinner
-    VariableNameEditFieldLabel      matlab.ui.control.Label
-    VariableNameEditField           matlab.ui.control.EditField
-    ShowPreviewCheckBox             matlab.ui.control.CheckBox
-    OffsetXyzSpinners               ott.ui.support.XyzSpinners
-    RotationXyzSpinners             ott.ui.support.XyzSpinners
-    UIAxes                          matlab.ui.control.UIAxes
-    updateCheckButton               ott.ui.support.UpdateCheckButton
+    RotationalSymmetrySpinner       ott.ui.support.LabeledSpinner
   end
 
   % Component initialization
   methods (Access = protected)
     
-    function startupFcn(app)
+    function setDefaultValues(app)
+      
+      % App specifics
+      app.CadFileSelector.Value = '';
+      app.ScaleSpinner.Value = 1;
+      app.XYMirrorSymmetryCheckBox.Value = true;
+      app.RotationalSymmetrySpinner.Value = 1;
+      
+      % Base class/finalisation
+      setDefaultValues@ott.ui.shape.NewShapeBase(app);
+    end
+    
+    function shape = generateShape(app)
+      % TODO
+      shape = [];
+    end
+    
+    function code = generateCode(app)
+      % TODO
+      code = {};
     end
 
     % Create UIFigure and components
     function createLeftComponents(app)
+      % Create additional components for application
       
-      lmargin = 10;
-
-      % Create VariableNameEditFieldLabel
-      app.VariableNameEditFieldLabel = uilabel(app.LeftPanel);
-      app.VariableNameEditFieldLabel.HorizontalAlignment = 'left';
-      app.VariableNameEditFieldLabel.Position = [lmargin 379 84 22];
-      app.VariableNameEditFieldLabel.Text = 'Variable Name';
-
-      % Create VariableNameEditField
-      app.VariableNameEditField = uieditfield(app.LeftPanel, 'text');
-      app.VariableNameEditField.Position = [107 379 135 22];
-
-      % Create CADFileEditFieldLabel
-      app.CADFileEditFieldLabel = uilabel(app.LeftPanel);
-      app.CADFileEditFieldLabel.HorizontalAlignment = 'left';
-      app.CADFileEditFieldLabel.Position = [lmargin 341 54 22];
-      app.CADFileEditFieldLabel.Text = 'CAD File';
-
-      % Create CADFileEditField
-      app.CADFileEditField = uieditfield(app.LeftPanel, 'text');
-      app.CADFileEditField.Position = [77 341 126 22];
-
-      % Create Button
-      app.Button = uibutton(app.LeftPanel, 'push');
-      app.Button.Position = [216 341 26 22];
-      app.Button.Text = '...';
+      % Call base for most things
+      createLeftComponents@ott.ui.shape.NewShapeBase(app);
+      
+      % Configure extra grid
+      app.ExtraGrid.RowHeight = {32, 32, 32, 32, '1x'};
+      
+      % Create CAD file selector
+      app.CadFileSelector = ott.ui.support.FileSelector(app.ExtraGrid, ...
+        'label', 'CAD File');
+      app.CadFileSelector.Filter = {'*.obj;*.stl', 'CAD file'};
+      app.CadFileSelector.Title = 'Select a File';
+      app.CadFileSelector.PostSelect = app.UIFigure;
+      app.CadFileSelector.Layout.Row = 1;
+      app.CadFileSelector.Layout.Column = 1;
 
       % Create ScaleSpinnerLabel
-      app.ScaleSpinnerLabel = uilabel(app.LeftPanel);
-      app.ScaleSpinnerLabel.HorizontalAlignment = 'left';
-      app.ScaleSpinnerLabel.Position = [lmargin 269 35 22];
-      app.ScaleSpinnerLabel.Text = 'Scale';
-
-      % Create ScaleSpinner
-      app.ScaleSpinner = uispinner(app.LeftPanel);
-      app.ScaleSpinner.Position = [144 269 100 22];
-      app.ScaleSpinner.Value = 1;
+      app.ScaleSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
+        'label', 'Scale');
       app.ScaleSpinner.Step = 0.1;
+      app.ScaleSpinner.Layout.Row = 2;
+      app.ScaleSpinner.Layout.Column = 1;
 
       % Create XYMirrorSymmetryCheckBox
-      app.XYMirrorSymmetryCheckBox = uicheckbox(app.LeftPanel);
+      app.XYMirrorSymmetryCheckBox = uicheckbox(app.ExtraGrid);
       app.XYMirrorSymmetryCheckBox.Text = 'XY Mirror Symmetry';
-      app.XYMirrorSymmetryCheckBox.Position = [lmargin 103 130 22];
+      app.XYMirrorSymmetryCheckBox.Layout.Row = 3;
+      app.XYMirrorSymmetryCheckBox.Layout.Column = 1;
 
       % Create RotationalSymmetrySpinnerLabel
-      app.RotationalSymmetrySpinnerLabel = uilabel(app.LeftPanel);
-      app.RotationalSymmetrySpinnerLabel.HorizontalAlignment = 'left';
-      app.RotationalSymmetrySpinnerLabel.Position = [lmargin 136 117 22];
-      app.RotationalSymmetrySpinnerLabel.Text = 'Rotational Symmetry';
-
-      % Create RotationalSymmetrySpinner
-      app.RotationalSymmetrySpinner = uispinner(app.LeftPanel);
+      app.RotationalSymmetrySpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
+        'label', 'Rotational Symmetry');
       app.RotationalSymmetrySpinner.Limits = [0 Inf];
-      app.RotationalSymmetrySpinner.Position = [140 136 63 22];
-      app.RotationalSymmetrySpinner.Value = 1;
-
-      % Create ShowPreviewCheckBox
-      app.ShowPreviewCheckBox = uicheckbox(app.LeftPanel);
-      app.ShowPreviewCheckBox.Text = 'Show Preview';
-      app.ShowPreviewCheckBox.Position = [lmargin 43 98 22];
-      app.ShowPreviewCheckBox.Value = true;
-      
-      % Offset spinners
-      app.OffsetXyzSpinners = ott.ui.support.XyzSpinners(app.LeftPanel, ...
-          'label', 'Offset', 'position', [10, 240]);
+      app.RotationalSymmetrySpinner.Layout.Row = 4;
+      app.RotationalSymmetrySpinner.Layout.Column = 1;
         
-      % Rotation spinners
-      app.RotationXyzSpinners = ott.ui.support.XyzSpinners(app.LeftPanel, ...
-          'label', 'Rotation', 'position', [10, 210]);
-      
-      % Auto-update widget
-      app.updateCheckButton = ott.ui.support.UpdateCheckButton(...
-          app.LeftPanel, 'position', [lmargin, 14]);
-        
-    end
-    
-    function createRightComponents(app)
-
-      % Create UIAxes
-      app.UIAxes = uiaxes(app.RightPanel);
-      title(app.UIAxes, 'Preview')
-      xlabel(app.UIAxes, '')
-      ylabel(app.UIAxes, '')
-      app.UIAxes.XAxisLocation = 'origin';
-      app.UIAxes.XTick = [];
-      app.UIAxes.YAxisLocation = 'origin';
-      app.UIAxes.YTick = [];
-      app.UIAxes.Position = [7 45 373 328];
-      
     end
   end
 
@@ -172,7 +127,8 @@ classdef CadFileLoader < ott.ui.shape.AppBase
     function app = CadFileLoader()
       % Start the CadFileLoader interface
       
-      app = app@ott.ui.shape.AppBase();
+      app = app@ott.ui.shape.NewShapeBase();
+      
       if nargout == 0
         clear app;
       end

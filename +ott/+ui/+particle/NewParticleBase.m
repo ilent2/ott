@@ -39,6 +39,16 @@ classdef NewParticleBase < ott.ui.support.AppTopLevel
       app.UpdateButton.ClearErrors();
     end
     
+    function updateCb(app, ~)
+      % Called when a value is changed or when update is clicked
+      
+      % TODO: Generate new particle
+      
+      % Write to workspace (particle doesn't support preview)
+      app.VariableName.WriteVariable(app.particle);
+      
+    end
+    
     function createMainComponents(app)
       
       % Generate grid

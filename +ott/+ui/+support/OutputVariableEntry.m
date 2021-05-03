@@ -43,6 +43,24 @@ classdef OutputVariableEntry < ott.ui.support.GridWidget
       obj.EditField.Value = '';
       
     end
+    
+    function WriteVariable(obj, data)
+      % Write the specified data to the given variable name
+      
+      % Check we have work to do
+      if isempty(obj.Value)
+        error('No variable name specified');
+      end
+      
+      % Check valid variable name
+      if ~isvarname(obj.Value)
+        error('Value must be a valid variable name');
+      end
+      
+      % Store result
+      assignin('base', obj.Value, data);
+      
+    end
   end
   
   methods

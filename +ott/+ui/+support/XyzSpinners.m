@@ -1,24 +1,19 @@
-classdef XyzSpinners < ott.ui.support.GridWidget
+classdef XyzSpinners < ott.ui.support.LabeledWidget
 % Creates a labeled set of 3 spinners (e.g., for XYZ coordinates)
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  events (NotifyAccess = protected)
-    ValueChanged
-  end
-
   properties (Dependent)
     Value
     ValueChangedFcn
-    Visible
     Limits
+    LowerLimitInclusive
     Step
   end
   
   properties
-    Label             matlab.ui.control.Label
     XSpinner          matlab.ui.control.Spinner
     YSpinner          matlab.ui.control.Spinner
     ZSpinner          matlab.ui.control.Spinner
@@ -26,26 +21,19 @@ classdef XyzSpinners < ott.ui.support.GridWidget
   
   methods
     function obj = XyzSpinners(parent, varargin)
+      % Create a new XYZ Spinner instance
       
-      obj = obj@ott.ui.support.GridWidget(parent);
-      
-      p = inputParser();
-      p.addParameter('label', 'xyz');
+      p = inputParser;
+      p.addParameter('label', 'Xyz');
       p.addParameter('visible', 'on');
       p.parse(varargin{:});
       
-      % Create grid
-      obj.Grid.RowHeight = {22};
+      obj = obj@ott.ui.support.LabeledWidget(parent, ...
+          'label', p.Results.label, 'visible', p.Results.visible);
+        
+      % Configure grid for additional entries
       obj.Grid.ColumnWidth = {'1x', 60, 60, 60};
       obj.Grid.ColumnSpacing = 0;
-      obj.Grid.RowSpacing = 1;
-      
-      % Label
-      obj.Label = uilabel(obj.Grid);
-      obj.Label.HorizontalAlignment = 'left';
-      obj.Label.Text = p.Results.label;
-      obj.Label.Layout.Column = 1;
-      obj.Label.Layout.Row = 1;
 
       % X Spinner
       obj.XSpinner = uispinner(obj.Grid);
@@ -61,9 +49,6 @@ classdef XyzSpinners < ott.ui.support.GridWidget
       obj.ZSpinner = uispinner(obj.Grid);
       obj.ZSpinner.Layout.Column = 4;
       obj.ZSpinner.Layout.Row = 1;
-        
-      % Update visibility
-      obj.Visible = p.Results.visible;
     end
   end
   
@@ -76,17 +61,6 @@ classdef XyzSpinners < ott.ui.support.GridWidget
       obj.XSpinner.Value = val(1);
       obj.YSpinner.Value = val(2);
       obj.ZSpinner.Value = val(3);
-    end
-    
-    function val = get.Visible(obj)
-      val = obj.XSpinner.Visible;
-    end
-    
-    function set.Visible(obj, val)
-      obj.Label.Visible = val;
-      obj.XSpinner.Visible = val;
-      obj.YSpinner.Visible = val;
-      obj.ZSpinner.Visible = val;
     end
     
     function set.Limits(obj, val)
@@ -105,6 +79,12 @@ classdef XyzSpinners < ott.ui.support.GridWidget
       obj.XSpinner.ValueChangedFcn = val;
       obj.YSpinner.ValueChangedFcn = val;
       obj.ZSpinner.ValueChangedFcn = val;
+    end
+    
+    function set.LowerLimitInclusive(obj, val)
+      obj.XSpinner.LowerLimitInclusive = val;
+      obj.YSpinner.LowerLimitInclusive = val;
+      obj.ZSpinner.LowerLimitInclusive = val;
     end
   end
 end

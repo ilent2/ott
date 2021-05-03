@@ -1,4 +1,4 @@
-classdef VariableDropdown < ott.ui.support.GridWidget
+classdef VariableDropdown < ott.ui.support.LabeledDropDown
 % A dropdown menu for selecting variables from the current workspace
   
 % Copyright 2020 Isaac Lenon.
@@ -6,48 +6,34 @@ classdef VariableDropdown < ott.ui.support.GridWidget
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+% TODO: We could look at somthing like this for input validation:
+%   https://undocumentedmatlab.com/articles/editbox-data-input-validation
+
   properties (Access=public)
-    Label         matlab.ui.control.Label
-    DropDown      matlab.ui.control.DropDown
     Filter (1, :) char
   end
   
-  properties (Dependent)
-    Value
-    ValueChangedFcn
+  properties (Dependent, SetAccess=private)
+    Variable
   end
   
   methods
     function obj = VariableDropdown(parent, varargin)
       
-      obj = obj@ott.ui.support.GridWidget(parent);
-      
       p = inputParser;
       p.addParameter('label', 'Variable');
       p.addParameter('filter', 'double');
+      p.addParameter('visible', 'on');
       p.parse(varargin{:});
       
+      obj = obj@ott.ui.support.LabeledDropDown(parent, ...
+        'visible', p.Results.visible, 'label', p.Results.label);
+      
       obj.Filter = p.Results.filter;
-      
-      % Configure grid
-      obj.Grid.RowHeight = {22};
-      obj.Grid.ColumnWidth = {'1x', 100};
-      obj.Grid.ColumnSpacing = 1;
-      obj.Grid.RowSpacing = 1;
-      
-      % Create BeamDropDownLabel
-      obj.Label = uilabel(obj.Grid);
-      obj.Label.Layout.Column = 1;
-      obj.Label.Layout.Row = 1;
-      obj.Label.Text = p.Results.label;
 
-      % Create BeamDropDown
-      obj.DropDown = uidropdown(obj.Grid);
-      obj.DropDown.Items = {};
+      % Configure DropDown
       obj.DropDown.Editable = 'on';
       obj.DropDown.BackgroundColor = [1 1 1];
-      obj.DropDown.Layout.Column = 2;
-      obj.DropDown.Layout.Row = 1;
       obj.DropDown.Value = {};
       
     end
@@ -93,21 +79,12 @@ classdef VariableDropdown < ott.ui.support.GridWidget
   end
   
   methods
-    function set.Value(obj, val)
-      obj.DropDown.Value = val;
-    end
-    
-    function val = get.Value(obj)
-      st = obj.DropDown.Value;
+    function val = get.Variable(obj)
       try
-        val = evalin('base', st);
+        val = evalin('base', obj.Value);
       catch
-        val = nan;
+        val = [];
       end
-    end
-    
-    function set.ValueChangedFcn(obj, val)
-      obj.DropDown.ValueChangedFcn = val;
     end
   end
 end

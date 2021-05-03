@@ -788,7 +788,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
         end
 
         % Patch doesn't watch for hold, so clear it ourselves
-        isholdon = ishold();
+        isholdon = ishold(our_axes);
         if ~isholdon
           cla(our_axes);
         end
@@ -796,7 +796,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
         % Convert patch structures to patches
         sp = matlab.graphics.primitive.Patch.empty(1, 0);
         for ii = 1:numel(pch)
-          sp(ii) = patch(pch{ii}, p.Results.surfOptions{:});
+          sp(ii) = patch(our_axes, pch{ii}, p.Results.surfOptions{:});
         end
         pch = sp;
 
@@ -810,7 +810,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 
           % Preserve hold-no state
           if ~isholdon
-            hold('on');
+            hold(our_axes, 'on');
           end
 
           % Add quiver plot for each patch
@@ -828,12 +828,12 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 
             % Generate plot of surface normals
             s = p.Results.normalScale;
-            quiver3(mXyz(1, :), mXyz(2, :), mXyz(3, :), ...
+            quiver3(our_axes, mXyz(1, :), mXyz(2, :), mXyz(3, :), ...
                 s.*nxyz(1, :), s.*nxyz(2, :), s.*nxyz(3, :), 0);
           end
 
           if ~isholdon
-            hold('off');
+            hold(our_axes, 'off');
           end
         end
       end

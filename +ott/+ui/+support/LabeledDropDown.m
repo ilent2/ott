@@ -1,5 +1,5 @@
-classdef LabeledSpinner < ott.ui.support.LabeledWidget
-% Creates a labeled spinner
+classdef LabeledDropDown < ott.ui.support.LabeledWidget
+% A labeled dropdown widget
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -8,21 +8,19 @@ classdef LabeledSpinner < ott.ui.support.LabeledWidget
   properties (Dependent)
     Value
     ValueChangedFcn
-    Step
-    Limits
-    LowerLimitInclusive
+    Items
   end
   
   properties
-    Spinner           matlab.ui.control.Spinner
+    DropDown           matlab.ui.control.DropDown
   end
   
   methods
-    function obj = LabeledSpinner(parent, varargin)
+    function obj = LabeledDropDown(parent, varargin)
       % Create a labeled spinner widget
       
       p = inputParser;
-      p.addParameter('label', 'Spinner');
+      p.addParameter('label', 'DropDown');
       p.addParameter('visible', 'on');
       p.parse(varargin{:});
       
@@ -30,36 +28,32 @@ classdef LabeledSpinner < ott.ui.support.LabeledWidget
           'label', p.Results.label, 'visible', p.Results.visible);
 
       % Spinner
-      obj.Spinner = uispinner(obj.Grid);
-      obj.Spinner.Layout.Column = 2;
-      obj.Spinner.Layout.Row = 1;
+      obj.DropDown = uidropdown(obj.Grid);
+      obj.DropDown.Layout.Column = 2;
+      obj.DropDown.Layout.Row = 1;
       
     end
   end
   
   methods
     function val = get.Value(obj)
-      val = obj.Spinner.Value;
+      val = obj.DropDown.Value;
     end
     
     function set.Value(obj, val)
-      obj.Spinner.Value = val;
+      obj.DropDown.Value = val;
     end
     
-    function set.Limits(obj, val)
-      obj.Spinner.Limits = val;
+    function set.Items(obj, val)
+      obj.DropDown.Items = val;
     end
     
-    function set.Step(obj, val)
-      obj.Spinner.Step = val;
+    function val = get.Items(obj)
+      val = obj.DropDown.Items;
     end
     
     function set.ValueChangedFcn(obj, val)
-      obj.Spinner.ValueChangedFcn = val;
-    end
-    
-    function set.LowerLimitInclusive(obj, val)
-      obj.Spinner.LowerLimitInclusive = val;
+      obj.DropDown.ValueChangedFcn = val;
     end
   end
 end

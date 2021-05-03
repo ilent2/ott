@@ -1,24 +1,26 @@
-classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
-% Base class for beam creation application windows.
+classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn
+% Base class for shape creation application windows.
 %
 % This class is not intended to be instantiated directly.
-% The beam is stored internally and/or written to the matlab workspace
+% The shape is stored internally and/or written to the matlab workspace
 % if a variable name is given for the shape.  To access the internal
 % instance use:
 %
-%   app = ott.ui.beam.<name-of-your-app>()
-%   beam = app.beam
+%   app = ott.ui.shape.<name-of-your-app>()
+%   shape = app.shape
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
+
+% TODO: Maybe merge this with NewBeamBase?
 
   properties (Constant)
     windowSize = [640, 420];
   end
 
   properties (SetAccess=protected)
-    beam
+    shape       % Internal representation of the shape
   end
   
   properties (Access=public)
@@ -27,54 +29,49 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
     MainGrid              matlab.ui.container.GridLayout
     ExtraGrid             matlab.ui.container.GridLayout
     VariableName          ott.ui.support.OutputVariableEntry
-    WavelengthSpinner     ott.ui.support.LabeledSpinner
-    IndexSpinner          ott.ui.support.LabeledSpinner
-    RotationXyzSpinner    ott.ui.support.XyzSpinners
-    TranslationXyzSpinner ott.ui.support.XyzSpinners
+    OffsetXyzSpinners     ott.ui.support.XyzSpinners
+    RotationXyzSpinners   ott.ui.support.XyzSpinners
     ShowPreviewCheckBox   matlab.ui.control.CheckBox
     UpdateButton          ott.ui.support.UpdateCheckButton
     
     % Right pannel
     LoadingText           matlab.ui.control.Label
     PreviewUIAxes         matlab.ui.control.UIAxes
+    
   end
   
   methods (Access=protected, Abstract)
-    generateBeam(app)
+    generateShape(app)
   end
   
   methods (Access=protected)
     
     function startupFcn(app)
-      
-      app.updateBeamPreview();
+      app.updateShapePreview();
     end
     
-    function updateBeamPreview(app)
+    function updateShapePreview(app)
       
-      if isempty(app.beam)
+      if isempty(app.shape)
         return;
       end
       
       app.LoadingText.Visible = 'on';
       drawnow nocallbacks;
       
-      app.beam.visNearfield('plot_axes', app.PreviewUIAxes, ...
-        'axis', 'y', 'range', [1,1]*2e-6, 'field', 'Re(Ex)', ...
-        'size', [60, 60]);
+      % Update shape preview
+      app.shape.surf('axes', app.PreviewUIAxes);
       
       app.LoadingText.Visible = 'off';
       
     end
     
-    function setDefaultValues(app, evt)
+    function setDefaultValues(app, ~)
       % Set default values to window fields
       
       app.VariableName.Value = '';
-      app.WavelengthSpinner.Value = 1.0e-6;
-      app.IndexSpinner.Value = 1.0;
-      app.TranslationXyzSpinner.Value = [0, 0, 0];
-      app.RotationXyzSpinner.Value = [0, 0, 0];
+      app.OffsetXyzSpinners.Value = [0, 0, 0];
+      app.RotationXyzSpinners.Value = [0, 0, 0];
       app.ShowPreviewCheckBox.Value = true;
       app.UpdateButton.Value = true;
       
@@ -93,11 +90,11 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       % Called when a value is changed or when update is clicked
       
       % Generate new beam
-      app.beam = app.generateBeam();
+      app.shape = app.generateShape();
       
       % Write to workspace (if requested, not needed if only preview)
       if ~isempty(app.VariableName.Value)
-        app.VariableName.WriteVariable(app.beam);
+        app.VariableName.WriteVariable(app.shape);
       end
       
       % Generate beam preview
@@ -107,7 +104,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
     function showPreviewChangedCb(app, ~)
       % Generate a new preview (without generating new beam)
       if app.ShowPreviewCheckBox.Value
-        app.updateBeamPreview();
+        app.updateShapePreview();
       end
     end
     
@@ -124,7 +121,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       
       % Create grid
       app.MainGrid = uigridlayout(app.LeftPanel);
-      app.MainGrid.RowHeight = repmat({32}, 1, 8);
+      app.MainGrid.RowHeight = repmat({32}, 1, 6);
       app.MainGrid.RowHeight{end-2} = '1x';
       app.MainGrid.ColumnWidth = {230};
       app.MainGrid.ColumnSpacing = 1;
@@ -136,43 +133,23 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.VariableName.Layout.Column = 1;
       app.VariableName.ValueChangedFcn = createCallbackFcn(app, ...
           @nameChangedCb, true);
-      
-      % Wavelength spinner
-      app.WavelengthSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
-          'label', 'Wavelength');
-      app.WavelengthSpinner.Layout.Row = 2;
-      app.WavelengthSpinner.Layout.Column = 1;
-      app.WavelengthSpinner.Step = 1e-7;
-      app.WavelengthSpinner.Limits = [1e-9, Inf];
-      app.WavelengthSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
-      
-      % Refractive index spinner
-      app.IndexSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
-          'label', 'Refractive Index');
-      app.IndexSpinner.Layout.Row = 3;
-      app.IndexSpinner.Layout.Column = 1;
-      app.IndexSpinner.Step = 0.1;
-      app.IndexSpinner.Limits = [0.1, Inf];
-      app.IndexSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
-      
+        
       % Offset entry
-      app.TranslationXyzSpinner = ott.ui.support.XyzSpinners(...
-          app.MainGrid, 'label', 'Translation');
-      app.TranslationXyzSpinner.Layout.Row = 4;
-      app.TranslationXyzSpinner.Layout.Column = 1;
-      app.TranslationXyzSpinner.Step = 1e-7;
-      app.TranslationXyzSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+      app.OffsetXyzSpinners = ott.ui.support.XyzSpinners(...
+          app.MainGrid, 'label', 'Offset');
+      app.OffsetXyzSpinners.Layout.Row = 2;
+      app.OffsetXyzSpinners.Layout.Column = 1;
+      app.OffsetXyzSpinners.Step = 1e-7;
+      app.OffsetXyzSpinners.ValueChangedFcn = createCallbackFcn(app, ...
           @valueChangedCb, true);
       
-      % Direction entry
-      app.RotationXyzSpinner = ott.ui.support.XyzSpinners(...
+      % Rotation entry
+      app.RotationXyzSpinners = ott.ui.support.XyzSpinners(...
           app.MainGrid, 'label', 'Rotation');
-      app.RotationXyzSpinner.Layout.Row = 5;
-      app.RotationXyzSpinner.Layout.Column = 1;
-      app.RotationXyzSpinner.Step = 10;
-      app.RotationXyzSpinner.ValueChangedFcn = createCallbackFcn(app, ...
+      app.RotationXyzSpinners.Layout.Row = 3;
+      app.RotationXyzSpinners.Layout.Column = 1;
+      app.RotationXyzSpinners.Step = 10;
+      app.RotationXyzSpinners.ValueChangedFcn = createCallbackFcn(app, ...
           @valueChangedCb, true);
       
       % Create grid
@@ -181,13 +158,13 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.ExtraGrid.ColumnWidth = {'1x'};
       app.ExtraGrid.ColumnSpacing = 1;
       app.ExtraGrid.RowSpacing = 1;
-      app.ExtraGrid.Layout.Row = 6;
+      app.ExtraGrid.Layout.Row = 4;
       app.ExtraGrid.Layout.Column = 1;
       
       % Preview checkbox
       app.ShowPreviewCheckBox = uicheckbox(app.MainGrid);
       app.ShowPreviewCheckBox.Text = 'Show Preview';
-      app.ShowPreviewCheckBox.Layout.Row = 7;
+      app.ShowPreviewCheckBox.Layout.Row = 5;
       app.ShowPreviewCheckBox.Layout.Column = 1;
       app.ShowPreviewCheckBox.Value = true;
       app.ShowPreviewCheckBox.ValueChangedFcn = createCallbackFcn(app, ...
@@ -195,10 +172,10 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       
       % Update button
       app.UpdateButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
-      app.UpdateButton.Layout.Row = 8;
+      app.UpdateButton.Layout.Row = 6;
       app.UpdateButton.Layout.Column = 1;
       addlistener(app.UpdateButton, "UpdateCalled", @(h,e) app.updateCb(e));
-      
+        
     end
     
     function createRightComponents(app)
@@ -208,10 +185,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       title(app.PreviewUIAxes, 'Preview')
       xlabel(app.PreviewUIAxes, '')
       ylabel(app.PreviewUIAxes, '')
-      app.PreviewUIAxes.XAxisLocation = 'origin';
-      app.PreviewUIAxes.XTick = [];
-      app.PreviewUIAxes.YAxisLocation = 'origin';
-      app.PreviewUIAxes.YTick = [];
+      view(app.PreviewUIAxes, [-40, 30]);
       app.PreviewUIAxes.Position = [10 10 373 app.windowSize(2)-20];
       
       % Create loading text

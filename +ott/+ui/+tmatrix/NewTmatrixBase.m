@@ -36,6 +36,17 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel
       app.UpdateButton.ClearErrors();
     end
     
+    function updateCb(app, ~)
+      % Called when a value is changed or when update is clicked
+      
+      % Generate new beam
+      app.tmatrix = app.generateTmatrix();
+      
+      % Write to workspace (T-matrix doesn't support preview)
+      app.VariableName.WriteVariable(app.beam);
+      
+    end
+    
     function createMainComponents(app)
       
       % Create grid
