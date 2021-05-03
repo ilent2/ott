@@ -1,4 +1,5 @@
-classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn
+classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
+    & ott.ui.support.AppProducer
 % Base class for shape creation application windows.
 %
 % This class is not intended to be instantiated directly.
@@ -7,20 +8,14 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn
 % instance use:
 %
 %   app = ott.ui.shape.<name-of-your-app>()
-%   shape = app.shape
+%   shape = app.Data
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-% TODO: Maybe merge this with NewBeamBase?
-
   properties (Constant)
     windowSize = [640, 420];
-  end
-
-  properties (SetAccess=protected)
-    shape       % Internal representation of the shape
   end
   
   properties (Access=public)
@@ -28,11 +23,8 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn
     % Left panel
     MainGrid              matlab.ui.container.GridLayout
     ExtraGrid             matlab.ui.container.GridLayout
-    VariableName          ott.ui.support.OutputVariableEntry
     OffsetXyzSpinners     ott.ui.support.XyzSpinners
     RotationXyzSpinners   ott.ui.support.XyzSpinners
-    ShowPreviewCheckBox   matlab.ui.control.CheckBox
-    UpdateButton          ott.ui.support.UpdateCheckButton
     
     % Right pannel
     LoadingText           matlab.ui.control.Label
@@ -40,17 +32,20 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn
     
   end
   
-  methods (Access=protected, Abstract)
-    generateShape(app)
-  end
-  
   methods (Access=protected)
-    
-    function startupFcn(app)
-      app.updateShapePreview();
+    function setDefaultValues(app, ~)
+      % Set default values to window fields
+      
+      app.VariableName.Value = '';
+      app.OffsetXyzSpinners.Value = [0, 0, 0];
+      app.RotationXyzSpinners.Value = [0, 0, 0];
+      app.ShowPreviewCheckBox.Value = true;
+      app.UpdateButton.Value = true;
+      
+      app.Update();
     end
     
-    function updateShapePreview(app)
+    function UpdatePreview(app)
       
       if isempty(app.shape)
         return;
@@ -64,57 +59,6 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn
       
       app.LoadingText.Visible = 'off';
       
-    end
-    
-    function setDefaultValues(app, ~)
-      % Set default values to window fields
-      
-      app.VariableName.Value = '';
-      app.OffsetXyzSpinners.Value = [0, 0, 0];
-      app.RotationXyzSpinners.Value = [0, 0, 0];
-      app.ShowPreviewCheckBox.Value = true;
-      app.UpdateButton.Value = true;
-      
-      app.valueChangedCb();
-      
-    end
-    
-    function valueChangedCb(app, ~)
-      % Regenerate data if auto-update is enabled
-      if app.UpdateButton.Value
-        app.updateCb();
-      end
-    end
-    
-    function updateCb(app, ~)
-      % Called when a value is changed or when update is clicked
-      
-      % Generate new beam
-      app.shape = app.generateShape();
-      
-      % Write to workspace (if requested, not needed if only preview)
-      if ~isempty(app.VariableName.Value)
-        app.VariableName.WriteVariable(app.shape);
-      end
-      
-      % Generate beam preview
-      app.showPreviewChangedCb();
-    end
-    
-    function showPreviewChangedCb(app, ~)
-      % Generate a new preview (without generating new beam)
-      if app.ShowPreviewCheckBox.Value
-        app.updateShapePreview();
-      end
-    end
-    
-    function nameChangedCb(app, ~)
-      % Change output variable, dont regenerate data
-      
-      % Write to workspace (if requested, not needed if only preview)
-      if ~isempty(app.VariableName.Value)
-        app.VariableName.WriteVariable(app.beam);
-      end
     end
     
     function createLeftComponents(app)
@@ -131,8 +75,6 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn
       app.VariableName = ott.ui.support.OutputVariableEntry(app.MainGrid);
       app.VariableName.Layout.Row = 1;
       app.VariableName.Layout.Column = 1;
-      app.VariableName.ValueChangedFcn = createCallbackFcn(app, ...
-          @nameChangedCb, true);
         
       % Offset entry
       app.OffsetXyzSpinners = ott.ui.support.XyzSpinners(...
@@ -162,19 +104,15 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn
       app.ExtraGrid.Layout.Column = 1;
       
       % Preview checkbox
-      app.ShowPreviewCheckBox = uicheckbox(app.MainGrid);
-      app.ShowPreviewCheckBox.Text = 'Show Preview';
-      app.ShowPreviewCheckBox.Layout.Row = 5;
-      app.ShowPreviewCheckBox.Layout.Column = 1;
-      app.ShowPreviewCheckBox.Value = true;
-      app.ShowPreviewCheckBox.ValueChangedFcn = createCallbackFcn(app, ...
-          @showPreviewChangedCb, true);
+      app.PreviewCheckBox = uicheckbox(app.MainGrid);
+      app.PreviewCheckBox.Text = 'Show Preview';
+      app.PreviewCheckBox.Layout.Row = 5;
+      app.PreviewCheckBox.Layout.Column = 1;
       
       % Update button
       app.UpdateButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
       app.UpdateButton.Layout.Row = 6;
       app.UpdateButton.Layout.Column = 1;
-      addlistener(app.UpdateButton, "UpdateCalled", @(h,e) app.updateCb(e));
         
     end
     
@@ -194,6 +132,18 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn
       app.LoadingText.Text = 'Loading...';
       app.LoadingText.BackgroundColor = app.UIFigure.Color;
       app.LoadingText.HorizontalAlignment = 'center';
+      
+    end
+  end
+  
+  methods
+    function app = NewShapeBase()
+      
+      % Call window constructor first to create widgets
+      app = app@ott.ui.support.AppTwoColumn();
+      
+      % Then call AppProducer to connect production widgets
+      app = app@ott.ui.support.AppProducer();
       
     end
   end

@@ -1,8 +1,14 @@
-classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel
-% Base class for T-matrix creation applications.
+classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
+    & ott.ui.support.AppProducer
+% Base class for beam creation application windows.
 %
-% Properties:
-%   - tmatrix
+% This class is not intended to be instantiated directly.
+% The T-matrix is stored internally and written to the matlab workspace
+% if a variable name is given for the shape.  To access the internal
+% instance use:
+%
+%   app = ott.ui.tmatrix.<name-of-your-app>()
+%   tmatrix = app.Data
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -11,21 +17,10 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel
   properties (Constant)
     windowSize = [640, 420];
   end
-
-  properties (SetAccess=protected)
-    tmatrix
-  end
   
   properties (Access=public)
     MainGrid            matlab.ui.container.GridLayout
-    VariableName        ott.ui.support.OutputVariableEntry
-    ParticleName        ott.ui.support.VariableDropdown
-    UpdateButton        ott.ui.support.UpdateWithProgress
-  end
-  
-  methods (Access=protected, Abstract)
-    generateTmatrix(app)
-    generateCode(app)
+    ShapeName           ott.ui.support.VariableDropdown
   end
   
   methods (Access=protected)
@@ -34,17 +29,6 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel
       app.ParticleName.Value = '';
       app.UpdateButton.Value = 0;
       app.UpdateButton.ClearErrors();
-    end
-    
-    function updateCb(app, ~)
-      % Called when a value is changed or when update is clicked
-      
-      % Generate new beam
-      app.tmatrix = app.generateTmatrix();
-      
-      % Write to workspace (T-matrix doesn't support preview)
-      app.VariableName.WriteVariable(app.beam);
-      
     end
     
     function createMainComponents(app)
@@ -60,9 +44,9 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel
       app.VariableName.Layout.Row = 1;
       app.VariableName.Layout.Column = 1;
       
-      app.ParticleName = ott.ui.support.VariableDropdown(app.MainGrid);
-      app.ParticleName.Layout.Row = 2;
-      app.ParticleName.Layout.Column = 1;
+      app.ShapeName = ott.ui.support.VariableDropdown(app.MainGrid);
+      app.ShapeName.Layout.Row = 2;
+      app.ShapeName.Layout.Column = 1;
       
       app.UpdateButton = ott.ui.support.UpdateWithProgress(app.MainGrid);
       app.UpdateButton.Layout.Row = 4;
@@ -71,4 +55,15 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel
     end
   end
   
+  methods
+    function app = NewTmatrixBase()
+      
+      % Call window constructor first to create widgets
+      app = app@ott.ui.support.AppTopLevel();
+      
+      % Then call AppProducer to connect production widgets
+      app = app@ott.ui.support.AppProducer();
+      
+    end
+  end
 end

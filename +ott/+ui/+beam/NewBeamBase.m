@@ -1,4 +1,5 @@
-classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
+classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
+    & ott.ui.support.AppProducer
 % Base class for beam creation application windows.
 %
 % This class is not intended to be instantiated directly.
@@ -7,7 +8,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
 % instance use:
 %
 %   app = ott.ui.beam.<name-of-your-app>()
-%   beam = app.beam
+%   beam = app.Data
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -16,58 +17,24 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
   properties (Constant)
     windowSize = [640, 420];
   end
-
-  properties (SetAccess=protected)
-    beam
-  end
   
   properties (Access=public)
     
     % Left panel
     MainGrid              matlab.ui.container.GridLayout
     ExtraGrid             matlab.ui.container.GridLayout
-    VariableName          ott.ui.support.OutputVariableEntry
     WavelengthSpinner     ott.ui.support.LabeledSpinner
     IndexSpinner          ott.ui.support.LabeledSpinner
     RotationXyzSpinner    ott.ui.support.XyzSpinners
     TranslationXyzSpinner ott.ui.support.XyzSpinners
-    ShowPreviewCheckBox   matlab.ui.control.CheckBox
-    UpdateButton          ott.ui.support.UpdateCheckButton
     
     % Right pannel
     LoadingText           matlab.ui.control.Label
     PreviewUIAxes         matlab.ui.control.UIAxes
   end
   
-  methods (Access=protected, Abstract)
-    generateBeam(app)
-  end
-  
   methods (Access=protected)
-    
-    function startupFcn(app)
-      
-      app.updateBeamPreview();
-    end
-    
-    function updateBeamPreview(app)
-      
-      if isempty(app.beam)
-        return;
-      end
-      
-      app.LoadingText.Visible = 'on';
-      drawnow nocallbacks;
-      
-      app.beam.visNearfield('plot_axes', app.PreviewUIAxes, ...
-        'axis', 'y', 'range', [1,1]*2e-6, 'field', 'Re(Ex)', ...
-        'size', [60, 60]);
-      
-      app.LoadingText.Visible = 'off';
-      
-    end
-    
-    function setDefaultValues(app, evt)
+    function setDefaultValues(app, ~)
       % Set default values to window fields
       
       app.VariableName.Value = '';
@@ -78,46 +45,27 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.ShowPreviewCheckBox.Value = true;
       app.UpdateButton.Value = true;
       
-      app.valueChangedCb();
-      
+      % Update the output
+      app.Update();
     end
     
-    function valueChangedCb(app, ~)
-      % Regenerate data if auto-update is enabled
-      if app.UpdateButton.Value
-        app.updateCb();
-      end
-    end
-    
-    function updateCb(app, ~)
-      % Called when a value is changed or when update is clicked
+    function UpdatePreview(app)
+      % Update the beam preview
       
-      % Generate new beam
-      app.beam = app.generateBeam();
+      % Call base
+      UpdatePreview@ott.ui.support.AppProducer(app);
       
-      % Write to workspace (if requested, not needed if only preview)
-      if ~isempty(app.VariableName.Value)
-        app.VariableName.WriteVariable(app.beam);
-      end
+      % Display loading text now!
+      app.LoadingText.Visible = 'on';
+      drawnow nocallbacks;
       
-      % Generate beam preview
-      app.showPreviewChangedCb();
-    end
-    
-    function showPreviewChangedCb(app, ~)
-      % Generate a new preview (without generating new beam)
-      if app.ShowPreviewCheckBox.Value
-        app.updateBeamPreview();
-      end
-    end
-    
-    function nameChangedCb(app, ~)
-      % Change output variable, dont regenerate data
+      % Generate preview
+      app.beam.visNearfield('plot_axes', app.PreviewUIAxes, ...
+        'axis', 'y', 'range', [1,1]*2e-6, 'field', 'Re(Ex)', ...
+        'size', [60, 60]);
       
-      % Write to workspace (if requested, not needed if only preview)
-      if ~isempty(app.VariableName.Value)
-        app.VariableName.WriteVariable(app.beam);
-      end
+      % Hide loading text
+      app.LoadingText.Visible = 'off';
     end
     
     function createLeftComponents(app)
@@ -134,8 +82,6 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.VariableName = ott.ui.support.OutputVariableEntry(app.MainGrid);
       app.VariableName.Layout.Row = 1;
       app.VariableName.Layout.Column = 1;
-      app.VariableName.ValueChangedFcn = createCallbackFcn(app, ...
-          @nameChangedCb, true);
       
       % Wavelength spinner
       app.WavelengthSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
@@ -145,7 +91,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.WavelengthSpinner.Step = 1e-7;
       app.WavelengthSpinner.Limits = [1e-9, Inf];
       app.WavelengthSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @UpdateParametersCb, true);
       
       % Refractive index spinner
       app.IndexSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
@@ -155,7 +101,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.IndexSpinner.Step = 0.1;
       app.IndexSpinner.Limits = [0.1, Inf];
       app.IndexSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @UpdateParametersCb, true);
       
       % Offset entry
       app.TranslationXyzSpinner = ott.ui.support.XyzSpinners(...
@@ -164,7 +110,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.TranslationXyzSpinner.Layout.Column = 1;
       app.TranslationXyzSpinner.Step = 1e-7;
       app.TranslationXyzSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @UpdateParametersCb, true);
       
       % Direction entry
       app.RotationXyzSpinner = ott.ui.support.XyzSpinners(...
@@ -173,7 +119,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.RotationXyzSpinner.Layout.Column = 1;
       app.RotationXyzSpinner.Step = 10;
       app.RotationXyzSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @UpdateParametersCb, true);
       
       % Create grid
       app.ExtraGrid = uigridlayout(app.MainGrid);
@@ -185,19 +131,15 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.ExtraGrid.Layout.Column = 1;
       
       % Preview checkbox
-      app.ShowPreviewCheckBox = uicheckbox(app.MainGrid);
-      app.ShowPreviewCheckBox.Text = 'Show Preview';
-      app.ShowPreviewCheckBox.Layout.Row = 7;
-      app.ShowPreviewCheckBox.Layout.Column = 1;
-      app.ShowPreviewCheckBox.Value = true;
-      app.ShowPreviewCheckBox.ValueChangedFcn = createCallbackFcn(app, ...
-          @showPreviewChangedCb, true);
+      app.PreviewCheckBox = uicheckbox(app.MainGrid);
+      app.PreviewCheckBox.Text = 'Show Preview';
+      app.PreviewCheckBox.Layout.Row = 7;
+      app.PreviewCheckBox.Layout.Column = 1;
       
       % Update button
       app.UpdateButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
       app.UpdateButton.Layout.Row = 8;
       app.UpdateButton.Layout.Column = 1;
-      addlistener(app.UpdateButton, "UpdateCalled", @(h,e) app.updateCb(e));
       
     end
     
@@ -220,6 +162,18 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn
       app.LoadingText.Text = 'Loading...';
       app.LoadingText.BackgroundColor = app.UIFigure.Color;
       app.LoadingText.HorizontalAlignment = 'center';
+      
+    end
+  end
+  
+  methods
+    function app = NewBeamBase()
+      
+      % Call window constructor first to create widgets
+      app = app@ott.ui.support.AppTwoColumn();
+      
+      % Then call AppProducer to connect production widgets
+      app = app@ott.ui.support.AppProducer();
       
     end
   end

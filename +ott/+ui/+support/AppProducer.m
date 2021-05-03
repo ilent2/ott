@@ -16,7 +16,7 @@ classdef AppProducer < handle
 %   - UpdateButtonCb -- Called by the update button
 %
 % Methods
-%   - Preview -- Called when the preview should be updated
+%   - UpdatePreview -- Called when the preview should be updated
 %   - Update -- Called when data should be updated
 %   - WriteData -- Called when data should be written
 
@@ -27,17 +27,12 @@ classdef AppProducer < handle
   properties (Abstract, GetAccess=public, SetAccess=protected)
     Data
   end
-  
-  % Properties
-  properties (Access=protected)
-    WriteOptional 	logical = true
-  end
 
   % Widgets
   properties (Access=public)
     VariableName          ott.ui.support.OutputVariableEntry
     ShowPreviewCheckBox   matlab.ui.control.CheckBox
-    UpdateButton          ott.ui.support.UpdateCheckButton
+    UpdateButton          ott.ui.support.UpdateButtonBase
   end
   
   % Callbacks
@@ -45,11 +40,6 @@ classdef AppProducer < handle
     function UpdateVariableNameCb(app, ~)
       % Called when output variable name changes
       app.WriteData();
-    end
-    
-    function UpdateParametersCb(app, ~)
-      % Called when input parameters change
-      app.Update();
     end
     
     function PreviewToggledCb(app, ~)
@@ -65,6 +55,17 @@ classdef AppProducer < handle
     end
   end
   
+  methods (Access=protected)
+    function UpdateParametersCb(app, ~)
+      % Called when input parameters change
+      app.Update();
+    end
+  end
+  
+  methods (Abstract, Access=protected)
+    GenerateData(app)
+  end
+  
   % Regular methods
   methods (Access=protected)
     function UpdatePreview(~)
@@ -73,18 +74,16 @@ classdef AppProducer < handle
     
     function WriteData(app)
       % Write data if available
-      
-      % Check if we can bail-out with now work
-      if app.WriteOptional && isempty(app.VariableName.Value)
-        return;
+      if ~isempty(app.VariableName.Value)
+        app.VariableName.WriteVariable(app.Data);
       end
-      
-      % Write data
-      app.VariableName.WriteVariable(app.Data);
     end
     
     function Update(app)
-      % Overload this method with application specific updates
+      % Update the data (and output/preview)
+      
+      % Generate new data
+      app.Data = app.GenerateData();
       
       % Write new data
       app.WriteData();

@@ -28,34 +28,26 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
   end
   
   properties (Access=public)
-    ForceAxes                      matlab.ui.control.UIAxes
-    TorqueAxes                     matlab.ui.control.UIAxes
-    Panel                          matlab.ui.container.Panel
-    CalculateButton                matlab.ui.control.Button
-    OutputEditFieldLabel           matlab.ui.control.Label
-    OutputEditField                matlab.ui.control.EditField
-    DirectionDropDownLabel         matlab.ui.control.Label
-    DirectionDropDown              matlab.ui.control.DropDown
-    ResolutionSpinnerLabel         matlab.ui.control.Label
-    ResolutionSpinner              matlab.ui.control.Spinner
-    RangeSpinnerLabel              matlab.ui.control.Label
-    RangeSpinner                   matlab.ui.control.Spinner
-    RangeSpinner_2                 matlab.ui.control.Spinner
-    Gauge                          matlab.ui.control.LinearGauge
-    BeamDropDownLabel              matlab.ui.control.Label
-    BeamDropDown                   matlab.ui.control.DropDown
-    TmatrixDropDownLabel           matlab.ui.control.Label
-    TmatrixDropDown                matlab.ui.control.DropDown
-    InitialPositionEditFieldLabel  matlab.ui.control.Label
-    InitialPositionEditField       matlab.ui.control.EditField
-    InitialRotationEditFieldLabel  matlab.ui.control.Label
-    InitialRotationEditField       matlab.ui.control.EditField
+    
+    % Left panel
+    LeftGrid                        matlab.ui.control.GridLayout
+    BeamDropDown                    ott.ui.support.VariableDropdown
+    TmatrixDropDown                 ott.ui.support.VariableDropdown
+    DirectionDropdown               ott.ui.support.LabeledDropdown
+    ResolutionSpinner               ott.ui.support.LabeledSpinner
+    RangeSpinners                   ott.ui.support.RangeSpinners
+    PositionXyzSpinner              ott.ui.support.XyzSpinners
+    RotationXyzSpinner              ott.ui.support.XyzSpinners
+    UpdateButton                    ott.ui.support.UpdateWithProgress
+    
+    % Right panel
+    RightGrid                       matlab.ui.control.GridLayout
+    ForceAxes                       matlab.ui.control.UIAxes
+    TorqueAxes                      matlab.ui.control.UIAxes
+    
   end
   
   methods (Access=protected)
-    function startupFcn(app)
-    end
-    
     function createLeftComponents(app)
 
       % Create CalculateButton
@@ -63,18 +55,6 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       app.CalculateButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateButtonPushed, true);
       app.CalculateButton.Position = [148 16 71 22];
       app.CalculateButton.Text = 'Calculate';
-
-      % Create OutputEditFieldLabel
-      app.OutputEditFieldLabel = uilabel(app.LeftPanel);
-      app.OutputEditFieldLabel.HorizontalAlignment = 'right';
-      app.OutputEditFieldLabel.Position = [9 343 42 22];
-      app.OutputEditFieldLabel.Text = 'Output';
-
-      % Create OutputEditField
-      app.OutputEditField = uieditfield(app.LeftPanel, 'text');
-      app.OutputEditField.ValueChangedFcn = createCallbackFcn(app, @OutputEditFieldValueChanged, true);
-      app.OutputEditField.Position = [108 343 100 22];
-      app.OutputEditField.Value = 'ForceTorqueData';
 
       % Create DirectionDropDownLabel
       app.DirectionDropDownLabel = uilabel(app.LeftPanel);

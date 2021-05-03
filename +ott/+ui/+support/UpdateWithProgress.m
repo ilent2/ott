@@ -1,4 +1,5 @@
-classdef UpdateWithProgress < ott.ui.support.GridWidget
+classdef UpdateWithProgress < ott.ui.support.GridWidget ...
+    & ott.ui.support.UpdateButtonBase
 % Create an update button with an adjacent progress bar
   
 % Copyright 2021 IST Austria, Written by Isaac Lenton
@@ -11,7 +12,17 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget
   end
   
   properties (Dependent)
-    Value
+    AutoUpdate
+    Level
+  end
+  
+  methods (Access = private)
+    function ButtonPushedCb(obj, evt)
+      % Callback for button: dispatches notification
+      
+      % Emit UpdateCalled event (lazy: reuse input event...)
+      notify(obj, "UpdateCalled", evt);
+    end
   end
   
   methods
@@ -19,19 +30,20 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget
       
       obj = obj@ott.ui.support.GridWidget(parent);
       
-      % COnfigure grid
+      % Configure grid
       obj.Grid.RowHeight = {22};
-      obj.Grid.ColumnWidth = {70, 120};
+      obj.Grid.ColumnWidth = {'1x', 120};
       obj.Grid.ColumnSpacing = 10;
       obj.Grid.RowSpacing = 1;
       
-      % Create BeamDropDownLabel
+      % Create Button
       obj.Button = uibutton(obj.Grid, 'push');
       obj.Button.Text = 'Update';
       obj.Button.Layout.Column = 1;
       obj.Button.Layout.Row = 1;
+      obj.Button.ButtonPushedFcn = @(h,e) obj.ButtonPushedCb(e);
 
-      % Create BeamDropDown
+      % Create Guage
       obj.Gauge = uigauge(obj.Grid, 'linear');
       obj.Gauge.Enable = 'off';
       obj.Gauge.FontSize = 8;
@@ -46,7 +58,15 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget
   end
   
   methods
-    function set.Value(app, val)
+    function val = get.AutoUpdate(app)
+      val = false;
+    end
+    
+    function set.AutoUpdate(app)
+      error('Can not set AutoUpdate for UpdateWithProgress widget');
+    end
+    
+    function set.Level(app, val)
       app.Gauge.Value = val;
     end
   end

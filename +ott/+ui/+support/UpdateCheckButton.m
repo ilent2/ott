@@ -1,4 +1,5 @@
-classdef UpdateCheckButton < ott.ui.support.GridWidget
+classdef UpdateCheckButton < ott.ui.support.GridWidget ...
+    & ott.ui.support.UpdateButtonBase
 % A check box and button for enabling/disabling auto-update and update.
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
@@ -10,7 +11,7 @@ classdef UpdateCheckButton < ott.ui.support.GridWidget
   end
 
   properties (Dependent)
-    Value           % Current auto-update value
+    AutoUpdate           % Current auto-update value
   end
   
   properties
@@ -77,13 +78,12 @@ classdef UpdateCheckButton < ott.ui.support.GridWidget
   end
   
   methods
-    function val = get.Value(obj)
+    function val = get.AutoUpdate(obj)
       val = obj.CheckBox.Value;
     end
     
-    function set.Value(obj, val)
+    function set.AutoUpdate(obj, val)
       obj.CheckBox.Value = val;
     end
   end
-  
 end

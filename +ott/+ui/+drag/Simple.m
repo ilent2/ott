@@ -1,6 +1,7 @@
 classdef Simple < ott.ui.support.AppTopLevel ...
     & ott.ui.support.RefreshInputsMenu ...
-    & ott.ui.support.GenerateCodeMenu
+    & ott.ui.support.GenerateCodeMenu ...
+    & ott.ui.support.AppProducer
 % Constructs a drag tensor for a shape.
 % This interface uses :meth:`ott.drag.Stokes.FromShape`.
 
@@ -31,10 +32,8 @@ classdef Simple < ott.ui.support.AppTopLevel ...
     MainGrid              matlab.ui.container.GridLayout
     
     % Left column
-    VariableName          ott.ui.support.OutputVariableEntry
     ShapeDropdown         ott.ui.support.VariableDropdown
     ViscositySpinner      ott.ui.support.LabeledSpinner
-    updateCheckButton     ott.ui.support.UpdateCheckButton
     
     % Right column
     UITable                             matlab.ui.control.Table
@@ -46,12 +45,23 @@ classdef Simple < ott.ui.support.AppTopLevel ...
       app.VariableName.Value = '';
       app.ShapeDropdown.Value = '';
       app.ViscositySpinner.Value = 1;
-      app.updateCheckButton.Value = true;
+      app.UpdateButton.Value = true;
       app.UITable.Data = repmat({''}, 6, 6);
     end
     
     function code = generateCode(app)
       code = {};  % TODO
+    end
+    
+    function data = GenerateData(app)
+      % Generate data and put in preview-table
+      
+      % TODO: Generate data
+      data = randn(6, 6);
+      
+      % Put data in table
+      app.UITable.Data = data;
+      
     end
     
     function createMainComponents(app)
@@ -86,9 +96,9 @@ classdef Simple < ott.ui.support.AppTopLevel ...
       app.ViscositySpinner.Layout.Column = 1;
       
       % Auto-update widget
-      app.updateCheckButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
-      app.updateCheckButton.Layout.Row = 5;
-      app.updateCheckButton.Layout.Column = 1;
+      app.UpdateButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
+      app.UpdateButton.Layout.Row = 5;
+      app.UpdateButton.Layout.Column = 1;
       
       % Create UITable
       cwidth = 40;
@@ -106,11 +116,15 @@ classdef Simple < ott.ui.support.AppTopLevel ...
     function app=Simple()
       % Start the ForcePosition GUI
       
+      % Construct widgets first
       app = app@ott.ui.support.AppTopLevel();
+      
+      % Then connect producer callbacks
+      app = app@ott.ui.support.AppProducer();
+      
       if nargout == 0
         clear app;
       end
     end
   end
-  
 end

@@ -1,8 +1,9 @@
-classdef NewParticleBase < ott.ui.support.AppTopLevel
+classdef NewParticleBase < ott.ui.support.AppTopLevel ...
+    & ott.ui.support.AppProducer
 % Base class for particle generation applications
 %
 % Properties
-%   - particle
+%   - Data
 %
 % Abstract methods
 %   - generateCode
@@ -12,41 +13,19 @@ classdef NewParticleBase < ott.ui.support.AppTopLevel
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
   
-  properties
-    particle
-  end
-  
   properties (Access=protected)
     MainGrid              matlab.ui.container.GridLayout
     ExtraGrid             matlab.ui.container.GridLayout
-    VariableName          ott.ui.support.OutputVariableEntry
-    UpdateButton          ott.ui.support.UpdateWithProgress
-  end
-  
-  methods (Access=protected, Abstract)
-    generateCode(app)
-    generateParticle(app)
   end
   
   methods (Access=protected)
-    
-    function startupFcn(app)
-    end
-    
     function setDefaultValues(app)
       app.VariableName.Value = '';
-      app.UpdateButton.Value = 0;
+      app.UpdateButton.GuageValue = 0;
       app.UpdateButton.ClearErrors();
-    end
-    
-    function updateCb(app, ~)
-      % Called when a value is changed or when update is clicked
       
-      % TODO: Generate new particle
-      
-      % Write to workspace (particle doesn't support preview)
-      app.VariableName.WriteVariable(app.particle);
-      
+      % Update the output
+      app.Update();
     end
     
     function createMainComponents(app)
