@@ -40,14 +40,17 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
       app.MainGrid.ColumnSpacing = 1;
       app.MainGrid.RowSpacing = 1;
       
+      % Output variable entry
       app.VariableName = ott.ui.support.OutputVariableEntry(app.MainGrid);
       app.VariableName.Layout.Row = 1;
       app.VariableName.Layout.Column = 1;
       
+      % Shape input
       app.ShapeName = ott.ui.support.VariableDropdown(app.MainGrid);
       app.ShapeName.Layout.Row = 2;
       app.ShapeName.Layout.Column = 1;
       
+      % Update button
       app.UpdateButton = ott.ui.support.UpdateWithProgress(app.MainGrid);
       app.UpdateButton.Layout.Row = 4;
       app.UpdateButton.Layout.Column = 1;

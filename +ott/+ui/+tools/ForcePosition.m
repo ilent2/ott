@@ -12,6 +12,8 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+% TODO: Change range step when direction changes
+
   properties (Constant)
     cnameText = 'ForcePosition';
 
@@ -24,16 +26,16 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       ''};
     
     windowName = ott.ui.tools.ForcePosition.nameText;
-    windowSize = [640, 460];
+    windowSize = [640, 400];
   end
   
   properties (Access=public)
     
     % Left panel
-    LeftGrid                        matlab.ui.control.GridLayout
+    LeftGrid                        matlab.ui.container.GridLayout
     BeamDropDown                    ott.ui.support.VariableDropdown
     TmatrixDropDown                 ott.ui.support.VariableDropdown
-    DirectionDropdown               ott.ui.support.LabeledDropdown
+    DirectionDropdown               ott.ui.support.LabeledDropDown
     ResolutionSpinner               ott.ui.support.LabeledSpinner
     RangeSpinners                   ott.ui.support.RangeSpinners
     PositionXyzSpinner              ott.ui.support.XyzSpinners
@@ -41,139 +43,116 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
     UpdateButton                    ott.ui.support.UpdateWithProgress
     
     % Right panel
-    RightGrid                       matlab.ui.control.GridLayout
+    RightGrid                       matlab.ui.container.GridLayout
     ForceAxes                       matlab.ui.control.UIAxes
     TorqueAxes                      matlab.ui.control.UIAxes
     
   end
   
   methods (Access=protected)
+    function code = generateCode(app)
+      code = {}; % TODO
+    end
+    
+    function setDefaultValues(app, ~)
+      app.BeamDropDown.Value = '';
+      app.TmatrixDropDown.Value = '';
+      app.DirectionDropdown.Value = 'z';
+      app.ResolutionSpinner.Value = 100;
+      app.RangeSpinners.Value = [-1e-6, 1e-6];
+      app.PositionXyzSpinner.Value = [0,0,0];
+      app.RotationXyzSpinner.Value = [0,0,0];
+    end
+    
     function createLeftComponents(app)
+      
+      % Left layout grid
+      app.LeftGrid = uigridlayout(app.LeftPanel);
+      app.LeftGrid.RowHeight = repmat({32}, 1, 9);
+      app.LeftGrid.RowHeight{end-1} = '1x';
+      app.LeftGrid.ColumnWidth = {'1x'};
+      app.LeftGrid.RowSpacing = 0;
+      
+      % Beam selection
+      app.BeamDropDown = ott.ui.support.VariableDropdown(app.LeftGrid, ...
+        'label', 'Beam');
+      app.BeamDropDown.Layout.Row = 1;
+      app.BeamDropDown.Layout.Column = 1;
+      
+      % T-matrix selection
+      app.TmatrixDropDown = ott.ui.support.VariableDropdown(app.LeftGrid, ...
+        'label', 'Particle');
+      app.TmatrixDropDown.Layout.Row = 2;
+      app.TmatrixDropDown.Layout.Column = 1;
+      
+      % Direction
+      app.DirectionDropdown = ott.ui.support.LabeledDropDown(app.LeftGrid, ...
+        'label', 'Direction');
+      app.DirectionDropdown.Items = {'X Translation', 'Y Translation', ...
+        'Z Translation', 'X Rotation', 'Y Rotation', 'Z Rotation'};
+      app.DirectionDropdown.ItemsData = {'x', 'y', 'z', 'Rx', 'Ry', 'Rz'};
+      app.DirectionDropdown.Layout.Row = 3;
+      app.DirectionDropdown.Layout.Column = 1;
+      
+      % Resolution
+      app.ResolutionSpinner = ott.ui.support.LabeledSpinner(app.LeftGrid, ...
+        'label', 'Resolution');
+      app.ResolutionSpinner.Step = 1;
+      app.ResolutionSpinner.Limits = [1, Inf];
+      app.ResolutionSpinner.Layout.Row = 4;
+      app.ResolutionSpinner.Layout.Column = 1;
+      
+      % Range
+      app.RangeSpinners = ott.ui.support.RangeSpinners(app.LeftGrid);
+      app.RangeSpinners.Step = 1e-7;
+      app.RangeSpinners.Layout.Row = 5;
+      app.RangeSpinners.Layout.Column = 1;
+
+      % Create Position
+      app.PositionXyzSpinner = ott.ui.support.XyzSpinners(app.LeftGrid, ...
+        'label', 'Position');
+      app.PositionXyzSpinner.Layout.Row = 6;
+      app.PositionXyzSpinner.Layout.Column = 1;
+
+      % Create Rotation
+      app.RotationXyzSpinner = ott.ui.support.XyzSpinners(app.LeftGrid, ...
+          'label', 'Rotation');
+      app.RotationXyzSpinner.Layout.Row = 7;
+      app.RotationXyzSpinner.Layout.Column = 1;
 
       % Create CalculateButton
-      app.CalculateButton = uibutton(app.LeftPanel, 'push');
-      app.CalculateButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateButtonPushed, true);
-      app.CalculateButton.Position = [148 16 71 22];
-      app.CalculateButton.Text = 'Calculate';
-
-      % Create DirectionDropDownLabel
-      app.DirectionDropDownLabel = uilabel(app.LeftPanel);
-      app.DirectionDropDownLabel.HorizontalAlignment = 'right';
-      app.DirectionDropDownLabel.Position = [9 296 53 22];
-      app.DirectionDropDownLabel.Text = 'Direction';
-
-      % Create DirectionDropDown
-      app.DirectionDropDown = uidropdown(app.LeftPanel);
-      app.DirectionDropDown.Items = {'X Translation', 'Y Translation', 'Z Translation', 'X Rotation', 'Y Rotation', 'Z Rotation'};
-      app.DirectionDropDown.ItemsData = {'x', 'y', 'z', 'Rx', 'Ry', 'Rz'};
-      app.DirectionDropDown.Position = [108 296 100 22];
-      app.DirectionDropDown.Value = 'z';
-
-      % Create ResolutionSpinnerLabel
-      app.ResolutionSpinnerLabel = uilabel(app.LeftPanel);
-      app.ResolutionSpinnerLabel.HorizontalAlignment = 'right';
-      app.ResolutionSpinnerLabel.Position = [9 222 62 22];
-      app.ResolutionSpinnerLabel.Text = 'Resolution';
-
-      % Create ResolutionSpinner
-      app.ResolutionSpinner = uispinner(app.LeftPanel);
-      app.ResolutionSpinner.Position = [108 222 100 22];
-      app.ResolutionSpinner.Value = 100;
-
-      % Create RangeSpinnerLabel
-      app.RangeSpinnerLabel = uilabel(app.LeftPanel);
-      app.RangeSpinnerLabel.HorizontalAlignment = 'right';
-      app.RangeSpinnerLabel.Position = [9 259 41 22];
-      app.RangeSpinnerLabel.Text = 'Range';
-
-      % Create RangeSpinner
-      app.RangeSpinner = uispinner(app.LeftPanel);
-      app.RangeSpinner.Position = [65 259 67 22];
-      app.RangeSpinner.Value = -2;
-
-      % Create RangeSpinner_2
-      app.RangeSpinner_2 = uispinner(app.LeftPanel);
-      app.RangeSpinner_2.Position = [139 259 69 22];
-      app.RangeSpinner_2.Value = 2;
-
-      % Create Gauge
-      app.Gauge = uigauge(app.LeftPanel, 'linear');
-      app.Gauge.Enable = 'off';
-      app.Gauge.FontSize = 8;
-      app.Gauge.Position = [9 13 133 29];
-
-      % Create BeamDropDownLabel
-      app.BeamDropDownLabel = uilabel(app.LeftPanel);
-      app.BeamDropDownLabel.HorizontalAlignment = 'right';
-      app.BeamDropDownLabel.Position = [9 417 37 22];
-      app.BeamDropDownLabel.Text = 'Beam';
-
-      % Create BeamDropDown
-      app.BeamDropDown = uidropdown(app.LeftPanel);
-      app.BeamDropDown.Items = {};
-      app.BeamDropDown.Editable = 'on';
-      app.BeamDropDown.BackgroundColor = [1 1 1];
-      app.BeamDropDown.Position = [108 417 100 22];
-      app.BeamDropDown.Value = {};
-
-      % Create TmatrixDropDownLabel
-      app.TmatrixDropDownLabel = uilabel(app.LeftPanel);
-      app.TmatrixDropDownLabel.HorizontalAlignment = 'right';
-      app.TmatrixDropDownLabel.Position = [9 380 49 22];
-      app.TmatrixDropDownLabel.Text = 'T-matrix';
-
-      % Create TmatrixDropDown
-      app.TmatrixDropDown = uidropdown(app.LeftPanel);
-      app.TmatrixDropDown.Items = {};
-      app.TmatrixDropDown.Editable = 'on';
-      app.TmatrixDropDown.BackgroundColor = [1 1 1];
-      app.TmatrixDropDown.Position = [108 380 100 22];
-      app.TmatrixDropDown.Value = {};
-
-      % Create InitialPositionEditFieldLabel
-      app.InitialPositionEditFieldLabel = uilabel(app.LeftPanel);
-      app.InitialPositionEditFieldLabel.HorizontalAlignment = 'right';
-      app.InitialPositionEditFieldLabel.Position = [9 175 80 22];
-      app.InitialPositionEditFieldLabel.Text = 'Initial Position';
-
-      % Create InitialPositionEditField
-      app.InitialPositionEditField = uieditfield(app.LeftPanel, 'text');
-      app.InitialPositionEditField.Position = [108 175 100 22];
-      app.InitialPositionEditField.Value = '[0;0;0]';
-
-      % Create InitialRotationEditFieldLabel
-      app.InitialRotationEditFieldLabel = uilabel(app.LeftPanel);
-      app.InitialRotationEditFieldLabel.HorizontalAlignment = 'right';
-      app.InitialRotationEditFieldLabel.Position = [9 138 82 22];
-      app.InitialRotationEditFieldLabel.Text = 'Initial Rotation';
-
-      % Create InitialRotationEditField
-      app.InitialRotationEditField = uieditfield(app.LeftPanel, 'text');
-      app.InitialRotationEditField.Position = [108 138 100 22];
-      app.InitialRotationEditField.Value = 'eye(3)';
+      app.UpdateButton = ott.ui.support.UpdateWithProgress(app.LeftGrid);
+      app.UpdateButton.Layout.Row = 9;
+      app.UpdateButton.Layout.Column = 1;
     end
     
     function createRightComponents(app)
       
-      width = 360;
-      height = 220;
+      % Left layout grid
+      app.RightGrid = uigridlayout(app.RightPanel);
+      app.RightGrid.RowHeight = {'1x', '1x'};
+      app.RightGrid.ColumnWidth = {'1x'};
+      app.RightGrid.RowSpacing = 20;
       
       % Create UIAxes
-      app.ForceAxes = uiaxes(app.RightPanel);
+      app.ForceAxes = uiaxes(app.RightGrid);
       xlabel(app.ForceAxes, 'X')
       ylabel(app.ForceAxes, 'Force')
-      app.ForceAxes.Position = [10 height+10 width height];
+      app.ForceAxes.Layout.Row = 1;
+      app.ForceAxes.Layout.Column = 1;
 
       % Create UIAxes2
-      app.TorqueAxes = uiaxes(app.RightPanel);
+      app.TorqueAxes = uiaxes(app.RightGrid);
       xlabel(app.TorqueAxes, 'X')
       ylabel(app.TorqueAxes, 'Torque')
-      app.TorqueAxes.Position = [10 10 width height];
+      app.TorqueAxes.Layout.Row = 2;
+      app.TorqueAxes.Layout.Column = 1;
+      
     end
   end
   
   methods (Access=public)
-    function app=ForcePosition()
+    function app = ForcePosition()
       % Start the ForcePosition GUI
       
       app = app@ott.ui.support.AppTwoColumn();

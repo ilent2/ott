@@ -9,6 +9,7 @@ classdef LabeledDropDown < ott.ui.support.LabeledWidget
     Value
     ValueChangedFcn
     Items
+    ItemsData
   end
   
   properties
@@ -46,6 +47,14 @@ classdef LabeledDropDown < ott.ui.support.LabeledWidget
     
     function set.Items(obj, val)
       obj.DropDown.Items = val;
+    end
+    
+    function val = get.ItemsData(obj)
+      val = obj.DropDown.ItemsData;
+    end
+    
+    function set.ItemsData(obj, val)
+      obj.DropDown.ItemsData = val;
     end
     
     function val = get.Items(obj)

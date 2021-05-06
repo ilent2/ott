@@ -34,7 +34,7 @@ classdef VariableDropdown < ott.ui.support.LabeledDropDown
       % Configure DropDown
       obj.DropDown.Editable = 'on';
       obj.DropDown.BackgroundColor = [1 1 1];
-      obj.DropDown.Value = {};
+      obj.DropDown.Value = '';
       
     end
     
