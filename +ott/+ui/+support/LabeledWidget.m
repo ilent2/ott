@@ -36,11 +36,12 @@ classdef (Abstract) LabeledWidget < ott.ui.support.GridWidget
       p = inputParser();
       p.addParameter('label', 'Label');
       p.addParameter('visible', 'on');
+      p.addParameter('wwidth', 100);
       p.parse(varargin{:});
       
       % Configure grid
       obj.Grid.RowHeight = {22};
-      obj.Grid.ColumnWidth = {'1x', 100};
+      obj.Grid.ColumnWidth = {'1x', p.Results.wwidth};
       obj.Grid.ColumnSpacing = 1;
       obj.Grid.RowSpacing = 1;
       

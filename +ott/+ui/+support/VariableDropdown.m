@@ -23,11 +23,12 @@ classdef VariableDropdown < ott.ui.support.LabeledDropDown
       p = inputParser;
       p.addParameter('label', 'Variable');
       p.addParameter('filter', 'double');
-      p.addParameter('visible', 'on');
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
       
       obj = obj@ott.ui.support.LabeledDropDown(parent, ...
-        'visible', p.Results.visible, 'label', p.Results.label);
+        'label', p.Results.label, unmatched{:});
       
       obj.Filter = p.Results.filter;
 

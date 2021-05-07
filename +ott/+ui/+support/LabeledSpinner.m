@@ -23,11 +23,12 @@ classdef LabeledSpinner < ott.ui.support.LabeledWidget
       
       p = inputParser;
       p.addParameter('label', 'Spinner');
-      p.addParameter('visible', 'on');
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
       
       obj = obj@ott.ui.support.LabeledWidget(parent, ...
-          'label', p.Results.label, 'visible', p.Results.visible);
+        'label', p.Results.label, unmatched{:});
 
       % Spinner
       obj.Spinner = uispinner(obj.Grid);

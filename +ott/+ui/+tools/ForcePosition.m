@@ -66,6 +66,8 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
     
     function createLeftComponents(app)
       
+      wwidth = 120;
+      
       % Left layout grid
       app.LeftGrid = uigridlayout(app.LeftPanel);
       app.LeftGrid.RowHeight = repmat({32}, 1, 9);
@@ -75,19 +77,19 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       
       % Beam selection
       app.BeamDropDown = ott.ui.support.VariableDropdown(app.LeftGrid, ...
-        'label', 'Beam');
+        'label', 'Beam', 'wwidth', wwidth);
       app.BeamDropDown.Layout.Row = 1;
       app.BeamDropDown.Layout.Column = 1;
       
       % T-matrix selection
       app.TmatrixDropDown = ott.ui.support.VariableDropdown(app.LeftGrid, ...
-        'label', 'Particle');
+        'label', 'Particle', 'wwidth', wwidth);
       app.TmatrixDropDown.Layout.Row = 2;
       app.TmatrixDropDown.Layout.Column = 1;
       
       % Direction
       app.DirectionDropdown = ott.ui.support.LabeledDropDown(app.LeftGrid, ...
-        'label', 'Direction');
+        'label', 'Direction', 'wwidth', wwidth);
       app.DirectionDropdown.Items = {'X Translation', 'Y Translation', ...
         'Z Translation', 'X Rotation', 'Y Rotation', 'Z Rotation'};
       app.DirectionDropdown.ItemsData = {'x', 'y', 'z', 'Rx', 'Ry', 'Rz'};
@@ -96,7 +98,7 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       
       % Resolution
       app.ResolutionSpinner = ott.ui.support.LabeledSpinner(app.LeftGrid, ...
-        'label', 'Resolution');
+        'label', 'Resolution', 'wwidth', wwidth);
       app.ResolutionSpinner.Step = 1;
       app.ResolutionSpinner.Limits = [1, Inf];
       app.ResolutionSpinner.Layout.Row = 4;
