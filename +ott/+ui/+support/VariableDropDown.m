@@ -1,4 +1,4 @@
-classdef VariableDropdown < ott.ui.support.LabeledDropDown
+classdef VariableDropDown < ott.ui.support.LabeledDropDown
 % A dropdown menu for selecting variables from the current workspace
   
 % Copyright 2020 Isaac Lenon.
@@ -18,7 +18,7 @@ classdef VariableDropdown < ott.ui.support.LabeledDropDown
   end
   
   methods
-    function obj = VariableDropdown(parent, varargin)
+    function obj = VariableDropDown(parent, varargin)
       
       p = inputParser;
       p.addParameter('label', 'Variable');

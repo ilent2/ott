@@ -9,7 +9,7 @@ classdef RefreshInputsMenu < handle
 % using/distributing this file.
 
   properties (Access=protected)
-    inputs (1, :) ott.ui.support.VariableDropdown
+    inputs (1, :) ott.ui.support.VariableDropDown
   end
   
   methods (Access=protected)

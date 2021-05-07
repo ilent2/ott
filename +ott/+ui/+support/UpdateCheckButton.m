@@ -6,10 +6,6 @@ classdef UpdateCheckButton < ott.ui.support.GridWidget ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  events (NotifyAccess = protected)
-    UpdateCalled    % Emitted when button clicked or auto-update enabled
-  end
-
   properties (Dependent)
     AutoUpdate           % Current auto-update value
   end
@@ -30,7 +26,7 @@ classdef UpdateCheckButton < ott.ui.support.GridWidget ...
       end
       
       % Emit UpdateCalled event (lazy: reuse input event...)
-      if obj.Value
+      if obj.AutoUpdate
         notify(obj, "UpdateCalled", evt);
       end
       

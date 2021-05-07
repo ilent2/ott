@@ -13,6 +13,7 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
 % using/distributing this file.
 
 % TODO: Change range step when direction changes
+% TODO: Add support for input arguments
 
   properties (Constant)
     cnameText = 'ForcePosition';
@@ -33,9 +34,9 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
     
     % Left panel
     LeftGrid                        matlab.ui.container.GridLayout
-    BeamDropDown                    ott.ui.support.VariableDropdown
-    TmatrixDropDown                 ott.ui.support.VariableDropdown
-    DirectionDropdown               ott.ui.support.LabeledDropDown
+    BeamDropDown                    ott.ui.support.VariableDropDown
+    TmatrixDropDown                 ott.ui.support.VariableDropDown
+    DirectionDropDown               ott.ui.support.LabeledDropDown
     ResolutionSpinner               ott.ui.support.LabeledSpinner
     RangeSpinners                   ott.ui.support.RangeSpinners
     PositionXyzSpinner              ott.ui.support.XyzSpinners
@@ -57,7 +58,7 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
     function setDefaultValues(app, ~)
       app.BeamDropDown.Value = '';
       app.TmatrixDropDown.Value = '';
-      app.DirectionDropdown.Value = 'z';
+      app.DirectionDropDown.Value = 'z';
       app.ResolutionSpinner.Value = 100;
       app.RangeSpinners.Value = [-1e-6, 1e-6];
       app.PositionXyzSpinner.Value = [0,0,0];
@@ -76,25 +77,27 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       app.LeftGrid.RowSpacing = 0;
       
       % Beam selection
-      app.BeamDropDown = ott.ui.support.VariableDropdown(app.LeftGrid, ...
+      app.BeamDropDown = ott.ui.support.VariableDropDown(app.LeftGrid, ...
         'label', 'Beam', 'wwidth', wwidth);
       app.BeamDropDown.Layout.Row = 1;
       app.BeamDropDown.Layout.Column = 1;
+      app.registerRefreshInput(app.BeamDropDown);
       
       % T-matrix selection
-      app.TmatrixDropDown = ott.ui.support.VariableDropdown(app.LeftGrid, ...
+      app.TmatrixDropDown = ott.ui.support.VariableDropDown(app.LeftGrid, ...
         'label', 'Particle', 'wwidth', wwidth);
       app.TmatrixDropDown.Layout.Row = 2;
       app.TmatrixDropDown.Layout.Column = 1;
+      app.registerRefreshInput(app.TmatrixDropDown);
       
       % Direction
-      app.DirectionDropdown = ott.ui.support.LabeledDropDown(app.LeftGrid, ...
+      app.DirectionDropDown = ott.ui.support.LabeledDropDown(app.LeftGrid, ...
         'label', 'Direction', 'wwidth', wwidth);
-      app.DirectionDropdown.Items = {'X Translation', 'Y Translation', ...
+      app.DirectionDropDown.Items = {'X Translation', 'Y Translation', ...
         'Z Translation', 'X Rotation', 'Y Rotation', 'Z Rotation'};
-      app.DirectionDropdown.ItemsData = {'x', 'y', 'z', 'Rx', 'Ry', 'Rz'};
-      app.DirectionDropdown.Layout.Row = 3;
-      app.DirectionDropdown.Layout.Column = 1;
+      app.DirectionDropDown.ItemsData = {'x', 'y', 'z', 'Rx', 'Ry', 'Rz'};
+      app.DirectionDropDown.Layout.Row = 3;
+      app.DirectionDropDown.Layout.Column = 1;
       
       % Resolution
       app.ResolutionSpinner = ott.ui.support.LabeledSpinner(app.LeftGrid, ...
