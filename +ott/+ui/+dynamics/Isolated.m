@@ -30,13 +30,13 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
   
   properties (Access=public)
     % Left panel
-    LeftGrid         matlab.ui.container.GridLayout
-    BeamDropdown       ott.ui.support.VariableDropdown
-    ParticleDropdown       ott.ui.support.VariableDropdown
-    TimestepSpinner      ott.ui.support.LabeledSpinner
-    NumStepsSpinner      ott.ui.support.LabeledSpinner
-    PositionXyzSpinner    ott.ui.support.XyzSpinners
-    RotationXyzSpinner    ott.ui.support.XyzSpinners
+    LeftGrid            matlab.ui.container.GridLayout
+    BeamDropdown        ott.ui.support.VariableDropdown
+    ParticleDropdown    ott.ui.support.VariableDropdown
+    TimestepSpinner     ott.ui.support.LabeledSpinner
+    NumStepsSpinner     ott.ui.support.LabeledSpinner
+    PositionXyzSpinner  ott.ui.support.XyzSpinners
+    RotationXyzSpinner  ott.ui.support.XyzSpinners
     
     % Right panel
     RightGrid         matlab.ui.container.GridLayout
@@ -47,6 +47,8 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
   
   methods (Access=protected)
     function setDefaultValues(app)
+      
+      % Left panel
       app.VariableName.Value = '';
       app.BeamDropdown.Value = '';
       app.ParticleDropdown.Value = '';
@@ -54,8 +56,10 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
       app.NumStepsSpinner.Value = 100;
       app.PositionXyzSpinner.Value = [0,0,0];
       app.RotationXyzSpinner.Value = [0,0,0];
-      app.PlotType.Value = 'Position';
       app.UpdateButton.Value = 0;
+      
+      % Right panel
+      app.PlotType.Value = 'Position';
     end
     
     function code = generateCode(app)

@@ -5,9 +5,10 @@ classdef AppProducer < handle
 %   - VariableName -- Output variable name widget
 %   - UpdateButton -- Update button and auto-update toggle
 %   - PreviewCheckBox -- (Optional) Toggle to control preview status
-%
-% Abstract properties
 %   - Data -- Data produced by the process.
+%
+% Abstract methods
+%   - GenerateData
 %
 % Callback methods
 %   - UpdateVariableNameCb -- Called when output variable name changes
@@ -24,7 +25,7 @@ classdef AppProducer < handle
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-  properties (Abstract, GetAccess=public, SetAccess=protected)
+  properties (GetAccess=public, SetAccess=private)
     Data
   end
 

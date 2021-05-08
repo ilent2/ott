@@ -22,7 +22,8 @@ classdef Simple < ott.ui.tmatrix.NewTmatrixBase
   end
   
   methods (Access=protected)
-    function startupFcn(app)
+    function data = GenerateData(app)
+      data = ott.tmatrix.Tmatrix.FromShape();  % TODO: parameters
     end
   end
   

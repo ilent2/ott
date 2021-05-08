@@ -1,5 +1,7 @@
 classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
-    & ott.ui.support.AppProducer
+    & ott.ui.support.AppProducer ...
+    & ott.ui.support.GenerateCodeMenu ...
+    & ott.ui.support.RefreshInputsMenu
 % Base class for beam creation application windows.
 %
 % This class is not intended to be instantiated directly.
@@ -19,14 +21,17 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
   end
   
   properties (Access=public)
-    MainGrid            matlab.ui.container.GridLayout
-    ShapeName           ott.ui.support.VariableDropdown
+    MainGrid             matlab.ui.container.GridLayout
+    ExtraGrid            matlab.ui.container.GridLayout
+    ShapeName            ott.ui.support.VariableDropdown
+    WavelengthSpinner    ott.ui.support.LabeledSpinner
+    RelativeIndexSpinner ott.ui.support.LabeledSpinner
   end
   
   methods (Access=protected)
     function setDefaultValues(app)
       app.VariableName.Value = '';
-      app.ParticleName.Value = '';
+      app.ShapeName.Value = '';
       app.UpdateButton.Value = 0;
       app.UpdateButton.ClearErrors();
     end
@@ -49,6 +54,15 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
       app.ShapeName = ott.ui.support.VariableDropdown(app.MainGrid);
       app.ShapeName.Layout.Row = 2;
       app.ShapeName.Layout.Column = 1;
+      
+      % Create grid
+      app.ExtraGrid = uigridlayout(app.MainGrid);
+      app.ExtraGrid.Padding = [0, 0, 0, 0];
+      app.ExtraGrid.ColumnWidth = {'1x'};
+      app.ExtraGrid.ColumnSpacing = 1;
+      app.ExtraGrid.RowSpacing = 1;
+      app.ExtraGrid.Layout.Row = 3;
+      app.ExtraGrid.Layout.Column = 1;
       
       % Update button
       app.UpdateButton = ott.ui.support.UpdateWithProgress(app.MainGrid);

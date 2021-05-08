@@ -20,7 +20,8 @@ classdef Dda < ott.ui.tmatrix.NewTmatrixBase
   end
   
   methods (Access=protected)
-    function startupFcn(app)
+    function data = GenerateData(app)
+      data = ott.tmatrix.Dda();  % TODO: parameters
     end
   end
   

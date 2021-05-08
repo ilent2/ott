@@ -20,7 +20,8 @@ classdef Pointmatch < ott.ui.tmatrix.NewTmatrixBase
   end
   
   methods (Access=protected)
-    function startupFcn(app)
+    function data = GenerateData(app)
+      data = ott.tmatrix.Pointmatch();  % TODO: parameters
     end
   end
   

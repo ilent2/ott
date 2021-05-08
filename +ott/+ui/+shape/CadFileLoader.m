@@ -71,9 +71,20 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
       setDefaultValues@ott.ui.shape.NewShapeBase(app);
     end
     
-    function shape = generateShape(app)
-      % TODO
-      shape = [];
+    function data = GenerateData(app)
+      % Load a CAD file
+      
+      fname = app.CadFileSelector.Value;
+      [~, ~, ext] = fileparts(fname);
+      
+      switch ext
+        case 'obj'
+          data = ott.shape.ObjLoader(fname);
+        case 'stl'
+          data = ott.shape.StlLoader(fname);
+        otherwise
+          error('Unsupported CAD file, must be .obj or .stl');
+      end
     end
     
     function code = generateCode(app)

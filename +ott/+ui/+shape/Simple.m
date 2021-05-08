@@ -80,6 +80,16 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
   methods (Access=private)
     function ShapeDropDownValueChanged(app, evt)
       
+      % Update visible shape widgets
+      app.UpdateVisibleShapeWidgets();
+      
+      % Continue processing changed value
+      app.valueChangedCb(evt);
+    end
+      
+    function UpdateVisibleShapeWidgets(app)
+      % Update the visible widgets associated with the selected shape type
+      
       rheight = 32;
       
       % Hide all widgets
@@ -134,9 +144,6 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
         otherwise
           error('Internal error');
       end
-      
-      % Continue processing changed value
-      app.valueChangedCb(evt);
     end
   end
   
@@ -169,36 +176,36 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       setDefaultValues@ott.ui.shape.NewShapeBase(app);
       
       % Display appropriate widgets
-      app.ShapeDropDownValueChanged([]);
+      app.UpdateVisibleShapeWidgets();
     end
     
-    function shape = generateShape(app)
+    function data = GenerateData(app)
       % Generate shape
       
       switch app.ShapeDropDown.Value
         case 'Sphere'
-          shape = ott.shape.Sphere(app.SphereSpinner.Value);
+          data = ott.shape.Sphere(app.SphereSpinner.Value);
         case 'Ellipsoid'
-          shape = ott.shape.Ellipsoid(app.EllipsoidXyzSpinners.Value);
+          data = ott.shape.Ellipsoid(app.EllipsoidXyzSpinners.Value);
         case 'Cylinder'
-          shape = ott.shape.Cylinder(app.CylinderRadiusSpinner.Value, ...
+          data = ott.shape.Cylinder(app.CylinderRadiusSpinner.Value, ...
             app.CylinderHeightSpinner.Value);
         case 'Cube'
-          shape = ott.shape.Cube(app.CubeSpinner.Value);
+          data = ott.shape.Cube(app.CubeSpinner.Value);
         case 'Rectangular Prism'
-          shape = ott.shape.RectangularPrism(app.PrismXyzSpinners.Value);
+          data = ott.shape.RectangularPrism(app.PrismXyzSpinners.Value);
         case 'Pill'
-          shape = ott.shape.AxisymFunc.Pill(app.PillHeightSpinner.Value, ...
+          data = ott.shape.AxisymFunc.Pill(app.PillHeightSpinner.Value, ...
             app.PillRadiusSpinner.Value);
         case 'Bicone'
-          shape = ott.shape.AxisymInterp.Bicone(app.BiconeHeightSpinner.Value, ...
+          data = ott.shape.AxisymInterp.Bicone(app.BiconeHeightSpinner.Value, ...
             app.BiconeRadiusSpinner.Value);
         case 'Cone Tipped Cylinder'
-          shape = ott.shape.AxisymInterp.ConeTippedCylinder(...
+          data = ott.shape.AxisymInterp.ConeTippedCylinder(...
             app.ConeHeightSpinner.Value, app.ConeRadiusSpinner.Value, ...
             app.ConeTHeightSpinner.Value);
         case 'Biconcave Disc'
-          shape = ott.shape.AxisymFunc.BiconcaveDisc(...
+          data = ott.shape.AxisymFunc.BiconcaveDisc(...
             app.DiscRadiusSpinner.Value, app.DiscCoeffSpinners.Value);
         otherwise
           error('Internal error');

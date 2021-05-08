@@ -32,7 +32,7 @@ classdef Simple < ott.ui.support.AppTopLevel ...
     MainGrid              matlab.ui.container.GridLayout
     
     % Left column
-    ShapeDropdown         ott.ui.support.VariableDropdown
+    ShapeDropDown         ott.ui.support.VariableDropDown
     ViscositySpinner      ott.ui.support.LabeledSpinner
     
     % Right column
@@ -43,7 +43,7 @@ classdef Simple < ott.ui.support.AppTopLevel ...
     
     function setDefaultValues(app)
       app.VariableName.Value = '';
-      app.ShapeDropdown.Value = '';
+      app.ShapeDropDown.Value = '';
       app.ViscositySpinner.Value = 1;
       app.UpdateButton.Value = true;
       app.UITable.Data = repmat({''}, 6, 6);
@@ -83,11 +83,11 @@ classdef Simple < ott.ui.support.AppTopLevel ...
       app.VariableName.Layout.Column = 1;
       
       % Shape selector
-      app.ShapeDropdown = ott.ui.support.VariableDropdown(app.MainGrid, ...
+      app.ShapeDropDown = ott.ui.support.VariableDropDown(app.MainGrid, ...
           'label', 'Shape', 'filter', 'ott.shape.Shape');
-      app.ShapeDropdown.Layout.Row = 2;
-      app.ShapeDropdown.Layout.Column = 1;
-      app.registerRefreshInput(app.ShapeDropdown);
+      app.ShapeDropDown.Layout.Row = 2;
+      app.ShapeDropDown.Layout.Column = 1;
+      app.registerRefreshInput(app.ShapeDropDown);
         
       % Viscosity
       app.ViscositySpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...

@@ -60,6 +60,9 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
 
+% TODO: Whats the difference between voxels.scale and voxels.spacing?
+%   Should voxels.scale exist?
+
   properties (Abstract)
     maxRadius          % Maximum particle radius
     volume             % Particle volume
@@ -476,7 +479,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       %   - origin (enum) -- Coordinate system origin.  Either 'global'
       %     or 'local' for world coordinates or shape coordinates.
       %
-      %   - axis (handle) -- Axes hanlde to place plot in.
+      %   - axes (handle) -- Axes hanlde to place plot in.
       %     Default: ``[]``, uses gca() when available.
 
       p = inputParser;
