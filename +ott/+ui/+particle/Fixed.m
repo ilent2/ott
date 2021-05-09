@@ -36,37 +36,37 @@ classdef Fixed < ott.ui.particle.NewParticleBase ...
   end
   
   properties
-    ShapeDropdown       ott.ui.support.VariableDropdown
-    DragDropdown        ott.ui.support.VariableDropdown
-    TmatrixDropdown     ott.ui.support.VariableDropdown
-    TinternalDropdown   ott.ui.support.VariableDropdown
+    ShapeDropDown       ott.ui.support.VariableDropDown
+    DragDropDown        ott.ui.support.VariableDropDown
+    TmatrixDropDown     ott.ui.support.VariableDropDown
+    TinternalDropDown   ott.ui.support.VariableDropDown
     MassSpinner         ott.ui.support.LabeledSpinner
   end
   
   methods (Access=protected)
-    function particle = generateParticle(app)
+    function particle = generateData(app)
       % Generate the particle
-      particle = ott.particle.Fixed(app.ShapeDropdown.Value, ...
-          app.DragDropdown.Value, app.TmatrixDropdown.Value, ...
-          'tinternal', app.TinternalDropdown.Value, ...
+      particle = ott.particle.Fixed(app.ShapeDropDown.Variable, ...
+          app.DragDropDown.Variable, app.TmatrixDropDown.Variable, ...
+          'tinternal', app.TinternalDropDown.Value, ...
           'mass', app.MassSpinner.Value);
     end
     
     function code = generateCode(app)
       % Generate code for the user
       code = {};
-      code{end+1} = 'particle = ott.particle.Fixed(app.ShapeDropdown.Value, ...';
-      code{end+1} = '    app.DragDropdown.Value, app.TmatrixDropdown.Value, ...';
-      code{end+1} = '    ''tinternal'', app.TinternalDropdown.Value, ...';
+      code{end+1} = 'particle = ott.particle.Fixed(app.ShapeDropDown.Value, ...';
+      code{end+1} = '    app.DragDropDown.Value, app.TmatrixDropDown.Value, ...';
+      code{end+1} = '    ''tinternal'', app.TinternalDropDown.Value, ...';
       code{end+1} = '    ''mass'', app.MassSpinner.Value);';
     end
     
     function setDefaultValues(app)
       % Set App-specific default values
-      app.ShapeDropdown.Value = '';
-      app.DragDropdown.Value = '';
-      app.TmatrixDropdown.Value = '';
-      app.TinternalDropdown.Value = '';
+      app.ShapeDropDown.Value = '';
+      app.DragDropDown.Value = '';
+      app.TmatrixDropDown.Value = '';
+      app.TinternalDropDown.Value = '';
       app.MassSpinner.Value = 1e-6;
       
       setDefaultValues@ott.ui.particle.NewParticleBase(app);
@@ -82,18 +82,18 @@ classdef Fixed < ott.ui.particle.NewParticleBase ...
       app.ExtraGrid.RowHeight = {32, 32, 32};
       
       % Shape
-      app.ShapeDropdown = ott.ui.support.VariableDropdown(app.ExtraGrid, ...
+      app.ShapeDropDown = ott.ui.support.VariableDropDown(app.ExtraGrid, ...
           'label', 'Shape');
-      app.ShapeDropdown.Layout.Row = 1;
-      app.ShapeDropdown.Layout.Column = 1;
-      app.registerRefreshInput(app.ShapeDropdown);
+      app.ShapeDropDown.Layout.Row = 1;
+      app.ShapeDropDown.Layout.Column = 1;
+      app.registerRefreshInput(app.ShapeDropDown);
         
       % Drag
-      app.DragDropdown = ott.ui.support.VariableDropdown(app.ExtraGrid, ...
+      app.DragDropDown = ott.ui.support.VariableDropDown(app.ExtraGrid, ...
           'label', 'Drag');
-      app.DragDropdown.Layout.Row = 2;
-      app.DragDropdown.Layout.Column = 1;
-      app.registerRefreshInput(app.DragDropdown);
+      app.DragDropDown.Layout.Row = 2;
+      app.DragDropDown.Layout.Column = 1;
+      app.registerRefreshInput(app.DragDropDown);
       
       % Mass
       app.MassSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
@@ -102,18 +102,18 @@ classdef Fixed < ott.ui.particle.NewParticleBase ...
       app.MassSpinner.Layout.Column = 1;
       
       % T-matrix
-      app.TmatrixDropdown = ott.ui.support.VariableDropdown(app.ExtraGrid, ...
+      app.TmatrixDropDown = ott.ui.support.VariableDropDown(app.ExtraGrid, ...
           'label', 'T-matrix');
-      app.TmatrixDropdown.Layout.Row = 1;
-      app.TmatrixDropdown.Layout.Column = 2;
-      app.registerRefreshInput(app.TmatrixDropdown);
+      app.TmatrixDropDown.Layout.Row = 1;
+      app.TmatrixDropDown.Layout.Column = 2;
+      app.registerRefreshInput(app.TmatrixDropDown);
       
       % T-internal
-      app.TinternalDropdown = ott.ui.support.VariableDropdown(app.ExtraGrid, ...
+      app.TinternalDropDown = ott.ui.support.VariableDropDown(app.ExtraGrid, ...
           'label', 'Internal T-matrix');
-      app.TinternalDropdown.Layout.Row = 2;
-      app.TinternalDropdown.Layout.Column = 2;
-      app.registerRefreshInput(app.TinternalDropdown);
+      app.TinternalDropDown.Layout.Row = 2;
+      app.TinternalDropDown.Layout.Column = 2;
+      app.registerRefreshInput(app.TinternalDropDown);
       
     end
   end

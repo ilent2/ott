@@ -179,7 +179,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.UpdateVisibleShapeWidgets();
     end
     
-    function data = GenerateData(app)
+    function data = generateData(app)
       % Generate shape
       
       switch app.ShapeDropDown.Value

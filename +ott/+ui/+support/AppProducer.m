@@ -4,22 +4,22 @@ classdef AppProducer < handle
 % Properties (uninitialised)
 %   - VariableName -- Output variable name widget
 %   - UpdateButton -- Update button and auto-update toggle
-%   - PreviewCheckBox -- (Optional) Toggle to control preview status
+%   - ShowPreviewCheckBox -- (Optional) Toggle to control preview status
 %   - Data -- Data produced by the process.
 %
 % Abstract methods
-%   - GenerateData
+%   - generateData
 %
 % Callback methods
-%   - UpdateVariableNameCb -- Called when output variable name changes
-%   - UpdateParametersCb -- Called when input parameters change
-%   - PreviewToggledCb -- Called when the preview checkbox is changed
-%   - UpdateButtonCb -- Called by the update button
+%   - updateVariableNameCb -- Called when output variable name changes
+%   - updateParametersCb -- Called when input parameters change
+%   - previewToggledCb -- Called when the preview checkbox is changed
+%   - updateButtonCb -- Called by the update button
 %
 % Methods
-%   - UpdatePreview -- Called when the preview should be updated
-%   - Update -- Called when data should be updated
-%   - WriteData -- Called when data should be written
+%   - updatePreview -- Called when the preview should be updated
+%   - update -- Called when data should be updated
+%   - writeData -- Called when data should be written
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -33,65 +33,66 @@ classdef AppProducer < handle
   properties (Access=public)
     VariableName          ott.ui.support.OutputVariableEntry
     ShowPreviewCheckBox   matlab.ui.control.CheckBox
-    UpdateButton          ott.ui.support.UpdateButtonBase
+    UpdateButton          % ott.ui.support.UpdateButtonBase
   end
   
   % Callbacks
   methods (Access=private)
-    function UpdateVariableNameCb(app, ~)
+    function updateVariableNameCb(app, ~)
       % Called when output variable name changes
-      app.WriteData();
+      app.writeData();
     end
     
-    function PreviewToggledCb(app, ~)
+    function previewToggledCb(app, ~)
       % Called when the preview checkbox is changed
       if app.ShowPreviewCheckBox.Value
-        app.UpdatePreview();
+        app.updatePreview();
       end
     end
     
-    function UpdateButtonCb(app, ~)
+    function updateButtonCb(app, ~)
       % Called by the update button
-      app.Update();
+      app.update();
     end
   end
   
   methods (Access=protected)
-    function UpdateParametersCb(app, ~)
+    function updateParametersCb(app, ~)
       % Called when input parameters change
-      app.Update();
+      app.update();
     end
   end
   
   methods (Abstract, Access=protected)
-    GenerateData(app)
+    generateData(app)
   end
   
   % Regular methods
   methods (Access=protected)
-    function UpdatePreview(~)
+    function updatePreview(~)
       % Overload this methods to update the preview
     end
     
-    function WriteData(app)
+    function writeData(app)
       % Write data if available
       if ~isempty(app.VariableName.Value)
-        app.VariableName.WriteVariable(app.Data);
+        app.VariableName.writeVariable(app.Data);
       end
     end
     
-    function Update(app)
+    function update(app)
       % Update the data (and output/preview)
       
       % Generate new data
-      app.Data = app.GenerateData();
+      app.Data = app.generateData();
       
       % Write new data
-      app.WriteData();
+      app.writeData();
       
       % Call preview method (if required)
-      if isempty(app.ShowPreviewCheckBox) || app.ShowPreviewCheckBox.Value
-        app.UpdatePreview();
+      if ~isempty(app.Data) && ...
+          (isempty(app.ShowPreviewCheckBox) || app.ShowPreviewCheckBox.Value)
+        app.updatePreview();
       end
     end
   end
@@ -106,13 +107,11 @@ classdef AppProducer < handle
         'UpdateButton must be created before calling constructor.');
       
       % Connect callbacks
-      app.VariableName.ValueChangedFcn = createCallbackFcn(app, ...
-          @UpdateVariableNameCb, true);
+      app.VariableName.ValueChangedFcn = @(o,e) app.updateVariableNameCb(e);
       addlistener(app.UpdateButton, "UpdateCalled", ...
-          @(h,e) app.UpdateButtonCb(e));
+          @(h,e) app.updateButtonCb(e));
       if ~isempty(app.ShowPreviewCheckBox)
-        app.ShowPreviewCheckBox.ValueChangedFcn = createCallbackFcn(app, ...
-            @PreviewToggledCb, true);
+        app.ShowPreviewCheckBox.ValueChangedFcn = @(o,e) app.previewToggledCb(e);
       end
       
     end

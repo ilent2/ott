@@ -1,4 +1,4 @@
-function tests = testLauncher
+function tests = testDrag
   tests = functiontests(localfunctions);
 end
 
@@ -7,5 +7,6 @@ function setupOnce(testCase)
 end
 
 function testSimple(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.drag.Simple();
+  testCase.addTeardown(@delete,gui);
 end

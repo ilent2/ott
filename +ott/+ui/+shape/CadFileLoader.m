@@ -71,10 +71,15 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
       setDefaultValues@ott.ui.shape.NewShapeBase(app);
     end
     
-    function data = GenerateData(app)
+    function data = generateData(app)
       % Load a CAD file
       
       fname = app.CadFileSelector.Value;
+      if isempty(fname)
+        data = [];
+        return;
+      end
+      
       [~, ~, ext] = fileparts(fname);
       
       switch ext

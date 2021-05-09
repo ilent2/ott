@@ -1,4 +1,7 @@
-classdef Visualise < ott.ui.beam.AppBase
+classdef Visualise < ott.ui.support.AppTwoColumn ...
+    & ott.ui.support.GenerateCodeMenu ...
+    & ott.ui.support.RefreshInputsMenu
+% Graphical user interface to visualise a beam
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -19,11 +22,16 @@ classdef Visualise < ott.ui.beam.AppBase
   end
   
   methods (Access=protected)
-    function startupFcn(app)
+    
+    function setDefaultValues(app)
+      % TODO
+    end
+    
+    function code = generateCode(app)
+      code = {}; % TODO
     end
     
     function createRightComponents(app)
-      app.createBeamPreview();
     end
     
     function createLeftComponents(app)
@@ -34,7 +42,8 @@ classdef Visualise < ott.ui.beam.AppBase
     function app=Visualise()
       % Start the ForcePosition GUI
       
-      app = app@ott.ui.beam.AppBase();
+      app = app@ott.ui.support.AppTwoColumn();
+      
       if nargout == 0
         clear app;
       end

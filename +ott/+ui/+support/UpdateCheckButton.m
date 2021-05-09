@@ -32,7 +32,7 @@ classdef UpdateCheckButton < ott.ui.support.GridWidget ...
       
     end
     
-    function ButtonPushedCb(obj, evt)
+    function buttonPushedCb(obj, evt)
       
       % Emit UpdateCalled event (lazy: reuse input event...)
       notify(obj, "UpdateCalled", evt);
@@ -68,7 +68,7 @@ classdef UpdateCheckButton < ott.ui.support.GridWidget ...
       obj.Button.Layout.Column = 2;
       obj.Button.Layout.Row = 1;
       obj.Button.Text = 'Update';
-      obj.Button.ButtonPushedFcn = @(h,e) obj.ButtonPushedCb(e);
+      obj.Button.ButtonPushedFcn = @(h,e) obj.buttonPushedCb(e);
       
     end
   end

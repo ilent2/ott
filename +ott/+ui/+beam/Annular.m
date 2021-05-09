@@ -1,4 +1,5 @@
-classdef Annular < ott.ui.beam.NewBeamBase
+classdef Annular < ott.ui.beam.NewBeamBase ...
+    & ott.ui.support.GenerateCodeMenu
 % Generate a simple beam representation and visualise.
 %
 % Supported beams:
@@ -21,9 +22,6 @@ classdef Annular < ott.ui.beam.NewBeamBase
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-% TODO: Should we split this interface into Gaussian, PlaneWave
-% and Annular?
-
   properties (Constant)
     cnameText = 'Annular';
 
@@ -35,7 +33,6 @@ classdef Annular < ott.ui.beam.NewBeamBase
       ''};
     
     windowName = ott.ui.beam.Annular.nameText;
-    windowSize = [640, 420];
   end
   
   properties (Access=public)
@@ -64,14 +61,19 @@ classdef Annular < ott.ui.beam.NewBeamBase
   end
   
   methods (Access=protected)
-    function startupFcn(app)
+    
+    function code = generateCode(app)
+      code = {}; % TODO
     end
     
-    function createRightComponents(app)
-      app.createBeamPreview();
+    function data = generateData(app)
+      data = []; % TODO
     end
     
     function createLeftComponents(app)
+      
+      % Call base for most things
+      createLeftComponents@ott.ui.beam.NewBeamBase(app);
       
       % Create VariableNameEditFieldLabel
       app.VariableNameEditFieldLabel = uilabel(app.LeftPanel);
@@ -212,7 +214,7 @@ classdef Annular < ott.ui.beam.NewBeamBase
     function app=Annular()
       % Start the ForcePosition GUI
       
-      app = app@ott.ui.beam.AppBase();
+      app = app@ott.ui.beam.NewBeamBase();
       
       if nargout == 0
         clear app;

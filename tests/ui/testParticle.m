@@ -1,4 +1,4 @@
-function tests = testLauncher
+function tests = testParticle
   tests = functiontests(localfunctions);
 end
 
@@ -6,6 +6,12 @@ function setupOnce(testCase)
   addpath('../../');
 end
 
-function testSimple(testCase)
-  error('Not yet implemented');
+function testFixed(testCase)
+  gui = ott.ui.particle.Fixed();
+  testCase.addTeardown(@delete,gui);
+end
+
+function testFromShape(testCase)
+  gui = ott.ui.particle.FromShape();
+  testCase.addTeardown(@delete,gui);
 end

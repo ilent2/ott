@@ -131,9 +131,9 @@ classdef Fixed < ott.particle.Particle
       %   - mass (numeric) -- Particle mass.  Default: ``[]``.
 
       p = inputParser;
-      p.addOptional('shape', [], @(x) isa(x, 'ott.shape.Shape'));
-      p.addOptional('drag', [], @(x) isa(x, 'ott.drag.Stokes'));
-      p.addOptional('tmatrix', [], @(x) isa(x, 'ott.tmatrix.Tmatrix'));
+      p.addOptional('shape', [], @(x) isempty(x) || isa(x, 'ott.shape.Shape'));
+      p.addOptional('drag', [], @(x) isempty(x) || isa(x, 'ott.drag.Stokes'));
+      p.addOptional('tmatrix', [], @(x) isempty(x) || isa(x, 'ott.tmatrix.Tmatrix'));
       p.addParameter('tinternal', []);
       p.addParameter('mass', []);
       p.parse(varargin{:});

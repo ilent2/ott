@@ -7,5 +7,6 @@ function setupOnce(testCase)
 end
 
 function testLauncherApp(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.Launcher();
+  testCase.addTeardown(@delete,gui);
 end

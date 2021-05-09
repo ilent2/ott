@@ -21,11 +21,11 @@ classdef NewParticleBase < ott.ui.support.AppTopLevel ...
   methods (Access=protected)
     function setDefaultValues(app)
       app.VariableName.Value = '';
-      app.UpdateButton.GuageValue = 0;
-      app.UpdateButton.ClearErrors();
+      app.UpdateButton.Level = 0;
+      app.UpdateButton.clearErrors();
       
       % Update the output
-      app.Update();
+      app.update();
     end
     
     function createMainComponents(app)

@@ -1,4 +1,4 @@
-function tests = testLauncher
+function tests = testTmatrix
   tests = functiontests(localfunctions);
 end
 
@@ -7,17 +7,21 @@ function setupOnce(testCase)
 end
 
 function testDda(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.tmatrix.Dda();
+  testCase.addTeardown(@delete,gui);
 end
 
 function testMie(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.tmatrix.Mie();
+  testCase.addTeardown(@delete,gui);
 end
 
 function testPointmatch(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.tmatrix.Pointmatch();
+  testCase.addTeardown(@delete,gui);
 end
 
 function testSimple(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.tmatrix.Simple();
+  testCase.addTeardown(@delete,gui);
 end

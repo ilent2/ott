@@ -40,7 +40,7 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
   end
   
   properties (Access=public)
-    ShapeDropdown       ott.ui.support.VariableDropdown
+    ShapeDropDown       ott.ui.support.VariableDropDown
     ParticleIrSpinner    ott.ui.support.LabeledSpinner
     MediumIrSpinner    ott.ui.support.LabeledSpinner
     WavelengthSpinner    ott.ui.support.LabeledSpinner
@@ -50,9 +50,8 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
   end
   
   methods (Access=protected)
-    function particle = generateParticle(app)
-      % TODO
-      particle = [];
+    function data = generateData(app)
+      data = []; % TODO
     end
     
     function code = generateCode(app)
@@ -63,7 +62,7 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
     function setDefaultValues(app)
       % Set App-specific default values
       
-      app.ShapeDropdown.Value = '';
+      app.ShapeDropDown.Value = '';
       app.ParticleIrSpinner.Value = 1.2;
       app.MediumIrSpinner.Value = 1.0;
       app.WavelengthSpinner.Value = 1e-6;
@@ -83,11 +82,11 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
       app.ExtraGrid.RowHeight = {32, 32, 32};
       
       % Shape
-      app.ShapeDropdown = ott.ui.support.VariableDropdown(app.ExtraGrid, ...
+      app.ShapeDropDown = ott.ui.support.VariableDropDown(app.ExtraGrid, ...
           'label', 'Shape');
-      app.ShapeDropdown.Layout.Row = 1;
-      app.ShapeDropdown.Layout.Column = 1;
-      app.registerRefreshInput(app.ShapeDropdown);
+      app.ShapeDropDown.Layout.Row = 1;
+      app.ShapeDropDown.Layout.Column = 1;
+      app.registerRefreshInput(app.ShapeDropDown);
       
       % Particle IR spinner
       app.ParticleIrSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...

@@ -1,4 +1,6 @@
-classdef Scattered < ott.ui.beam.NewBeamBase
+classdef Scattered < ott.ui.beam.NewBeamBase ...
+    & ott.ui.support.RefreshInputsMenu
+% GUI to generate a scattered beam from a particle and beam input.
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -19,21 +21,11 @@ classdef Scattered < ott.ui.beam.NewBeamBase
   end
   
   properties (Access=public)
-    IncidentBeamDropDown      ott.ui.support.VariableDropdown
-    ParticleDropDown          ott.ui.support.VariableDropdown
+    IncidentBeamDropDown      ott.ui.support.VariableDropDown
+    ParticleDropDown          ott.ui.support.VariableDropDown
   end
   
   methods (Access=protected)
-    function beam = generateBeam(app)
-      try
-        beam = app.IncidentBeamDropDown.Value.scatter(...
-            app.ParticleDropDown.Value, ...
-            'position', app.TranslationXyzSpinner.Value, ...
-            'rotation', app.RotationXyzSpinner.Value);
-      catch
-        beam = [];
-      end
-    end
     
     function setDefaultValues(app)
       
@@ -43,6 +35,21 @@ classdef Scattered < ott.ui.beam.NewBeamBase
       
       % Call remaining defaults
       setDefaultValues@ott.ui.beam.NewBeamBase(app);
+    end
+    
+    function code = generateCode(app)
+      code = {};
+    end
+    
+    function beam = generateData(app)
+      try
+        beam = app.IncidentBeamDropDown.Value.scatter(...
+            app.ParticleDropDown.Value, ...
+            'position', app.TranslationXyzSpinner.Value, ...
+            'rotation', app.RotationXyzSpinner.Value);
+      catch
+        beam = [];
+      end
     end
     
     function createLeftComponents(app)
@@ -58,14 +65,16 @@ classdef Scattered < ott.ui.beam.NewBeamBase
       app.ExtraGrid.RowHeight = {32, 32, '1x'};
 
       % Incident beam drop down
-      app.IncidentBeamDropDown = ott.ui.support.VariableDropdown(...
+      app.IncidentBeamDropDown = ott.ui.support.VariableDropDown(...
         app.ExtraGrid, 'label', 'Incident Beam');
       app.IncidentBeamDropDown.Layout.Row = 1;
+      app.registerRefreshInput(app.IncidentBeamDropDown);
       
       % Particle drop down
-      app.ParticleDropDown = ott.ui.support.VariableDropdown(...
+      app.ParticleDropDown = ott.ui.support.VariableDropDown(...
         app.ExtraGrid, 'label', 'Particle');
       app.ParticleDropDown.Layout.Row = 2;
+      app.registerRefreshInput(app.ParticleDropDown);
       
     end
   end

@@ -45,7 +45,7 @@ classdef Simple < ott.ui.support.AppTopLevel ...
       app.VariableName.Value = '';
       app.ShapeDropDown.Value = '';
       app.ViscositySpinner.Value = 1;
-      app.UpdateButton.Value = true;
+      app.UpdateButton.AutoUpdate = true;
       app.UITable.Data = repmat({''}, 6, 6);
     end
     
@@ -53,7 +53,7 @@ classdef Simple < ott.ui.support.AppTopLevel ...
       code = {};  % TODO
     end
     
-    function data = GenerateData(app)
+    function data = generateData(app)
       % Generate data and put in preview-table
       
       % TODO: Generate data

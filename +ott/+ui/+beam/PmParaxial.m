@@ -1,4 +1,6 @@
-classdef PmParaxial < ott.ui.beam.NewBeamBase
+classdef PmParaxial < ott.ui.beam.NewBeamBase ...
+    & ott.ui.support.GenerateCodeMenu
+% Generate a beam using paraxial point matching
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -16,7 +18,6 @@ classdef PmParaxial < ott.ui.beam.NewBeamBase
       ''};
     
     windowName = ott.ui.beam.PmParaxial.nameText;
-    windowSize = [640, 420];
   end
   
   properties (Access=protected)
@@ -43,14 +44,19 @@ classdef PmParaxial < ott.ui.beam.NewBeamBase
   end
   
   methods (Access=protected)
-    function startupFcn(app)
+    
+    function code = generateCode(app)
+      code = {}; % TODO
     end
     
-    function createRightComponents(app)
-      app.createBeamPreview();
+    function data = generateData(app)
+      data = []; % TODO
     end
     
     function createLeftComponents(app)
+      
+      % Call base for most things
+      createLeftComponents@ott.ui.beam.NewBeamBase(app);
 
       % Create VariableNameEditFieldLabel
       app.VariableNameEditFieldLabel = uilabel(app.LeftPanel);

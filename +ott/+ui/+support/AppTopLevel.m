@@ -27,7 +27,7 @@ classdef AppTopLevel < ott.ui.support.AppBase
   end
   
   methods (Access=protected)
-    function createFileMenuContent(app)
+    function createFileMenuContent(~)
       % Overload this method to add other file menu content
     end
   end
@@ -74,15 +74,13 @@ classdef AppTopLevel < ott.ui.support.AppBase
       
       % Create ResettoDefaultsMenu
       menuItem = uimenu(menu);
-      menuItem.MenuSelectedFcn = ...
-        createCallbackFcn(app, @setDefaultValues, true);
+      menuItem.MenuSelectedFcn = @(o,e) app.setDefaultValues();
       menuItem.Text = 'Reset to Defaults';
       
       % Refresh inputs
       if isa(app, 'ott.ui.support.RefreshInputsMenu')
         menuItem = uimenu(menu);
-        menuItem.MenuSelectedFcn = ...
-          createCallbackFcn(app, @refreshInputsCb, true);
+        menuItem.MenuSelectedFcn = @(o,e) app.refreshInputsCb();
         menuItem.Text = 'Refresh Inputs';
       end
 
@@ -90,8 +88,7 @@ classdef AppTopLevel < ott.ui.support.AppBase
       if isa(app, 'ott.ui.support.GenerateCodeMenu')
         menuItem = uimenu(menu);
         menuItem.Separator = 'on';
-        menuItem.MenuSelectedFcn = createCallbackFcn(app, ...
-            @GenerateCodeMenuSelected, true);
+        menuItem.MenuSelectedFcn = @(o,e) app.GenerateCodeMenuSelected();
         menuItem.Text = 'Generate Code...';
       end
       

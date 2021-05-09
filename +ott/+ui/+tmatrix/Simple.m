@@ -22,8 +22,12 @@ classdef Simple < ott.ui.tmatrix.NewTmatrixBase
   end
   
   methods (Access=protected)
-    function data = GenerateData(app)
+    function data = generateData(app)
       data = ott.tmatrix.Tmatrix.FromShape();  % TODO: parameters
+    end
+    
+    function code = generateCode(app)
+      code = {}; % TODO
     end
   end
   

@@ -56,11 +56,11 @@ classdef Launcher < ott.ui.support.AppBase
             ?ott.ui.beam.Gaussian, ?ott.ui.beam.Annular, ...
             ?ott.ui.beam.Visualise];
         case 'Drag'
-          ref = [?ott.ui.drag.Simple];
+          ref = ?ott.ui.drag.Simple;
         case 'Dynamics'
-          ref = [?ott.ui.dynamics.Isolated];
+          ref = ?ott.ui.dynamics.Isolated;
         case 'Particle'
-          ref = [?ott.ui.particle.Simple];
+          ref = ?ott.ui.particle.Simple;
         case 'Shape'
           ref = [?ott.ui.shape.CadFileLoader, ?ott.ui.shape.Simple, ...
               ?ott.ui.shape.Visualise];
@@ -91,7 +91,7 @@ classdef Launcher < ott.ui.support.AppBase
     function CategoryChangedCallback(app, ~)
       ref = app.getCurrentAppList();
       
-      names = {};
+      names = cell(1, length(ref));
       for ii = 1:length(ref)
         nameProp = findobj(ref(ii).PropertyList, 'Name', 'cnameText');
         names{ii} = nameProp.DefaultValue;
@@ -218,6 +218,7 @@ classdef Launcher < ott.ui.support.AppBase
       % Start the optical tweezers GUI launcher
       
       app = app@ott.ui.support.AppBase();
+      
       if nargout == 0
         clear app;
       end

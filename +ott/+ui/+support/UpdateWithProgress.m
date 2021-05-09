@@ -17,7 +17,7 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget ...
   end
   
   methods (Access = private)
-    function ButtonPushedCb(obj, evt)
+    function buttonPushedCb(obj, evt)
       % Callback for button: dispatches notification
       
       % Emit UpdateCalled event (lazy: reuse input event...)
@@ -52,17 +52,25 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget ...
       
     end
     
-    function ClearErrors(app)
-      % TODO
+    function clearErrors(obj)
+      obj.Gauge.BackgroundColor = 'white';
+    end
+    
+    function setError(obj)
+      obj.Gauge.BackgroundColor = 'red';
+    end
+    
+    function setWarning(obj)
+      obj.Gauge.BackgroundColor = 'yellow';
     end
   end
   
   methods
-    function val = get.AutoUpdate(app)
+    function val = get.AutoUpdate(~)
       val = false;
     end
     
-    function set.AutoUpdate(app)
+    function set.AutoUpdate(~, ~)
       error('Can not set AutoUpdate for UpdateWithProgress widget');
     end
     

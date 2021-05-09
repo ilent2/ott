@@ -1,4 +1,4 @@
-function tests = testLauncher
+function tests = testSupport
   tests = functiontests(localfunctions);
 end
 
@@ -7,5 +7,4 @@ function setupOnce(testCase)
 end
 
 function testPlaceholder(testCase)
-  error('Not yet implemented');
 end

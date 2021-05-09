@@ -19,13 +19,19 @@ classdef Mie < ott.ui.tmatrix.NewTmatrixBase
     windowName = ott.ui.tmatrix.Mie.nameText;
   end
   
-  methods (Access=protected)
-    function data = GenerateData(app)
-      data = ott.tmatrix.Mie(radius);  % TODO: parameters
-    end
+  properties (Access=public)
+    
   end
   
-  methods (Access=public)
+  methods (Access=protected)
+    function data = generateData(app)
+      data = ott.tmatrix.Mie(radius);  % TODO: parameters
+    end
+    
+    function code = generateCode(app)
+      code = {}; % TODO
+    end
+    
     function createMainComponents(app)
       % Create components for gui
       
@@ -35,17 +41,19 @@ classdef Mie < ott.ui.tmatrix.NewTmatrixBase
       % TODO: Configure extra grid
       
       % Properties selector
-      app.PropertiesDropDown = ott.ui.support.LabeledDropDown(app.ExtraGrid, ...
-        'label', 'Properties');
-      % TODO: Layout
-      
-      % Radius entry
-      app.RadiusSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
-        'label', 'Radius');
-      % TODO: Layout
+%       app.PropertiesDropDown = ott.ui.support.LabeledDropDown(app.ExtraGrid, ...
+%         'label', 'Properties');
+%       % TODO: Layout
+%       
+%       % Radius entry
+%       app.RadiusSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
+%         'label', 'Radius');
+%       % TODO: Layout
       
     end
-    
+  end
+  
+  methods (Access=public)
     function app=Mie()
       % Start the ForcePosition GUI
       

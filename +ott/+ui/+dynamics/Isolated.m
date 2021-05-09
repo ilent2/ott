@@ -31,8 +31,8 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
   properties (Access=public)
     % Left panel
     LeftGrid            matlab.ui.container.GridLayout
-    BeamDropdown        ott.ui.support.VariableDropdown
-    ParticleDropdown    ott.ui.support.VariableDropdown
+    BeamDropDown        ott.ui.support.VariableDropDown
+    ParticleDropDown    ott.ui.support.VariableDropDown
     TimestepSpinner     ott.ui.support.LabeledSpinner
     NumStepsSpinner     ott.ui.support.LabeledSpinner
     PositionXyzSpinner  ott.ui.support.XyzSpinners
@@ -50,13 +50,13 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
       
       % Left panel
       app.VariableName.Value = '';
-      app.BeamDropdown.Value = '';
-      app.ParticleDropdown.Value = '';
+      app.BeamDropDown.Value = '';
+      app.ParticleDropDown.Value = '';
       app.TimestepSpinner.Value = 1e-3;
       app.NumStepsSpinner.Value = 100;
       app.PositionXyzSpinner.Value = [0,0,0];
       app.RotationXyzSpinner.Value = [0,0,0];
-      app.UpdateButton.Value = 0;
+      app.UpdateButton.Level = 0;
       
       % Right panel
       app.PlotType.Value = 'Position';
@@ -66,13 +66,14 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
       code = {}; % TODO
     end
     
-    function data = GenerateData(app)
-      % TODO
+    function data = generateData(app)
       
       % Set progress bar to 0
       
       % Start simulation
       % Update progress bar every N seconds
+      
+      data = []; % TODO
       
     end
     
@@ -90,19 +91,19 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
       app.VariableName.Layout.Column = 1;
       
       % Beam selector
-      app.BeamDropdown = ott.ui.support.VariableDropdown(...
+      app.BeamDropDown = ott.ui.support.VariableDropDown(...
         app.LeftGrid, 'label', 'Beam');
-      app.BeamDropdown.Layout.Row = 2;
-      app.BeamDropdown.Layout.Column = 1;
-      app.BeamDropdown.ValueChangedFcn = createCallbackFcn(app, ...
+      app.BeamDropDown.Layout.Row = 2;
+      app.BeamDropDown.Layout.Column = 1;
+      app.BeamDropDown.ValueChangedFcn = createCallbackFcn(app, ...
           @UpdateParametersCb, true);
       
       % Particle selector
-      app.ParticleDropdown = ott.ui.support.VariableDropdown(...
+      app.ParticleDropDown = ott.ui.support.VariableDropDown(...
         app.LeftGrid, 'label', 'Particle');
-      app.ParticleDropdown.Layout.Row = 3;
-      app.ParticleDropdown.Layout.Column = 1;
-      app.ParticleDropdown.ValueChangedFcn = createCallbackFcn(app, ...
+      app.ParticleDropDown.Layout.Row = 3;
+      app.ParticleDropDown.Layout.Column = 1;
+      app.ParticleDropDown.ValueChangedFcn = createCallbackFcn(app, ...
           @UpdateParametersCb, true);
       
       % Time step size
@@ -138,7 +139,7 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
           @UpdateParametersCb, true);
     
       % Progress bar and update button
-      app.UpdateButton = ott.ui.support.UpdateWithProgress(app.MainGrid);
+      app.UpdateButton = ott.ui.support.UpdateWithProgress(app.LeftGrid);
       app.UpdateButton.Layout.Row = 9;
       app.UpdateButton.Layout.Column = 1;
     end
@@ -159,16 +160,16 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
       app.TopAxes.Layout.Column = 1;
 
       % Create DropDown
-      app.PlotDropDown = uidropdown(app.RightGrid);
-      app.PlotDropDown.Items = {'Position', 'Rotation', 'Force', 'Torque'};
-      app.PlotDropDown.ValueChangedFcn = createCallbackFcn(app, @DropDownValueChanged, true);
-      app.PlotDropDown.Layout.Row = 2;
-      app.PlotDropDown.Layout.Column = 1;
+      app.PlotType = uidropdown(app.RightGrid);
+      app.PlotType.Items = {'Position', 'Rotation', 'Force', 'Torque'};
+      app.PlotType.ValueChangedFcn = createCallbackFcn(app, @DropDownValueChanged, true);
+      app.PlotType.Layout.Row = 2;
+      app.PlotType.Layout.Column = 1;
 
       % Create UIAxes2
-      app.UIAxes2 = uiaxes(app.RightGrid);
-      xlabel(app.UIAxes2, 'X');
-      ylabel(app.UIAxes2, 'Y');
+      app.BottomAxes = uiaxes(app.RightGrid);
+      xlabel(app.BottomAxes, 'X');
+      ylabel(app.BottomAxes, 'Y');
       app.BottomAxes.Layout.Row = 3;
       app.BottomAxes.Layout.Column = 1;
       

@@ -40,22 +40,18 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       app.OffsetXyzSpinners.Value = [0, 0, 0];
       app.RotationXyzSpinners.Value = [0, 0, 0];
       app.ShowPreviewCheckBox.Value = true;
-      app.UpdateButton.Value = true;
+      app.UpdateButton.AutoUpdate = true;
       
-      app.Update();
+      app.update();
     end
     
-    function UpdatePreview(app)
-      
-      if isempty(app.shape)
-        return;
-      end
+    function updatePreview(app)
       
       app.LoadingText.Visible = 'on';
       drawnow nocallbacks;
       
       % Update shape preview
-      app.shape.surf('axes', app.PreviewUIAxes);
+      app.Data.surf('axes', app.PreviewUIAxes);
       
       app.LoadingText.Visible = 'off';
       
@@ -104,10 +100,10 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       app.ExtraGrid.Layout.Column = 1;
       
       % Preview checkbox
-      app.PreviewCheckBox = uicheckbox(app.MainGrid);
-      app.PreviewCheckBox.Text = 'Show Preview';
-      app.PreviewCheckBox.Layout.Row = 5;
-      app.PreviewCheckBox.Layout.Column = 1;
+      app.ShowPreviewCheckBox = uicheckbox(app.MainGrid);
+      app.ShowPreviewCheckBox.Text = 'Show Preview';
+      app.ShowPreviewCheckBox.Layout.Row = 5;
+      app.ShowPreviewCheckBox.Layout.Column = 1;
       
       % Update button
       app.UpdateButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
@@ -132,6 +128,7 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       app.LoadingText.Text = 'Loading...';
       app.LoadingText.BackgroundColor = app.UIFigure.Color;
       app.LoadingText.HorizontalAlignment = 'center';
+      app.LoadingText.Visible = 'off';
       
     end
   end

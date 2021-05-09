@@ -43,10 +43,10 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.TranslationXyzSpinner.Value = [0, 0, 0];
       app.RotationXyzSpinner.Value = [0, 0, 0];
       app.ShowPreviewCheckBox.Value = true;
-      app.UpdateButton.Value = true;
+      app.UpdateButton.AutoUpdate = true;
       
       % Update the output
-      app.Update();
+      app.update();
     end
     
     function UpdatePreview(app)
@@ -131,10 +131,10 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.ExtraGrid.Layout.Column = 1;
       
       % Preview checkbox
-      app.PreviewCheckBox = uicheckbox(app.MainGrid);
-      app.PreviewCheckBox.Text = 'Show Preview';
-      app.PreviewCheckBox.Layout.Row = 7;
-      app.PreviewCheckBox.Layout.Column = 1;
+      app.ShowPreviewCheckBox = uicheckbox(app.MainGrid);
+      app.ShowPreviewCheckBox.Text = 'Show Preview';
+      app.ShowPreviewCheckBox.Layout.Row = 7;
+      app.ShowPreviewCheckBox.Layout.Column = 1;
       
       % Update button
       app.UpdateButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
@@ -162,6 +162,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.LoadingText.Text = 'Loading...';
       app.LoadingText.BackgroundColor = app.UIFigure.Color;
       app.LoadingText.HorizontalAlignment = 'center';
+      app.LoadingText.Visible = 'off';
       
     end
   end

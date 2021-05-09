@@ -23,7 +23,7 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
   properties (Access=public)
     MainGrid             matlab.ui.container.GridLayout
     ExtraGrid            matlab.ui.container.GridLayout
-    ShapeName            ott.ui.support.VariableDropdown
+    ShapeName            ott.ui.support.VariableDropDown
     WavelengthSpinner    ott.ui.support.LabeledSpinner
     RelativeIndexSpinner ott.ui.support.LabeledSpinner
   end
@@ -32,8 +32,8 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
     function setDefaultValues(app)
       app.VariableName.Value = '';
       app.ShapeName.Value = '';
-      app.UpdateButton.Value = 0;
-      app.UpdateButton.ClearErrors();
+      app.UpdateButton.Level = 0;
+      app.UpdateButton.clearErrors();
     end
     
     function createMainComponents(app)
@@ -51,7 +51,7 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
       app.VariableName.Layout.Column = 1;
       
       % Shape input
-      app.ShapeName = ott.ui.support.VariableDropdown(app.MainGrid);
+      app.ShapeName = ott.ui.support.VariableDropDown(app.MainGrid);
       app.ShapeName.Layout.Row = 2;
       app.ShapeName.Layout.Column = 1;
       

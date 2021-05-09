@@ -1,4 +1,4 @@
-function tests = testLauncher
+function tests = testShape
   tests = functiontests(localfunctions);
 end
 
@@ -7,13 +7,16 @@ function setupOnce(testCase)
 end
 
 function testCadFile(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.shape.CadFileLoader();
+  testCase.addTeardown(@delete,gui);
 end
 
 function testSimple(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.shape.Simple();
+  testCase.addTeardown(@delete,gui);
 end
 
 function testVisualise(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.shape.Visualise();
+  testCase.addTeardown(@delete,gui);
 end

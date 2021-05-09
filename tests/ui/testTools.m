@@ -7,9 +7,11 @@ function setupOnce(testCase)
 end
 
 function testForcePosition(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.tools.ForcePosition();
+  testCase.addTeardown(@delete,gui);
 end
 
 function testPowerSpectrum(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.tools.PowerSpectrum();
+  testCase.addTeardown(@delete,gui);
 end

@@ -1,4 +1,4 @@
-function tests = testLauncher
+function tests = testDynamics
   tests = functiontests(localfunctions);
 end
 
@@ -7,5 +7,6 @@ function setupOnce(testCase)
 end
 
 function testIsolated(testCase)
-  error('Not yet implemented');
+  gui = ott.ui.dynamics.Isolated();
+  testCase.addTeardown(@delete,gui);
 end

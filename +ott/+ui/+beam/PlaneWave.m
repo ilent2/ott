@@ -1,4 +1,5 @@
-classdef PlaneWave < ott.ui.beam.NewBeamBase
+classdef PlaneWave < ott.ui.beam.NewBeamBase ...
+    & ott.ui.support.GenerateCodeMenu
 % Generate a plane wave beam.
 %
 % This GUI can be launched from the launcher Beam -> PlaneWave or with:
@@ -37,6 +38,23 @@ classdef PlaneWave < ott.ui.beam.NewBeamBase
       setDefaultValues@ott.ui.beam.NewBeamBase(app);
     end
     
+    function code = generateCode(app)
+      code = {}; % TODO
+    end
+    
+    function beam = generateData(app)
+      
+      rot3 = app.RotationXyzSpinner.Value;
+      rotation = ott.utils.rotx(rot3(1))*ott.utils.roty(rot3(2))*ott.utils.rotz(rot3(3));
+      
+      % Generate new beam
+      beam = ott.beam.PlaneWave(...
+          'polarisation', app.PolarisationEntry.Value, ...
+          'index_medium', app.IndexSpinner.Value, ...
+          'wavelength0', app.WavelengthSpinner.Value, ...
+          'rotation', rotation);
+    end
+    
     function createLeftComponents(app)
       
       % Call base for most things
@@ -56,19 +74,6 @@ classdef PlaneWave < ott.ui.beam.NewBeamBase
       app.PolarisationEntry.ValueChangedFcn = createCallbackFcn(app, ...
           @valueChangedCb, true);
       
-    end
-    
-    function beam = generateBeam(app)
-      
-      rot3 = app.RotationXyzSpinner.Value;
-      rotation = ott.utils.rotx(rot3(1))*ott.utils.roty(rot3(2))*ott.utils.rotz(rot3(3));
-      
-      % Generate new beam
-      beam = ott.beam.PlaneWave(...
-          'polarisation', app.PolarisationEntry.Value, ...
-          'index_medium', app.IndexSpinner.Value, ...
-          'wavelength0', app.WavelengthSpinner.Value, ...
-          'rotation', rotation);
     end
   end
   
