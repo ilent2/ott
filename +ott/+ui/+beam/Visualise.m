@@ -31,10 +31,10 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
       code = {}; % TODO
     end
     
-    function createRightComponents(app)
+    function createLeftComponents(app)
     end
     
-    function createLeftComponents(app)
+    function createRightComponents(app)
     end
   end
   

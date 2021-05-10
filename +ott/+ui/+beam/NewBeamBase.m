@@ -26,7 +26,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
     WavelengthSpinner     ott.ui.support.LabeledSpinner
     IndexSpinner          ott.ui.support.LabeledSpinner
     RotationXyzSpinner    ott.ui.support.XyzSpinners
-    TranslationXyzSpinner ott.ui.support.XyzSpinners
+    PositionXyzSpinner    ott.ui.support.XyzSpinners
     
     % Right pannel
     LoadingText           matlab.ui.control.Label
@@ -40,7 +40,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.VariableName.Value = '';
       app.WavelengthSpinner.Value = 1.0e-6;
       app.IndexSpinner.Value = 1.0;
-      app.TranslationXyzSpinner.Value = [0, 0, 0];
+      app.PositionXyzSpinner.Value = [0, 0, 0];
       app.RotationXyzSpinner.Value = [0, 0, 0];
       app.ShowPreviewCheckBox.Value = true;
       app.UpdateButton.AutoUpdate = true;
@@ -102,12 +102,12 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.IndexSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Offset entry
-      app.TranslationXyzSpinner = ott.ui.support.XyzSpinners(...
-          app.MainGrid, 'label', 'Translation');
-      app.TranslationXyzSpinner.Layout.Row = 4;
-      app.TranslationXyzSpinner.Layout.Column = 1;
-      app.TranslationXyzSpinner.Step = 1e-7;
-      app.TranslationXyzSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
+      app.PositionXyzSpinner = ott.ui.support.XyzSpinners(...
+          app.MainGrid, 'label', 'Position');
+      app.PositionXyzSpinner.Layout.Row = 4;
+      app.PositionXyzSpinner.Layout.Column = 1;
+      app.PositionXyzSpinner.Step = 1e-7;
+      app.PositionXyzSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Direction entry
       app.RotationXyzSpinner = ott.ui.support.XyzSpinners(...

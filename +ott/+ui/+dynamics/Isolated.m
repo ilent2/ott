@@ -158,13 +158,20 @@ classdef Isolated < ott.ui.support.AppTwoColumn ...
       ylabel(app.TopAxes, 'Y');
       app.TopAxes.Layout.Row = 1;
       app.TopAxes.Layout.Column = 1;
+      
+      rowGrid = uigridlayout(app.RightGrid);
+      rowGrid.Padding = [0,0,0,10];
+      rowGrid.ColumnWidth = {'1.2x', 100, '1x'};
+      rowGrid.RowHeight = {22};
+      rowGrid.Layout.Row = 2;
+      rowGrid.Layout.Column = 1;
 
       % Create DropDown
-      app.PlotType = uidropdown(app.RightGrid);
+      app.PlotType = uidropdown(rowGrid);
       app.PlotType.Items = {'Position', 'Rotation', 'Force', 'Torque'};
       app.PlotType.ValueChangedFcn = createCallbackFcn(app, @DropDownValueChanged, true);
-      app.PlotType.Layout.Row = 2;
-      app.PlotType.Layout.Column = 1;
+      app.PlotType.Layout.Row = 1;
+      app.PlotType.Layout.Column = 2;
 
       % Create UIAxes2
       app.BottomAxes = uiaxes(app.RightGrid);

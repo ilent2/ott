@@ -71,8 +71,7 @@ classdef PlaneWave < ott.ui.beam.NewBeamBase ...
           app.ExtraGrid);
       app.PolarisationEntry.Layout.Row = 1;
       app.PolarisationEntry.Layout.Column = 1;
-      app.PolarisationEntry.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.PolarisationEntry.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
     end
   end
