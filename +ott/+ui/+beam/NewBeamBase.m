@@ -90,8 +90,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.WavelengthSpinner.Layout.Column = 1;
       app.WavelengthSpinner.Step = 1e-7;
       app.WavelengthSpinner.Limits = [1e-9, Inf];
-      app.WavelengthSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @UpdateParametersCb, true);
+      app.WavelengthSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Refractive index spinner
       app.IndexSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
@@ -100,8 +99,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.IndexSpinner.Layout.Column = 1;
       app.IndexSpinner.Step = 0.1;
       app.IndexSpinner.Limits = [0.1, Inf];
-      app.IndexSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @UpdateParametersCb, true);
+      app.IndexSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Offset entry
       app.TranslationXyzSpinner = ott.ui.support.XyzSpinners(...
@@ -109,8 +107,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.TranslationXyzSpinner.Layout.Row = 4;
       app.TranslationXyzSpinner.Layout.Column = 1;
       app.TranslationXyzSpinner.Step = 1e-7;
-      app.TranslationXyzSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @UpdateParametersCb, true);
+      app.TranslationXyzSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Direction entry
       app.RotationXyzSpinner = ott.ui.support.XyzSpinners(...
@@ -118,8 +115,7 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.RotationXyzSpinner.Layout.Row = 5;
       app.RotationXyzSpinner.Layout.Column = 1;
       app.RotationXyzSpinner.Step = 10;
-      app.RotationXyzSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @UpdateParametersCb, true);
+      app.RotationXyzSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Create grid
       app.ExtraGrid = uigridlayout(app.MainGrid);

@@ -1,4 +1,4 @@
-classdef JonesPolarisationEntry < ott.ui.support.GridWidget
+classdef JonesPolarisationEntry < ott.ui.support.LabeledWidget
 % Entry for a Jones polarisation vector.
 %
 % This is currently just a text entry field.  In future it might be
@@ -10,7 +10,6 @@ classdef JonesPolarisationEntry < ott.ui.support.GridWidget
 % using/distributing this file.
 
   properties
-    Label         matlab.ui.control.Label
     EditField     matlab.ui.control.EditField
   end
   
@@ -22,23 +21,14 @@ classdef JonesPolarisationEntry < ott.ui.support.GridWidget
   methods
     function obj = JonesPolarisationEntry(parent, varargin)
       
-      obj = obj@ott.ui.support.GridWidget(parent);
-      
       p = inputParser;
+      p.addParameter('label', 'Polarisation');
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
       
-      % Create grid
-      obj.Grid.RowHeight = {22};
-      obj.Grid.ColumnWidth = {'1x', 100};
-      obj.Grid.ColumnSpacing = 1;
-      obj.Grid.RowSpacing = 1;
-      
-      % Create label
-      obj.Label = uilabel(obj.Grid);
-      obj.Label.HorizontalAlignment = 'left';
-      obj.Label.Layout.Column = 1;
-      obj.Label.Layout.Row = 1;
-      obj.Label.Text = 'Polarisation';
+      obj = obj@ott.ui.support.LabeledWidget(parent, ...
+        'label', p.Results.label, unmatched{:});
 
       % Create ScatteredBeamEditField
       obj.EditField = uieditfield(obj.Grid, 'text');

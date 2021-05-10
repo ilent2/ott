@@ -55,6 +55,15 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
       data = []; % TODO
     end
     
+    function TypeDropDownValueChanged(app, evt)
+      
+      % Update visible shape widgets
+      app.UpdateVisibleTypeWidgets();
+      
+      % Continue processing changed value
+      app.updateParametersCb(evt);
+    end
+    
     function createLeftComponents(app)
       
       % Call base for most things
@@ -79,8 +88,7 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
       app.LmodeSpinner.Layout.Column = 1;
       app.LmodeSpinner.Step = 1;
       app.LmodeSpinner.Limits = [-Inf,Inf];
-      app.LmodeSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.LmodeSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Pmode spinner
       app.PmodeSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
@@ -89,8 +97,7 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
       app.PmodeSpinner.Layout.Column = 1;
       app.PmodeSpinner.Step = 1;
       app.PmodeSpinner.Limits = [0,Inf];
-      app.PmodeSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.PmodeSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Mmode spinner
       app.MmodeSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
@@ -99,8 +106,7 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
       app.MmodeSpinner.Layout.Column = 1;
       app.MmodeSpinner.Step = 1;
       app.MmodeSpinner.Limits = [0,Inf];
-      app.MmodeSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.MmodeSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Nmode spinner
       app.NmodeSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
@@ -109,8 +115,7 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
       app.NmodeSpinner.Layout.Column = 1;
       app.NmodeSpinner.Step = 1;
       app.NmodeSpinner.Limits = [0,Inf];
-      app.NmodeSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.NmodeSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
         
       % NA spinner
       app.NaSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
@@ -120,16 +125,14 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
       app.NaSpinner.Step = 0.1;
       app.NaSpinner.LowerLimitInclusive = 'off';
       app.NaSpinner.Limits = [0.0, Inf];
-      app.NaSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.NaSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
         
       % Polarisation jones vector entry
       app.PolarisationEntry = ott.ui.support.JonesPolarisationEntry(...
           app.ExtraGrid);
       app.PolarisationEntry.Layout.Row = 10;
       app.PolarisationEntry.Layout.Column = 1;
-      app.PolarisationEntry.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.PolarisationEntry.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Power spinner  
       app.PowerSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
@@ -139,8 +142,7 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
       app.PowerSpinner.Step = 0.1;
       app.PowerSpinner.LowerLimitInclusive = 'off';
       app.PowerSpinner.Limits = [0.0, Inf];
-      app.PowerSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.PowerSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
 
     end
   end

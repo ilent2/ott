@@ -81,13 +81,13 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
     function ShapeDropDownValueChanged(app, evt)
       
       % Update visible shape widgets
-      app.UpdateVisibleShapeWidgets();
+      app.updateVisibleShapeWidgets();
       
       % Continue processing changed value
-      app.valueChangedCb(evt);
+      app.updateParametersCb(evt);
     end
       
-    function UpdateVisibleShapeWidgets(app)
+    function updateVisibleShapeWidgets(app)
       % Update the visible widgets associated with the selected shape type
       
       rheight = 32;
@@ -176,7 +176,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       setDefaultValues@ott.ui.shape.NewShapeBase(app);
       
       % Display appropriate widgets
-      app.UpdateVisibleShapeWidgets();
+      app.updateVisibleShapeWidgets();
     end
     
     function data = generateData(app)
@@ -312,7 +312,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.SphereSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Radius');
       app.SphereSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.SphereSpinner.Step = 1e-7;
       app.SphereSpinner.Limits = [0, Inf];
       app.SphereSpinner.LowerLimitInclusive = 'off';
@@ -322,7 +322,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.EllipsoidXyzSpinners = ott.ui.support.XyzSpinners(app.ExtraGrid, ...
           'label', 'Radii');
       app.EllipsoidXyzSpinners.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.EllipsoidXyzSpinners.Step = 1e-7;
       app.EllipsoidXyzSpinners.Limits = [0, Inf];
       app.EllipsoidXyzSpinners.LowerLimitInclusive = 'off';
@@ -332,7 +332,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.CylinderRadiusSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Radius');
       app.CylinderRadiusSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.CylinderRadiusSpinner.Step = 1e-7;
       app.CylinderRadiusSpinner.Limits = [0, Inf];
       app.CylinderRadiusSpinner.LowerLimitInclusive = 'off';
@@ -342,7 +342,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.CylinderHeightSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Height');
       app.CylinderHeightSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.CylinderHeightSpinner.Step = 1e-7;
       app.CylinderHeightSpinner.Limits = [0, Inf];
       app.CylinderHeightSpinner.LowerLimitInclusive = 'off';
@@ -352,7 +352,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.CubeSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Width');
       app.CubeSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.CubeSpinner.Step = 1e-7;
       app.CubeSpinner.Limits = [0, Inf];
       app.CubeSpinner.LowerLimitInclusive = 'off';
@@ -362,7 +362,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.PrismXyzSpinners = ott.ui.support.XyzSpinners(app.ExtraGrid, ...
           'label', 'Width');
       app.PrismXyzSpinners.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.PrismXyzSpinners.Step = 1e-7;
       app.PrismXyzSpinners.Limits = [0, Inf];
       app.PrismXyzSpinners.LowerLimitInclusive = 'off';
@@ -372,7 +372,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.PillRadiusSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Radius');
       app.PillRadiusSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.PillRadiusSpinner.Step = 1e-7;
       app.PillRadiusSpinner.Limits = [0, Inf];
       app.PillRadiusSpinner.LowerLimitInclusive = 'off';
@@ -382,7 +382,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.PillHeightSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Height');
       app.PillHeightSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.PillHeightSpinner.Step = 1e-7;
       app.PillHeightSpinner.Limits = [0, Inf];
       app.PillHeightSpinner.LowerLimitInclusive = 'off';
@@ -392,7 +392,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.BiconeRadiusSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Radius');
       app.BiconeRadiusSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.BiconeRadiusSpinner.Step = 1e-7;
       app.BiconeRadiusSpinner.Limits = [0, Inf];
       app.BiconeRadiusSpinner.LowerLimitInclusive = 'off';
@@ -402,7 +402,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.BiconeHeightSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Height');
       app.BiconeHeightSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.BiconeHeightSpinner.Step = 1e-7;
       app.BiconeHeightSpinner.Limits = [0, Inf];
       app.BiconeHeightSpinner.LowerLimitInclusive = 'off';
@@ -412,7 +412,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.ConeRadiusSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Radius');
       app.ConeRadiusSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.ConeRadiusSpinner.Step = 1e-7;
       app.ConeRadiusSpinner.Limits = [0, Inf];
       app.ConeRadiusSpinner.LowerLimitInclusive = 'off';
@@ -422,7 +422,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.ConeHeightSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Total Height');
       app.ConeHeightSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.ConeHeightSpinner.Step = 1e-7;
       app.ConeHeightSpinner.Limits = [0, Inf];
       app.ConeHeightSpinner.LowerLimitInclusive = 'off';
@@ -432,7 +432,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.ConeTHeightSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Tip Height');
       app.ConeTHeightSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.ConeTHeightSpinner.Step = 1e-7;
       app.ConeTHeightSpinner.Limits = [0, Inf];
       app.ConeTHeightSpinner.LowerLimitInclusive = 'off';
@@ -442,7 +442,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.DiscRadiusSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Radius');
       app.DiscRadiusSpinner.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.DiscRadiusSpinner.Step = 1e-7;
       app.DiscRadiusSpinner.Limits = [0, Inf];
       app.DiscRadiusSpinner.LowerLimitInclusive = 'off';
@@ -452,7 +452,7 @@ classdef Simple < ott.ui.shape.NewShapeBase ...
       app.DiscCoeffSpinners = ott.ui.support.XyzSpinners(app.ExtraGrid, ...
           'label', 'Coefficients');
       app.DiscCoeffSpinners.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+          @updateParametersCb, true);
       app.DiscCoeffSpinners.Step = 0.1;
       app.DiscCoeffSpinners.Layout.Row = 16;
       app.DiscCoeffSpinners.Layout.Column = 1;
