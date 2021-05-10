@@ -17,7 +17,7 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
 % using/distributing this file.
 
   properties (Constant)
-    windowSize = [640, 420];
+    windowSize = [300, 420];
   end
   
   properties (Access=public)
@@ -26,6 +26,10 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
     ShapeName            ott.ui.support.VariableDropDown
     WavelengthSpinner    ott.ui.support.LabeledSpinner
     RelativeIndexSpinner ott.ui.support.LabeledSpinner
+  end
+  
+  properties (Access=protected)
+    wwidth = 140
   end
   
   methods (Access=protected)
@@ -41,31 +45,35 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
       % Create grid
       app.MainGrid = uigridlayout(app.UIFigure, [4, 1]);
       app.MainGrid.RowHeight = {32, 32, '1x', 32};
-      app.MainGrid.ColumnWidth = {220};
+      app.MainGrid.ColumnWidth = {'1x'};
       app.MainGrid.ColumnSpacing = 1;
       app.MainGrid.RowSpacing = 1;
       
       % Output variable entry
-      app.VariableName = ott.ui.support.OutputVariableEntry(app.MainGrid);
+      app.VariableName = ott.ui.support.OutputVariableEntry(app.MainGrid, ...
+        'wwidth', app.wwidth);
       app.VariableName.Layout.Row = 1;
       app.VariableName.Layout.Column = 1;
       
       % Shape input
-      app.ShapeName = ott.ui.support.VariableDropDown(app.MainGrid);
+      app.ShapeName = ott.ui.support.VariableDropDown(app.MainGrid, ...
+        'wwidth', app.wwidth);
       app.ShapeName.Layout.Row = 2;
       app.ShapeName.Layout.Column = 1;
+      app.registerRefreshInput(app.ShapeName);
       
       % Create grid
       app.ExtraGrid = uigridlayout(app.MainGrid);
+      app.ExtraGrid.Layout.Row = 3;
+      app.ExtraGrid.Layout.Column = 1;
       app.ExtraGrid.Padding = [0, 0, 0, 0];
       app.ExtraGrid.ColumnWidth = {'1x'};
       app.ExtraGrid.ColumnSpacing = 1;
       app.ExtraGrid.RowSpacing = 1;
-      app.ExtraGrid.Layout.Row = 3;
-      app.ExtraGrid.Layout.Column = 1;
       
       % Update button
-      app.UpdateButton = ott.ui.support.UpdateWithProgress(app.MainGrid);
+      app.UpdateButton = ott.ui.support.UpdateWithProgress(app.MainGrid, ...
+        'wwidth', app.wwidth);
       app.UpdateButton.Layout.Row = 4;
       app.UpdateButton.Layout.Column = 1;
       

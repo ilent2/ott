@@ -1,4 +1,4 @@
-classdef OutputVariableEntry < ott.ui.support.GridWidget
+classdef OutputVariableEntry < ott.ui.support.LabeledWidget
 % A Label and Text Entry for specifying the output variable name.
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
@@ -6,7 +6,6 @@ classdef OutputVariableEntry < ott.ui.support.GridWidget
 % using/distributing this file.
 
   properties
-    Label         matlab.ui.control.Label
     EditField     matlab.ui.control.EditField
   end
   
@@ -18,23 +17,14 @@ classdef OutputVariableEntry < ott.ui.support.GridWidget
   methods
     function obj = OutputVariableEntry(parent, varargin)
       
-      obj = obj@ott.ui.support.GridWidget(parent);
-      
       p = inputParser;
+      p.addParameter('label', 'Output');
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
       
-      % Create grid
-      obj.Grid.RowHeight = {22};
-      obj.Grid.ColumnWidth = {'1x', 100};
-      obj.Grid.ColumnSpacing = 1;
-      obj.Grid.RowSpacing = 1;
-      
-      % Create label
-      obj.Label = uilabel(obj.Grid);
-      obj.Label.HorizontalAlignment = 'left';
-      obj.Label.Layout.Column = 1;
-      obj.Label.Layout.Row = 1;
-      obj.Label.Text = 'Variable Name';
+      obj = obj@ott.ui.support.LabeledWidget(parent, ...
+        'label', p.Results.label, unmatched{:});
 
       % Create ScatteredBeamEditField
       obj.EditField = uieditfield(obj.Grid, 'text');
