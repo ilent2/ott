@@ -11,7 +11,7 @@ classdef LabeledTextEntry < ott.ui.support.LabeledWidget
   end
   
   properties
-    Entry           matlab.ui.control.EditField
+    EditField           matlab.ui.control.EditField
   end
   
   methods
@@ -28,24 +28,24 @@ classdef LabeledTextEntry < ott.ui.support.LabeledWidget
         'label', p.Results.label, unmatched{:});
 
       % Spinner
-      obj.Entry = uieditfield(obj.Grid, 'text');
-      obj.Entry.Layout.Column = 2;
-      obj.Entry.Layout.Row = 1;
+      obj.EditField = uieditfield(obj.Grid, 'text');
+      obj.EditField.Layout.Column = 2;
+      obj.EditField.Layout.Row = 1;
       
     end
   end
   
   methods
     function val = get.Value(obj)
-      val = obj.Entry.Value;
+      val = obj.EditField.Value;
     end
     
     function set.Value(obj, val)
-      obj.Entry.Value = val;
+      obj.EditField.Value = val;
     end
     
     function set.ValueChangedFcn(obj, val)
-      obj.Entry.ValueChangedFcn = val;
+      obj.EditField.ValueChangedFcn = val;
     end
   end
 end

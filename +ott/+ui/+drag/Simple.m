@@ -44,24 +44,37 @@ classdef Simple < ott.ui.support.AppTopLevel ...
     function setDefaultValues(app)
       app.VariableName.Value = '';
       app.ShapeDropDown.Value = '';
-      app.ViscositySpinner.Value = 1;
+      app.ViscositySpinner.Value = 1.7e-3;
       app.UpdateButton.AutoUpdate = true;
       app.UITable.Data = repmat({''}, 6, 6);
     end
     
     function code = generateCode(app)
-      code = {};  % TODO
+      % Generate code
+      code = {};
+      code{end+1} = ['viscosity = ' num2str(app.ViscositySpinner.Value) ';'];
+      code{end+1} = 'drag = ott.drag.Stokes.FromShape(...';
+      code{end+1} = '  shape, viscosity);';
     end
     
     function data = generateData(app)
-      % Generate data and put in preview-table
+      % Generate data
+      data = ott.drag.Stokes.FromShape(...
+        app.ShapeDropDown.Variable, ...
+        app.ViscositySpinner.Value);
+    end
+    
+    function updatePreview(app)
+      % Update the preview table
       
-      % TODO: Generate data
-      data = randn(6, 6);
+      % Get data
+      data = app.Data.forward;
       
-      % Put data in table
+      % Get string represeentation
+      data = arrayfun(@(x)sprintf('%e', x), data, 'UniformOutput', false);
+      
+      % Display data
       app.UITable.Data = data;
-      
     end
     
     function createMainComponents(app)
@@ -87,6 +100,7 @@ classdef Simple < ott.ui.support.AppTopLevel ...
           'label', 'Shape', 'filter', 'ott.shape.Shape');
       app.ShapeDropDown.Layout.Row = 2;
       app.ShapeDropDown.Layout.Column = 1;
+      app.ShapeDropDown.ValueChangedFcn = @(~,~) app.updateParametersCb();
       app.registerRefreshInput(app.ShapeDropDown);
         
       % Viscosity
@@ -94,6 +108,10 @@ classdef Simple < ott.ui.support.AppTopLevel ...
           'label', 'Viscosity');
       app.ViscositySpinner.Layout.Row = 3;
       app.ViscositySpinner.Layout.Column = 1;
+      app.ViscositySpinner.Step = 1e-4;
+      app.ViscositySpinner.Limits = [0, Inf];
+      app.ViscositySpinner.LowerLimitInclusive = 'off';
+      app.ViscositySpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Auto-update widget
       app.UpdateButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
