@@ -49,11 +49,11 @@ classdef (Abstract) NewBeamBase < ott.ui.support.AppTwoColumn ...
       app.update();
     end
     
-    function UpdatePreview(app)
+    function updatePreview(app)
       % Update the beam preview
       
       % Call base
-      UpdatePreview@ott.ui.support.AppProducer(app);
+      updatePreview@ott.ui.support.AppProducer(app);
       
       % Display loading text now!
       app.LoadingText.Visible = 'on';
