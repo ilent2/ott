@@ -84,7 +84,12 @@ classdef AppProducer < handle
       % Update the data (and output/preview)
       
       % Generate new data
-      app.Data = app.generateData();
+      try
+        app.Data = app.generateData();
+      catch ME
+        app.UpdateButton.setError();
+        rethrow(ME);
+      end
       
       % Write new data
       app.writeData();

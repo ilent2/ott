@@ -81,7 +81,7 @@ classdef Pointmatch < ott.tmatrix.Homogeneous
       %   - Nmax (numeric) -- Size of the VSWF expansion used for the
       %     T-matrix calculation.  In some cases it can be reduced
       %     after construction.
-      %     Default: ``ott.utis.ka2nmax(2*pi*shape.maxRadius)`` (may
+      %     Default: ``ott.utils.ka2nmax(2*pi*shape.maxRadius)`` (may
       %     need different values to give convergence for some shapes).
       %
       %   - angulargrid ({theta, phi}) -- Angular grid of points for

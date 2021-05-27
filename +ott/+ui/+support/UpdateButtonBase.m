@@ -12,4 +12,10 @@ classdef UpdateButtonBase < handle
   properties (Abstract)
     AutoUpdate
   end
+  
+  methods (Abstract)
+    setError(app)
+    setWarning(app)
+    clearErrors(app)
+  end
 end

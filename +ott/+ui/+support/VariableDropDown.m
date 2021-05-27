@@ -81,11 +81,7 @@ classdef VariableDropDown < ott.ui.support.LabeledDropDown
   
   methods
     function val = get.Variable(obj)
-      try
-        val = evalin('base', obj.Value);
-      catch
-        val = [];
-      end
+      val = evalin('base', obj.Value);
     end
   end
 end

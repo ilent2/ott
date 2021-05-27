@@ -36,6 +36,8 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
     function setDefaultValues(app)
       app.VariableName.Value = '';
       app.ShapeName.Value = '';
+      app.WavelengthSpinner.Value = 1e-6;
+      app.RelativeIndexSpinner.Value = 1.2;
       app.UpdateButton.Level = 0;
       app.UpdateButton.clearErrors();
     end
@@ -44,7 +46,8 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
       
       % Create grid
       app.MainGrid = uigridlayout(app.UIFigure, [4, 1]);
-      app.MainGrid.RowHeight = {32, 32, '1x', 32};
+      app.MainGrid.RowHeight = repmat({32}, 1, 6);
+      app.MainGrid.RowHeight{end-1} = '1x';
       app.MainGrid.ColumnWidth = {'1x'};
       app.MainGrid.ColumnSpacing = 1;
       app.MainGrid.RowSpacing = 1;
@@ -57,14 +60,34 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
       
       % Shape input
       app.ShapeName = ott.ui.support.VariableDropDown(app.MainGrid, ...
-        'wwidth', app.wwidth);
+        'wwidth', app.wwidth, 'filter', 'ott.shape.Shape');
       app.ShapeName.Layout.Row = 2;
       app.ShapeName.Layout.Column = 1;
       app.registerRefreshInput(app.ShapeName);
       
+      % Wavelength spinner
+      app.WavelengthSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'wwidth', app.wwidth, 'label', 'Wavelength');
+      app.WavelengthSpinner.Layout.Row = 3;
+      app.WavelengthSpinner.Layout.Column = 1;
+      app.WavelengthSpinner.Step = 1e-6;
+      app.WavelengthSpinner.Limits = [0,Inf];
+      app.WavelengthSpinner.LowerLimitInclusive = false;
+      app.WavelengthSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
+      
+      % Index relative spinner
+      app.RelativeIndexSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
+          'wwidth', app.wwidth, 'label', 'Rel. Index');
+      app.RelativeIndexSpinner.Layout.Row = 4;
+      app.RelativeIndexSpinner.Layout.Column = 1;
+      app.RelativeIndexSpinner.Step = 0.1;
+      app.RelativeIndexSpinner.Limits = [0,Inf];
+      app.RelativeIndexSpinner.LowerLimitInclusive = false;
+      app.RelativeIndexSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
+      
       % Create grid
       app.ExtraGrid = uigridlayout(app.MainGrid);
-      app.ExtraGrid.Layout.Row = 3;
+      app.ExtraGrid.Layout.Row = 5;
       app.ExtraGrid.Layout.Column = 1;
       app.ExtraGrid.Padding = [0, 0, 0, 0];
       app.ExtraGrid.ColumnWidth = {'1x'};
@@ -74,7 +97,7 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
       % Update button
       app.UpdateButton = ott.ui.support.UpdateWithProgress(app.MainGrid, ...
         'wwidth', app.wwidth);
-      app.UpdateButton.Layout.Row = 4;
+      app.UpdateButton.Layout.Row = 6;
       app.UpdateButton.Layout.Column = 1;
       
     end

@@ -71,6 +71,18 @@ classdef UpdateCheckButton < ott.ui.support.GridWidget ...
       obj.Button.ButtonPushedFcn = @(h,e) obj.buttonPushedCb(e);
       
     end
+    
+    function clearErrors(obj)
+      % TODO: Visual queue
+    end
+    
+    function setError(obj)
+      % TODO: Visual queue
+    end
+    
+    function setWarning(obj)
+      % TODO: Visual queue
+    end
   end
   
   methods

@@ -34,7 +34,7 @@ classdef OutputVariableEntry < ott.ui.support.LabeledWidget
       
     end
     
-    function WriteVariable(obj, data)
+    function writeVariable(obj, data)
       % Write the specified data to the given variable name
       
       % Check we have work to do

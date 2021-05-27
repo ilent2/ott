@@ -17,11 +17,11 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget ...
   end
   
   methods (Access = private)
-    function buttonPushedCb(obj, evt)
+    function buttonPushedCb(obj)
       % Callback for button: dispatches notification
       
-      % Emit UpdateCalled event (lazy: reuse input event...)
-      notify(obj, "UpdateCalled", evt);
+      % Emit UpdateCalled event
+      notify(obj, "UpdateCalled");
     end
   end
   
@@ -41,7 +41,7 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget ...
       obj.Button.Text = 'Update';
       obj.Button.Layout.Column = 1;
       obj.Button.Layout.Row = 1;
-      obj.Button.ButtonPushedFcn = @(h,e) obj.ButtonPushedCb(e);
+      obj.Button.ButtonPushedFcn = @(~,~) obj.buttonPushedCb();
 
       % Create Guage
       obj.Gauge = uigauge(obj.Grid, 'linear');
