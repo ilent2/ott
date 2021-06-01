@@ -19,10 +19,15 @@ classdef VariableDropDown < ott.ui.support.LabeledDropDown
   
   methods
     function obj = VariableDropDown(parent, varargin)
+      % Construct a new variable drop down instance.
+      %
+      % @param label : Label for the drop down.  Default: 'Variable'
+      % @param filter : Filter to apply to variables in the base
+      %   workspace.  Default: []
       
       p = inputParser;
       p.addParameter('label', 'Variable');
-      p.addParameter('filter', 'double');
+      p.addParameter('filter', []);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -63,8 +68,12 @@ classdef VariableDropDown < ott.ui.support.LabeledDropDown
       varnames = evalin('base', 'who');
       vars = basevars;
       for ii = 1:length(varnames)
-          if isa(evalin('base', varnames{ii}), obj.Filter)
-              vars{end+1} = varnames{ii}; %#ok<AGROW>
+          if ~isempty(obj.Filter)
+            if isa(evalin('base', varnames{ii}), obj.Filter)
+                vars{end+1} = varnames{ii}; %#ok<AGROW>
+            end
+          else
+            vars{end+1} = varnames{ii}; %#ok<AGROW>
           end
       end
 

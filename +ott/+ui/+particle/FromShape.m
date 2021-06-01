@@ -33,17 +33,17 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
       '', ...
       'Calculate Internal -- If true, also calculates internal T-matrix.', ...
       '', ...
-      'Mass -- Mass of the particle.'};
+      'Mass (kg) -- Mass of the particle.'};
     
     windowName = ott.ui.particle.FromShape.nameText;
-    windowSize = [500, 230];
+    windowSize = [500, 260];
   end
   
   properties (Access=public)
     ShapeDropDown       ott.ui.support.VariableDropDown
-    ParticleIrSpinner    ott.ui.support.LabeledSpinner
-    MediumIrSpinner    ott.ui.support.LabeledSpinner
-    WavelengthSpinner    ott.ui.support.LabeledSpinner
+    ParticleIrSpinner   ott.ui.support.LabeledSpinner
+    MediumIrSpinner     ott.ui.support.LabeledSpinner
+    WavelengthSpinner   ott.ui.support.LabeledSpinner
     ViscositySpinner    ott.ui.support.LabeledSpinner
     InternalCheckbox    matlab.ui.control.CheckBox
     MassSpinner         ott.ui.support.LabeledSpinner
@@ -51,7 +51,15 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
   
   methods (Access=protected)
     function data = generateData(app)
-      data = []; % TODO
+      % Generate particle
+      
+      data = ott.particle.Fixed.FromShape(app.ShapeDropDown.Variable, ...
+        'index_particle', app.ParticleIrSpinner.Value, ...
+        'index_medium', app.MediumIrSpinner.Value, ...
+        'wavelength0', app.WavelengthSpinner.Value, ...
+        'viscosity', app.ViscositySpinner.Value, ...
+        'internal', app.InternalCheckbox.Value, ...
+        'mass', app.MassSpinner.Value);
     end
     
     function code = generateCode(app)
@@ -66,8 +74,9 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
       app.ParticleIrSpinner.Value = 1.2;
       app.MediumIrSpinner.Value = 1.0;
       app.WavelengthSpinner.Value = 1e-6;
-      app.ViscositySpinner.Value = 1e-3;
+      app.ViscositySpinner.Value = 8.9e-4;
       app.MassSpinner.Value = 1e-6;
+      app.InternalCheckbox.Value = false;
       
       setDefaultValues@ott.ui.particle.NewParticleBase(app);
     end
@@ -79,11 +88,11 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
       createMainComponents@ott.ui.particle.NewParticleBase(app);
       
       % Configure extra grid
-      app.ExtraGrid.RowHeight = {32, 32, 32};
+      app.ExtraGrid.RowHeight = repmat({30}, 1, 4);
       
       % Shape
       app.ShapeDropDown = ott.ui.support.VariableDropDown(app.ExtraGrid, ...
-          'label', 'Shape');
+          'label', 'Shape', 'filter', 'ott.shape.Shape');
       app.ShapeDropDown.Layout.Row = 1;
       app.ShapeDropDown.Layout.Column = 1;
       app.registerRefreshInput(app.ShapeDropDown);
@@ -91,30 +100,51 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
       % Particle IR spinner
       app.ParticleIrSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Particle Index');
+      app.ParticleIrSpinner.Step = 0.1;
+      app.ParticleIrSpinner.Limits = [0, Inf];
+      app.ParticleIrSpinner.LowerLimitInclusive = 'off';
       app.ParticleIrSpinner.Layout.Row = 2;
       app.ParticleIrSpinner.Layout.Column = 1;
         
       % Medium IR spinner
       app.MediumIrSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Medium Index');
+      app.MediumIrSpinner.Step = 0.1;
+      app.MediumIrSpinner.Limits = [0, Inf];
+      app.MediumIrSpinner.LowerLimitInclusive = 'off';
       app.MediumIrSpinner.Layout.Row = 3;
       app.MediumIrSpinner.Layout.Column = 1;
+      
+      % Internal checkbox
+      app.InternalCheckbox = uicheckbox(app.ExtraGrid);
+      app.InternalCheckbox.Text = 'Internal';
+      app.InternalCheckbox.Layout.Row = 4;
+      app.InternalCheckbox.Layout.Column = 1;
         
       % Wavelength
       app.WavelengthSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Wavelength');
+      app.WavelengthSpinner.Step = 1e-7;
+      app.WavelengthSpinner.Limits = [0, Inf];
+      app.WavelengthSpinner.LowerLimitInclusive = 'off';
       app.WavelengthSpinner.Layout.Row = 1;
       app.WavelengthSpinner.Layout.Column = 2;
         
       % Viscosity
       app.ViscositySpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Viscosity');
+      app.ViscositySpinner.Step = 1e-5;
+      app.ViscositySpinner.Limits = [0, Inf];
+      app.ViscositySpinner.LowerLimitInclusive = 'off';
       app.ViscositySpinner.Layout.Row = 2;
       app.ViscositySpinner.Layout.Column = 2;
         
       % Mass
       app.MassSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
           'label', 'Mass');
+      app.MassSpinner.Step = 1e-7;
+      app.MassSpinner.Limits = [0, Inf];
+      app.MassSpinner.LowerLimitInclusive = 'off';
       app.MassSpinner.Layout.Row = 3;
       app.MassSpinner.Layout.Column = 2;
       

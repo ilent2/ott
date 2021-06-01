@@ -23,9 +23,6 @@ classdef NewParticleBase < ott.ui.support.AppTopLevel ...
       app.VariableName.Value = '';
       app.UpdateButton.Level = 0;
       app.UpdateButton.clearErrors();
-      
-      % Update the output
-      app.update();
     end
     
     function createMainComponents(app)
