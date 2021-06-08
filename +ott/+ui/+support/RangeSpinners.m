@@ -25,14 +25,16 @@ classdef RangeSpinners < ott.ui.support.LabeledWidget
       
       p = inputParser;
       p.addParameter('label', 'Range');
-      p.addParameter('visible', 'on');
+      p.KeepUnmatched = true;
       p.parse(varargin{:});
+      unmatched = ott.utils.unmatchedArgs(p);
       
       obj = obj@ott.ui.support.LabeledWidget(parent, ...
-          'label', p.Results.label, 'visible', p.Results.visible);
+        'label', p.Results.label, unmatched{:});
         
       % Configure grid for additional entries
-      obj.Grid.ColumnWidth = {'1x', 60, 60};
+      wwidth = obj.Grid.ColumnWidth{2};
+      obj.Grid.ColumnWidth = {'1x', wwidth/2, wwidth/2};
       obj.Grid.ColumnSpacing = 0;
 
       % X Spinner

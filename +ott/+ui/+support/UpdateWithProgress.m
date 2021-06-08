@@ -46,9 +46,10 @@ classdef UpdateWithProgress < ott.ui.support.GridWidget ...
       % Create Guage
       obj.Gauge = uigauge(obj.Grid, 'linear');
       obj.Gauge.Enable = 'off';
-      obj.Gauge.FontSize = 8;
+      obj.Gauge.FontSize = 6;
       obj.Gauge.Layout.Column = 2;
       obj.Gauge.Layout.Row = 1;
+      obj.Gauge.Limits = [0, 100];
       
     end
     

@@ -113,8 +113,7 @@ classdef AppProducer < handle
       
       % Connect callbacks
       app.VariableName.ValueChangedFcn = @(o,e) app.updateVariableNameCb(e);
-      addlistener(app.UpdateButton, "UpdateCalled", ...
-          @(h,e) app.updateButtonCb(e));
+      app.UpdateButton.UpdateCalledFcn = @(h,e) app.updateButtonCb(e);
       if ~isempty(app.ShowPreviewCheckBox)
         app.ShowPreviewCheckBox.ValueChangedFcn = @(o,e) app.previewToggledCb(e);
       end

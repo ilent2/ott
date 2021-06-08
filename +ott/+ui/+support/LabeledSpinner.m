@@ -11,6 +11,7 @@ classdef LabeledSpinner < ott.ui.support.LabeledWidget
     Step
     Limits
     LowerLimitInclusive
+    RoundFractionalValues
   end
   
   properties
@@ -61,6 +62,10 @@ classdef LabeledSpinner < ott.ui.support.LabeledWidget
     
     function set.LowerLimitInclusive(obj, val)
       obj.Spinner.LowerLimitInclusive = val;
+    end
+    
+    function set.RoundFractionalValues(obj, val)
+      obj.Spinner.RoundFractionalValues = val;
     end
   end
 end

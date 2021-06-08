@@ -12,7 +12,6 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
-% TODO: Change range step when direction changes
 % TODO: Add support for input arguments
 
   properties (Constant)
@@ -24,7 +23,26 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       'displacement or rotation angle.'];
     
     helpText = {ott.ui.tools.ForcePosition.aboutText, ...
-      ''};
+      '', ...
+      'This interface assumes all units are SI base units, i.e. ', ...
+      'meters for lengths, Newtons for forces.  Angles are in degrees.', ...
+      '', ...
+      'beam - Specify the beam variable name in the matlab workspace.', ...
+      '', ...
+      'tmatrix - Specify the T-matrix or Particle variable name in the', ...
+      ' matlab workspace.', ...
+      '', ...
+      'direction - Direction to translate/rotate particle.', ...
+      '', ...
+      'resolution - Number of positions/rotations.', ...
+      '', ...
+      'range - Specifies distance to translate/rotate particle.  Uses', ...
+      ' degrees for rotations and meters for translations.  Specify the', ...
+      ' range as a start (left) and end (right) value.', ...
+      '', ...
+      'position - Initial position of particle.', ...
+      '', ...
+      'rotation - Initial rotation of particle.'};
     
     windowName = ott.ui.tools.ForcePosition.nameText;
     windowSize = [640, 400];
@@ -51,18 +69,144 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
   end
   
   methods (Access=protected)
+    function progressCb(app, data)
+      % Update the progress bar
+      
+      app.UpdateButton.Level = data.iteration/data.total * 100;
+      drawnow;
+    end
+    
     function code = generateCode(app)
       code = {}; % TODO
     end
     
+    function generatePlots(app)
+      
+      % Configure guage
+      app.UpdateButton.Gauge.Enable = true;
+      app.UpdateButton.Level = 0;
+      app.UpdateButton.clearErrors();
+      
+      try
+      
+        % Get beam/particle
+        tmatrix = app.TmatrixDropDown.Variable;
+        beam = app.BeamDropDown.Variable;
+
+        % Get range
+        t0 = app.RangeSpinners.Value(1);
+        t1 = app.RangeSpinners.Value(2);
+        t = linspace(t0, t1, app.ResolutionSpinner.Value);
+
+        % Get initial position/rotation
+        xyz0 = app.PositionXyzSpinner.Value(:);
+        Rxyz0 = app.RotationXyzSpinner.Value;
+        R0 = ott.utils.rotx(Rxyz0(1))*ott.utils.roty(Rxyz0(2))*ott.utils.rotz(Rxyz0(3));
+
+        switch app.DirectionDropDown.Value
+          case 'x'
+            xyz = [1;0;0].*t + xyz0;
+            R = R0;
+          case 'y'
+            xyz = [0;1;0].*t + xyz0;
+            R = R0;
+          case 'z'
+            xyz = [0;0;1].*t + xyz0;
+            R = R0;
+          case 'Rx'
+            R = ott.utils.rotx(t, 'usecell', true);
+            R = cellfun(@(r) r * R0, R, 'UniformOutput', false);
+            xyz = xyz0;
+          case 'Ry'
+            R = ott.utils.roty(t, 'usecell', true);
+            R = cellfun(@(r) r * R0, R, 'UniformOutput', false);
+            xyz = xyz0;
+          case 'Rz'
+            R = ott.utils.rotz(t, 'usecell', true);
+            R = cellfun(@(r) r * R0, R, 'UniformOutput', false);
+            xyz = xyz0;
+          otherwise
+            error('Internal error');
+        end
+
+        % Calculate force/torque
+        [force, torque] = beam.forcetorque(tmatrix, ...
+            'position', xyz, 'rotation', R, ...
+            'progress', @(a) app.progressCb(a));
+      
+        % Update plots
+        plot(app.ForceAxes, t, -force);
+        plot(app.TorqueAxes, t, -torque);
+          
+      catch ME
+        app.UpdateButton.setError();
+        rethrow(ME);
+      end
+      
+      % Update guage
+      app.UpdateButton.Gauge.Enable = false;
+      
+    end
+    
     function setDefaultValues(app, ~)
+      % Reset window to defaults
+      
+      % Set widget values
       app.BeamDropDown.Value = '';
       app.TmatrixDropDown.Value = '';
       app.DirectionDropDown.Value = 'z';
       app.ResolutionSpinner.Value = 100;
-      app.RangeSpinners.Value = [-1e-6, 1e-6];
+      % app.RangeSpinners.Value = [-1e-6, 1e-6]; % in directionValueChCb
       app.PositionXyzSpinner.Value = [0,0,0];
       app.RotationXyzSpinner.Value = [0,0,0];
+      app.UpdateButton.Level = 0;
+      app.UpdateButton.clearErrors();
+      
+      % Update direction specific things
+      app.directionValueChangedCb();
+      
+      % Clear plots
+      cla(app.ForceAxes);
+      cla(app.TorqueAxes);
+    end
+    
+    function directionValueChangedCb(app)
+
+      % Update graph labels
+      switch app.DirectionDropDown.Value
+        case 'x'
+          xlabel(app.ForceAxes, 'Position (m)')
+          xlabel(app.TorqueAxes, 'Position (m)')
+          app.RangeSpinners.Step = 5e-7;
+          app.RangeSpinners.Value = [-1e-6, 1e-6];
+        case 'y'
+          xlabel(app.ForceAxes, 'Position (m)')
+          xlabel(app.TorqueAxes, 'Position (m)')
+          app.RangeSpinners.Step = 5e-7;
+          app.RangeSpinners.Value = [-1e-6, 1e-6];
+        case 'z'
+          xlabel(app.ForceAxes, 'Position (m)')
+          xlabel(app.TorqueAxes, 'Position (m)')
+          app.RangeSpinners.Step = 5e-7;
+          app.RangeSpinners.Value = [-1e-6, 1e-6];
+        case 'Rx'
+          xlabel(app.ForceAxes, 'Angle (deg)')
+          xlabel(app.TorqueAxes, 'Angle (deg)')
+          app.RangeSpinners.Step = 10;
+          app.RangeSpinners.Value = [-90, 90];
+        case 'Ry'
+          xlabel(app.ForceAxes, 'Angle (deg)')
+          xlabel(app.TorqueAxes, 'Angle (deg)')
+          app.RangeSpinners.Step = 10;
+          app.RangeSpinners.Value = [-90, 90];
+        case 'Rz'
+          xlabel(app.ForceAxes, 'Angle (deg)')
+          xlabel(app.TorqueAxes, 'Angle (deg)')
+          app.RangeSpinners.Step = 10;
+          app.RangeSpinners.Value = [-90, 90];
+        otherwise
+          error('Internal error');
+      end
     end
     
     function createLeftComponents(app)
@@ -78,14 +222,15 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       
       % Beam selection
       app.BeamDropDown = ott.ui.support.VariableDropDown(app.LeftGrid, ...
-        'label', 'Beam', 'wwidth', wwidth);
+        'label', 'Beam', 'wwidth', wwidth, 'filter', 'ott.beam.Beam');
       app.BeamDropDown.Layout.Row = 1;
       app.BeamDropDown.Layout.Column = 1;
       app.registerRefreshInput(app.BeamDropDown);
       
       % T-matrix selection
       app.TmatrixDropDown = ott.ui.support.VariableDropDown(app.LeftGrid, ...
-        'label', 'Particle', 'wwidth', wwidth);
+        'label', 'Particle', 'wwidth', wwidth, ...
+        'filter', {'ott.tmatrix.Tmatrix', 'ott.particle.Particle'});
       app.TmatrixDropDown.Layout.Row = 2;
       app.TmatrixDropDown.Layout.Column = 1;
       app.registerRefreshInput(app.TmatrixDropDown);
@@ -98,6 +243,7 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       app.DirectionDropDown.ItemsData = {'x', 'y', 'z', 'Rx', 'Ry', 'Rz'};
       app.DirectionDropDown.Layout.Row = 3;
       app.DirectionDropDown.Layout.Column = 1;
+      app.DirectionDropDown.ValueChangedFcn = @(~,~) app.directionValueChangedCb();
       
       % Resolution
       app.ResolutionSpinner = ott.ui.support.LabeledSpinner(app.LeftGrid, ...
@@ -106,10 +252,12 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       app.ResolutionSpinner.Limits = [1, Inf];
       app.ResolutionSpinner.Layout.Row = 4;
       app.ResolutionSpinner.Layout.Column = 1;
+      app.ResolutionSpinner.RoundFractionalValues = true;
       
       % Range
-      app.RangeSpinners = ott.ui.support.RangeSpinners(app.LeftGrid);
-      app.RangeSpinners.Step = 1e-7;
+      app.RangeSpinners = ott.ui.support.RangeSpinners(app.LeftGrid, ...
+          'wwidth', 160);
+      app.RangeSpinners.Step = 5e-7;
       app.RangeSpinners.Layout.Row = 5;
       app.RangeSpinners.Layout.Column = 1;
 
@@ -118,17 +266,20 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
         'label', 'Position');
       app.PositionXyzSpinner.Layout.Row = 6;
       app.PositionXyzSpinner.Layout.Column = 1;
+      app.PositionXyzSpinner.Step = 5e-7;
 
       % Create Rotation
       app.RotationXyzSpinner = ott.ui.support.XyzSpinners(app.LeftGrid, ...
           'label', 'Rotation');
       app.RotationXyzSpinner.Layout.Row = 7;
       app.RotationXyzSpinner.Layout.Column = 1;
+      app.RotationXyzSpinner.Step = 10;
 
       % Create CalculateButton
       app.UpdateButton = ott.ui.support.UpdateWithProgress(app.LeftGrid);
       app.UpdateButton.Layout.Row = 9;
       app.UpdateButton.Layout.Column = 1;
+      app.UpdateButton.UpdateCalledFcn = @(~,~) app.generatePlots();
     end
     
     function createRightComponents(app)
@@ -141,15 +292,15 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       
       % Create UIAxes
       app.ForceAxes = uiaxes(app.RightGrid);
-      xlabel(app.ForceAxes, 'X')
-      ylabel(app.ForceAxes, 'Force')
+      xlabel(app.ForceAxes, 'Position (m)')
+      ylabel(app.ForceAxes, 'Force (N)')
       app.ForceAxes.Layout.Row = 1;
       app.ForceAxes.Layout.Column = 1;
 
       % Create UIAxes2
       app.TorqueAxes = uiaxes(app.RightGrid);
-      xlabel(app.TorqueAxes, 'X')
-      ylabel(app.TorqueAxes, 'Torque')
+      xlabel(app.TorqueAxes, 'Position (m)')
+      ylabel(app.TorqueAxes, 'Torque (Nm)')
       app.TorqueAxes.Layout.Row = 2;
       app.TorqueAxes.Layout.Column = 1;
       

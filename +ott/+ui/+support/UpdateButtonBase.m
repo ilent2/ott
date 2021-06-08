@@ -13,9 +13,19 @@ classdef UpdateButtonBase < handle
     AutoUpdate
   end
   
+  properties (Dependent)
+    UpdateCalledFcn   % Convinience method to set UpdateCalled callback
+  end
+  
   methods (Abstract)
     setError(app)
     setWarning(app)
     clearErrors(app)
+  end
+  
+  methods
+    function set.UpdateCalledFcn(obj, fcn)
+      addlistener(obj, "UpdateCalled", fcn);
+    end
   end
 end

@@ -10,7 +10,7 @@ classdef VariableDropDown < ott.ui.support.LabeledDropDown
 %   https://undocumentedmatlab.com/articles/editbox-data-input-validation
 
   properties (Access=public)
-    Filter (1, :) char
+    Filter
   end
   
   properties (Dependent, SetAccess=private)
@@ -69,8 +69,17 @@ classdef VariableDropDown < ott.ui.support.LabeledDropDown
       vars = basevars;
       for ii = 1:length(varnames)
           if ~isempty(obj.Filter)
-            if isa(evalin('base', varnames{ii}), obj.Filter)
-                vars{end+1} = varnames{ii}; %#ok<AGROW>
+            if iscell(obj.Filter)
+              for jj = 1:numel(obj.Filter)
+                if isa(evalin('base', varnames{ii}), obj.Filter{jj})
+                  vars{end+1} = varnames{ii}; %#ok<AGROW>
+                  break;
+                end
+              end
+            else
+              if isa(evalin('base', varnames{ii}), obj.Filter)
+                  vars{end+1} = varnames{ii}; %#ok<AGROW>
+              end
             end
           else
             vars{end+1} = varnames{ii}; %#ok<AGROW>
@@ -91,6 +100,12 @@ classdef VariableDropDown < ott.ui.support.LabeledDropDown
   methods
     function val = get.Variable(obj)
       val = evalin('base', obj.Value);
+    end
+    
+    function set.Filter(obj, val)
+      assert(isa(val, 'char') | isa(val, 'cell'), ...
+        'Filter must be character array or cell array of char arrays.');
+      obj.Filter = val;
     end
   end
 end

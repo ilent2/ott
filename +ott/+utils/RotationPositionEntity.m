@@ -169,7 +169,7 @@ classdef (Abstract) RotationPositionEntity < ...
     function obj = set.position(obj, val)
       assert(isnumeric(val) && numel(val) == 3, ...
           'position must be 3 element numeric vector');
-      obj.positionInternal = val;
+      obj.positionInternal = val(:);
     end
     function val = get.position(obj)
       val = obj.positionInternal;
@@ -177,7 +177,7 @@ classdef (Abstract) RotationPositionEntity < ...
 
     function obj = set.rotation(obj, val)
       assert(isnumeric(val) && ismatrix(val) && all(size(val) == [3, 3]), ...
-          'position must be 3x3 numeric matrix');
+          'rotation must be 3x3 numeric matrix');
       obj.rotationInternal = val;
     end
     function val = get.rotation(obj)
