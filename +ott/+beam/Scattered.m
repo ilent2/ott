@@ -612,7 +612,7 @@ classdef Scattered < ott.beam.Beam
     % Force/torque related methods
     %
 
-    function varargout = force(beam, obeam, varargin)
+    function varargout = scalarForce(beam, obeam, varargin)
       % Calculate change in linear momentum between beams.
       %
       % Uses the internal bsc data of the two beams to calculate the
@@ -627,20 +627,23 @@ classdef Scattered < ott.beam.Beam
       %
       %   [fx, fy, fz] = ibeam.force(...) -- As above, but unpacking
       %   the outputs for X/Y/Z.
+      
+      assert(numel(beam) == 1, 'beam must be scalar');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for force without arguments');
         [odata, ~] = beam.getAndParseType('type', 'outgoing');
         [idata, ~] = beam.getAndParseType('type', 'incoming');
-        [varargout{1:nargout}] = idata.force(odata);
+        [varargout{1:nargout}] = idata.scalarForce(odata);
       else
+        assert(numel(obeam) == 1, 'other must be scalar');
         [odata, ~] = beam.getAndParseType('type', 'total');
-        [varargout{1:nargout}] = odata.force(obeam, varargin{:});
+        [varargout{1:nargout}] = odata.scalarForce(obeam, varargin{:});
       end
     end
 
-    function varargout = torque(beam, obeam, varargin)
+    function varargout = scalarTorque(beam, obeam, varargin)
       % Calculate change in angular momentum between beams.
       %
       % Uses the internal bsc data of the two beams to calculate the
@@ -655,20 +658,23 @@ classdef Scattered < ott.beam.Beam
       %
       %   [tx, ty, tz] = ibeam.torque(...) -- As above, but unpacking
       %   the outputs for X/Y/Z.
+      
+      assert(numel(beam) == 1, 'beam must be scalar');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for torque without arguments');
         [odata, ~] = beam.getAndParseType('type', 'outgoing');
         [idata, ~] = beam.getAndParseType('type', 'incoming');
-        [varargout{1:nargout}] = idata.torque(odata);
+        [varargout{1:nargout}] = idata.scalarTorque(odata);
       else
+        assert(numel(obeam) == 1, 'other must be scalar');
         [odata, ~] = beam.getAndParseType('type', 'total');
-        [varargout{1:nargout}] = odata.torque(obeam, varargin{:});
+        [varargout{1:nargout}] = odata.scalarTorque(obeam, varargin{:});
       end
     end
 
-    function varargout = spin(beam, obeam, varargin)
+    function varargout = scalarSpin(beam, obeam, varargin)
       % Calculate change in spin angular momentum between beams.
       %
       % Uses the internal bsc data of the two beams to calculate the
@@ -683,20 +689,23 @@ classdef Scattered < ott.beam.Beam
       %
       %   [sx, sy, sz] = ibeam.spin(...) -- As above, but unpacking
       %   the outputs for X/Y/Z.
+      
+      assert(numel(beam) == 1, 'beam must be scalar');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for spin without arguments');
         [odata, ~] = beam.getAndParseType('type', 'outgoing');
         [idata, ~] = beam.getAndParseType('type', 'incoming');
-        [varargout{1:nargout}] = idata.spin(odata);
+        [varargout{1:nargout}] = idata.scalarSpin(odata);
       else
+        assert(numel(obeam) == 1, 'other must be scalar');
         [odata, ~] = beam.getAndParseType('type', 'total');
-        [varargout{1:nargout}] = odata.spin(obeam, varargin{:});
+        [varargout{1:nargout}] = odata.scalarSpin(obeam, varargin{:});
       end
     end
 
-    function varargout = forcetorque(beam, obeam, varargin)
+    function varargout = scalarForceTorque(beam, obeam, varargin)
       % Calculate change in momentum between beams
       %
       % Usage
@@ -707,18 +716,19 @@ classdef Scattered < ott.beam.Beam
       %   [f, t, s] = ibeam.forcetorque(sbeam) -- calculates the force,
       %   torque and spin between the incident beam ``ibeam`` and
       %   scattered beam ``sbeam``.
-      %
-      %   Outputs 3x[N...] matrix depending on the number and shape of beams.
+      
+      assert(numel(beam) == 1, 'beam must be scalar');
 
       if nargin == 1
         assert(~isempty(beam.scattered) && ~isempty(beam.incident), ...
           'scattered and incident must be set for forcetorque without arguments');
         [odata, ~] = beam.getAndParseType('type', 'outgoing');
         [idata, ~] = beam.getAndParseType('type', 'incoming');
-        [varargout{1:nargout}] = idata.forcetorque(odata);
+        [varargout{1:nargout}] = idata.scalarForceTorque(odata);
       else
+        assert(numel(obeam) == 1, 'other must be scalar');
         [odata, ~] = beam.getAndParseType('type', 'total');
-        [varargout{1:nargout}] = odata.forcetorque(obeam, varargin{:});
+        [varargout{1:nargout}] = odata.scalarForceTorque(obeam, varargin{:});
       end
     end
 

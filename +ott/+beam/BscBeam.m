@@ -241,7 +241,8 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %     in particle reference frame.
       %
       % Parameters
-      %   - particle (ott.particle.Particle) -- Scattering particle.
+      %   - particle (ott.particle.Particle | ott.tmatrix.Tmatrix) --
+      %     Scattering particle (or T-matrix to convert to particle).
       %     Uses the position, rotation and T-matrix properties.
       %
       % Optional named arguments
@@ -251,14 +252,25 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %     cell array must have the same size.
       %     Default: ``particle.position``.
       %
-      %   - rotation (3x3N numeric) -- Particle rotation.
-      %     Default: ``particle.rotation``.
+      %   - rotation (3x3N numeric | 3xN cell) -- Particle rotation
+      %     expressed as an array of 3x3 rotation matrices.
+      %     If input is a cell array, uses ``cell2mat`` to convert to
+      %     a numeric matrix.  Default: ``particle.rotation``.
       %
       %   - progress (function_handle) -- Function to call for progress
       %     updates during method evaluation.  Takes one argument, see
       %     :meth:`DefaultScatterProgressCallback` for more information.
       %     Default: ``[]`` (for N < 200) and
       %     ``@DefaultScatterProgressCallback`` (otherwise).
+      
+      % Convert T-matrix to particle
+      if isa(particle, 'ott.tmatrix.Tmatrix')
+        oparticle = particle;
+        particle = ott.particle.Fixed.empty(1, 0);
+        for ii = 1:numel(oparticle)
+          particle(ii) = ott.particle.Fixed('tmatrix', oparticle(ii));
+        end
+      end
       
       p = inputParser;
       p.addParameter('position', [particle.position]);
@@ -270,9 +282,12 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       position = p.Results.position;
       rotation = p.Results.rotation;
       
-      % Convert cell array to vector format
+      % Convert cell arrays to vector format
       if iscell(position)
         position = [position{1}(:), position{2}(:), position{3}(:)].';
+      end
+      if iscell(rotation)
+        rotation = cell2mat(rotation);
       end
       
       % Check sizes
@@ -526,8 +541,10 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
           .* 2 .* beam.wavenumber ./ sqrt(beam.impedance);
       end
     end
+    
+    % TODO: Do we want/need methods for vector force/torque/spin?
 
-    function F = force(ibeam, sbeam, varargin)
+    function F = scalarForce(ibeam, sbeam, varargin)
       % Calculate force (in Newtons)
       %
       % Usage
@@ -539,13 +556,13 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %   Additional parameters are passed to :meth:`scatterBsc`.
       
       % Calculate force
-      F = forceHelper(ibeam, sbeam, @(i, s) i.force(s), varargin{:});
+      F = scalarForceHelper(ibeam, sbeam, @(i, s) i.force(s), varargin{:});
 
       % Convert units of output to SI
       F = F ./ ibeam.speed;
     end
 
-    function T = torque(ibeam, sbeam, varargin)
+    function T = scalarTorque(ibeam, sbeam, varargin)
       % Calculate torque (in Newton meters)
       %
       % Usage
@@ -557,13 +574,13 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %   Additional parameters are passed to :meth:`scatter`.
 
       % Calculate force
-      T = forceHelper(ibeam, sbeam, @(i, s) i.torque(s), varargin{:});
+      T = scalarForceHelper(ibeam, sbeam, @(i, s) i.torque(s), varargin{:});
 
       % Convert units of output to SI
       T = T ./ ibeam.omega;
     end
 
-    function T = spin(ibeam, sbeam, varargin)
+    function T = scalarSpin(ibeam, sbeam, varargin)
       % Calculate spin (in Newton meters)
       %
       % Usage
@@ -575,7 +592,7 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       %   Additional parameters are passed to :meth:`scatter`.
 
       % Calculate force
-      T = forceHelper(ibeam, sbeam, @(i, s) i.spin(s), varargin{:});
+      T = scalarForceHelper(ibeam, sbeam, @(i, s) i.spin(s), varargin{:});
 
       % Convert units of output to SI
       T = T ./ ibeam.omega;
@@ -583,19 +600,28 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
   end
 
   methods (Hidden)
-    function O = forceHelper(ibeam, sbeam, func, varargin)
+    
+    function O = scalarForceHelper(ibeam, sbeam, func, varargin)
       % Helper for force/torque methdods
+      
+      assert(numel(ibeam) == 1, 'ibeam must be scalar');
+      assert(numel(sbeam) == 1, 'sbeam must be scalar');
       
       % Calculate scattering if required
       if ~isa(sbeam, 'ott.beam.Beam')
       
+        particle = sbeam;
+        if isa(particle, 'ott.tmatrix.Tmatrix')
+          particle = ott.particle.Fixed('tmatrix', particle);
+        end
+      
         p = inputParser;
-        p.addParameter('rotation', [sbeam.rotation]);
+        p.addParameter('rotation', particle.rotation);
         p.KeepUnmatched = true;
         p.parse(varargin{:});
         
         % Calculate scattered field (incident-scattered)
-        [ibsc, sbsc] = ibeam.scatterBsc(sbeam, varargin{:});
+        [ibsc, sbsc] = ibeam.scatterBsc(particle, varargin{:});
         
         % Get particle rotation
         particle_rot = p.Results.rotation;
@@ -603,6 +629,10 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
         % Convert to incoming-outgoing
         sbsc = ibsc + 2*sbsc;
       else
+        
+        assert(numel(varargin) == 0, ...
+            'ott:beam:BscBeam:scalarForceHelper:beam_too_many_args', ...
+            'too many input arguments');
         
         % Get particle rotation (to be applied later)
         particle_rot = sbeam.rotation;
@@ -627,13 +657,7 @@ classdef BscBeam < ott.beam.ArrayType & ott.beam.properties.IndexOmegaProps
       
       % Apply particle rotation term to result
       % This avoid calculating a wigner matrix
-      if size(particle_rot, 2) == 3
-        O = reshape(particle_rot * O(:, :), size(O));
-      else
-        for ii = 1:size(particle_rot, 2)/3
-          O(:, :, ii) = particle_rot(:, (1:3) + (ii-1)*3) * O(:, :, ii);
-        end
-      end
+      O = reshape(particle_rot * O(:, :), size(O));
     end
     
     function val = defaultVisRangeInternal(beam)

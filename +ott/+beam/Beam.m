@@ -208,6 +208,26 @@ classdef Beam < matlab.mixin.Heterogeneous ...
               'Unknown value for field_type.');
       end
     end
+    
+    function DefaultScatterProgressCallback(data)
+      % Default progress callback for :meth:`scatter`.
+      %
+      % Prints the progress to the terminal.
+      %
+      % Usage
+      %   DefaultScatterProgressCallback(data)
+      %
+      % Parameters
+      %   - data (struct) -- Structure with two fields: ``iteration``
+      %     and ``total``.
+      
+      % Print progress every 5%
+      iout = round(0.1*data.total);
+      if mod(data.iteration, iout) == 0
+        disp(['Scatter progress... ' ...
+          num2str((data.iteration)/data.total*100) '%']);
+      end
+    end
   end
 
   methods (Access=protected)
@@ -472,83 +492,177 @@ classdef Beam < matlab.mixin.Heterogeneous ...
         Efv = Efv .* exp(1i*psi);
       end
     end
+    
+    %
+    % Scatter
+    %
+    
+    function sbeam = scalarScatter(ibeam, particle, varargin)
+      % Calculate how a particle scatters a beam (scalar version).
+      %
+      % This function only supports scalar beam/parameter combinations.
+      % For a version supporting vector inputs, see :meth:`scatter`.
+      %
+      % Usage
+      %   sbeam = scalarScatter(ibeam, particle, ...)
+      %
+      % Returns
+      %   - sbeam (ott.beam.Scattered) -- Scattered beam encapsulating
+      %     the particle, incident beam, scattered beams.  For a
+      %     method which doesn't create a scattered beam, see
+      %     :meth:`scatterBsc`.
+      %
+      % Parameters
+      %   - particle (ott.particle.Particle | ott.tmatrix.Tmatrix) --
+      %     Particle T-matrix properties (possibly internal and external)
+      %     or a T-matrix object.  If a T-matrix is supplied, it is used
+      %     to create a Fixed particle.
+      %
+      % Optional named arguments
+      %   - position (3x1 numeric) -- Particle position.
+      %     Default: ``particle.position``.
+      %
+      %   - rotation (3x3 numeric) -- Particle rotation.
+      %     Default: ``particle.rotation``.
+      
+      assert(numel(ibeam) == 1, 'ibeam must be scalar');
+      assert(numel(particle) == 1, 'particle must be scalar');
+      
+      if isa(particle, 'ott.tmatrix.Tmatrix')
+        particle = ott.particle.Fixed('tmatrix', particle);
+      end
+      
+      p = inputParser;
+      p.addParameter('position', particle.position);
+      p.addParameter('rotation', particle.rotation);
+      p.parse(varargin{:});
+      
+      % Stow rotation/position
+      particle.position = p.Results.position;
+      particle.rotation = p.Results.rotation;
+      
+      % Calculate scattering
+      sbeam = ibeam.scatterInternal(particle);
+    end
 
     %
-    % Force and torque related methods
+    % Force and torque related (scalar) methods
     %
-
-    function f = force(beam, other, varargin)
-      % Calculate the difference in momentum between beams.
+    
+    function f = scalarForce(beam, other, varargin)
+      % Calculate the force between two beams or particles.
+      %
+      % This method implements the functionality for scalar inputs.
+      % See :meth:`force` for a method supporting beam arrays.
       %
       % The default implementation uses :meth:`intensityMoment`.
       % This method should be overloaded if there is a more optimal
       % method for your time of beam.
       %
       % Usage
-      %   force = beam.force(other_beam)
+      %   force = beam.scalarForce(other_beam, ...)
       %
-      %   force = beam.force(particle, ...)
+      %   force = beam.scalarForce(particle, ...) and
+      %   force = beam.scalarForce(tmatrix, ...)
+      %   Uses :meth:`scalarScatter` first to get beam.  Additional
+      %   arguments are passed to :meth:`scalarScatter`.
       %
       % Returns
       %   - 3x1 numeric vector.
       
+      assert(numel(beam) == 1, 'beam must be scalar');
+      assert(numel(other) == 1, 'other must be scalar');
       assert(isa(beam, 'ott.beam.Beam'), ...
         'first argument must be Beam instance');
       
       if ~isa(other, 'ott.beam.Beam')
-        % TODO: This is a bit of duplication between BscBeam and in the
-        % future (once implemented) Array.  Can we improve it?
-        
-        p = inputParser;
-        p.addParameter('position', other.position);
-        p.addParameter('rotation', other.rotation);
-        p.parse(varargin{:});
-        
-        rotation = p.Results.rotation;
-        position = p.Results.position;
-        
-        Nrot = size(rotation, 2)/3;
-        Npos = size(position, 2);
-        assert(Nrot == Npos || Nrot == 1 || Npos == 1, ...
-          'number of rotations/positions must mach or be singular');
-        if Npos == 1, position = repmat(position, 1, Nrot); end
-        if Nrot == 1, rotation = repmat(rotation, 1, Npos); end
-        
-        f = zeros(3, size(position, 2));
-        for ii = 1:size(position, 2)
-          sbeam = beam.scatter(other, 'position', position(:, ii), ...
-            'rotation', rotation(:, (1:3) + (ii-1)*3));
-          f(:, ii) = sbeam.force();
-        end
-        return;
+        sbeam = beam.scalarScatter(other, varargin{:});
+        f = sbeam.scalarForce();
+      else
+        assert(nargin == 2, ...
+            'ott:beam:Beam:scalarForce:beam_too_many_inputs', ...
+            'additional arguments not supported with beam input');
+        fbeam = beam.intensityMoment() ./ beam.speed;
+        obeam = other.intensityMoment() ./ other.speed;
+        f = obeam - fbeam;
       end
-
-      fbeam = beam.intensityMoment() ./ beam.speed;
-      obeam = other.intensityMoment() ./ other.speed;
-
-      f = obeam - fbeam;
     end
-
-    function t = torque(~, varargin)
-      % Calculate the angular momentum difference between beams.
+    
+    function t = scalarTorque(beam, other, varargin)
+      % Calculate the torque between two beams or particles.
       %
-      % There is no default implementation of this method.  This function
-      % simply returns nans.
-
-      t = nan(3, 1);
-    end
-
-    function t = spin(~, varargin)
-      % Calculate the spin angular momentum between beams.
+      % This method implements the functionality for scalar inputs.
+      % See :meth:`torque` for a method supporting beam arrays.
       %
-      % There is no default implementation of this method.  This function
-      % simply returns nans.
-
-      t = nan(3, 1);
+      % The default implementation returns nan for beam inputs!
+      %
+      % Usage
+      %   torque = beam.scalarTorque(other_beam)
+      %
+      %   torque = beam.scalarTorque(particle, ...) and
+      %   torque = beam.scalarTorque(tmatrix, ...)
+      %   Uses :meth:`scalarScatter` first to get beam.  Additional
+      %   arguments are passed to :meth:`scalarScatter`.
+      %
+      % Returns
+      %   - 3x1 numeric vector.
+      
+      assert(numel(beam) == 1, 'beam must be scalar');
+      assert(numel(other) == 1, 'other must be scalar');
+      assert(isa(beam, 'ott.beam.Beam'), ...
+        'first argument must be Beam instance');
+      
+      if ~isa(other, 'ott.beam.Beam')
+        sbeam = beam.scalarScatter(other, varargin{:});
+        t = sbeam.scalarTorque();
+      else
+        assert(nargin == 2, ...
+            'ott.beam.Beam:scalarTorque:beam_too_many_inputs', ...
+            'additional arguments not supported with beam input');
+        t = nan(3, 1);
+      end
     end
-
-    function varargout = forcetorque(ibeam, sbeam, varargin)
+    
+    function t = scalarSpin(beam, other, varargin)
+      % Calculate the spin between two beams or particles.
+      %
+      % This method implements the functionality for scalar inputs.
+      % See :meth:`spin` for a method supporting beam arrays.
+      %
+      % The default implementation returns nan for beam inputs!
+      %
+      % Usage
+      %   spin = beam.scalarSpin(other_beam)
+      %
+      %   spin = beam.scalarSpin(particle, ...) and
+      %   spin = beam.scalarSpin(tmatrix, ...)
+      %   Uses :meth:`scalarScatter` first to get beam.  Additional
+      %   arguments are passed to :meth:`scalarScatter`.
+      %
+      % Returns
+      %   - 3x1 numeric vector.
+      
+      assert(numel(beam) == 1, 'beam must be scalar');
+      assert(numel(other) == 1, 'other must be scalar');
+      assert(isa(beam, 'ott.beam.Beam'), ...
+        'first argument must be Beam instance');
+      
+      if ~isa(other, 'ott.beam.Beam')
+        sbeam = beam.scalarScatter(other, varargin{:});
+        t = sbeam.scalarSpin();
+      else
+        assert(nargin == 2, ...
+            'ott.beam.Beam:scalarSpin:beam_too_many_inputs', ...
+            'additional arguments not supported with beam input');
+        t = nan(3, 1);
+      end
+    end
+    
+    function varargout = scalarForceTorque(beam, other, varargin)
       % Calculate force, torque and spin (in SI units)
+      %
+      % This method implements the functionality for scalar inputs.
+      % See :meth:`forcetorque` for a method supporting beam arrays.
       %
       % Usage
       %   [f, t, s] = incident_beam.forcetorque(scattered_beam) --
@@ -557,20 +671,23 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %   [f, t, s] = incident_beam.forcetorque(particle, ...) --
       %   First calculates the scattering, then calculates the
       %   force/torque/spin between resulting beams.
-      %   Additional parameters are passed to :meth:`scatter`.
-
-      % Calculate scattering if required
-      if ~isa(sbeam, 'ott.beam.Beam')
-        sbeam = ibeam.scatter(sbeam, varargin{:});
-        [varargout{1:nargout}] = sbeam.forcetorque();
-        return;
-      end
-
-      varargout{1} = ibeam.force(sbeam);
-      if nargout > 1
-        varargout{2} = ibeam.torque(sbeam);
-        if nargout > 2
-          varargout{3} = ibeam.spin(sbeam);
+      %   Additional parameters are passed to :meth:`scalarScatter`.
+      
+      assert(numel(beam) == 1, 'beam must be scalar');
+      assert(numel(other) == 1, 'other must be scalar');
+      assert(isa(beam, 'ott.beam.Beam'), ...
+        'first argument must be Beam instance');
+      
+      if ~isa(other, 'ott.beam.Beam')
+        sbeam = beam.scalarScatter(other, varargin{:});
+        [varargout{1:nargout}] = sbeam.scalarForceTorque();
+      else
+        varargout{1} = beam.scalarForce(other);
+        if nargout > 1
+          varargout{2} = beam.scalarTorque(other);
+          if nargout > 2
+            varargout{3} = beam.scalarSpin(other);
+          end
         end
       end
     end
@@ -999,6 +1116,10 @@ classdef Beam < matlab.mixin.Heterogeneous ...
     function sbeam = scatter(ibeam, particle, varargin)
       % Calculate how a particle scatters the beam
       %
+      % This method supports multiple beam/particle/parameters and
+      % is capable of producing an array of beams.  The number of
+      % beams/particles/parameters must match.
+      %
       % Usage
       %   sbeam = scatter(ibeam, particle, ...)
       %
@@ -1009,31 +1130,226 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %     :meth:`scatterBsc`.
       %
       % Parameters
-      %   - particle (ott.particle.Particle) -- Particle with
-      %     T-matrix properties (possibly internal and external).
+      %   - particle (ott.particle.Particle | ott.tmatrix.Tmatrix) --
+      %     Scattering particle (or T-matrix to convert to particle).
+      %     Uses the position, rotation and T-matrix properties.
       %
       % Optional named arguments
-      %   - position (3x1 numeric) -- Particle position.
-      %     Default: ``particle.position``.
+      %   - position (3xN numeric | 3x1 cell) -- Particle position.
+      %     Can either be Cartesian position vectors or a cell array
+      %     with ``{X, Y, Z}`` cartesian coordinates.  Each matrix in
+      %     cell array must have the same size.
+      %     If empty, attempts to get default position from particle.
+      %     Default: ``[particle.position]``.
       %
-      %   - rotation (3x3 numeric) -- Particle rotation.
-      %     Default: ``particle.rotation``.
+      %   - rotation (3x3N numeric | 3xN cell) -- Particle rotation
+      %     expressed as an array of 3x3 rotation matrices.
+      %     If input is a cell array, uses ``cell2mat`` to convert to
+      %     If empty, attempts to get default rotation from particle.
+      %     a numeric matrix.  Default: ``[particle.rotation]``.
+      %
+      %   - progress (function_handle) -- Function to call for progress
+      %     updates during method evaluation.  Takes one argument, see
+      %     :meth:`DefaultScatterProgressCallback` for more information.
+      %     Default: ``[]`` (for N < 200) and
+      %     ``@DefaultScatterProgressCallback`` (otherwise).
       
+      % TODO: This has similarities to BscBeam.scatterBsc and Array
+      % (future).  Maybe there is something better we can do?
+      
+      % Convert T-matrix to particle
       if isa(particle, 'ott.tmatrix.Tmatrix')
-        particle = ott.particle.Fixed('tmatrix', particle);
+        oparticle = particle;
+        particle = ott.particle.Fixed.empty(1, 0);
+        for ii = 1:numel(oparticle)
+          particle(ii) = ott.particle.Fixed('tmatrix', oparticle(ii));
+        end
       end
       
       p = inputParser;
-      p.addParameter('position', particle.position);
-      p.addParameter('rotation', particle.rotation);
+      p.addParameter('position', [particle.position]);
+      p.addParameter('rotation', [particle.rotation]);
+      p.addParameter('progress', []);
       p.parse(varargin{:});
       
-      particle.position = p.Results.position;
-      particle.rotation = p.Results.rotation;
+      % Get position and rotation
+      position = p.Results.position;
+      rotation = p.Results.rotation;
       
-      sbeam(numel(ibeam)) = ott.beam.Empty();
-      for ii = 1:numel(ibeam)
-        sbeam(ii) = ibeam(ii).scatterInternal(particle);
+      % Convert cell arrays to vector format
+      if iscell(position)
+        position = [position{1}(:), position{2}(:), position{3}(:)].';
+      end
+      if iscell(rotation)
+        rotation = cell2mat(rotation);
+      end
+      
+      % Check sizes of position/rotation
+      assert(isnumeric(position) && ismatrix(position) && size(position, 1) == 3, ...
+        'position must be 3xN numeric matrix');
+      assert(isnumeric(rotation) && ismatrix(rotation) ...
+        && size(rotation, 1) == 3 && mod(size(rotation, 2), 3) == 0, ...
+        'rotation must be 3x3N numeric matrix');
+      
+      % Count amount of work
+      Nbeams = numel(ibeam);
+      Npart = numel(particle);
+      Npos = size(position, 2);
+      Nrot = size(rotation, 2)/3;
+      szs = unique([Nbeams, Npos, Nrot, Npart]);
+      assert(numel(szs) == 1 || (numel(szs) == 2 && szs(1) == 1), ...
+          'Number or rotations/positions/beams/particles must match or be 1');
+      if Npos == 1, position = repmat(position, 1, szs(end)); end
+      if Nrot == 1, rotation = repmat(rotation, 1, szs(end)); end
+
+      % Handle default argument for progress callback
+      progress_cb = p.Results.progress;
+      if isempty(progress_cb)
+        if szs(end) >= 200
+          progress_cb = @ott.beam.Beam.DefaultScatterProgressCallback;
+        else
+          progress_cb = @(x) [];
+        end
+      end
+      
+      % Report initial progress
+      progress_cb(struct('total', szs(end), 'iteration', 0));
+      
+      sbeam(szs(end)) = ott.beam.Empty();
+      for ii = 1:szs(end)
+        if Npart ~= 1
+          ii_particle = particle(ii);
+        else
+          ii_particle = particle;
+        end
+        
+        if Nbeams ~= 1
+          ii_beam = ibeam(ii);
+        else
+          ii_beam = ibeam;
+        end
+        
+        sbeam(ii) = ii_beam.scalarScatter(ii_particle, ...
+          'position', position(:, ii), ...
+          'rotation', rotation(:, (1:3)+3*(ii-1)));
+        
+        % Report progress
+        progress_cb(struct('total', szs(end), 'iteration', ii));
+      end
+    end
+    
+    %
+    % Force and torque related (vector) methods
+    %
+
+    function f = force(beam, varargin)
+      % Calculate the difference in momentum between beams.
+      %
+      % This method supports beam arrays and parameters producing beam
+      % arrays.  The default implementat calls the corresponding
+      % :meth:`scalarForce` for each beam in the array.
+      %
+      % Usage
+      %   force = beam.force(other_beam)
+      %
+      %   force = beam.force(particle, ...) or
+      %   force = beam.force(tmatrix, ...) -- Uses :meth:`scatter` to
+      %   create a scattered beam and then calculates the force.
+      %
+      % Returns
+      %   - 3xN numeric vector.
+      
+      assert(isa(beam, 'ott.beam.Beam'), ...
+        'first argument must be Beam instance');
+      
+      if nargin > 1 && ~isa(varargin{1}, 'ott.beam.Beam')
+        sbeam = beam.scatter(varargin{:});
+        f = sbeam.force();
+      else
+        f = forceHelper(beam, @(a,varargin) a.scalarForce(varargin{:}), varargin{:});
+      end
+    end
+
+    function f = torque(beam, varargin)
+      % Calculate the torque between two beams.
+      %
+      % This method supports beam arrays and parameters producing beam
+      % arrays.  The default implementat calls the corresponding
+      % :meth:`scalarTorque` for each beam in the array.
+      %
+      % Usage
+      %   torque = beam.torque(other_beam)
+      %
+      %   torque = beam.torque(particle, ...) or
+      %   torque = beam.torque(tmatrix, ...) -- Uses :meth:`scatter` to
+      %   create a scattered beam and then calculates the torque.
+      %
+      % Returns
+      %   - 3xN numeric vector.
+      
+      assert(isa(beam, 'ott.beam.Beam'), ...
+        'first argument must be Beam instance');
+      
+      if nargin > 1 && ~isa(varargin{1}, 'ott.beam.Beam')
+        sbeam = beam.scatter(varargin{:});
+        f = sbeam.torque();
+      else
+        f = forceHelper(beam, @(a,varargin) a.scalarTorque(varargin{:}), varargin{:});
+      end
+    end
+
+    function f = spin(beam, varargin)
+      % Calculate the spin between two beams.
+      %
+      % This method supports beam arrays and parameters producing beam
+      % arrays.  The default implementat calls the corresponding
+      % :meth:`scalarSpin` for each beam in the array.
+      %
+      % Usage
+      %   spin = beam.spin(other_beam)
+      %
+      %   spin = beam.spin(particle, ...) or
+      %   spin = beam.spin(tmatrix, ...) -- Uses :meth:`scatter` to
+      %   create a scattered beam and then calculates the spin.
+      %
+      % Returns
+      %   - 3xN numeric vector.
+      
+      assert(isa(beam, 'ott.beam.Beam'), ...
+        'first argument must be Beam instance');
+      
+      if nargin > 1 && ~isa(varargin{1}, 'ott.beam.Beam')
+        sbeam = beam.scatter(varargin{:});
+        f = sbeam.spin();
+      else
+        f = forceHelper(beam, @(a,varargin) a.scalarSpin(varargin{:}), varargin{:});
+      end
+    end
+    
+    function varargout = forcetorque(ibeam, varargin)
+      % Calculate force, torque and spin (in SI units)
+      %
+      % Usage
+      %   [f, t, s] = incident_beam.forcetorque(scattered_beam) --
+      %   Calculates the force/torque/spin between two beams.
+      %
+      %   [f, t, s] = incident_beam.forcetorque(particle, ...) --
+      %   First calculates the scattering, then calculates the
+      %   force/torque/spin between resulting beams.
+      %   Additional parameters are passed to :meth:`scatter`.
+
+      % Calculate scattering if required
+      if nargin > 1 && ~isa(varargin{1}, 'ott.beam.Beam')
+        sbeam = ibeam.scatter(varargin{:});
+        [varargout{1:nargout}] = sbeam.forcetorque();
+      else
+        varargout{1} = ibeam.force(varargin{:});
+        if nargout > 1
+          varargout{2} = ibeam.torque(varargin{:});
+          if nargout > 2
+            varargout{3} = ibeam.spin(varargin{:});
+          end
+        end
       end
     end
 
@@ -1141,6 +1457,37 @@ classdef Beam < matlab.mixin.Heterogeneous ...
   methods (Hidden)
     function rng = defaultVisRangeInternal(~)
       rng = [1,1];
+    end
+    
+    function f = forceHelper(beam, method, varargin)
+      % Helper for force/torque/spin vector methods
+      
+      if nargin == 3
+        Ninc = numel(beam);
+        Noth = numel(varargin{1});
+        assert(Ninc == 1 || Noth == 1 || Ninc == Noth, ...
+          'number of beams must match or one must be scalar');
+      else
+        Noth = 1;
+        Ninc = numel(beam);
+      end
+
+      if Ninc ~= 1 && Noth ~= 1
+        f = zeros(3, Ninc);
+        for ii = 1:Ninc
+          f(:, ii) = method(beam(ii), other(ii));
+        end
+      elseif Noth == 1  % 1 other beam or no other beams
+        f = zeros(3, Ninc);
+        for ii = 1:Ninc
+          f(:, ii) = method(beam(ii), varargin{:});
+        end
+      else
+        f = zeros(3, Noth);
+        for ii = 1:Noth
+          f(:, ii) = method(beam, other(ii));
+        end
+      end
     end
   end
   

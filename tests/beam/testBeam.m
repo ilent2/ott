@@ -103,6 +103,37 @@ function testForce(testCase)
 
 end
 
+function testForceTorque(testCase)
+
+  xyz = [[0;0;1e-6], [1e-6;0;0]];
+  R = {eye(3), eye(3)};
+
+  % Test with beam inputs
+  beam1 = ott.beam.Gaussian();
+  beam2 = ott.beam.BscBeam();
+  Fa = beam1.force(beam2);
+  [Fb,~,~] = beam1.forcetorque(beam2);
+  testCase.verifyEqual(Fa, Fb, 'force with beam');
+  
+  % Verify error
+  testCase.verifyError(@() beam1.force(beam2, 'position', xyz, 'rotation', R), ...
+      'ott:beam:BscBeam:scalarForceHelper:beam_too_many_args');
+  
+  tmatrix = ott.tmatrix.Mie(1, 1.2);
+  particle = ott.particle.Fixed('tmatrix', tmatrix);
+  
+  % Test with particle input
+  Fa = beam1.force(particle, 'position', xyz, 'rotation', R);
+  [Fb,~,~] = beam1.forcetorque(particle, 'position', xyz, 'rotation', R);
+  testCase.verifyEqual(Fa, Fb, 'force with tmatrix');
+  
+  % Test with tmatrix input
+  Fa = beam1.force(tmatrix, 'position', xyz, 'rotation', R);
+  [Fb,~,~] = beam1.forcetorque(tmatrix, 'position', xyz, 'rotation', R);
+  testCase.verifyEqual(Fa, Fb, 'force with tmatrix');
+  
+end
+
 function testTranslateFarfield(testCase)
 
   beam = ott.beam.Gaussian();

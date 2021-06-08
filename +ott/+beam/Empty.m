@@ -82,43 +82,69 @@ classdef Empty < ott.beam.Beam & ott.beam.properties.IndexOmegaProps
     % Force calculation methods
     %
     
-    function varargout = force(ebeam, other, varargin)
+    function varargout = scalarForce(ebeam, other, varargin)
       % Calculate force, defering to other beam force method
       %
       % Usage
       %   [F, ...] = emptyBeam.force(other, ...)
       
-      [varargout{1:nargout}] = other.force(ebeam, varargin{:});
-      varargout{1} = -varargout{1};
+      assert(numel(ebeam) == 1, 'beam must be scalar');
+      assert(numel(other) == 1, 'other must be scalar');
+      
+      if isa(other, 'ott.beam.Empty')
+        varargout{1} = zeros(3, 1);
+      else
+        % Let the other beam handle it
+        [varargout{1:nargout}] = other.force(ebeam, varargin{:});
+        varargout{1} = -varargout{1};
+      end
     end
     
-    function varargout = torque(ebeam, other, varargin)
+    function varargout = scalarTorque(ebeam, other, varargin)
       % Calculate torque, defering to other beam torque method
       %
       % Usage
       %   [F, ...] = emptyBeam.torque(other, ...)
       
-      [varargout{1:nargout}] = other.torque(ebeam, varargin{:});
-      varargout{1} = -varargout{1};
+      assert(numel(ebeam) == 1, 'beam must be scalar');
+      assert(numel(other) == 1, 'other must be scalar');
+      
+      if isa(other, 'ott.beam.Empty')
+        varargout{1} = zeros(3, 1);
+      else
+        % Let the other beam handle it
+        [varargout{1:nargout}] = other.torque(ebeam, varargin{:});
+        varargout{1} = -varargout{1};
+      end
     end
     
-    function varargout = spin(ebeam, other, varargin)
+    function varargout = scalarSpin(ebeam, other, varargin)
       % Calculate spin, defering to other beam spin method
       %
       % Usage
       %   [F, ...] = emptyBeam.spin(other, ...)
       
-      [varargout{1:nargout}] = other.spin(ebeam, varargin{:});
-      varargout{1} = -varargout{1};
+      assert(numel(ebeam) == 1, 'beam must be scalar');
+      assert(numel(other) == 1, 'other must be scalar');
+      
+      if isa(other, 'ott.beam.Empty')
+        varargout{1} = zeros(3, 1);
+      else
+        % Let the other beam handle it
+        [varargout{1:nargout}] = other.spin(ebeam, varargin{:});
+        varargout{1} = -varargout{1};
+      end
     end
 
-    function [moment, ints, data] = intensityMoment(~, varargin)
+    function [moment, ints, data] = intensityMoment(ebeam, varargin)
       % Calculate moment of the beam intensity in the far-field.
       %
       % For :class:`Empty` beams, this returns zeros.
       %
       % Usage
-      %   [moment, int, data] = beam.intensityMoment(...)
+      %   [moment, int, data] = beam.intensityMoment(beam, ...)
+      
+      assert(numel(ebeam) == 1, 'beam must be scalar');
 
       data = [];
       moment = zeros(3, 1);

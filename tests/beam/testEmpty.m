@@ -33,6 +33,22 @@ function testConstruct(testCase)
 
 end
 
+function testForce(testCase)
+
+  b1 = ott.beam.Empty();
+  b2 = ott.beam.Empty();
+  
+  f = b1.force(b2);
+  testCase.verifyEqual(f, [0;0;0], 'force');
+  
+  f = b1.torque(b2);
+  testCase.verifyEqual(f, [0;0;0], 'torque');
+  
+  f = b1.spin(b2);
+  testCase.verifyEqual(f, [0;0;0], 'spin');
+
+end
+
 function testField(testCase)
 
   beam = ott.beam.Empty();
