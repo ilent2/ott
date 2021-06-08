@@ -28,6 +28,9 @@ classdef testTools < matlab.uitest.TestCase
     function testPowerSpectrum(testCase)
       gui = ott.ui.tools.PowerSpectrum();
       testCase.addTeardown(@delete,gui);
+      
+      testCase.type(gui.XInputDropDown.DropDown, 'linspace(0,100,1000)');
+      testCase.type(gui.YInputDropDown.DropDown, 'randn(1,1000) + sin(10*linspace(0,100,1000))');
     end
   end
 end

@@ -45,7 +45,16 @@ classdef PowerSpectrum < ott.ui.support.AppTwoColumn ...
   
   methods (Access=protected)
     function code = generateCode(app)
-      code = {}; % TODO
+      code = {};
+      
+      code{end+1} = 'figure();';
+      code{end+1} = 'ax = axes();';
+      code{end+1} = '';
+      code{end+1} = ['ott.tools.powerSpectrum(ax, ', ...
+          app.XInputDropDown.Value, ', ', app.YInputDropDown.Value, ');'];
+      code{end+1} = '';
+      code{end+1} = ['xlabel(ax, ''', app.XLabelEntry.Value, ''');'];
+      code{end+1} = ['ylabel(ax, ''', app.YLabelEntry.Value, ''');'];
     end
     
     function setDefaultValues(app, ~)
@@ -54,14 +63,13 @@ classdef PowerSpectrum < ott.ui.support.AppTwoColumn ...
       app.XLabelEntry.Value = 'Frequency [a.u.]';
       app.YLabelEntry.Value = 'Power [a.u.]';
       app.UpdateButton.AutoUpdate = true;
-      
-      % Update the graph
-      app.UpdateCallback();
     end
     
     function ValueChangedCallback(app, ~)
       % Called when a widget changes
-      if app.UpdateButton.AutoUpdate
+      if app.UpdateButton.AutoUpdate ...
+          && ~isempty(app.XInputDropDown.Value) ...
+          && ~isempty(app.YInputDropDown.Value)
         app.UpdateCallback();
       end
     end
@@ -69,7 +77,12 @@ classdef PowerSpectrum < ott.ui.support.AppTwoColumn ...
     function UpdateCallback(app, ~)
       % Called when auto-update is enabled or the update button is clicked
      
-      % TODO: Update graph content
+      % Get data
+      xdata = app.XInputDropDown.Variable;
+      ydata = app.YInputDropDown.Variable;
+      
+      % Calculate PSD
+      ott.tools.powerSpectrum(app.UIAxes, xdata, ydata);
       
       % Update axis labels
       xlabel(app.UIAxes, app.XLabelEntry.Value);

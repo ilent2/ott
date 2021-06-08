@@ -60,7 +60,7 @@ classdef Launcher < ott.ui.support.AppBase
         case 'Dynamics'
           ref = ?ott.ui.dynamics.Isolated;
         case 'Particle'
-          ref = ?ott.ui.particle.Simple;
+          ref = [?ott.ui.particle.Fixed, ?ott.ui.particle.FromShape];
         case 'Shape'
           ref = [?ott.ui.shape.CadFileLoader, ?ott.ui.shape.Simple, ...
               ?ott.ui.shape.Visualise];

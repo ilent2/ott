@@ -103,8 +103,8 @@ classdef VariableDropDown < ott.ui.support.LabeledDropDown
     end
     
     function set.Filter(obj, val)
-      assert(isa(val, 'char') | isa(val, 'cell'), ...
-        'Filter must be character array or cell array of char arrays.');
+      assert(isempty(val) | isa(val, 'char') | isa(val, 'cell'), ...
+        'Filter must be empty, character array or cell array of char arrays.');
       obj.Filter = val;
     end
   end

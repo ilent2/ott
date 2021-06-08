@@ -30,9 +30,10 @@ function h = powerSpectrum(varargin)
 % See LICENSE.md for information about using/distributing this file.
 
   % Get axis handle
-  if isa(varargin{1}, 'matlab.graphics.axis.Axes')
+  if isa(varargin{1}, 'matlab.graphics.axis.Axes') ...
+      || isa(varargin{1}, 'matlab.ui.control.UIAxes')
     oax = varargin{1};
-    varargin = varargin{2:end};
+    varargin = varargin(2:end);
   else
     oax = gca();
   end
