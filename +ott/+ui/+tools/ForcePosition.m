@@ -77,7 +77,73 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
     end
     
     function code = generateCode(app)
-      code = {}; % TODO
+      code = {};
+      code{end+1} = '% Required variables: beam, particle';
+      code{end+1} = '';
+
+      % Get range
+      code{end+1} = ['theta = linspace(', num2str(app.RangeSpinners.Value(1)), ...
+          ', ', num2str(app.RangeSpinners.Value(2)), ', ', ...
+          num2str(app.ResolutionSpinner.Value), ');'];
+
+      % Get initial position/rotation
+      code{end+1} = ['xyz0 = [', num2str(app.PositionXyzSpinner.Value(:).'), '].'';'];
+      code{end+1} = ['Rx = ', num2str(app.RotationXyzSpinner.Value(1)), ';'];
+      code{end+1} = ['Ry = ', num2str(app.RotationXyzSpinner.Value(2)), ';'];
+      code{end+1} = ['Rz = ', num2str(app.RotationXyzSpinner.Value(3)), ';'];
+      code{end+1} = 'Rxyz0 = ott.utils.rotx(Rx)*ott.utils.roty(Ry)*ott.utils.rotz(Rz);';
+      code{end+1} = '';
+
+      switch app.DirectionDropDown.Value
+        case 'x'
+          code{end+1} = 'xyz = [1;0;0].*theta + xyz0;';
+          code{end+1} = 'R = Rxyz0;';
+          xtext = 'Position [m]';
+        case 'y'
+          code{end+1} = 'xyz = [0;1;0].*theta + xyz0;';
+          code{end+1} = 'R = Rxyz0;';
+          xtext = 'Position [m]';
+        case 'z'
+          code{end+1} = 'xyz = [0;0;1].*theta + xyz0;';
+          code{end+1} = 'R = Rxyz0;';
+          xtext = 'Position [m]';
+        case 'Rx'
+          code{end+1} = 'R = ott.utils.rotx(theta, ''usecell'', true);';
+          code{end+1} = 'R = cellfun(@(r) r * R0, R, ''UniformOutput'', false);';
+          code{end+1} = 'xyz = xyz0;';
+          xtext = 'Angle [deg]';
+        case 'Ry'
+          code{end+1} = 'R = ott.utils.roty(theta, ''usecell'', true);';
+          code{end+1} = 'R = cellfun(@(r) r * R0, R, ''UniformOutput'', false);';
+          code{end+1} = 'xyz = xyz0;';
+          xtext = 'Angle [deg]';
+        case 'Rz'
+          code{end+1} = 'R = ott.utils.rotz(theta, ''usecell'', true);';
+          code{end+1} = 'R = cellfun(@(r) r * R0, R, ''UniformOutput'', false);';
+          code{end+1} = 'xyz = xyz0;';
+          xtext = 'Angle [deg]';
+        otherwise
+          error('Internal error');
+      end
+      code{end+1} = '';
+
+      % Calculate force/torque
+      code{end+1} = '[force, torque] = beam.forcetorque(particle, ...';
+      code{end+1} = '    ''position'', xyz, ''rotation'', R);';
+      code{end+1} = '';
+
+      % Update plots
+      code{end+1} = 'figure();';
+      code{end+1} = 'subplot(1, 2, 1);';
+      code{end+1} = 'plot(theta, -force);';
+      code{end+1} = 'ylabel(''Force [N]'');';
+      code{end+1} = ['xlabel(''', xtext, ''');'];
+      code{end+1} = 'legend(''X'', ''Y'', ''Z'');';
+      code{end+1} = 'subplot(1, 2, 2);';
+      code{end+1} = 'plot(theta, -torque);';
+      code{end+1} = 'ylabel(''Torque [Nm]'');';
+      code{end+1} = ['xlabel(''', xtext, ''');'];
+      code{end+1} = 'legend(''X'', ''Y'', ''Z'');';
     end
     
     function generatePlots(app)
@@ -136,7 +202,9 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
       
         % Update plots
         plot(app.ForceAxes, t, -force);
+        legend('X', 'Y', 'Z');
         plot(app.TorqueAxes, t, -torque);
+        legend('X', 'Y', 'Z');
           
       catch ME
         app.UpdateButton.setError();
