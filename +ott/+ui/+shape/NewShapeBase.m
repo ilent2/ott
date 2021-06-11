@@ -25,6 +25,7 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
     ExtraGrid             matlab.ui.container.GridLayout
     OffsetXyzSpinners     ott.ui.support.XyzSpinners
     RotationXyzSpinners   ott.ui.support.XyzSpinners
+    LocalViewCheckBox     matlab.ui.control.CheckBox
     
     % Right pannel
     LoadingText           matlab.ui.control.Label
@@ -39,6 +40,7 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       app.VariableName.Value = '';
       app.OffsetXyzSpinners.Value = [0, 0, 0];
       app.RotationXyzSpinners.Value = [0, 0, 0];
+      app.LocalViewCheckBox.Value = true;
       app.ShowPreviewCheckBox.Value = true;
       app.UpdateButton.AutoUpdate = true;
       
@@ -50,8 +52,14 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       app.LoadingText.Visible = 'on';
       drawnow nocallbacks;
       
+      if app.LocalViewCheckBox.Value
+        origin = 'local';
+      else
+        origin = 'global';
+      end
+      
       % Update shape preview
-      app.Data.surf('axes', app.PreviewUIAxes);
+      app.Data.surf('axes', app.PreviewUIAxes, 'origin', origin);
       
       app.LoadingText.Visible = 'off';
       
@@ -61,8 +69,8 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       
       % Create grid
       app.MainGrid = uigridlayout(app.LeftPanel);
-      app.MainGrid.RowHeight = repmat({32}, 1, 6);
-      app.MainGrid.RowHeight{end-2} = '1x';
+      app.MainGrid.RowHeight = repmat({32}, 1, 7);
+      app.MainGrid.RowHeight{end-3} = '1x';
       app.MainGrid.ColumnWidth = {230};
       app.MainGrid.ColumnSpacing = 1;
       app.MainGrid.RowSpacing = 1;
@@ -78,8 +86,7 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       app.OffsetXyzSpinners.Layout.Row = 2;
       app.OffsetXyzSpinners.Layout.Column = 1;
       app.OffsetXyzSpinners.Step = 1e-7;
-      app.OffsetXyzSpinners.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.OffsetXyzSpinners.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Rotation entry
       app.RotationXyzSpinners = ott.ui.support.XyzSpinners(...
@@ -87,8 +94,7 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       app.RotationXyzSpinners.Layout.Row = 3;
       app.RotationXyzSpinners.Layout.Column = 1;
       app.RotationXyzSpinners.Step = 10;
-      app.RotationXyzSpinners.ValueChangedFcn = createCallbackFcn(app, ...
-          @valueChangedCb, true);
+      app.RotationXyzSpinners.ValueChangedFcn = @(~,~) app.updateParametersCb();
       
       % Create grid
       app.ExtraGrid = uigridlayout(app.MainGrid);
@@ -99,15 +105,22 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       app.ExtraGrid.Layout.Row = 4;
       app.ExtraGrid.Layout.Column = 1;
       
+      % Local view checkbox
+      app.LocalViewCheckBox = uicheckbox(app.MainGrid);
+      app.LocalViewCheckBox.Text = 'Local View';
+      app.LocalViewCheckBox.Layout.Row = 5;
+      app.LocalViewCheckBox.Layout.Column = 1;
+      app.LocalViewCheckBox.ValueChangedFcn = @(~,~) app.updatePreview();
+      
       % Preview checkbox
       app.ShowPreviewCheckBox = uicheckbox(app.MainGrid);
       app.ShowPreviewCheckBox.Text = 'Show Preview';
-      app.ShowPreviewCheckBox.Layout.Row = 5;
+      app.ShowPreviewCheckBox.Layout.Row = 6;
       app.ShowPreviewCheckBox.Layout.Column = 1;
       
       % Update button
       app.UpdateButton = ott.ui.support.UpdateCheckButton(app.MainGrid);
-      app.UpdateButton.Layout.Row = 6;
+      app.UpdateButton.Layout.Row = 7;
       app.UpdateButton.Layout.Column = 1;
         
     end

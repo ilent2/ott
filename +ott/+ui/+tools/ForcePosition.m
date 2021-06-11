@@ -166,8 +166,7 @@ classdef ForcePosition < ott.ui.support.AppTwoColumn ...
 
         % Get initial position/rotation
         xyz0 = app.PositionXyzSpinner.Value(:);
-        Rxyz0 = app.RotationXyzSpinner.Value;
-        R0 = ott.utils.rotx(Rxyz0(1))*ott.utils.roty(Rxyz0(2))*ott.utils.rotz(Rxyz0(3));
+        R0 = ott.utils.euler2rot(app.RotationXyzSpinner.Value(:));
 
         switch app.DirectionDropDown.Value
           case 'x'

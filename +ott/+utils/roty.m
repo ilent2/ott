@@ -47,5 +47,10 @@ else
   R = [cos(theta), 0, sin(theta);
        0, 1, 0;
        -sin(theta), 0, cos(theta)];
+     
+  % Ensure output is cell if requested
+  if p.Results.usecell
+    R = {R};
+  end
 end
 
