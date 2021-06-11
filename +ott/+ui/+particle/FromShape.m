@@ -7,18 +7,20 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
+% TODO: Progress bar (too hard for now, add later)
+
   properties (Constant)
     cnameText = 'FromShape';
 
     nameText = 'Generate Particle from Shape';
 
-    aboutText = ['Generate a simple particle from a shape.' ...
-      ' Calculates the optical, fluidic, shape and other particle ' ...
-      ' related properties into a single entity.'];
+    aboutText = ['Generate a simple particle from a shape. ' ...
+      'Calculates the optical, fluidic, shape and other particle ' ...
+      'related properties into a single entity.'];
     
     helpText = {ott.ui.particle.FromShape.aboutText, ...
       '', ...
-      ['Internally this applicatio uses the ott.particle.Fixed.FromShape' ...
+      ['Internally this application uses the ott.particle.Fixed.FromShape' ...
       ' method to create the particle.  Options are:'], ...
       '', ...
       'Shape -- The geometric shape describing the object geometry.', ...
@@ -63,8 +65,26 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
     end
     
     function code = generateCode(app)
-      % TODO
+      % Generate code
+      
+      % Get default shape name
+      shape_name = app.ShapeDropDown.Value;
+      if isempty(app.ShapeDropDown.Value)
+        shape_name = 'shape';
+      end
+      
       code = {};
+      code{end+1} = ['particle = ott.particle.Fixed.FromShape(', shape_name ', ...'];
+      code{end+1} = ['  ''index_particle'', ', num2str(app.ParticleIrSpinner.Value), ', ...'];
+      code{end+1} = ['  ''index_medium'', ', num2str(app.MediumIrSpinner.Value), ', ...'];
+      code{end+1} = ['  ''wavelength0'', ', num2str(app.WavelengthSpinner.Value), ', ...'];
+      code{end+1} = ['  ''viscosity'', ', num2str(app.ViscositySpinner.Value), ', ...'];
+      if app.InternalCheckbox.Value
+        code{end+1} = '  ''internal'', true, ...';
+      else
+        code{end+1} = '  ''internal'', false, ...';
+      end
+      code{end+1} = ['  ''mass'', ', num2str(app.MassSpinner.Value), ');'];
     end
     
     function setDefaultValues(app)
@@ -89,6 +109,13 @@ classdef FromShape < ott.ui.particle.NewParticleBase ...
       
       % Configure extra grid
       app.ExtraGrid.RowHeight = repmat({30}, 1, 4);
+      
+      % Hide progress bar
+      % TODO: This GUI should have a progress bar, but it should work for
+      % the particle T-matrix calculation, drag calculation and anything
+      % else.  Not sure how do to this at the moment.
+      app.UpdateButton.Gauge.Visible = false;
+      app.UpdateButton.Button.Layout.Column = 2;
       
       % Shape
       app.ShapeDropDown = ott.ui.support.VariableDropDown(app.ExtraGrid, ...

@@ -10,6 +10,33 @@ classdef testParticle < matlab.uitest.TestCase
     function testFixed(testCase)
       gui = ott.ui.particle.Fixed();
       testCase.addTeardown(@delete,gui);
+      
+      tmatrix = ott.tmatrix.Mie(1, 1.2);
+      mass = 1.4;
+      shape = ott.shape.Sphere();
+      drag = ott.drag.StokesSphere(1e-6, 1e-6);
+      target = ott.particle.Fixed('tmatrix', tmatrix, 'tinternal', tmatrix, ...
+        'mass', mass, 'shape', shape, 'drag', drag);
+      
+      assignin('base', 'shape', shape);
+      testCase.addTeardown(@evalin, 'base', 'clear(''shape'')');
+      assignin('base', 'drag', drag);
+      testCase.addTeardown(@evalin, 'base', 'clear(''drag'')');
+      assignin('base', 'tmatrix', tmatrix);
+      testCase.addTeardown(@evalin, 'base', 'clear(''tmatrix'')');
+      
+      testCase.addTeardown(@evalin, 'base', 'clear(''output'')');
+      testCase.type(gui.VariableName.EditField, 'output');
+      testCase.type(gui.ShapeDropDown.DropDown, 'shape');
+      testCase.type(gui.DragDropDown.DropDown, 'drag');
+      testCase.type(gui.TmatrixDropDown.DropDown, 'tmatrix');
+      testCase.type(gui.TinternalDropDown.DropDown, 'tmatrix');
+      testCase.type(gui.MassSpinner.Spinner, mass);
+      
+      % Compare output
+      testCase.press(gui.UpdateButton.Button);
+      output = evalin('base', 'output');
+      testCase.verifyEqual(output, target);
     end
 
     function testFromShape(testCase)
