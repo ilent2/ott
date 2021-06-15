@@ -10,6 +10,9 @@ classdef testShape < matlab.uitest.TestCase
     function testCadFile(testCase)
       gui = ott.ui.shape.CadFileLoader();
       testCase.addTeardown(@delete,gui);
+      
+      fname = '..\shape\cube.stl';
+      testCase.type(gui.CadFileSelector.EditField, fname);
     end
 
     function testSimple(testCase)

@@ -12,7 +12,7 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
 % instance use:
 %
 %   app = ott.ui.shape.CadFileLoader()
-%   shape = app.shape
+%   shape = app.Data
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
@@ -41,7 +41,7 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
       '', ...
       'Rotation (x, y, z) : Rotation, degrees.', ...
       '', ...
-      ['Rotational/XY Symmetry: Set these if the objects has', ...
+      ['Rotational/XY Symmetry/starShaped: Set these if the objects has', ...
       'symetries (including rotations/translations).  If in ', ...
       'doubt, do not set these.']};
     
@@ -53,6 +53,7 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
     CadFileSelector                 ott.ui.support.FileSelector
     ScaleSpinner                    ott.ui.support.LabeledSpinner
     XYMirrorSymmetryCheckBox        matlab.ui.control.CheckBox
+    StarShapedCheckBox              matlab.ui.control.CheckBox
     RotationalSymmetrySpinner       ott.ui.support.LabeledSpinner
   end
 
@@ -64,11 +65,12 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
       % App specifics
       app.CadFileSelector.Value = '';
       app.ScaleSpinner.Value = 1;
-      app.XYMirrorSymmetryCheckBox.Value = true;
+      app.XYMirrorSymmetryCheckBox.Value = false;
+      app.StarShapedCheckBox.Value = false;
       app.RotationalSymmetrySpinner.Value = 1;
       
       % Base class/finalisation
-      setDefaultValues@ott.ui.shape.NewShapeBase(app);
+      setDefaultValues@ott.ui.shape.NewShapeBase(app, false);
     end
     
     function data = generateData(app)
@@ -77,24 +79,86 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
       fname = app.CadFileSelector.Value;
       if isempty(fname)
         data = [];
+        warning('ott:ui:shape:CadFileLoader:no_filename', 'No shape specified');
         return;
       end
       
       [~, ~, ext] = fileparts(fname);
       
+      % Get scale
+      scale = app.ScaleSpinner.Value;
+      
+      % Get rotation/offset
+      offset = app.OffsetXyzSpinners.Value(:) ./ scale;
+      rotation = ott.utils.euler2rot(app.RotationXyzSpinners.Value(:));
+      
       switch ext
-        case 'obj'
-          data = ott.shape.ObjLoader(fname);
-        case 'stl'
-          data = ott.shape.StlLoader(fname);
+        case '.obj'
+          data = ott.shape.ObjLoader(fname, ...
+            'position', offset, 'rotation', rotation);
+        case '.stl'
+          data = ott.shape.StlLoader(fname, ...
+            'position', offset, 'rotation', rotation);
         otherwise
           error('Unsupported CAD file, must be .obj or .stl');
       end
+      
+      % Apply scale
+      data = data * scale;
+      
+      % Set symmetry parameters
+      data.starShaped = app.StarShapedCheckBox.Value;
+      data.xySymmetry = app.XYMirrorSymmetryCheckBox.Value;
+      data.zRotSymmetry = app.RotationalSymmetrySpinner.Value;
     end
     
     function code = generateCode(app)
-      % TODO
+      
+      fname = app.CadFileSelector.Value;
+      if isempty(fname)
+        error('Must specify file name to generate code');
+      end
+      
       code = {};
+      code{end+1} = ['fname = ''', fname, ''';'];
+      code{end+1} = '';
+      
+      [~, ~, ext] = fileparts(fname);
+      
+      % Get scale
+      code{end+1} = ['scale = ', num2str(app.ScaleSpinner.Value), ';'];
+      
+      % Get rotation/offset
+      code{end+1} = ['offset = [', num2str(app.OffsetXyzSpinners.Value), '].'' ./ scale;'];
+      code{end+1} = ['rotation = ott.utils.euler2rot([', num2str(app.RotationXyzSpinners.Value), '].'');'];
+      code{end+1} = '';
+      
+      switch ext
+        case '.obj'
+          code{end+1} = 'shape = ott.shape.ObjLoader(fname, ...';
+          code{end+1} = '  ''position'', offset, ''rotation'', rotation);';
+        case '.stl'
+          code{end+1} = 'shape = ott.shape.StlLoader(fname, ...';
+          code{end+1} = '  ''position'', offset, ''rotation'', rotation);';
+        otherwise
+          error('Unsupported CAD file, must be .obj or .stl');
+      end
+      code{end+1} = 'shape = shape * scale;';
+      code{end+1} = '';
+      
+      if app.StarShapedCheckBox.Value
+        code{end+1} = 'shape.starShaped = true;';
+      else
+        code{end+1} = 'shape.starShaped = false;';
+      end
+      
+      if app.XYMirrorSymmetryCheckBox.Value
+        code{end+1} = 'shape.xySymmetry = true;';
+      else
+        code{end+1} = 'shape.xySymmetry = false;';
+      end
+      
+      code{end+1} = ['shape.zRotSymmetry = ' num2str(app.RotationalSymmetrySpinner.Value), ';'];
     end
 
     % Create UIFigure and components
@@ -105,7 +169,8 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
       createLeftComponents@ott.ui.shape.NewShapeBase(app);
       
       % Configure extra grid
-      app.ExtraGrid.RowHeight = {32, 32, 32, 32, '1x'};
+      app.ExtraGrid.RowHeight = repmat({32}, 1, 6);
+      app.ExtraGrid.RowHeight{end} = '1x';
       
       % Create CAD file selector
       app.CadFileSelector = ott.ui.support.FileSelector(app.ExtraGrid, ...
@@ -115,6 +180,7 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
       app.CadFileSelector.PostSelect = app.UIFigure;
       app.CadFileSelector.Layout.Row = 1;
       app.CadFileSelector.Layout.Column = 1;
+      app.CadFileSelector.ValueChangedFcn = @(~,~) app.updateParametersCb();
 
       % Create ScaleSpinnerLabel
       app.ScaleSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
@@ -122,19 +188,29 @@ classdef CadFileLoader < ott.ui.shape.NewShapeBase ...
       app.ScaleSpinner.Step = 0.1;
       app.ScaleSpinner.Layout.Row = 2;
       app.ScaleSpinner.Layout.Column = 1;
+      app.ScaleSpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
 
       % Create XYMirrorSymmetryCheckBox
       app.XYMirrorSymmetryCheckBox = uicheckbox(app.ExtraGrid);
       app.XYMirrorSymmetryCheckBox.Text = 'XY Mirror Symmetry';
       app.XYMirrorSymmetryCheckBox.Layout.Row = 3;
       app.XYMirrorSymmetryCheckBox.Layout.Column = 1;
+      app.XYMirrorSymmetryCheckBox.ValueChangedFcn = @(~,~) app.updateParametersCb();
 
-      % Create RotationalSymmetrySpinnerLabel
+      % Create StarShapedCheckBox
+      app.StarShapedCheckBox = uicheckbox(app.ExtraGrid);
+      app.StarShapedCheckBox.Text = 'Star Shaped';
+      app.StarShapedCheckBox.Layout.Row = 4;
+      app.StarShapedCheckBox.Layout.Column = 1;
+      app.StarShapedCheckBox.ValueChangedFcn = @(~,~) app.updateParametersCb();
+
+      % Create RotationalSymmetrySpinner
       app.RotationalSymmetrySpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
         'label', 'Rotational Symmetry');
       app.RotationalSymmetrySpinner.Limits = [0 Inf];
-      app.RotationalSymmetrySpinner.Layout.Row = 4;
+      app.RotationalSymmetrySpinner.Layout.Row = 5;
       app.RotationalSymmetrySpinner.Layout.Column = 1;
+      app.RotationalSymmetrySpinner.ValueChangedFcn = @(~,~) app.updateParametersCb();
         
     end
   end

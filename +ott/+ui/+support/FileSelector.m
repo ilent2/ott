@@ -24,8 +24,7 @@ classdef FileSelector < ott.ui.support.LabeledWidget
       % Callback for browse button click
       
       % Display a file chooser dialog
-      warning('not working yet');
-      %[file, path] = uigetfile(obj.Filter, obj.Title);
+      [file, path] = uigetfile(obj.Filter, obj.Title);
 
       % Put the GUI back on top
       if ishandle(obj.PostSelect)

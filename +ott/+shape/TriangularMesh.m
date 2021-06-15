@@ -14,6 +14,9 @@ classdef TriangularMesh < ott.shape.Shape ...
 %   - verts     -- 3xN matrix of vertex locations
 %   - faces     -- 3xN matrix of vertex indices describing faces
 %   - norms     -- 3xN matrix of face normal vectors
+%   - zRotSymmetry -- (Can be set) rotational symmetry of shape
+%   - xySymmetry -- (Can be set) mirror symmetry of shape
+%   - starShaped -- (Can be set) if the particle is star shaped
 %
 % Methods
 %   - subdivide  -- Add an extra vertex to the centre of each face

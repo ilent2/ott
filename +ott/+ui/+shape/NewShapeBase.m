@@ -34,7 +34,7 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
   end
   
   methods (Access=protected)
-    function setDefaultValues(app, ~)
+    function setDefaultValues(app, update)
       % Set default values to window fields
       
       app.VariableName.Value = '';
@@ -44,7 +44,10 @@ classdef (Abstract) NewShapeBase < ott.ui.support.AppTwoColumn ...
       app.ShowPreviewCheckBox.Value = true;
       app.UpdateButton.AutoUpdate = true;
       
-      app.update();
+      % Only call update if requested
+      if nargin == 1 || update == true
+        app.update();
+      end
     end
     
     function updatePreview(app)
