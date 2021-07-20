@@ -721,24 +721,45 @@ classdef Bsc
     end
     
     function varargout = visualiseFarfieldSlice(beam, phi, varargin)
-      % Generate a 2-D scattering plot of the far-field
+      % Generate a 2-D scattering plot of the far-field.
       %
-      % beam.visualiseFarfieldSlice(phi) display a visualisation
-      % of the farfield.
+      % Usage:
+      %   beam.visualiseFarfieldSlice(phi, ...)
+      %   Generates a slice/polar plot of the far-field.  In this version
+      %   the slice is always aligned to the z-axis.  `phi` specifies the
+      %   rotation of the plane about the z-axis.
       %
-      % [theta, I] = beam.visualiseFarfieldSlice(phi) calculate data
-      % for the visualisation.  Pass showVisualisation, true to show.
+      %   [theta, I] = beam.visualiseFarfieldSlice(phi, ...)
+      %   calculate data for the visualisation but don't generate a
+      %   visualisation unless `showVisualisation` is true.
+      %
+      % Optional named arguments:
+      %   - field (enum) -- The field type to visualise.  Defaults to
+      %     'irradiance'.  Not all field types support visualisation.
+      %
+      %   - normalise (logical) -- If true, the calculated fields are
+      %     normalised by the maximum calculated field value.
+      %
+      %   - ntheta (numeric) -- Number of angular points to use.
+      %     Defaults to 100.
+      %
+      %   - showVisualisation (logical) -- If the visualisation should
+      %     be shown.  Defaults to `nargout == 0`.
       
       p = inputParser;
       p.addParameter('field', 'irradiance');
-      p.addParameter('normalise', false);
-      p.addParameter('ntheta', 100);
-      p.addParameter('showVisualisation', nargout == 0);
+      p.addParameter('normalise', false, @islogical);
+      p.addParameter('ntheta', 100, @isnumeric);
+      p.addParameter('showVisualisation', nargout == 0, @islogical);
       p.parse(varargin{:});
       
       ptheta = linspace(0, 2*pi, p.Results.ntheta);
       
       % TODO: Other field types
+
+      assert(isnumeric(phi), 'phi must be numeric');
+      assert(isscalar(phi), ...
+        'phi must be scalar in this version, will change in OTT 2.0');
 
       % Calculate electric field
       [E, ~] = beam.farfield(ptheta, phi);
