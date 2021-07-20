@@ -282,7 +282,7 @@ classdef ArrayType < ott.beam.Beam
       end
 
       % Generate visualisation
-      beam.visFarfieldSlicePlot(imout, ptheta, nargout, varargin{:});
+      beam.visFarfieldSlicePlot(ptheta, imout, nargout, varargin{:});
 
       if nargout == 0
         clear imout ptheta vswfData

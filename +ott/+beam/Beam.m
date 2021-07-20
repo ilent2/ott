@@ -1042,27 +1042,49 @@ classdef Beam < matlab.mixin.Heterogeneous ...
     end
 
     function [imout, ptheta, vswfData] = visFarfieldSlice(beam, varargin)
-      % Generate a 2-D slice through the far-field
+      % Generate one or more 2-D slices through the far-field.
+      %
+      % Each slice consists of points at equally spaced angles `ptheta`
+      % in a plane described by three Euler angles `rho, theta, phi`.
+      % `theta, phi` describe the primary axis of the slice plane, that is
+      % `ptheta = 0`.  `theta` describes the rotation from the +z axis
+      % towards the +x axis, and `phi` describes the rotation from the +x
+      % axis towards the +y axis.  `rho` describes the rotation of the
+      % slice plane about the primary axis.
+      %
+      % For example, to calculate slices through two orthogonal planes
+      % aligned to the +z axis, you would set theta,phi to (0,0) and
+      % rho to 0 and pi/2 for the x-z and y-z planes respectively.
+      % In the resulting slice, ptheta=0 corresponds to the +z axis.
+      % Similarly, to calculate two planes aligned to the +y axis you
+      % would simply need to change theta,phi to (pi/2, pi/2).
       %
       % Usage
-      %   beam.visualiseFarfieldSlice(phi, ...)
-      %   Generates a 2-D slice at angle phi around the z-axis.
-      %   If `phi` is not prsent, uses default of ``[0, pi/2]``.
-      %   Plots into the current axes.
+      %   beam.visualiseFarfieldSlice(...)
+      %   With no arguments, generates the z-x and z-y slices, i.e.
+      %   theta = 0, and phi = 0, and rho = [0, pi/2].
+      %   Plots into the the current axes.
       %
-      %   [im, theta, data] = beam.visualiseFarfieldSlice(...)
-      %   Outputs the calculated values and corresponding angles.
+      %   beam.visualiseFarfieldSlice(rho, theta, phi, ...)
+      %   Generates slices described by the angles rho, theta, phi (radians).
+      %   Inputs are passed to :meth:`ott.utils.matchsize`, all input sizes
+      %   must match or be scalars.  Plots into the current axes.
+      %
+      %   [im, ptheta, data] = beam.visualiseFarfieldSlice(...)
+      %   Outputs the calculated values and corresponding polar angles.
+      %   These can be used in a polarplot: ``polarplot(ptheta, im)``.
       %
       % Optional named arguments
       %   - field (enum) -- Type of visualisation to generate, see
       %     :meth:`VisualisationData` for valid options.
       %     Default: ``'irradiance'``.
       %
-      %   - normalise (logical) -- If the field value should be normalized.
+      %   - normalise (logical) -- If true, normalised the calculated field
+      %     values by the maximum calculated field value.
       %     Default: ``false``.
       %
-      %   - npts (numeric) -- Number of points for sphere surface.
-      %     Passed to ``sphere(npts)``.  Default: ``100``.
+      %   - npts (numeric) -- Number of points for the slice.
+      %     Passed to ``linspace(0, 2*pi, npts)``.  Default: ``100``.
       %
       %   - plot_axes (axes handle) -- Axes to place the visualisation in.
       %     If empty, no visualisation is generated.
@@ -1076,7 +1098,9 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       %     Default: ``'incoming'``.
 
       p = inputParser;
-      p.addOptional('phi', [0, pi/2], @isnumeric);
+      p.addOptional('rho', [0, pi/2], @isnumeric);
+      p.addOptional('theta', 0, @isnumeric);
+      p.addOptional('phi', 0, @isnumeric);
       p.addParameter('field', 'irradiance');
       p.addParameter('basis', 'incoming');
       p.addParameter('normalise', false);
@@ -1087,22 +1111,42 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
-
-      % Generate grid
+      
+      % Get plane angles and ensure sizes match
+      theta = p.Results.theta;
+      phi = p.Results.phi;
+      rho = p.Results.rho;
+      [rho, theta, phi] = ott.utils.matchsize(rho(:), theta(:), phi(:));
+      
+      % Generate coordinates (work in Cartesian for now as its simpler)
       ptheta = linspace(0, 2*pi, p.Results.npts);
-      [r, ptheta, phi] = ott.utils.matchsize(0, ptheta(:), p.Results.phi);
-      rtp = [r(:), ptheta(:), phi(:)].';
+      xyzRing = ott.utils.rtp2xyz(ones(size(ptheta)), ptheta, 0*ptheta);
+      
+      % Generate full grid (3 x npts x numel(theta))
+      rtp = zeros(3, numel(ptheta), numel(theta));
+      for ii = 1:numel(theta)
+        Rp = ott.utils.rotz(phi(ii)*180/pi);
+        Rt = ott.utils.roty(theta(ii)*180/pi);
+        Rr = ott.utils.rotz(rho(ii)*180/pi);
+        rtp(:,:,ii) = ott.utils.xyz2rtp(Rp * Rt * Rr * xyzRing);
+      end
+      
+      % Restructure grid for calculations
+      rtp = reshape(rtp, 3, []);
       rtp = ott.utils.sanitiseRtp(rtp);
-
+      
       % Calculate fields
       [E, vswfData] = beam.efarfield(rtp, 'data', p.Results.data, ...
           unmatched{:});
 
       % Generate visualisation data
       imout = beam.VisualisationData(p.Results.field, E);
+      
+      % Structure output for polarplot
+      imout = reshape(imout, numel(ptheta), numel(theta), []);
 
       % Generate visualisation
-      beam.visFarfieldSlicePlot(imout, ptheta, nargout, varargin{:});
+      beam.visFarfieldSlicePlot(ptheta, imout, nargout, varargin{:});
 
       % Assign outputs
       if nargout == 0
@@ -1582,11 +1626,13 @@ classdef Beam < matlab.mixin.Heterogeneous ...
       end
     end
 
-    function visFarfieldSlicePlot(imout, ptheta, our_nargout, varargin)
+    function our_axes = visFarfieldSlicePlot(ptheta, imout, our_nargout, varargin)
       % Generate the plot for far-field slice
 
       p = inputParser;
-      p.addOptional('phi', [0, pi/2], @isnumeric);
+      p.addOptional('rho', [0, pi/2], @isnumeric);  % Ignored
+      p.addOptional('theta', [0, 0], @isnumeric);   % Ignored
+      p.addOptional('phi', [0, 0], @isnumeric);  % Ignored
       p.addParameter('normalise', false);
       p.addParameter('plot_axes', []);
       p.KeepUnmatched = true;
@@ -1599,6 +1645,11 @@ classdef Beam < matlab.mixin.Heterogeneous ...
         our_axes = p.Results.plot_axes;
         if isempty(our_axes)
           our_axes = gca();
+        end
+        
+        % Ensure the axes is a polar axis, otherwise replace it
+        if ~isa(our_axes, 'matlab.graphics.axis.PolarAxes')
+          polaraxes(our_axes);
         end
 
         % Check that we only have one visualisation to show
@@ -1613,7 +1664,6 @@ classdef Beam < matlab.mixin.Heterogeneous ...
         end
 
         % Generate plot
-        polaraxes(our_axes);
         polarplot(ptheta, I);
       end
     end
