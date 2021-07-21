@@ -61,6 +61,8 @@ classdef BscPmGauss < ott.BscPointmatch
       %     If omitted, Nmax is initially set to 100, the beam is
       %     calculated and Nmax is reduced so that the power does
       %     not drop significantly.
+      %   - 'zero_rejection_level' -- Level used to determine non-zero
+      %     beam coefficients in far-field point matching.  Default: 1e-8.
       %
       %   - 'NA'     --         Numerical aperture of objective
       %   - 'polarisation'  --  Polarisation of the beam
@@ -106,6 +108,7 @@ classdef BscPmGauss < ott.BscPointmatch
       p.addOptional('mode', [ 0 0 ]);
 
       p.addParameter('Nmax', []);
+      p.addParameter('zero_rejection_level', 1e-8);
       p.addParameter('offset', []);
       p.addParameter('polarisation', [ 1 1i ]);
       p.addParameter('wavelength0', 1);
@@ -408,7 +411,8 @@ classdef BscPmGauss < ott.BscPointmatch
       end
 
       % Do the point matching and store the result
-      [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, theta, phi);
+      [beam.a, beam.b] = beam.bsc_farfield(nn, mm, e_field, theta, phi, ...
+        'zero_rejection_level', p.Results.zero_rejection_level);
 
       % If no Nmax supplied, shrink the beam to the smallest size that
       % preserves the beam power
