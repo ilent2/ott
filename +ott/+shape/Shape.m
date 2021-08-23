@@ -222,7 +222,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       %   - origin (enum) -- Coordinate origin.  'local' or 'global'.
 
       p = inputParser;
-      p.addParameter('origin', 'global');
+      p = shape.addOriginParameter(p);
       p.parse(varargin{:});
 
       bb = shape.boundingBox;
@@ -252,7 +252,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       %   - origin (enum) -- Coordinate origin.  'local' or 'global'.
 
       p = inputParser;
-      p.addParameter('origin', 'global');
+      p = shape.addOriginParameter(p);
       p.parse(varargin{:});
 
       bb = shape.boundingBox;
@@ -362,7 +362,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       % Additional arguments passed to intersectAllInternal.
 
       p = inputParser;
-      p.addParameter('origin', 'global');
+      p = shape.addOriginParameter(p);
       p.addParameter('removeNan', false);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
@@ -424,7 +424,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       % Additional arguments passed to intersectInternal.
 
       p = inputParser;
-      p.addParameter('origin', 'global');
+      p = shape.addOriginParameter(p);
       p.KeepUnmatched = true;
       p.parse(varargin{:});
       unmatched = ott.utils.unmatchedArgs(p);
@@ -478,6 +478,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       %
       %   - origin (enum) -- Coordinate system origin.  Either 'global'
       %     or 'local' for world coordinates or shape coordinates.
+      %     Default: ``'global'``.
       %
       %   - axes (handle) -- Axes hanlde to place plot in.
       %     Default: ``[]``, uses gca() when available.
@@ -488,7 +489,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       p.addParameter('visualise', nargout == 0);
       p.addParameter('scale', 1.0);
       p.addParameter('axes', []);
-      p.addParameter('origin', 'local');
+      p = shape.addOriginParameter(p);
       p.addParameter('even_range', false);
       p.parse(varargin{:});
 
@@ -536,11 +537,20 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
         if isempty(our_axes)
           our_axes = gca();
         end
+        
+        % Determine if hold is on (to be consistent with surf/isosurf)
+        isholdon = ishold(our_axes);
 
         plot3(our_axes, xyz(1,:), xyz(2,:), xyz(3,:), 'o', plotoptions{:});
         axis(our_axes, 'equal');
         title(our_axes, ['spacing = ' num2str(p.Results.spacing) ...
             ', N = ' int2str(sum(mask))])
+
+        % Clear the orientation/aspect if hold isn't on
+        if ~isholdon
+          view(our_axes, [60, 30]);
+          daspect(our_axes, [1, 1, 1]);
+        end
       end
 
       % Assign output
@@ -567,6 +577,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       %
       %   - origin (enum) -- Coordinate system origin.  Either 'global'
       %     or 'local' for world coordinates or shape coordinates.
+      %     Default: ``'global'``.
       %
       %   - axis (handle) -- Axes hanlde to place plot in.
       %     Default: ``[]``, uses gca() when available.
@@ -575,7 +586,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       p.addParameter('samples', [50, 50, 50]);
       p.addParameter('visualise', nargout == 0);
       p.addParameter('axes', []);
-      p.addParameter('origin', 'local');
+      p = shape.addOriginParameter(p);
       p.addParameter('padding', 0.1);
       p.parse(varargin{:});
 
@@ -624,7 +635,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
         end
 
         % Patch doesn't watch for hold, so clear it ourselves
-        isholdon = ishold();
+        isholdon = ishold(our_axes);
         if ~isholdon
           cla(our_axes);
         end
@@ -762,8 +773,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       p.addParameter('surfOptions', {});
       p.addParameter('axes', []);
       p.addParameter('showNormals', false);
-      p.addParameter('origin', 'global', ...
-          @(x) sum(strcmpi(x, {'local', 'global'}) == 1));
+      p = shape.addOriginParameter(p);
       p.addParameter('visualise', true);
       p.addParameter('normalScale', 0.1);
       p.KeepUnmatched = true;
@@ -827,7 +837,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
             mXyz = mXyz ./ size(pch(ii).Faces, 2);
 
             % Calculate normals
-            nxyz = shape(ii).normalsXyz(mXyz);
+            nxyz = shape(ii).normalsXyz(mXyz, 'origin', p.Results.origin);
 
             % Generate plot of surface normals
             s = p.Results.normalScale;
@@ -857,7 +867,7 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
       %     scales the position coordinate too (default).
 
       p = inputParser;
-      p.addParameter('origin', 'global');
+      p = shape.addOriginParameter(p);
       p.parse(varargin{:});
 
       assert(isnumeric(sc) && isscalar(sc), ...
@@ -874,6 +884,14 @@ classdef (Abstract) Shape < ott.utils.RotationPositionProp ...
           shape(ii).position = shape(ii).position * sc;
         end
       end
+    end
+  end
+
+  methods (Static, Hidden)
+    function p = addOriginParameter(p)
+      % Add the origin parameter to an input parser
+      p.addParameter('origin', 'global', ...
+          @(x) sum(strcmpi(x, {'local', 'global'}) == 1));
     end
   end
 
