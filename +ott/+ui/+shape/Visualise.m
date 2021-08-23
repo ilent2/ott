@@ -13,8 +13,6 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
 % using/distributing this file.
 
 % TODO: Shape as input argument
-% TODO: Window help text
-% TODO: Check functionality of origin widget
 % TODO: Generate code function
 
   properties (Constant)
@@ -22,10 +20,24 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
 
     nameText = 'Visualise Shape';
 
-    aboutText = ['Generate a visualisation of a shape.'];
+    aboutText = ['Generate a visualisation of an existing shape.  ', ...
+      'This GUI can be used to create a surface or voxel based visualisation', ...
+      'of an OTT shape.'];
     
     helpText = {ott.ui.shape.Visualise.aboutText, ...
-      ''};
+      '', ...
+      ['This GUI requires that there is a ott.shape.Shape object already ', ...
+      'in the current matlab workspace.  If you don''t yet have a shape, ', ...
+      'you can create one with the Shape>Simple GUI.'], ...
+      '', ...
+      ['shape - Specify the variable name of the OTT shape to visualise. ', ...
+      'If this list is empty, try clicking ''File > Refresh Inputs'' or ', ...
+      'check that the variable is a valid ott.shape.Shape object.'], ...
+      '', ...
+      ['Visualisation - Specify the type of visualisation to create.  ', ...
+      'See the documentation for visualisation specific parameters.'], ...
+      '', ...
+      };
     
     windowName = ott.ui.shape.Visualise.nameText;
     windowSize = [640, 350];
@@ -86,10 +98,63 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
       
       % Update visible widgets
       app.UpdateVisibleWidgets();
+      
+      % Clear figure
+      cla(app.UIAxes);
+      title(app.UIAxes, '');
     end
     
     function code = generateCode(app)
-      code = {}; % TODO
+      % Generate visualisation code
+      code = {};
+      
+      code{end+1} = 'figure()';
+      
+      % Update shape preview
+      switch app.VisualisationDropDown.Value
+        case 'Surface'
+          code{end+1} = 's = shape.surf(...';
+          code{end+1} = ['  ''normalScale'', ' num2str(app.SurfNormalScale.Value) ', ...'];
+          code{end+1} = ['  ''showNormals'', ' num2str(app.SurfNormals.Value) ', ...'];
+          code{end+1} = ['  ''origin'', ''' app.OriginDropDown.Value ''');'];
+          
+          if ~app.SurfEdges.Value
+            code{end+1} = '';
+            code{end+1} = '% Hide edges';
+            code{end+1} = 's.EdgeColor = ''none'';';
+          end
+          
+          if app.SurfSmooth.Value
+            code{end+1} = '';
+            code{end+1} = '% Smooth lighting';
+            code{end+1} = 'camlight(app.UIAxes);';
+            code{end+1} = 'lighting(app.UIAxes, ''gouraud'');';
+          end
+          
+        case 'Voxels'
+          
+          code{end+1} = 'plotoptions = {...';
+          code{end+1} = '  ''MarkerFaceColor'', ''w'', ...';
+          code{end+1} = '  ''MarkerEdgeColor'', [.5 .5 .5], ...';
+          code{end+1} = ['  ''MarkerSize'', ' num2str(app.VoxScaleSpinner.Value) '};'];
+          code{end+1} = '';
+          
+          code{end+1} = 'shape.voxels(...';
+          code{end+1} = ['  ''spacing'', ' num2str(app.VoxSpacingSpinner.Value) ', ...'];
+          code{end+1} = '  ''plotoptions'', plotoptions, ...';
+          code{end+1} = ['  ''even_range'', ' num2str(app.VoxEvenRange.Value) ', ...'];
+          code{end+1} = ['  ''origin'', ''' app.OriginDropDown.Value ''');'];
+          
+        otherwise
+          error('Internal error');
+      end
+      
+      code{end+1} = '';
+      
+      code{end+1} = '% Axis Labels';
+      code{end+1} = 'xlabel(''X'');';
+      code{end+1} = 'ylabel(''Y'');';
+      code{end+1} = 'zlabel(''Z'');';
     end
     
     function UpdateVisibleWidgets(app, ~)
@@ -162,7 +227,8 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
         case 'Surface'
           s = shape.surf('axes', app.UIAxes, ...
             'normalScale', app.SurfNormalScale.Value, ...
-            'showNormals', app.SurfNormals.Value);
+            'showNormals', app.SurfNormals.Value, ...
+            'origin', app.OriginDropDown.Value);
           
           % Hide edges
           if ~app.SurfEdges.Value
@@ -174,6 +240,10 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
             camlight(app.UIAxes);
             lighting(app.UIAxes, 'gouraud');
           end
+          
+          % No title for surf (at the moment)
+          title(app.UIAxes, '');
+          
         case 'Voxels'
           
           plotoptions = {...
@@ -189,6 +259,11 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
         otherwise
           error('Internal error');
       end
+      
+      % Labels
+      xlabel(app.UIAxes, 'X');
+      ylabel(app.UIAxes, 'Y');
+      zlabel(app.UIAxes, 'Z');
       
       app.LoadingText.Visible = 'off';
       
@@ -275,6 +350,9 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
         'label', 'Normal scale');
       app.SurfNormalScale.Layout.Row = 8;
       app.SurfNormalScale.Layout.Column = 1;
+      app.SurfNormalScale.Limits = [0, Inf];
+      app.SurfNormalScale.LowerLimitInclusive = false;
+      app.SurfNormalScale.Step = 0.1;
       app.SurfNormalScale.ValueChangedFcn = createCallbackFcn(app, ...
         @ValueChangedCb, true);
       
@@ -309,7 +387,6 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
       app.UIAxes = uiaxes(app.RightPanel);
       xlabel(app.UIAxes, '')
       ylabel(app.UIAxes, '')
-      view(app.UIAxes, [-40, 30]);
       app.UIAxes.Position = [10 10 373 app.windowSize(2)-20];
       
       % Create loading text
