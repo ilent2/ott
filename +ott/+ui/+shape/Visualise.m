@@ -13,7 +13,6 @@ classdef Visualise < ott.ui.support.AppTwoColumn ...
 % using/distributing this file.
 
 % TODO: Shape as input argument
-% TODO: Generate code function
 
   properties (Constant)
     cnameText = 'Visualise';

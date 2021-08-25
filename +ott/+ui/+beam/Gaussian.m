@@ -12,13 +12,14 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
 %
 % This GUI can be launched from the launcher Beam -> Simple or by running:
 %
-%   ott.ui.beam.Simple
+%   ott.ui.beam.Gaussian
 
 % Copyright 2021 IST Austria, Written by Isaac Lenton
 % This file is part of OTT, see LICENSE.md for information about
 % using/distributing this file.
 
 % TODO: Do we want a NA warning?
+% TODO: Auto-update checkbox doesn't work, always updates with DropDown.
 
   properties (Constant)
     cnameText = 'Gaussian';
@@ -60,12 +61,33 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
     end
     
     function data = generateData(app)
-      data = []; % TODO
+      data = [];
+      
+      wavelength = app.WavelengthSpinner.Value;
+      index = app.IndexSpinner.Value;
+      position = app.PositionXyzSpinner.Value;
+      rotation = ott.utils.euler2rot(app.RotationXyzSpinner.Value.');
+      NA = app.NaSpinner.Value;
+      polarisation = app.PolarisationEntry.Value;
+      power = app.PowerSpinner.Value;
+      
+      warning('wavlength not used yet'); % TODO
       
       switch app.BeamTypeDropDown.Value
         case 'Gaussian'
+          data = ott.beam.Gaussian.FromNa(NA, 'power', power, ...
+            'index_medium', index, 'polfield', polarisation, ...
+            'position', position, 'rotation', rotation);
         case 'Hermite'
+          data = ott.beam.HermiteGaussian.FromNa(NA, 'power', power, ...
+            'mmode', app.MmodeSpinner.Value, 'nmode', app.NmodeSpinner.Value, ...
+            'index_medium', index, 'polfield', polarisation, ...
+            'position', position, 'rotation', rotation);
         case 'Laguerre'
+          data = ott.beam.LaguerreGaussian.FromNa(NA, 'power', power, ...
+            'lmode', app.LmodeSpinner.Value, 'pmode', app.PmodeSpinner.Value, ...
+            'index_medium', index, 'polfield', polarisation, ...
+            'position', position, 'rotation', rotation);
         otherwise
           error('Internal error');
       end
@@ -75,7 +97,7 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
       
       app.BeamTypeDropDown.Value = 'Gaussian';
       app.LmodeSpinner.Value = 2;
-      app.PmodeSpinner.Value = 2;
+      app.PmodeSpinner.Value = 0;
       app.MmodeSpinner.Value = 2;
       app.NmodeSpinner.Value = 2;
       app.PowerSpinner.Value = 2;
@@ -152,7 +174,8 @@ classdef Gaussian < ott.ui.beam.NewBeamBase ...
       % TODO: Hide unneeded components from base
         
       % Beam type dropdown
-      app.BeamTypeDropDown = ott.ui.support.LabeledDropDown(app.ExtraGrid);
+      app.BeamTypeDropDown = ott.ui.support.LabeledDropDown(app.ExtraGrid, ...
+        'label', 'Beam Type');
       app.BeamTypeDropDown.Items = {'Gaussian', 'Laguerre', 'Hermite'};
       app.BeamTypeDropDown.Layout.Row = 1;
       app.BeamTypeDropDown.Layout.Column = 1;
