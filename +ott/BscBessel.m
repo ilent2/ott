@@ -175,5 +175,28 @@ classdef BscBessel < ott.Bsc
       % Make the beam vector and store the coefficients
       [beam.a, beam.b] = ott.Bsc.make_beam_vector(a, b, nn, mm);
     end
+    
+    function [sbeam, beam] = scatter(beam, tmatrix, varargin)
+      %SCATTER scatter a beam using a T-matrix
+      %
+      % For BscBessel: Adds an extra check to make sure the beam Nmax is
+      % large enough to represent a bessel beam.
+      %
+      % For full documentation see Bsc/scatter.
+
+      % Determine the maximum tmatrix.Nmax(2) and check type
+      maxNmax2 = 0;
+      for ii = 1:numel(tmatrix)
+        maxNmax2 = max(maxNmax2, tmatrix(ii).Nmax(2));
+      end
+      
+      if beam.Nmax < maxNmax2
+        warning('ott:BscBessel:scatter:small_nmax', ...
+          'The beam Nmax may be too small for the current T-matrix');
+      end
+      
+      % Do the default processing
+      [sbeam, beam] = scatter@ott.Bsc(beam, tmatrix, varargin{:});
+    end
   end
 end

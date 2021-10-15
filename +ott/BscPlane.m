@@ -192,5 +192,28 @@ classdef BscPlane < ott.Bsc
         A = [ A B ; B A ];
       end
     end
+    
+    function [sbeam, beam] = scatter(beam, tmatrix, varargin)
+      %SCATTER scatter a beam using a T-matrix
+      %
+      % For BscPlane: Adds an extra check to make sure the beam Nmax is
+      % large enough to represent a plane wave.
+      %
+      % For full documentation see Bsc/scatter.
+
+      % Determine the maximum tmatrix.Nmax(2) and check type
+      maxNmax2 = 0;
+      for ii = 1:numel(tmatrix)
+        maxNmax2 = max(maxNmax2, tmatrix(ii).Nmax(2));
+      end
+      
+      if beam.Nmax < maxNmax2
+        warning('ott:BscPlane:scatter:small_nmax', ...
+          'The beam Nmax may be too small for the current T-matrix');
+      end
+      
+      % Do the default processing
+      [sbeam, beam] = scatter@ott.Bsc(beam, tmatrix, varargin{:});
+    end
   end
 end
