@@ -68,13 +68,17 @@ for ii = 1:nargout
     continue;
   end
   
-  Mr = varargout{ii}(:,1);
-  Mtheta = varargout{ii}(:,2);
-  Mphi = varargout{ii}(:,3);
+  % utils.vswf might return multiple points, split acordingly
+  npts = size(varargout{ii}, 2)/3;
+  Mr = varargout{ii}(:, 1:npts);
+  Mtheta = varargout{ii}(:, npts+(1:npts));
+  Mphi = varargout{ii}(:, 2*npts+(1:npts));
+  
   Mx = Mr .* r_hat_x + Mtheta .* theta_hat_x + Mphi .* phi_hat_x;
   My = Mr .* r_hat_y + Mtheta .* theta_hat_y + Mphi .* phi_hat_y;
   Mz = Mr .* r_hat_z + Mtheta .* theta_hat_z + Mphi .* phi_hat_z;
-  varargout{ii} = [ Mx My Mz ];
+  
+  varargout{ii} = [Mx My Mz];
   
 end
 
