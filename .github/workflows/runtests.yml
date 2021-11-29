@@ -24,7 +24,7 @@ jobs:
         continue-on-error: true
         with:
           test-results-junit: test-results/results.xml
-          code-coverage-cobertura: code-coverage/coverage.xml
+          code-coverage-cobertura: code-coverage/coverage.cobertura.xml
           source-folder: tests
 
       - name: Publish Unit Test Results
@@ -32,12 +32,13 @@ jobs:
         if: always()
         with:
           files: test-results/results.xml
+          report_individual_runs: true
 
       - name: Code Coverage Summary Report
         uses: irongut/CodeCoverageSummary@v1.2.0
         if: always()
         with:
-          filename: code-coverage/coverage.xml
+          filename: code-coverage/coverage.cobertura.xml
           format: markdown
           badge: true
 
