@@ -22,8 +22,15 @@ jobs:
         uses: matlab-actions/run-tests@v1
         with:
           test-results-junit: test-results/results.xml
-          code-coverage-cobertura: code-coverage/coverage.cobertura.xml
-          source-folder: tests
+          code-coverage-cobertura: code-coverage/coverage.xml
+
+          # Exclude GUI, not yet supported by test runner
+          select-by-folder: [ tests/beam; tests/bsc; tests/drag; tests/dynamics;
+              tests/examples; tests/particle; tests/shape; tests/tmatrix;
+              tests/tools; tests/utils ]
+
+          # Folders we should run coverage reports on
+          source-folder: [ +ott; examples ]
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
@@ -36,7 +43,7 @@ jobs:
         uses: irongut/CodeCoverageSummary@v1.2.0
         if: always()
         with:
-          filename: code-coverage/coverage.cobertura.xml
+          filename: code-coverage/coverage.xml
           format: markdown
           badge: true
 
