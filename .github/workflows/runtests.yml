@@ -20,8 +20,6 @@ jobs:
 
       - name: Run tests and generate artifacts
         uses: matlab-actions/run-tests@v1
-        id: main
-        continue-on-error: true
         with:
           test-results-junit: test-results/results.xml
           code-coverage-cobertura: code-coverage/coverage.cobertura.xml
@@ -32,7 +30,7 @@ jobs:
         if: always()
         with:
           files: test-results/results.xml
-          report_individual_runs: true
+          report_individual_runs: "true"
 
       - name: Code Coverage Summary Report
         uses: irongut/CodeCoverageSummary@v1.2.0
@@ -44,16 +42,14 @@ jobs:
 
       - name: Upload results artifact
         uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: test-restuls
           path: test-results/results.xml
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: code-coverage
           path: code-coverage/coverage.xml
-
-      - name: check failures
-        if: steps.main.outcome != 'success'
-        run: exit 1
