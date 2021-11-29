@@ -2,7 +2,7 @@ ott - Optical Tweezers Toolbox
 ==============================
 
 [![Documentation Status](https://readthedocs.org/projects/ott/badge/?version=latest)](https://ott.readthedocs.io/en/latest/?badge=latest)
-[![Unit-test Status](https://github.com/ilent2/ott/actions/workflows/runtests.yml/badge.svg?branch=draft162)](https://github.com/ilent2/ott/actions?query=workflow%3Aruntests)
+[![Unit-test Status](https://github.com/ilent2/ott/actions/workflows/runtests.yml/badge.svg?branch=draft162)](https://github.com/ilent2/ott/actions?query=workflow%3A"Unit+Tests")
 [![View Optical Tweezers Toolbox on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/73541-optical-tweezers-toolbox)
 
 Overview
