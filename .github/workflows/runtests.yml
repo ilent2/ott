@@ -3,6 +3,7 @@
 name: Unit Tests
 
 # Controls when the workflow will run
+# Add [skip ci] to the commit to skip running
 on:
   push:
     branches: [ draft162 ]
@@ -22,3 +23,15 @@ jobs:
           test-results-junit: test-results/results.xml
           code-coverage-cobertura: code-coverage/coverage.xml
           source-folder: tests
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-restuls
+          path: test-results/results.xml
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: code-coverage
+          path: code-coverage/coverage.xml
