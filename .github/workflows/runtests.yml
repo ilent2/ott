@@ -27,6 +27,20 @@ jobs:
           code-coverage-cobertura: code-coverage/coverage.xml
           source-folder: tests
 
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action/composite@v1
+        if: always()
+        with:
+          files: test-results/results.xml
+
+      - name: Code Coverage Summary Report
+        uses: irongut/CodeCoverageSummary@v1.2.0
+        if: always()
+        with:
+          filename: code-coverage/coverage.xml
+          format: markdown
+          badge: true
+
       - name: Upload results artifact
         uses: actions/upload-artifact@v2
         with:
