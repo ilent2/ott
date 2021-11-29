@@ -25,12 +25,13 @@ jobs:
           code-coverage-cobertura: code-coverage/coverage.xml
 
           # Exclude GUI, not yet supported by test runner
-          select-by-folder: [ tests/beam; tests/bsc; tests/drag; tests/dynamics;
+          select-by-folder: >
+              tests/beam; tests/bsc; tests/drag; tests/dynamics;
               tests/examples; tests/particle; tests/shape; tests/tmatrix;
-              tests/tools; tests/utils ]
+              tests/tools; tests/utils
 
           # Folders we should run coverage reports on
-          source-folder: [ +ott; examples ]
+          source-folder: +ott; examples
 
       - name: Publish Unit Test Results
         uses: EnricoMi/publish-unit-test-result-action/composite@v1
