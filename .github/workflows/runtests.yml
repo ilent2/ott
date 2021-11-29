@@ -19,6 +19,7 @@ jobs:
         uses: matlab-actions/setup-matlab@v1
       - name: Run tests and generate artifacts
         uses: matlab-actions/run-tests@v1
+        continue-on-error: true
         with:
           test-results-junit: test-results/results.xml
           code-coverage-cobertura: code-coverage/coverage.xml
