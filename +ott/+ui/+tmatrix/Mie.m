@@ -42,7 +42,7 @@ classdef Mie < ott.ui.tmatrix.NewTmatrixBase
       % Generate shape
       
       switch app.InputDropDown.Value
-        case 'Sphere'
+        case 'Radius'
           radius = app.RadiusSpinner.Value;
         case 'Shape Max Radius'
           radius = app.ShapeName.Variable.maxRadius;
@@ -54,24 +54,34 @@ classdef Mie < ott.ui.tmatrix.NewTmatrixBase
       
       data = ott.tmatrix.Mie(...
         'radius', radius ./ app.WavelengthSpinner.Value, ...
-        'index_relative', app.RelativeIndexSpinner);
+        'index_relative', app.RelativeIndexSpinner.Value);
     end
     
     function code = generateCode(app)
-      code = {}; % TODO
+      code = {};
       
       switch app.InputDropDown.Value
-        case 'Sphere'
+        case 'Radius'
+          code{end+1} = ['radius = ' num2str(app.RadiusSpinner.Value) ';'];
         case 'Shape Max Radius'
+          code{end+1} = ['radius = ' app.ShapeName.Value '.maxRadius;'];
         case 'Shape Volume'
+          code{end+1} = ['radius = ((3/4/pi) * ' app.ShapeName.Value '.volume).^(1/3);'];
         otherwise
           error('Internal error');
       end
+      
+      code{end+1} = ['wavelength = ' num2str(app.WavelengthSpinner.Value) ';'];
+      code{end+1} = ['index_relative = ' num2str(app.RelativeIndexSpinner.Value) ';'];
+      code{end+1} = '';
+      code{end+1} = 'tmatrix = ott.tmatrix.Mie(...';
+      code{end+1} = '  ''radius'', radius ./ wavelength, ...';
+      code{end+1} = '  ''index_relative'', index_relative);';
     end
     
     function updateVisibleWidgets(app)
       % Update widget enable status
-      if strcmpi(app.InputDropDown.Value, 'Sphere')
+      if strcmpi(app.InputDropDown.Value, 'Radius')
         app.RadiusSpinner.Enable = true;
         app.ShapeName.Enable = false;
         app.MainGrid.RowHeight{3} = app.MainGrid.RowHeight{1};

@@ -83,6 +83,9 @@ classdef AppProducer < handle
     function update(app)
       % Update the data (and output/preview)
       
+      % Clear any existing errors before running
+      app.UpdateButton.clearErrors();
+      
       % Generate new data
       try
         app.Data = app.generateData();
