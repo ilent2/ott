@@ -119,6 +119,7 @@ classdef TmatrixSmarties < ott.Tmatrix
       p.addParameter('Nmax', []);
       p.addParameter('npts', []);
       p.addParameter('verbose', false);
+      p.addParameter('progress_callback', @(x) []);
 
       p.parse(varargin{:});
 
