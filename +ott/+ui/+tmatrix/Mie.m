@@ -74,9 +74,13 @@ classdef Mie < ott.ui.tmatrix.NewTmatrixBase
       if strcmpi(app.InputDropDown.Value, 'Sphere')
         app.RadiusSpinner.Enable = true;
         app.ShapeName.Enable = false;
+        app.MainGrid.RowHeight{3} = app.MainGrid.RowHeight{1};
+        app.MainGrid.RowHeight{4} = 0;
       else
         app.RadiusSpinner.Enable = false;
         app.ShapeName.Enable = true;
+        app.MainGrid.RowHeight{3} = 0;
+        app.MainGrid.RowHeight{4} = app.MainGrid.RowHeight{1};
       end
     end
     
@@ -95,22 +99,22 @@ classdef Mie < ott.ui.tmatrix.NewTmatrixBase
       % Create base components
       createMainComponents@ott.ui.tmatrix.NewTmatrixBase(app);
       
-      % Configure extra grid
-      app.ExtraGrid.RowHeight = repmat({32}, 1, 3);
-      app.ExtraGrid.RowHeight(end) = {'1x'};
+      % Increase the main grid size and shift everything down by one
+      % So we can put the Shape Type input after the Output field
+      ott.ui.support.insertGridRow(app.MainGrid, app.MainGrid.RowHeight{1}, 2, 2);
       
-      % Input type selector
-      app.InputDropDown = ott.ui.support.LabeledDropDown(app.ExtraGrid, ...
-        'label', 'Input', 'wwidth', app.wwidth);
-      app.InputDropDown.Layout.Row = 1;
+      % Add Input type selector bellow output selector
+      app.InputDropDown = ott.ui.support.LabeledDropDown(app.MainGrid, ...
+        'label', 'Input Type', 'wwidth', app.wwidth);
+      app.InputDropDown.Layout.Row = 2;
       app.InputDropDown.Layout.Column = 1;
-      app.InputDropDown.Items = {'Shape Max Radius', 'Shape Volume', 'Sphere'};
+      app.InputDropDown.Items = {'Shape Max Radius', 'Shape Volume', 'Radius'};
       app.InputDropDown.ValueChangedFcn = @(~,~) app.inputTypeChangedCb();
       
       % Radius entry
-      app.RadiusSpinner = ott.ui.support.LabeledSpinner(app.ExtraGrid, ...
+      app.RadiusSpinner = ott.ui.support.LabeledSpinner(app.MainGrid, ...
         'label', 'Radius', 'wwidth', app.wwidth);
-      app.RadiusSpinner.Layout.Row = 2;
+      app.RadiusSpinner.Layout.Row = 3;
       app.RadiusSpinner.Layout.Column = 1;
       app.RadiusSpinner.Step = 1e-7;
       app.RadiusSpinner.Limits = [0, Inf];

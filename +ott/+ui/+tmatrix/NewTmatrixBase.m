@@ -60,7 +60,7 @@ classdef (Abstract) NewTmatrixBase < ott.ui.support.AppTopLevel ...
       
       % Shape input
       app.ShapeName = ott.ui.support.VariableDropDown(app.MainGrid, ...
-        'wwidth', app.wwidth, 'filter', 'ott.shape.Shape');
+        'label', 'Shape', 'wwidth', app.wwidth, 'filter', 'ott.shape.Shape');
       app.ShapeName.Layout.Row = 2;
       app.ShapeName.Layout.Column = 1;
       app.registerRefreshInput(app.ShapeName);
