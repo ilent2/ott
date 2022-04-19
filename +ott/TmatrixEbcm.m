@@ -92,6 +92,7 @@ classdef TmatrixEbcm < ott.Tmatrix
       p.addParameter('index_particle', []);
       
       p.addParameter('verbose', false);
+      p.addParameter('progress_callback', @(x) []);
       
       p.parse(varargin{:});
 
@@ -125,7 +126,8 @@ classdef TmatrixEbcm < ott.Tmatrix
           'z_mirror_symmetry', z_mirror_symmetry, ...
           'invmethod', p.Results.invmethod, ...
           'internal', p.Results.internal, ...
-          'verbose', p.Results.verbose);
+          'verbose', p.Results.verbose, ...
+          'progress_callback', p.Results.progress_callback);
     end
   end
   
@@ -186,7 +188,10 @@ classdef TmatrixEbcm < ott.Tmatrix
       pa.addParameter('z_mirror_symmetry', false);
       pa.addParameter('internal', false);
       pa.addParameter('invmethod', []);
+      
       pa.addParameter('verbose', false);
+      pa.addParameter('progress_callback', @(x) []);
+      
       pa.parse(varargin{:});
 
       % Store inputs k_medium and k_particle

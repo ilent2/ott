@@ -119,8 +119,14 @@ classdef TmatrixSmarties < ott.Tmatrix
       p.addParameter('Nmax', []);
       p.addParameter('npts', []);
       p.addParameter('verbose', false);
+      p.addParameter('progress_callback', @(x) []);
 
       p.parse(varargin{:});
+      
+      % First check we have SMARTIES
+      if exist('slvForT', 'file') ~= 2
+        error('Could not find SMARTIES function slvForT, check SMARTIES installed');
+      end
 
       % Get the wavenumber of the particle and medium
       [tmatrix.k_medium, tmatrix.k_particle] = ...

@@ -263,7 +263,7 @@ classdef TmatrixDda < ott.Tmatrix
 
       % Tell the user some things
       if pa.Results.verbose && pa.Results.z_rotational_symmetry ~= 1
-        disp(['Voxels with rotationa symmetry: ' num2str(size(xyz, 2))]);
+        disp(['Voxels with rotational symmetry: ' num2str(size(xyz, 2))]);
       end
 
       % Put everything in units of wavelengths
@@ -280,7 +280,7 @@ classdef TmatrixDda < ott.Tmatrix
         % Calculate alpha for remaining positions
 
         if isempty(pa.Results.spacing)
-          error('Spacing is needed for polarizability calculation');
+          error('spacing is needed for polarizability calculation');
         end
 
         % Get and filter k_particle, convert to index
