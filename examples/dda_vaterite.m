@@ -106,17 +106,14 @@ for ii = 1:length(times)
     end
     
     % Calculate polarizability unit
-    upol = ott.utils.polarizability.LDR(spacing ./ wavelength0, [index_o; index_o; index_e] ./ index_medium);
+    upol = ott.utils.polarizability.LDR(spacing ./ wavelength_medium, ...
+        [index_o; index_o; index_e] ./ index_medium);
     
     % Calculate sheaf-of-wheta orientations
     dirs = sheafOfWheat(voxels, 0.5*radius(ii));
     
     % Rotate polarizability and index_relative units
-    % We need index_relative to ensure correct scaling of the TE modes
-    index_relative = ott.utils.rotate_3x3tensor(...
-        diag([index_o, index_o, index_e] ./ index_medium), 'dir', dirs);
-    polarizabilities = ott.utils.rotate_3x3tensor(...
-        diag(upol), 'dir', dirs);
+    polarizabilities = ott.utils.rotate_3x3tensor(diag(upol), 'dir', dirs);
       
     tic();
 
