@@ -343,8 +343,9 @@ classdef Bsc
         if isvector(b)
           b = b(:);
         end
-        assert(size(a, 1) >= 3 && sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1)), ...
-          'number of multipole terms must be 3, 8, 15, 24, ...');
+        assert(size(a, 1) == 0 ...
+            || (size(a, 1) >= 3 && sqrt(size(a, 1)+1) == floor(sqrt(size(a, 1)+1))), ...
+          'number of multipole terms must be 0, 3, 8, 15, 24, ...');
         
         beam.a = a;
         beam.b = b;
@@ -1192,6 +1193,12 @@ classdef Bsc
 
     function nbeam = shrink_Nmax(beam, varargin)
       % SHRINK_NMAX reduces the size of the beam while preserving power
+      
+      % In case we have an empty beam bail early
+      if beam.Nmax == 0
+        nbeam = beam;
+        return
+      end
 
       p = inputParser;
       p.addParameter('tolerance', 1.0e-6);

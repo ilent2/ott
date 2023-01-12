@@ -10,6 +10,10 @@ function setupOnce(testCase)
   % Generate a gaussian beam for testing
   testCase.TestData.beam = ott.BscPmGauss();
 
+  % Generate a empty beam for testing
+  testCase.TestData.emtpyBeam = ott.Bsc([], [], ...
+      'incoming', 'incident');
+
 end
 
 function testTranslation(testCase)
@@ -84,6 +88,15 @@ function testUnevenTranslation(testCase)
 
 end
 
+function testEmptyTranslation(testCase)
+
+  beam = testCase.TestData.emtpyBeam;
+  tbeam = beam.translateZ(1.0);
+  testCase.verifyEqual(tbeam.getCoefficients, beam.getCoefficients, ...
+    'Empty beam should still be an empty beam');
+
+end
+
 function testMakeBeamVectorEmpty(testCase)
 % Check that make_beam_vector works for empty beams
 
@@ -146,6 +159,19 @@ function testSum(testCase)
   beamarr = [beam1, beam2];
   testCase.verifyEqual(sum(beamarr), beam3, ...
     'sum([beam1, beam2]) incorrect');
+
+  % Test empty
+  ebeam = testCase.TestData.emtpyBeam;
+  testCase.verifyEqual(ebeam + ebeam, ebeam, ...
+    'sum of empty beams should be empty beam');
   
+end
+
+function testShrinkNmax(testCase)
+
+  ebeam = testCase.TestData.emtpyBeam;
+  testCase.verifyEqual(ebeam.shrink_Nmax(), ebeam, ...
+    'Empty beam should not shrink/change');
+
 end
 
