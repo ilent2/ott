@@ -175,7 +175,7 @@ Contact us
 ----------
 
 The best person to contact for inquiries about the toolbox or lincensing
-is [Isaac Lenton](mailto:uqilento@uq.edu.au)
+is [Isaac Lenton](mailto:isaac.lenton@ist.ac.at)
 
 File listing
 ------------
