@@ -99,7 +99,12 @@ function testFields(testCase)
   Einc = beam.emFieldXyz(R*xyz);
   Eint = ibeam.emFieldXyz(R*xyz);
   Esca = sbeam.emFieldXyz(R*xyz);
-  Eext1 = Esca + Einc;
+
+  % ott.utils.emField evaluates the outgoing basis as h1/2, so emFieldXyz on a
+  % 'scattered' beam returns half the physical scattered field.  The physical
+  % total field is therefore inc + 2*sca - the same factor Bsc.totalField
+  % applies.  Without it this check fails by 42%.
+  Eext1 = Einc + 2*Esca;
   
   % Test fields are continous
   testCase.verifyThat(dot(xyz, Eext1 - Eint.*nrel^2), ...

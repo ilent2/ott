@@ -16,6 +16,17 @@ function [Y,Ytheta,Yphi] = spharm(n,m,theta,phi)
 % m columns.
 %
 % "Out of range" n and m result in return of Y = 0
+%
+% CONVENTION: these are the standard Condon-Shortley harmonics, i.e. the same
+% sign convention as scipy.special.sph_harm, treams, and the usual tables:
+%
+%     Y_1^1 = -sqrt(3/(8*pi)) sin(theta) exp(i*phi)      (note the minus)
+%
+% Upstream OTT OMITS that phase: legendrerow implements a geodesy recursion
+% in which it is conventionally absent, and nothing downstream restored it.
+% The shipped output therefore differs from the harmonics above by a factor
+% (-1)^m: measured ratio exactly -1 for odd m and +1 for even m, at both
+% signs of m.
 
 % This file is part of the optical tweezers toolbox.
 % See LICENSE.md for information about using/distributing this file.
@@ -70,6 +81,10 @@ pnm = pnm(abs(m)+1,:); %pick the m's we potentially have.
 
 [phiM,mv]=meshgrid(phi,m);
 
+% NOTE: the (-1)^m below is NOT the Condon-Shortley phase.
+% legendrerow only computes rows for |m|, so a negative-m request is handed 
+% the same P_n^|m| as its positive; this factor supplies the negative-order 
+% relation that turns one into the other, and applies to m < 0 ONLY.
 pnm = [(-1).^mv(m<0,:).*pnm(m<0,:);pnm(m>=0,:)];
 
 expphi = exp(1i*mv.*phiM);
@@ -77,6 +92,15 @@ expphi = exp(1i*mv.*phiM);
 %N = sqrt((2*n+1)/(8*pi));
 
 Y = pnm .* expphi;
+
+% ===================== FIX 1: CONDON-SHORTLEY PHASE =====================
+% Up to this line Y is the PHASE-FREE harmonic: legendrerow never applies the
+% (-1)^m that the Condon-Shortley convention carries inside P_l^m.  So Y here
+% and the standard Y_n^m differ by a factor (-1)^m -- for (n,m) = (1,1) this
+% line receives +sqrt(3/(8*pi)) sin(th) exp(i*ph) where the standard Y_1^1 is
+% MINUS that.  Multiplying by (-1)^m supplies the missing phase and lands on
+% the standard convention.
+Y = Y .* (-1).^mv;
 
 % Do we want to calculate the derivatives?
 if nargout <= 1
@@ -123,6 +147,12 @@ ymminus=Y2(1:end-2,:);
 Yphi = 1i/2 * sqrt((2*n+1)/(2*n+3)) * ...
    ( sqrt((n+mv+1).*(n+mv+2)) .* expminus .* ymplus ...
    + sqrt((n-mv+1).*(n-mv+2)) .* expplus .* ymminus );
+
+% Ytheta and Yphi are built by recursions relating Y(n,m) to Y(n,m+-1).  Those
+% neighbours now carry (-1)^(m+-1) = -(-1)^m, so each derivative acquires one
+% extra minus sign relative to the patched Y.  Undo it.
+Ytheta = -Ytheta;
+Yphi   = -Yphi;
 
 Y=Y(n+mi+1,:).';
 Yphi=Yphi(n+mi+1,:).';

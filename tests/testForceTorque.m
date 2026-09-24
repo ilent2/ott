@@ -130,7 +130,7 @@ function testPlaneWave(testCase)
   numpts = 10;
   R = zeros(3, 3*numpts);
   for ii = 1:numpts
-    R(:, (1:3) + 3*(ii-1)) = rotz(rand()*360)*roty(rand()*180);
+    R(:, (1:3) + 3*(ii-1)) = ott.utils.rotz(rand()*360)*ott.utils.roty(rand()*180);
   end
   
   [f, ~] = ott.forcetorque(beam, T, 'rotation', R);

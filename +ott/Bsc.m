@@ -18,6 +18,17 @@ classdef Bsc
 %   - b           --  Beam shape coefficients b vector
 %   - type        --  Beam type (incident, scattered, total)
 %   - basis       --  VSWF beam basis (incoming, outgoing or regular)
+%
+%       The outgoing and incoming bases use h1/2 and h2/2, not h1 and h2
+%       (ott.utils.emField divides both by two), so that
+%       regular = outgoing + incoming.  A consequence: emFieldXyz on a
+%       'scattered' beam returns HALF the physical scattered field.  The
+%       physical total field outside the particle is therefore
+%
+%           E_total = E_incident + 2*E_scattered
+%
+%       which is what totalField() applies.
+%
 %   - Nmax        --  Truncation number for VSWF coefficients
 %   - power       --  Power of the beam [M*L^2/S^3]
 %   - Nbeams      --  Number of beams in this Bsc object
@@ -135,6 +146,18 @@ classdef Bsc
         k_medium = default;
       else
         error('Unable to determine k_medium from inputs');
+      end
+
+      % The surrounding medium must be lossless.  The force and torque sums
+      % integrate the stress tensor over a sphere enclosing the particle,
+      % which gives the force ON the particle only if nothing in between
+      % absorbs; with a lossy host the answer depends on the integration
+      % radius, and the VSWF orthogonality the sums rely on no longer holds.
+      % Nothing downstream detects this, so warn here.
+      if ~isreal(k_medium)
+        warning('ott:Bsc:parser_k_medium:lossy_medium', ...
+            ['The surrounding medium is lossy (imag(k_medium) = ' ...
+             num2str(imag(k_medium)) '). OTT supports only lossless media.']);
       end
     end
     
@@ -660,7 +683,7 @@ classdef Bsc
       p.parse(varargin{:});
 
       % Scale the locations by the wave number (unitless coordinates)
-      rtp(1, :) = rtp(1, :) * abs(beam.k_medium);
+      rtp(1, :) = rtp(1, :) * beam.k_medium;
 
       % Get the indices required for the calculation
       cidx = p.Results.cidx;

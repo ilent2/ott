@@ -10,6 +10,11 @@ classdef TmatrixSmarties < ott.Tmatrix
 %   Somerville, Auguié, Le Ru.  JQSRT, Volume 174, May 2016, Pages 39-55.
 %   https://doi.org/10.1016/j.jqsrt.2016.01.005
 %
+% This build assembles the T-matrix with SMARTIES' own sparseTmatrix rather
+% than unfolding the |m| blocks here; the previous unfold dropped a sign and
+% stored every block transposed.  The 'internal' option routes SMARTIES' st4MR
+% blocks through the same assembly. 
+%
 % See also TmatrixSmarties
 
 % This file is part of the optical tweezers toolbox.
@@ -182,64 +187,39 @@ classdef TmatrixSmarties < ott.Tmatrix
     function data = getTmatrixData(CstTRa, name)
       % Convert the SMARTIES structure to T-matrix data
 
-      Nmax = length(CstTRa)-1;
-      tsz = ott.utils.combined_index(Nmax, Nmax);
-      data = sparse(2*tsz, 2*tsz);
-      sz = size(data);
-
-      % Loop over each multipole solution
-      for m = -Nmax:Nmax
-
-        n = abs(m)-1;
-        if m == 0, n = 0; end
-
-        % First do oe
-        blk = CstTRa{abs(m)+1}.([name, 'oe']);
-        assert(abs(m) == blk.m);
-
-        ridx = ott.utils.combined_index(n+blk.ind1, m);
-        cidx = ott.utils.combined_index(n+blk.ind1, m);
-        [ridx, cidx] = meshgrid(ridx, cidx);
-        data(sub2ind(sz, ridx, cidx)) = blk.M11;
-
-        ridx = ott.utils.combined_index(n+blk.ind1, m);
-        cidx = ott.utils.combined_index(n+blk.ind2, m);
-        [ridx, cidx] = meshgrid(ridx, cidx);
-        data(sub2ind(sz, ridx, cidx+tsz)) = blk.M12;
-
-        ridx = ott.utils.combined_index(n+blk.ind2, m);
-        cidx = ott.utils.combined_index(n+blk.ind1, m);
-        [ridx, cidx] = meshgrid(ridx, cidx);
-        data(sub2ind(sz, ridx+tsz, cidx)) = blk.M21;
-
-        ridx = ott.utils.combined_index(n+blk.ind2, m);
-        cidx = ott.utils.combined_index(n+blk.ind2, m);
-        [ridx, cidx] = meshgrid(ridx, cidx);
-        data(sub2ind(sz, ridx+tsz, cidx+tsz)) = blk.M22;
-
-        % Now do eo
-        blk = CstTRa{abs(m)+1}.([name, 'eo']);
-        assert(abs(m) == blk.m);
-
-        ridx = ott.utils.combined_index(n+blk.ind1, m);
-        cidx = ott.utils.combined_index(n+blk.ind1, m);
-        [ridx, cidx] = meshgrid(ridx, cidx);
-        data(sub2ind(sz, ridx, cidx)) = blk.M11;
-
-        ridx = ott.utils.combined_index(n+blk.ind1, m);
-        cidx = ott.utils.combined_index(n+blk.ind2, m);
-        [ridx, cidx] = meshgrid(ridx, cidx);
-        data(sub2ind(sz, ridx, cidx+tsz)) = blk.M12;
-
-        ridx = ott.utils.combined_index(n+blk.ind2, m);
-        cidx = ott.utils.combined_index(n+blk.ind1, m);
-        [ridx, cidx] = meshgrid(ridx, cidx);
-        data(sub2ind(sz, ridx+tsz, cidx)) = blk.M21;
-
-        ridx = ott.utils.combined_index(n+blk.ind2, m);
-        cidx = ott.utils.combined_index(n+blk.ind2, m);
-        [ridx, cidx] = meshgrid(ridx, cidx);
-        data(sub2ind(sz, ridx+tsz, cidx+tsz)) = blk.M22;
+      % ================= FIX 2: USE SMARTIES' OWN EXPORTER =================
+      % The original code here unfolded SMARTIES' |m| blocks onto +-m itself,
+      % with two defects:
+      %   (a) it dropped the (-1)^(s+s') that the achirality of a body of
+      %       revolution requires for m < 0 (SMARTIES applies it in
+      %       Utils/exportTmatrix.m:95), and
+      %   (b) it indexed through meshgrid(rows, cols), whose FIRST argument
+      %       varies along the COLUMNS, so every block was stored transposed.
+      % Measured on an oblate spheroid: achirality violated by 2.0 (a 100%
+      % breach) and unitarity 1.06e-3 for a lossless particle.  Against COMSOL
+      % over 114 orientations the unpatched force error is 53.6% / 56.7% / 63.7%
+      % (F_z / F_xy / T_xy), against 0.85% / 0.49% / 0.32% patched.
+      %
+      % SMARTIES ships sparseTmatrix, which applies the sign itself and returns
+      % the assembled matrix ALREADY in Nieminen ordering - byte-identical to
+      % ott.utils.combined_index.
+      % sparseTmatrix reads the 'st4MT' blocks.  SMARTIES returns the internal
+      % (regular) solution in the identically-shaped 'st4MR' blocks, so for the
+      % internal matrix we simply present those under the name sparseTmatrix
+      % looks for.
+      switch lower(name)
+        case 'st4mt'
+          data = sparseTmatrix(CstTRa);
+        case 'st4mr'
+          shim = CstTRa;
+          for ii = 1:numel(shim)
+            shim{ii}.st4MToe = CstTRa{ii}.st4MRoe;
+            shim{ii}.st4MTeo = CstTRa{ii}.st4MReo;
+          end
+          data = sparseTmatrix(shim);
+        otherwise
+          error('ott:TmatrixSmarties:name', ...
+                'unknown matrix name ''%s'' (expected st4MT or st4MR)', name);
       end
     end
   end

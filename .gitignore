@@ -7,3 +7,5 @@ octave-workspace
 
 .DS_Store
 
+# benchmark scratch: COMSOL exports, caches, generated figures
+/validation/

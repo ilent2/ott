@@ -1,7 +1,29 @@
-ott - Optical Tweezers Toolbox
-==============================
+ott - Optical Tweezers Toolbox (patched fork)
+============================================
 
-[![DOI](https://zenodo.org/badge/123386773.svg)](https://zenodo.org/badge/latestdoi/123386773)
+> **This is a patched fork, not upstream OTT.** Three defects are repaired:
+>
+> 1. the missing Condon-Shortley phase in `ott.utils.spharm`, which negated
+>    `F_x, F_y, T_x, T_y` for any beam spanning several `m`;
+> 2. the SMARTIES T-matrix import in `ott.TmatrixSmarties`, which dropped a
+>    sign and stored every block transposed;
+> 3. `abs(k_medium)` in `ott.Bsc.emFieldRtp`, which discarded the imaginary
+>    part of the wavenumber, so internal fields of absorbing particles never
+>    decayed.
+>
+> **[FIXES.md](FIXES.md)** has what changed, why, and the evidence: against
+> COMSOL over 26 wavelengths the patched build agrees to 0.17 % on force and
+> 0.13 % on absorbed power, where the unpatched build is out by 200 % and has
+> the sign of `F_x` and `F_y` backwards.
+>
+> Before reusing old scripts: transverse force and torque change for beams
+> spanning several `m`, every spheroid result changes, `translateXyz` is fixed
+> off the z axis, and internal fields of absorbing particles change. Axial
+> force, on-axis trap stiffness and all sphere results are unaffected.
+> `ott.TmatrixSmarties` requires SMARTIES on the MATLAB path.
+
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3352436.svg)](https://doi.org/10.5281/zenodo.3352436)
 [![Documentation Status](https://readthedocs.org/projects/ott/badge/?version=latest)](https://ott.readthedocs.io/en/latest/?badge=latest)
 [![View Optical Tweezers Toolbox on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://au.mathworks.com/matlabcentral/fileexchange/73541-optical-tweezers-toolbox)
 

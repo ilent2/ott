@@ -213,13 +213,28 @@ shown in :numref:`example-sphere-total-scattered`.
    sbeam.basis = 'outgoing';
    sbeam.visualise('axis', 'y', ...
       'mask', @(xyz) vecnorm(xyz) < radius, 'range', [1,1]*2e-6)
-   title('Scattered field');
+   title('Scattered field');   % note: this is half the physical scattered
+                               % field -- see the note on Bsc's basis property
 
    subplot(1, 2, 2);
-   tbeam = sbeam.totalField(beam);
-   tbeam.basis = 'regular';
-   tbeam.visualise('axis', 'y', ...
-      'mask', @(xyz) vecnorm(xyz) < radius, 'range', [1,1]*2e-6)
+   % Outside the particle the total field is the incident beam plus TWICE the scattered beam, the factor of
+   % two being the h1/2 outgoing basis (see the note on Bsc's basis property).
+   %
+   % The in/out form - incident in the 'incoming' basis plus totalField in the
+   % 'outgoing' basis - is algebraically the same, but do not use it here: the
+   % incoming half is ~1e12 times the answer, so it loses all its digits to
+   % cancellation once Nmax grows.
+   x = linspace(-2e-6, 2e-6, 80);
+   [X, Z] = meshgrid(x, x);
+   xyz = [X(:).'; zeros(1, numel(X)); Z(:).'];
+
+   ibeam = beam;   ibeam.basis = 'regular';
+   sbeam.basis = 'outgoing';
+   E = ibeam.emFieldXyz(xyz) + 2*sbeam.emFieldXyz(xyz);
+
+   Emag = reshape(vecnorm(E), size(X));
+   Emag(reshape(vecnorm(xyz), size(X)) < radius) = nan;   % mask the particle
+   imagesc(x, x, Emag); axis image; axis xy;
    title('Total field');
 
 .. _example-sphere-total-scattered:

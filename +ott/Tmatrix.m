@@ -340,6 +340,20 @@ classdef Tmatrix
       else
         error('Unable to determine k_medium from inputs');
       end
+
+      % The surrounding medium must be lossless.  The force and torque sums
+      % integrate the stress tensor over a sphere enclosing the particle,
+      % which gives the force ON the particle only if nothing in between
+      % absorbs; with a lossy host the answer depends on the integration
+      % radius, and the VSWF orthogonality the sums rely on no longer holds.
+      % Nothing downstream detects this, so warn here.
+      if ~isreal(k_medium)
+        warning('ott:Tmatrix:parser_k_medium:lossy_medium', ...
+            ['The surrounding medium is lossy (imag(k_medium) = ' ...
+             num2str(imag(k_medium)) ').  Fields are evaluated correctly, ' ...
+             'but force, torque and cross sections are not defined for an ' ...
+             'absorbing host and will be silently wrong.']);
+      end
     end
 
     function k_particle = parser_k_particle(p, default)
